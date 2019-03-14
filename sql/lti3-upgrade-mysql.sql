@@ -27,18 +27,18 @@ INSERT INTO lti2_context (consumer_pk, title, lti_context_id, type, settings, cr
   FROM lti_context x INNER JOIN lti2_consumer c ON x.consumer_key = c.consumer_key256
   WHERE x.lti_context_id IS NOT NULL;
 
--- Resource links without contexts
+-- Resource links with no context
 INSERT INTO lti2_resource_link (context_pk, consumer_pk, title, lti_resource_link_id, settings, primary_resource_link_pk, share_approved, created, updated)
   SELECT x.context_pk, c.consumer_pk, r.title, r.lti_resource_id, r.settings, NULL, NULL, r.created, r.updated
   FROM lti_context r INNER JOIN lti2_consumer c ON r.consumer_key = c.consumer_key256
     LEFT OUTER JOIN lti2_context x ON x.lti_context_id = r.lti_context_id
     WHERE r.lti_context_id IS NULL;
 
--- Resource links for contexts
+-- Resource links with a context
 INSERT INTO lti2_resource_link (context_pk, consumer_pk, title, lti_resource_link_id, settings, primary_resource_link_pk, share_approved, created, updated)
-  SELECT x.context_pk, c.consumer_pk, IF(INSTR(r.title, ':') > 0, TRIM(SUBSTRING(r.title, INSTR(r.title, ':') + 1)), r.title), r.lti_resource_id, r.settings, NULL, NULL, r.created, r.updated
+  SELECT x.context_pk, NULL, IF(INSTR(r.title, ':') > 0, TRIM(SUBSTRING(r.title, INSTR(r.title, ':') + 1)), r.title), r.lti_resource_id, r.settings, NULL, NULL, r.created, r.updated
   FROM lti_context r INNER JOIN lti2_consumer c ON r.consumer_key = c.consumer_key256
-    INNER JOIN lti2_context x ON x.lti_context_id = r.lti_context_id;
+    INNER JOIN lti2_context x ON (x.consumer_pk = c.consumer_pk) AND (x.lti_context_id = r.lti_context_id);
 
 -- Update resource link shares
 UPDATE lti2_resource_link r
@@ -48,11 +48,19 @@ UPDATE lti2_resource_link r
   INNER JOIN lti2_consumer c2 ON c2.consumer_pk = r2.consumer_pk
 SET r.primary_resource_link_pk = r2.resource_link_pk, r.share_approved = x.share_approved;
 
--- Share keys
+-- Share keys for resource links with no context
 INSERT INTO lti2_share_key (share_key_id, resource_link_pk, auto_approve, expires)
   SELECT s.share_key_id, r.resource_link_pk, s.auto_approve, s.expires
   FROM lti_share_key s INNER JOIN lti2_resource_link r ON s.primary_context_id = r.lti_resource_link_id
     INNER JOIN lti2_consumer c ON r.consumer_pk = c.consumer_pk
+  WHERE c.consumer_key256 = s.primary_consumer_key;
+
+-- Share keys for resource links with a context
+INSERT INTO lti2_share_key (share_key_id, resource_link_pk, auto_approve, expires)
+  SELECT s.share_key_id, r.resource_link_pk, s.auto_approve, s.expires
+  FROM lti_share_key s INNER JOIN lti2_resource_link r ON s.primary_context_id = r.lti_resource_link_id
+    INNER JOIN lti2_context x ON r.context_pk = x.context_pk
+    INNER JOIN lti2_consumer c ON x.consumer_pk = c.consumer_pk
   WHERE c.consumer_key256 = s.primary_consumer_key;
 
 -- User results
