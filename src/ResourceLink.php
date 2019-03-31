@@ -14,7 +14,6 @@ use DOMElement;
  *
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
  * @copyright  SPV Software Products
- * @version  3.1.0
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3
  */
 class ResourceLink
