@@ -3,8 +3,6 @@
 namespace ceLTIc\LTI\ApiHook\moodle;
 
 use ceLTIc\LTI\ApiHook\ApiContext;
-use ceLTIc\LTI\UserResult;
-use ceLTIc\LTI\HttpMessage;
 
 /**
  * Class to implement Context services for a Moodle tool consumer via its web services.
@@ -30,7 +28,6 @@ class MoodleApiContext extends ApiContext
     {
         $this->sourceObject = $this->context;
         $this->courseId = $this->context->ltiContextId;
-        $this->courseId = '2';
 
         return $this->get($withGroups);
     }

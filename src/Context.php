@@ -3,7 +3,7 @@
 namespace ceLTIc\LTI;
 
 use ceLTIc\LTI\Service;
-use ceLTIc\LTI\HTTPMessage;
+use ceLTIc\LTI\Http\HttpMessage;
 use ceLTIc\LTI\ApiHook\ApiHook;
 
 /**
@@ -54,9 +54,9 @@ class Context
     public $groups = null;
 
     /**
-     * HTTPMessage object for last service request.
+     * HttpMessage object for last service request.
      *
-     * @var HTTPMessage|null $lastServiceRequest
+     * @var HttpMessage|null $lastServiceRequest
      */
     public $lastServiceRequest = null;
 
@@ -140,7 +140,7 @@ class Context
     /**
      * Initialise the context.
      *
-     * Pseudonym for initialize().
+     * Synonym for initialize().
      */
     public function initialise()
     {
@@ -351,7 +351,7 @@ class Context
             $url = $this->getSetting('custom_context_setting_url');
             $service = new Service\ToolSettings($this, $url, $simple);
             $settings = $service->get($mode);
-            $this->lastServiceRequest = $service->getHTTPMessage();
+            $this->lastServiceRequest = $service->getHttpMessage();
             $ok = $settings !== false;
         }
         if (!$ok && $this->hasApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode())) {
@@ -377,7 +377,7 @@ class Context
             $url = $this->getSetting('custom_context_setting_url');
             $service = new Service\ToolSettings($this, $url);
             $ok = $service->set($settings);
-            $this->lastServiceRequest = $service->getHTTPMessage();
+            $this->lastServiceRequest = $service->getHttpMessage();
         }
         if (!$ok && $this->hasApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode())) {
             $className = $this->getApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode());
@@ -445,7 +445,7 @@ class Context
             $url = $this->getSetting('custom_context_memberships_url');
             $service = new Service\Membership($this, $url);
             $userResults = $service->get();
-            $this->lastServiceRequest = $service->getHTTPMessage();
+            $this->lastServiceRequest = $service->getHttpMessage();
             $ok = $userResults !== false;
         }
         if (!$ok && $hasApiHook) {

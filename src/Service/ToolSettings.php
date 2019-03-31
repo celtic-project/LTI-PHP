@@ -116,7 +116,7 @@ class ToolSettings extends Service
      *
      * @param array  $settings  An associative array of settings (optional, default is null)
      *
-     * @return HTTPMessage HTTP object containing request and response details
+     * @return bool True if request was successful
      */
     public function set($settings)
     {

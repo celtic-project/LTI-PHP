@@ -5,7 +5,7 @@ namespace ceLTIc\LTI;
 use ceLTIc\LTI\DataConnector;
 use ceLTIc\LTI\MediaType;
 use ceLTIc\LTI\Profile;
-use ceLTIc\LTI\HTTPMessage;
+use ceLTIc\LTI\Http\HttpMessage;
 use ceLTIc\LTI\OAuth;
 use ceLTIc\LTI\ApiHook\ApiHook;
 
@@ -617,7 +617,7 @@ EOD;
      */
     protected function onError()
     {
-        return false;
+        $this->ok = false;
     }
 
 ###
@@ -657,58 +657,56 @@ EOD;
      */
     private function result()
     {
-        $ok = false;
         if (!$this->ok) {
             $this->onError();
         }
-        if (!$ok) {
-            if (!$this->ok) {
+        if (!$this->ok) {
 
 // If not valid, return an error message to the tool consumer if a return URL is provided
-                if (!empty($this->returnUrl)) {
-                    $errorUrl = $this->returnUrl;
-                    if (strpos($errorUrl, '?') === false) {
-                        $errorUrl .= '?';
-                    } else {
-                        $errorUrl .= '&';
-                    }
-                    if ($this->debugMode && !is_null($this->reason)) {
-                        $errorUrl .= 'lti_errormsg=' . urlencode("Debug error: $this->reason");
-                    } else {
-                        $errorUrl .= 'lti_errormsg=' . urlencode($this->message);
-                        if (!is_null($this->reason)) {
-                            $errorUrl .= '&lti_errorlog=' . urlencode("Debug error: $this->reason");
-                        }
-                    }
-                    if (!is_null($this->consumer) && isset($this->messageParameters['lti_message_type']) && (($this->messageParameters['lti_message_type'] === 'ContentItemSelectionRequest') ||
-                        ($this->messageParameters['lti_message_type'] === 'LtiDeepLinkingRequest'))) {
-                        $formParams = array();
-                        if (isset($this->messageParameters['data'])) {
-                            $formParams['data'] = $this->messageParameters['data'];
-                        }
-                        $version = (isset($this->messageParameters['lti_version'])) ? $this->messageParameters['lti_version'] : self::LTI_VERSION1;
-                        $formParams = $this->consumer->signParameters($errorUrl, 'ContentItemSelection', $version, $formParams);
-                        $page = self::sendForm($errorUrl, $formParams);
-                        echo $page;
-                    } else {
-                        header("Location: {$errorUrl}");
-                    }
-                    exit;
+            if (!empty($this->returnUrl)) {
+                $errorUrl = $this->returnUrl;
+                if (strpos($errorUrl, '?') === false) {
+                    $errorUrl .= '?';
                 } else {
-                    if (!is_null($this->errorOutput)) {
-                        echo $this->errorOutput;
-                    } elseif ($this->debugMode && !empty($this->reason)) {
-                        echo "Debug error: {$this->reason}";
-                    } else {
-                        echo "Error: {$this->message}";
+                    $errorUrl .= '&';
+                }
+                if ($this->debugMode && !is_null($this->reason)) {
+                    $errorUrl .= 'lti_errormsg=' . urlencode("Debug error: $this->reason");
+                } else {
+                    $errorUrl .= 'lti_errormsg=' . urlencode($this->message);
+                    if (!is_null($this->reason)) {
+                        $errorUrl .= '&lti_errorlog=' . urlencode("Debug error: $this->reason");
                     }
                 }
-            } elseif (!is_null($this->redirectUrl)) {
-                header("Location: {$this->redirectUrl}");
+                if (!is_null($this->consumer) && isset($this->messageParameters['lti_message_type']) && (($this->messageParameters['lti_message_type'] === 'ContentItemSelectionRequest') ||
+                    ($this->messageParameters['lti_message_type'] === 'LtiDeepLinkingRequest'))) {
+                    $formParams = array();
+                    if (isset($this->messageParameters['data'])) {
+                        $formParams['data'] = $this->messageParameters['data'];
+                    }
+                    $version = (isset($this->messageParameters['lti_version'])) ? $this->messageParameters['lti_version'] : self::LTI_VERSION1;
+                    $formParams = $this->consumer->signParameters($errorUrl, 'ContentItemSelection', $version, $formParams);
+                    $page = self::sendForm($errorUrl, $formParams);
+                    echo $page;
+                } else {
+                    header("Location: {$errorUrl}");
+                }
                 exit;
-            } elseif (!is_null($this->output)) {
-                echo $this->output;
+            } else {
+                if (!is_null($this->errorOutput)) {
+                    echo $this->errorOutput;
+                } elseif ($this->debugMode && !empty($this->reason)) {
+                    echo "Debug error: {$this->reason}";
+                } else {
+                    echo "Error: {$this->message}";
+                }
             }
+        } elseif (!is_null($this->redirectUrl)) {
+            header("Location: {$this->redirectUrl}");
+            exit;
+        } elseif (!is_null($this->output)) {
+            echo $this->output;
+            exit;
         }
     }
 
@@ -935,7 +933,7 @@ EOD;
                     $url .= '&';
                 }
                 $url .= 'lti_version=' . self::LTI_VERSION2;
-                $http = new HTTPMessage($url, 'GET', null, 'Accept: application/vnd.ims.lti.v2.toolconsumerprofile+json');
+                $http = new HttpMessage($url, 'GET', null, 'Accept: application/vnd.ims.lti.v2.toolconsumerprofile+json');
                 $this->ok = $http->send();
                 if (!$this->ok) {
                     $this->reason = 'Tool consumer profile not accessible.';
@@ -1010,8 +1008,8 @@ EOD;
             } else {
                 $url .= '&';
             }
-            $url .= 'lti_version=' . $this->consumer->ltiVersion;
-            $http = new HTTPMessage($url, 'GET', null, 'Accept: application/vnd.ims.lti.v2.toolconsumerprofile+json');
+            $url .= 'lti_version=' . $this->messageParameters['lti_version'];
+            $http = new HttpMessage($url, 'GET', null, 'Accept: application/vnd.ims.lti.v2.toolconsumerprofile+json');
             if ($http->send()) {
                 $tcProfile = json_decode($http->response);
                 if (!is_null($tcProfile)) {

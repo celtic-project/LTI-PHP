@@ -4,7 +4,7 @@ namespace ceLTIc\LTI;
 
 use ceLTIc\LTI\DataConnector;
 use ceLTIc\LTI\Service;
-use ceLTIc\LTI\HTTPMessage;
+use ceLTIc\LTI\Http\HttpMessage;
 use ceLTIc\LTI\OAuth;
 
 /**
@@ -131,9 +131,9 @@ class ToolConsumer
     public $defaultEmail = '';
 
     /**
-     * HTTPMessage object for last service request.
+     * HttpMessage object for last service request.
      *
-     * @var HTTPMessage|null $lastServiceRequest
+     * @var HttpMessage|null $lastServiceRequest
      */
     public $lastServiceRequest = null;
 
@@ -238,7 +238,7 @@ class ToolConsumer
     /**
      * Initialise the tool consumer.
      *
-     * Pseudonym for initialize().
+     * Synonym for initialize().
      */
     public function initialise()
     {
@@ -458,7 +458,7 @@ class ToolConsumer
             $url = $this->getSetting('custom_system_setting_url');
             $service = new Service\ToolSettings($this, $url, $simple);
             $settings = $service->get($mode);
-            $this->lastServiceRequest = $service->getHTTPMessage();
+            $this->lastServiceRequest = $service->getHttpMessage();
             $ok = $settings !== false;
         }
         if (!$ok && $this->hasApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode())) {
@@ -484,7 +484,7 @@ class ToolConsumer
             $url = $this->getSetting('custom_system_setting_url');
             $service = new Service\ToolSettings($this, $url);
             $ok = $service->set($settings);
-            $this->lastServiceRequest = $service->getHTTPMessage();
+            $this->lastServiceRequest = $service->getHttpMessage();
         }
         if (!$ok && $this->hasApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode())) {
             $className = $this->getApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode());
@@ -573,14 +573,14 @@ class ToolConsumer
      * @param string $format   Media type
      * @param mixed  $data     Array of parameters or body string
      *
-     * @return HTTPMessage HTTP object containing request and response details
+     * @return HttpMessage HTTP object containing request and response details
      */
     public function doServiceRequest($service, $method, $format, $data)
     {
         $header = $this->addSignature($service->endpoint, $data, $method, $format);
 
 // Connect to tool consumer
-        $http = new HTTPMessage($service->endpoint, $method, $data, $header);
+        $http = new HttpMessage($service->endpoint, $method, $data, $header);
 // Parse JSON response
         if ($http->send() && !empty($http->response)) {
             $http->responseJson = json_decode($http->response);

@@ -4,7 +4,7 @@ namespace ceLTIc\LTI\Service;
 
 use ceLTIc\LTI;
 use ceLTIc\LTI\ToolConsumer;
-use ceLTIc\LTI\HTTPMessage;
+use ceLTIc\LTI\Http\HttpMessage;
 
 /**
  * Class to implement a service
@@ -46,9 +46,9 @@ class Service
     private $mediaType;
 
     /**
-     * HTTPMessage object for last service request.
+     * HttpMessage object for last service request.
      *
-     * @var HTTPMessage|null $http
+     * @var HttpMessage|null $http
      */
     private $http = null;
 
@@ -73,7 +73,7 @@ class Service
      * @param array   $parameters  Query parameters to add to endpoint (optional, default is none)
      * @param string  $body        Body of request (optional, default is null)
      *
-     * @return HTTPMessage HTTP object containing request and response details
+     * @return HttpMessage HTTP object containing request and response details
      */
     public function send($method, $parameters = array(), $body = null)
     {
@@ -96,7 +96,7 @@ class Service
         }
 
 // Connect to tool consumer
-        $this->http = new HTTPMessage($url, $method, $body, $header);
+        $this->http = new HttpMessage($url, $method, $body, $header);
 // Parse JSON response
         if ($this->http->send() && !empty($this->http->response)) {
             $this->http->responseJson = json_decode($this->http->response);
@@ -107,11 +107,11 @@ class Service
     }
 
     /**
-     * Get HTTPMessage object for last request.
+     * Get HttpMessage object for last request.
      *
-     * @return HTTPMessage HTTP object containing request and response details
+     * @return HttpMessage HTTP object containing request and response details
      */
-    public function getHTTPMessage()
+    public function getHttpMessage()
     {
         return $this->http;
     }

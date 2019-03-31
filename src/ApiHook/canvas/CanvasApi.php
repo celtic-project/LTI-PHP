@@ -3,7 +3,7 @@
 namespace ceLTIc\LTI\ApiHook\canvas;
 
 use ceLTIc\LTI\UserResult;
-use ceLTIc\LTI\HttpMessage;
+use ceLTIc\LTI\Http\HttpMessage;
 
 /**
  * Class to handle Canvas web service requests.

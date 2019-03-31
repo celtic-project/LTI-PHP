@@ -163,7 +163,6 @@ class DataConnector_mysqli extends DataConnector
                 $this->escape($settingsValue), $protected, $enabled, $this->escape($from), $this->escape($until),
                 $this->escape($last), $this->escape($now), $consumer->getRecordId());
         }
-        error_log(var_export($sql, true));
         $ok = mysqli_query($this->db, $sql);
         if ($ok) {
             if (empty($id)) {

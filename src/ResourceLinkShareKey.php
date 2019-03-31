@@ -115,7 +115,7 @@ class ResourceLinkShareKey
     /**
      * Initialise the resource link share key.
      *
-     * Pseudonym for initialize().
+     * Synonym for initialize().
      */
     public function initialise()
     {

@@ -101,7 +101,7 @@ class User
     /**
      * Initialise the user.
      *
-     * Pseudonym for initialize().
+     * Synonym for initialize().
      */
     public function initialise()
     {

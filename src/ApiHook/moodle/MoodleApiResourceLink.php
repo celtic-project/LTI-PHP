@@ -30,7 +30,6 @@ class MoodleApiResourceLink extends ApiResourceLink
         if (!empty($this->resourceLink->getContextId())) {
             $this->courseId = $this->resourceLink->getContext()->ltiContextId;
         }
-        $this->courseId = '2';
 
         $users = $this->get($withGroups);
 

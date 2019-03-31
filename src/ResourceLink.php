@@ -4,7 +4,7 @@ namespace ceLTIc\LTI;
 
 use ceLTIc\LTI\DataConnector\DataConnector;
 use ceLTIc\LTI\Service;
-use ceLTIc\LTI\HTTPMessage;
+use ceLTIc\LTI\Http\HttpMessage;
 use ceLTIc\LTI\ApiHook\ApiHook;
 use DOMDocument;
 use DOMElement;
@@ -110,9 +110,9 @@ class ResourceLink
     public $groups = null;
 
     /**
-     * HTTPMessage object for last service request.
+     * HttpMessage object for last service request.
      *
-     * @var HTTPMessage|null $lastServiceRequest
+     * @var HttpMessage|null $lastServiceRequest
      */
     public $lastServiceRequest = null;
 
@@ -268,7 +268,7 @@ class ResourceLink
     /**
      * Initialise the resource link.
      *
-     * Pseudonym for initialize().
+     * Synonym for initialize().
      */
     public function initialise()
     {
@@ -783,7 +783,7 @@ EOF;
             $url = $this->getSetting('custom_link_setting_url');
             $service = new Service\ToolSettings($this, $url, $simple);
             $settings = $service->get($mode);
-            $this->lastServiceRequest = $service->getHTTPMessage();
+            $this->lastServiceRequest = $service->getHttpMessage();
             $ok = $settings !== false;
         }
         if (!$ok && $this->hasApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode())) {
@@ -809,7 +809,7 @@ EOF;
             $url = $this->getSetting('custom_link_setting_url');
             $service = new Service\ToolSettings($this, $url);
             $ok = $service->set($settings);
-            $this->lastServiceRequest = $service->getHTTPMessage();
+            $this->lastServiceRequest = $service->getHttpMessage();
         }
         if (!$ok && $this->hasApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode())) {
             $className = $this->getApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode());
@@ -864,7 +864,7 @@ EOF;
             $url = $this->getContext()->getSetting('custom_context_memberships_url');
             $service = new Service\Membership($this, $url);
             $userResults = $service->get();
-            $this->lastServiceRequest = $service->getHTTPMessage();
+            $this->lastServiceRequest = $service->getHttpMessage();
             $ok = $userResults !== false;
         }
         if (!$ok && $hasExtService) {
@@ -1187,7 +1187,7 @@ EOF;
         if (!empty($url)) {
             $params = $this->getConsumer()->signParameters($url, $type, $this->getConsumer()->ltiVersion, $params);
 // Connect to tool consumer
-            $http = new HTTPMessage($url, 'POST', $params);
+            $http = new HttpMessage($url, 'POST', $params);
 // Parse XML response
             if ($http->send()) {
                 $this->extResponse = $http->response;
@@ -1250,7 +1250,7 @@ EOD;
             $consumer = $this->getConsumer();
             $header = $consumer->addSignature($url, $xmlRequest, 'POST', 'application/xml');
 // Connect to tool consumer
-            $http = new HTTPMessage($url, 'POST', $xmlRequest, $header);
+            $http = new HttpMessage($url, 'POST', $xmlRequest, $header);
 // Parse XML response
             if ($http->send()) {
                 $this->extResponse = $http->response;
@@ -1284,7 +1284,7 @@ EOD;
      */
     private function domnodeToArray($node)
     {
-        $output = '';
+        $output = array();
         switch ($node->nodeType) {
             case XML_CDATA_SECTION_NODE:
             case XML_TEXT_NODE:
@@ -1300,20 +1300,18 @@ EOD;
                         $s = (string) $v;
                         if (strlen($s) > 0) {
                             $output = $s;
+                            break;
                         }
                     }
                 }
-                if (is_array($output)) {
-                    if ($node->hasAttributes()) {
-                        foreach ($node->attributes as $attrNode) {
-                            /* @var $attrNode \DOMAttr */
-                            $output['@attributes'][$attrNode->name] = (string) $attrNode->value;
-                        }
+                if ($node->hasAttributes()) {
+                    foreach ($node->attributes as $attrNode) {
+                        $output['@attributes'][$attrNode->name] = (string) $attrNode->value;
                     }
-                    foreach ($output as $t => $v) {
-                        if (is_array($v) && count($v) == 1 && $t != '@attributes') {
-                            $output[$t] = $v[0];
-                        }
+                }
+                foreach ($output as $t => $v) {
+                    if (is_array($v) && count($v) == 1 && $t != '@attributes') {
+                        $output[$t] = $v[0];
                     }
                 }
                 break;

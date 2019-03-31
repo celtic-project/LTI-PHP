@@ -3,8 +3,6 @@
 namespace ceLTIc\LTI\ApiHook\canvas;
 
 use ceLTIc\LTI\ApiHook\ApiContext;
-use ceLTIc\LTI\UserResult;
-use ceLTIc\LTI\HTTPMessage;
 
 /**
  * Class to implement Resource Link services for a Canvas tool consumer via its proprietary API.

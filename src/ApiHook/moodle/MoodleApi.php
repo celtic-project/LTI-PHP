@@ -3,7 +3,7 @@
 namespace ceLTIc\LTI\ApiHook\moodle;
 
 use ceLTIc\LTI\UserResult;
-use ceLTIc\LTI\HttpMessage;
+use ceLTIc\LTI\Http\HttpMessage;
 
 /**
  * Class to handle Moodle web service requests.

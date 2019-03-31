@@ -2,7 +2,7 @@
 
 namespace ceLTIc\LTI\Http;
 
-use ceLTIc\LTI\HTTPMessage;
+use ceLTIc\LTI\Http\HttpMessage;
 
 /**
  * Interface to represent an HTTP message client
@@ -18,9 +18,9 @@ interface ClientInterface
     /**
      * Send the request to the target URL.
      *
-     * @param HTTPMessage $message
+     * @param HttpMessage $message
      *
      * @return bool True if the request was successful
      */
-    public function send(HTTPMessage $message);
+    public function send(HttpMessage $message);
 }
