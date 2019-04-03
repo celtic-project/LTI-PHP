@@ -1297,20 +1297,21 @@ EOD;
                         $output[$child->tagName][] = $v;
                     } else {
                         $s = (string) $v;
-                        if (strlen($s) > 0) {
+                        if (!empty($s)) {
                             $output = $s;
-                            break;
                         }
                     }
                 }
-                if ($node->hasAttributes()) {
-                    foreach ($node->attributes as $attrNode) {
-                        $output['@attributes'][$attrNode->name] = (string) $attrNode->value;
+                if (is_array($output)) {
+                    if ($node->hasAttributes()) {
+                        foreach ($node->attributes as $attrNode) {
+                            $output['@attributes'][$attrNode->name] = (string) $attrNode->value;
+                        }
                     }
-                }
-                foreach ($output as $t => $v) {
-                    if (is_array($v) && count($v) == 1 && $t != '@attributes') {
-                        $output[$t] = $v[0];
+                    foreach ($output as $t => $v) {
+                        if (is_array($v) && (count($v) === 1) && ($t !== '@attributes')) {
+                            $output[$t] = $v[0];
+                        }
                     }
                 }
                 break;
