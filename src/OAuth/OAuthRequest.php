@@ -37,16 +37,16 @@ class OAuthRequest
         if (!$http_url) {
             if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && ($_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')) {
                 $_SERVER['HTTPS'] = 'on';
-                if (isset($_SERVER['HTTP_X_FORWARDED_HOST'])) {
-                    $_SERVER['HTTP_HOST'] = $_SERVER['HTTP_X_FORWARDED_HOST'];
-                }
                 if ($_SERVER['SERVER_PORT'] == 80) {
                     $_SERVER['SERVER_PORT'] = 443;
                 }
             }
-            $scheme = (!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] != "on") ? 'http' : 'https';
+            if (isset($_SERVER['HTTP_X_FORWARDED_HOST'])) {
+                $_SERVER['SERVER_NAME'] = $_SERVER['HTTP_X_FORWARDED_HOST'];
+            }
+            $scheme = (!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] != 'on') ? 'http' : 'https';
             $http_url = ($http_url) ? $http_url : $scheme .
-                '://' . $_SERVER['HTTP_HOST'] .
+                '://' . $_SERVER['SERVER_NAME'] .
                 ':' .
                 $_SERVER['SERVER_PORT'] .
                 $_SERVER['REQUEST_URI'];
