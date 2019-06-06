@@ -959,7 +959,8 @@ EOD;
                 }
                 foreach ($this->constraints as $name => $constraint) {
                     if ($constraint['required']) {
-                        if (!in_array($name, $capabilities)) {
+                        if (empty(array_intersect($capabilities,
+                                    array_keys(array_intersect(self::$CUSTOM_SUBSTITUTION_VARIABLES, array($name)))))) {
                             $missing[$name] = true;
                         }
                     }
