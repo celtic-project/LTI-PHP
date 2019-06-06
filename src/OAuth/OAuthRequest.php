@@ -35,21 +35,30 @@ class OAuthRequest
     public static function from_request($http_method = null, $http_url = null, $parameters = null)
     {
         if (!$http_url) {
-            if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && ($_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')) {
+            if ((isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && ($_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')) ||
+                (isset($_SERVER['HTTP_X_FORWARDED_SSL']) && ($_SERVER['HTTP_X_FORWARDED_SSL'] === 'on')) ||
+                (isset($_SERVER['HTTP_X_URL_SCHEME']) && ($_SERVER['HTTP_X_URL_SCHEME'] === 'https'))) {
                 $_SERVER['HTTPS'] = 'on';
-                if ($_SERVER['SERVER_PORT'] == 80) {
-                    $_SERVER['SERVER_PORT'] = 443;
-                }
+                $_SERVER['SERVER_PORT'] = 443;
+            } else if (isset($_SERVER['HTTP_X_FORWARDED_PROTO'])) {
+                $_SERVER['HTTPS'] = 'off';
+                $_SERVER['SERVER_PORT'] = 80;
+            } else if (!isset($_SERVER['HTTPS'])) {
+                $_SERVER['HTTPS'] = 'off';
             }
             if (isset($_SERVER['HTTP_X_FORWARDED_HOST'])) {
-                $_SERVER['SERVER_NAME'] = $_SERVER['HTTP_X_FORWARDED_HOST'];
+                $host = explode(':', $_SERVER['HTTP_X_FORWARDED_HOST'], 2);
+                $_SERVER['SERVER_NAME'] = $host[0];
+                if (count($host) > 1) {
+                    $_SERVER['SERVER_PORT'] = $host[1];
+                } else if ($_SERVER['HTTPS'] === 'on') {
+                    $_SERVER['SERVER_PORT'] = 443;
+                } else {
+                    $_SERVER['SERVER_PORT'] = 80;
+                }
             }
-            $scheme = (!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] != 'on') ? 'http' : 'https';
-            $http_url = ($http_url) ? $http_url : $scheme .
-                '://' . $_SERVER['SERVER_NAME'] .
-                ':' .
-                $_SERVER['SERVER_PORT'] .
-                $_SERVER['REQUEST_URI'];
+            $scheme = ($_SERVER['HTTPS'] === 'on') ? 'https' : 'http';
+            $http_url = "{$scheme}://{$_SERVER['SERVER_NAME']}:{$_SERVER['SERVER_PORT']}{$_SERVER['REQUEST_URI']}";
         }
         $http_method = ($http_method) ? $http_method : $_SERVER['REQUEST_METHOD'];
 
@@ -68,7 +77,7 @@ class OAuthRequest
                 $parameters = array();
             }
 
-            if (($http_method == "POST" && isset($request_headers['Content-Type']) && stristr($request_headers['Content-Type'],
+            if (($http_method === 'POST' && isset($request_headers['Content-Type']) && stristr($request_headers['Content-Type'],
                     'application/x-www-form-urlencoded')) || !empty($_POST)) {
                 // It's a POST request of the proper content-type, so parse POST
                 // parameters and add those overriding any duplicates from GET
