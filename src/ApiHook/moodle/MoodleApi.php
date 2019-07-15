@@ -65,7 +65,7 @@ trait MoodleApi
                 $this->setGroupings($prefix);
             }
             $users = $this->getUsers($perPage, $withGroups);
-            if ($withGroups) {
+            if ($users && $withGroups) {
                 $this->setGroups($users);
             }
         } else {
@@ -89,7 +89,7 @@ trait MoodleApi
             'courseid' => $this->courseId
         );
         $courseGroupings = $this->callMoodleApi('core_group_get_course_groupings', $params);
-        if ($courseGroupings) {
+        if (is_array($courseGroupings)) {
             $groupingIds = array_map(function($grouping) {
                 return $grouping->id;
             }, $courseGroupings);
@@ -98,7 +98,7 @@ trait MoodleApi
                 'returngroups' => 1
             );
             $groupings = $this->callMoodleApi('core_group_get_groupings', $params);
-            if ($groupings) {
+            if (is_array($groupings)) {
                 foreach ($groupings as $grouping) {
                     if (!empty($grouping->groups) && (empty($prefix) || (strpos($grouping->name, $prefix) === 0))) {
                         $groupingId = strval($grouping->id);
@@ -146,7 +146,7 @@ trait MoodleApi
         );
         $teachers = array();
         $enrolments = $this->callMoodleApi('core_enrol_get_enrolled_users', $params);
-        if ($enrolments) {
+        if (is_array($enrolments)) {
             foreach ($enrolments as $enrolment) {
                 $teachers[] = $enrolment->id;
             }
@@ -187,7 +187,7 @@ trait MoodleApi
                 );
             }
             $enrolments = $this->callMoodleApi('core_enrol_get_enrolled_users', $params);
-            if (!is_null($enrolments)) {
+            if (is_array($enrolments)) {
                 foreach ($enrolments as $enrolment) {
                     $userId = strval($enrolment->id);
                     if (is_a($this->sourceObject, 'ceLTIc\LTI\ResourceLink')) {
@@ -222,7 +222,7 @@ trait MoodleApi
                 $users = false;
                 break;
             }
-        } while ($enrolments);
+        } while (is_array($enrolments) && !empty($enrolments));
 
         return $users;
     }
@@ -253,7 +253,7 @@ trait MoodleApi
                             unset($this->sourceObject->groups[$groupId]);
                         }
                         unset($this->sourceObject->groupSets[$setId]);
-                    } else if (array_key_exists($group, $this->sourceObject->groups)) {
+                    } elseif (array_key_exists($group, $this->sourceObject->groups)) {
                         $this->sourceObject->groupSets[$setId]['num_members'] ++;
                         if ($user->isStaff()) {
                             $this->sourceObject->groupSets[$setId]['num_staff'] ++;
