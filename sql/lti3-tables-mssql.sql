@@ -24,7 +24,7 @@ CREATE TABLE lti2_consumer (
 );
 
 CREATE TABLE lti2_nonce (
-  consumer_pk int IDENTITY NOT NULL,
+  consumer_pk int NOT NULL,
   value varchar(50) NOT NULL,
   expires datetime2 NOT NULL,
   PRIMARY KEY (consumer_pk, value)

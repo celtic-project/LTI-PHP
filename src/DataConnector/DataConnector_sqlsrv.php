@@ -109,34 +109,39 @@ class DataConnector_sqlsrv extends DataConnector
      *
      * @param ToolConsumer $consumer Consumer object
      *
-     * @return bool    True if the tool consumer object was successfully saved
+     * @return bool True if the tool consumer object was successfully saved
      */
     public function saveToolConsumer($consumer)
     {
-        $id = $consumer->getRecordId();
-        $key = $consumer->getKey();
-        $key256 = static::getConsumerKey($key);
-        if ($key === $key256) {
+        $id            = $consumer->getRecordId();
+        $key           = $consumer->getKey();
+        $key256        = static::getConsumerKey($key);
+        $time          = time();
+        $now           = date("{$this->dateFormat} {$this->timeFormat}", $time);
+        $from          = null;
+        $until         = null;
+        $last          = null;
+        $protected     = ($consumer->protected) ? 1 : 0;
+        $enabled       = ($consumer->enabled) ? 1 : 0;
+        $profile       = (!empty($consumer->profile)) ? json_encode($consumer->profile) : null;
+        $settingsValue = json_encode($consumer->getSettings());
+
+        if ($key === $key256){
             $key = null;
         }
-        $protected = ($consumer->protected) ? 1 : 0;
-        $enabled = ($consumer->enabled) ? 1 : 0;
-        $profile = (!empty($consumer->profile)) ? json_encode($consumer->profile) : null;
-        $settingsValue = json_encode($consumer->getSettings());
-        $time = time();
-        $now = date("{$this->dateFormat} {$this->timeFormat}", $time);
-        $from = null;
+
         if (!is_null($consumer->enableFrom)) {
-            $from = date_format($consumer->enableFrom, "{$this->dateFormat} {$this->timeFormat}");
+            $from = date("Y-m-d H:i:s",$consumer->enableFrom);
         }
-        $until = null;
+
         if (!is_null($consumer->enableUntil)) {
-            $until = date_format($consumer->enableUntil, "{$this->dateFormat} {$this->timeFormat}");
+            $until = date("Y-m-d H:i:s",$consumer->enableUntil);
         }
-        $last = null;
+
         if (!is_null($consumer->lastAccess)) {
-            $last = date_format($consumer->lastAccess, $this->dateFormat);
+            $last = date("Y-m-d",$consumer->lastAccess);
         }
+
         if (empty($id)) {
             $sql = sprintf("INSERT INTO {$this->dbTableNamePrefix}" . static::CONSUMER_TABLE_NAME . ' (consumer_key256, consumer_key, name, ' .
                 'secret, lti_version, signature_method, consumer_name, consumer_version, consumer_guid, profile, ' .
@@ -149,7 +154,8 @@ class DataConnector_sqlsrv extends DataConnector
                 $this->escape($consumer->consumerGuid), $this->escape($profile), $this->escape($consumer->toolProxy),
                 $this->escape($settingsValue), $protected, $enabled, $this->escape($from), $this->escape($until),
                 $this->escape($last), $this->escape($now), $this->escape($now));
-        } else {
+        }
+        else {
             $sql = sprintf("UPDATE {$this->dbTableNamePrefix}" . static::CONSUMER_TABLE_NAME . ' SET ' .
                 'consumer_key256 = %s, consumer_key = %s, ' .
                 'name = %s, secret= %s, lti_version = %s, signature_method = %s, consumer_name = %s, consumer_version = %s, consumer_guid = %s, ' .
@@ -162,8 +168,8 @@ class DataConnector_sqlsrv extends DataConnector
                 $this->escape($settingsValue), $protected, $enabled, $this->escape($from), $this->escape($until),
                 $this->escape($last), $this->escape($now), $consumer->getRecordId());
         }
-        $ok = sqlsrv_query($this->db, $sql);
-        if ($ok) {
+
+        if ($ok = sqlsrv_query($this->db, $sql)) {
             if (empty($id)) {
                 $consumer->setRecordId($this->insert_id());
                 $consumer->created = $time;
@@ -768,12 +774,21 @@ class DataConnector_sqlsrv extends DataConnector
      *
      * @return bool    True if the nonce object was successfully saved
      */
-    public function saveConsumerNonce($nonce)
-    {
+    public function saveConsumerNonce($nonce){
+        $tbl     = "[dbo].[".$this->dbTableNamePrefix.static::NONCE_TABLE_NAME."]";
         $expires = date("{$this->dateFormat} {$this->timeFormat}", $nonce->expires);
-        $sql = sprintf("INSERT INTO {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . " (consumer_pk, value, expires) VALUES (%d, %s, %s)",
-            $nonce->getConsumer()->getRecordId(), $this->escape($nonce->getValue()), $this->escape($expires));
-        $ok = sqlsrv_query($this->db, $sql);
+        $sql     = "";
+
+        $sql = "IF EXISTS (SELECT * FROM ".$tbl." WHERE [consumer_pk] = ".$nonce->getConsumer()->getRecordId().") ".
+               "UPDATE ".$tbl." SET [value]   = ".$this->escape($nonce->getValue()).",".
+                                   "[expires] = ".$this->escape($expires)." ".
+               "WHERE [consumer_pk] = ".$nonce->getConsumer()->getRecordId()." ".
+               "ELSE ".
+               "INSERT INTO ".$tbl." ([consumer_pk],[value],[expires]) ".
+               "VALUES (".$nonce->getConsumer()->getRecordId().",".
+                          $this->escape($nonce->getValue()).",".
+                          $this->escape($expires).");";
+        $ok  = sqlsrv_query($this->db, $sql);
 
         return $ok;
     }
@@ -993,5 +1008,4 @@ class DataConnector_sqlsrv extends DataConnector
 
         return $id;
     }
-
 }
