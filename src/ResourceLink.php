@@ -627,7 +627,7 @@ EOF;
                             }
                         case self::EXT_WRITE:
                         case self::EXT_DELETE:
-                            $ok = true;
+                            $response = true;
                             break;
                     }
                 }
@@ -878,7 +878,6 @@ EOF;
                 $ok = $this->doService('basic-lis-readmembershipsforcontext', $url, $params);
             }
             if ($ok) {
-                $oldUsers = $this->getUserResultSourcedIDs(true, ToolProvider::ID_SCOPE_RESOURCE);
                 $this->groupSets = array();
                 $this->groups = array();
                 if (!isset($this->extNodes['memberships']['member'])) {
@@ -942,21 +941,10 @@ EOF;
                         }
                         $userresult->groups[] = $group['id'];
                     }
-
-// If a result sourcedid is provided save the user
                     if (isset($members[$i]['lis_result_sourcedid'])) {
                         $userresult->ltiResultSourcedId = $members[$i]['lis_result_sourcedid'];
-                        $userresult->save();
                     }
                     $userResults[] = $userresult;
-
-// Remove old user (if it exists)
-                    unset($oldUsers[$userresult->getId(ToolProvider::ID_SCOPE_RESOURCE)]);
-                }
-
-// Delete any old users which were not in the latest list from the tool consumer
-                foreach ($oldUsers as $id => $userresult) {
-                    $userresult->delete();
                 }
             } else {
                 $userResults = false;
@@ -967,6 +955,22 @@ EOF;
             $className = $this->getApiHook(self::$MEMBERSHIPS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode());
             $hook = new $className($this);
             $userResults = $hook->getMemberships($withGroups);
+            $ok = $userResults !== false;
+        }
+        if ($ok) {
+            $oldUsers = $this->getUserResultSourcedIDs(true, ToolProvider::ID_SCOPE_RESOURCE);
+            foreach ($userResults as $userresult) {
+// If a result sourcedid is provided save the user
+                if (!empty($userresult->ltiResultSourcedId)) {
+                    $userresult->save();
+                }
+// Remove old user (if it exists)
+                unset($oldUsers[$userresult->getId(ToolProvider::ID_SCOPE_RESOURCE)]);
+            }
+// Delete any old users which were not in the latest list from the tool consumer
+            foreach ($oldUsers as $id => $userresult) {
+                $userresult->delete();
+            }
         }
 
         return $userResults;

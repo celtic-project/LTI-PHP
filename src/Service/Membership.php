@@ -86,14 +86,15 @@ class Membership extends Service
 
 // Set the user roles
                 if (isset($membership->role)) {
-                    $userresult->roles = LTI\ToolProvider::parseRoles($membership->role);
+                    $roles = $this->parseContextsInArray($http->responseJson->{'@context'}, $membership->role);
+                    $userresult->roles = LTI\ToolProvider::parseRoles($roles, LTI\ToolProvider::LTI_VERSION2);
                 }
 
 // If a result sourcedid is provided save the user
                 if ($isLink) {
                     if (isset($member->message)) {
                         foreach ($member->message as $message) {
-                            if (isset($message->message_type) && (($message->message_type === 'basic-lti-launch-request') || (strtolower($message->message_type) === 'ltiresourcelinkrequest'))) {
+                            if (isset($message->message_type) && (($message->message_type === 'basic-lti-launch-request') || ($message->message_type) === 'LtiResourceLinkRequest')) {
                                 if (isset($message->lis_result_sourcedid)) {
                                     $userresult->ltiResultSourcedId = $message->lis_result_sourcedid;
                                     $userresult->save();
