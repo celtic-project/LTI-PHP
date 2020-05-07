@@ -544,11 +544,10 @@ class ToolConsumer
      * @param mixed $data               Data to be passed
      * @param string $method            HTTP method
      * @param string|null $type         Content type of data being passed
-     * @param bool $forTP               True of the signature is being signed for a Tool Provider request
      *
      * @return mixed Array of signed message parameters or header string
      */
-    public function addSignature($endpoint, $data, $method = 'POST', $type = null, $forTP = false)
+    public function addSignature($endpoint, $data, $method = 'POST', $type = null)
     {
         switch ($this->signatureMethod) {
             case 'HMAC-SHA1':
@@ -635,6 +634,11 @@ class ToolConsumer
 
     /**
      * Add the OAuth signature to an array of message parameters or to a header string.
+     *
+     * @param string $endpoint          URL to which message is being sent
+     * @param mixed $data               Data to be passed
+     * @param string $method            HTTP method
+     * @param string|null $type         Content type of data being passed
      *
      * @return string[]|string Array of signed message parameters or header string
      */

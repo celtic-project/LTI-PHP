@@ -2,9 +2,6 @@
 
 namespace ceLTIc\LTI\Http;
 
-use ceLTIc\LTI\Http;
-use ceLTIc\LTI\Http\ClientInterface;
-
 /**
  * Class to represent an HTTP message request
  *
@@ -130,7 +127,7 @@ class HttpMessage
     /**
      * Set the HTTP client to use for sending the message.
      *
-     * @param Http\ClientInterface|null $httpClient
+     * @param ClientInterface|null $httpClient
      */
     public static function setHttpClient($httpClient = null)
     {
@@ -140,15 +137,15 @@ class HttpMessage
     /**
      * Get the HTTP client to use for sending the message. If one is not set, a default client is created.
      *
-     * @return Http\ClientInterface|null  The HTTP client
+     * @return ClientInterface|null  The HTTP client
      */
     public static function getHttpClient()
     {
         if (!self::$httpClient) {
             if (function_exists('curl_init')) {
-                self::$httpClient = new Http\CurlClient();
+                self::$httpClient = new CurlClient();
             } elseif (ini_get('allow_url_fopen')) {
-                self::$httpClient = new Http\StreamClient();
+                self::$httpClient = new StreamClient();
             }
         }
 

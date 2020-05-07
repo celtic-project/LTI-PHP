@@ -40,10 +40,10 @@ class OAuthRequest
                 (isset($_SERVER['HTTP_X_URL_SCHEME']) && ($_SERVER['HTTP_X_URL_SCHEME'] === 'https'))) {
                 $_SERVER['HTTPS'] = 'on';
                 $_SERVER['SERVER_PORT'] = 443;
-            } else if (isset($_SERVER['HTTP_X_FORWARDED_PROTO'])) {
+            } elseif (isset($_SERVER['HTTP_X_FORWARDED_PROTO'])) {
                 $_SERVER['HTTPS'] = 'off';
                 $_SERVER['SERVER_PORT'] = 80;
-            } else if (!isset($_SERVER['HTTPS'])) {
+            } elseif (!isset($_SERVER['HTTPS'])) {
                 $_SERVER['HTTPS'] = 'off';
             }
             if (isset($_SERVER['HTTP_X_FORWARDED_HOST'])) {
@@ -51,7 +51,7 @@ class OAuthRequest
                 $_SERVER['SERVER_NAME'] = $host[0];
                 if (count($host) > 1) {
                     $_SERVER['SERVER_PORT'] = $host[1];
-                } else if ($_SERVER['HTTPS'] === 'on') {
+                } elseif ($_SERVER['HTTPS'] === 'on') {
                     $_SERVER['SERVER_PORT'] = 443;
                 } else {
                     $_SERVER['SERVER_PORT'] = 80;

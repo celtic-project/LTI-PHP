@@ -2,19 +2,19 @@
 
 namespace ceLTIc\LTI;
 
-use ceLTIc\LTI\Http;
+use ceLTIc\LTI\Http\HttpMessage;
 
 /**
  * Class to represent an HTTP message request
  *
- * @deprecated Use Http\HttpMessage instead
- * @see Http\HttpMessage
+ * @deprecated Use HttpMessage instead
+ * @see HttpMessage
  *
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
  * @copyright  SPV Software Products
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3
  */
-class HTTPMessage extends Http\HttpMessage
+class HTTPMessage extends HttpMessage
 {
 
     /**
@@ -29,19 +29,6 @@ class HTTPMessage extends Http\HttpMessage
     {
         parent::__construct($url, $method, $params, $header);
         Util::log('Class ceLTIc\LTI\HTTPMessage has been deprecated; please use ceLTIc\LTI\Http\HttpMessage instead.', true);
-    }
-
-    /**
-     * Get HTTPMessage object for last request.
-     *
-     * @deprecated Use getHttpMessage instead
-     * @see Http\HttpMessage::getHttpMessage()
-     *
-     * @return HTTPMessage HTTP object containing request and response details
-     */
-    public function getHTTPMessage()
-    {
-        return $this->getHttpMessage();
     }
 
 }

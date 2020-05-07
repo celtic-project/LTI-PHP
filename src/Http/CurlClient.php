@@ -2,8 +2,6 @@
 
 namespace ceLTIc\LTI\Http;
 
-use ceLTIc\LTI\Http\HttpMessage;
-
 /**
  * Class to implement the HTTP message interface using the Curl library
  *
@@ -24,6 +22,7 @@ class CurlClient implements ClientInterface
     public function send(HttpMessage $message)
     {
         $ch = curl_init();
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30);
         curl_setopt($ch, CURLOPT_URL, $message->getUrl());
         if (!empty($message->requestHeaders)) {
             curl_setopt($ch, CURLOPT_HTTPHEADER, $message->requestHeaders);
