@@ -504,7 +504,8 @@ class ResourceLink
      */
     public function hasOutcomesService()
     {
-        $has = !empty($this->getSetting('ext_ims_lis_basic_outcome_url')) || !empty($this->getSetting('lis_outcome_service_url'));
+        $has = !empty($this->getSetting('ext_ims_lis_basic_outcome_url')) || !empty($this->getSetting('lis_outcome_service_url')) ||
+            !empty($this->getSetting('custom_lineitem_url'));
         if (!$has) {
             $has = self::hasApiHook(self::$OUTCOMES_SERVICE_HOOK, $this->getConsumer()->getFamilyCode());
         }
@@ -520,7 +521,7 @@ class ResourceLink
     {
         $has = false;
         if (!empty($this->contextId)) {
-            $has = !empty($this->getContext()->getSetting('custom_context_memberships_url'));
+            $has = !empty($this->getContext()->getSetting('custom_context_memberships_url')) || !empty($this->getContext()->getSetting('custom_context_memberships_v2_url'));
         }
         if (!$has) {
             $has = !empty($this->getSetting('ext_ims_lis_memberships_url'));
@@ -561,12 +562,15 @@ class ResourceLink
         $sourcedId = $userresult->ltiResultSourcedId;
 
 // Use LTI 1.1 service in preference to extension service if it is available
+        $urlAGS = $sourceResourceLink->getSetting('custom_lineitem_url');
         $urlLTI11 = $sourceResourceLink->getSetting('lis_outcome_service_url');
         $urlExt = $sourceResourceLink->getSetting('ext_ims_lis_basic_outcome_url');
-        if ($urlExt || $urlLTI11) {
+        if ($urlExt || $urlLTI11 || $urlAGS) {
             switch ($action) {
                 case self::EXT_READ:
-                    if ($urlLTI11 && ($ltiOutcome->type === self::EXT_TYPE_DECIMAL)) {
+                    if ($urlAGS) {
+                        $do = $action;
+                    } elseif ($urlLTI11 && ($ltiOutcome->type === self::EXT_TYPE_DECIMAL)) {
                         $do = 'readResult';
                     } elseif ($urlExt) {
                         $urlLTI11 = null;
@@ -574,7 +578,9 @@ class ResourceLink
                     }
                     break;
                 case self::EXT_WRITE:
-                    if ($urlLTI11 && $this->checkValueType($ltiOutcome, array(self::EXT_TYPE_DECIMAL))) {
+                    if ($urlAGS) {
+                        $do = $action;
+                    } elseif ($urlLTI11 && $this->checkValueType($ltiOutcome, array(self::EXT_TYPE_DECIMAL))) {
                         $do = 'replaceResult';
                     } elseif ($this->checkValueType($ltiOutcome)) {
                         $urlLTI11 = null;
@@ -582,7 +588,9 @@ class ResourceLink
                     }
                     break;
                 case self::EXT_DELETE:
-                    if ($urlLTI11 && ($ltiOutcome->type === self::EXT_TYPE_DECIMAL)) {
+                    if ($urlAGS) {
+                        $do = $action;
+                    } elseif ($urlLTI11 && ($ltiOutcome->type === self::EXT_TYPE_DECIMAL)) {
                         $do = 'deleteResult';
                     } elseif ($urlExt) {
                         $urlLTI11 = null;
@@ -596,10 +604,24 @@ class ResourceLink
             if (is_null($value)) {
                 $value = '';
             }
-            if ($urlLTI11) {
+            if ($urlAGS) {
+                switch ($action) {
+                    case self::EXT_READ:
+                        $ltiOutcome = $this->doResultService($userresult, $urlAGS);
+                        $response = !empty($ltiOutcome);
+                        break;
+                    case self::EXT_DELETE:
+                        $ltiOutcome->setValue(null);
+                        $ltiOutcome->activityProgress = 'Initialized';
+                        $ltiOutcome->gradingProgress = 'NotReady';
+                    case self::EXT_WRITE:
+                        $response = $this->doScoreService($ltiOutcome, $userresult, $urlAGS);
+                        break;
+                }
+            } elseif ($urlLTI11) {
                 $xml = '';
                 if ($action === self::EXT_WRITE) {
-                    $xml = <<<EOF
+                    $xml = <<< EOF
 
         <result>
           <resultScore>
@@ -856,12 +878,19 @@ EOF;
     {
         $ok = false;
         $userResults = array();
-        $hasLtiservice = !empty($this->contextId) && !empty($this->getContext()->getSetting('custom_context_memberships_url'));
+        $hasLtiservice = !empty($this->contextId) &&
+            (!empty($this->getContext()->getSetting('custom_context_memberships_url')) || !empty($this->getContext()->getSetting('custom_context_memberships_v2_url')));
         $hasExtService = !empty($this->getSetting('ext_ims_lis_memberships_url'));
         $hasApiHook = $this->hasApiHook(self::$MEMBERSHIPS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode());
         if ($hasLtiservice && (!$withGroups || (!$hasExtService && !$hasApiHook))) {
-            $url = $this->getContext()->getSetting('custom_context_memberships_url');
-            $service = new Service\Membership($this, $url);
+            if (!empty($this->getContext()->getSetting('custom_context_memberships_v2_url'))) {
+                $url = $this->getContext()->getSetting('custom_context_memberships_v2_url');
+                $format = Service\Membership::MEMBERSHIPS_MEDIA_TYPE_NRPS;
+            } else {
+                $url = $this->getContext()->getSetting('custom_context_memberships_url');
+                $format = Service\Membership::MEMBERSHIPS_MEDIA_TYPE_V1;
+            }
+            $service = new Service\Membership($this, $url, $format);
             $userResults = $service->get();
             $this->lastServiceRequest = $service->getHttpMessage();
             $ok = $userResults !== false;
@@ -925,12 +954,12 @@ EOF;
                                 $this->groupSets[$set_id] = array('title' => $group['set']['title'], 'groups' => array(),
                                     'num_members' => 0, 'num_staff' => 0, 'num_learners' => 0);
                             }
-                            $this->groupSets[$set_id]['num_members'] ++;
+                            $this->groupSets[$set_id]['num_members']++;
                             if ($userresult->isStaff()) {
-                                $this->groupSets[$set_id]['num_staff'] ++;
+                                $this->groupSets[$set_id]['num_staff']++;
                             }
                             if ($userresult->isLearner()) {
-                                $this->groupSets[$set_id]['num_learners'] ++;
+                                $this->groupSets[$set_id]['num_learners']++;
                             }
                             if (!in_array($group['id'], $this->groupSets[$set_id]['groups'])) {
                                 $this->groupSets[$set_id]['groups'][] = $group['id'];
@@ -1206,6 +1235,68 @@ EOF;
 
                 }
             }
+            $this->extRequest = $http->request;
+            $this->extRequestHeaders = $http->requestHeaders;
+            $this->lastServiceRequest = $http;
+        }
+
+        return $ok;
+    }
+
+    /**
+     * Send a request to the Result service endpoint.
+     *
+     * @param UserResult $userResult   UserResult object
+     * @param string $url  URL to send request to
+     *
+     * @return Outcome    Outcome object
+     */
+    private function doResultService($userResult, $url)
+    {
+        $outcome = null;
+        $this->extRequest = '';
+        $this->extRequestHeaders = '';
+        $this->extResponse = '';
+        $this->extResponseHeaders = '';
+        $this->lastServiceRequest = null;
+        if (!empty($url)) {
+            $resultService = new Service\Result($this->getConsumer(), $url);
+            $outcome = $resultService->get($userResult);
+            $http = $resultService->getHttpMessage();
+            $this->extResponse = $http->response;
+            $this->extResponseHeaders = $http->responseHeaders;
+            $this->extRequest = $http->request;
+            $this->extRequestHeaders = $http->requestHeaders;
+            $this->lastServiceRequest = $http;
+        }
+
+        return $outcome;
+    }
+
+    /**
+     * Send a service request to the Score service endpoint.
+     *
+     * @param Outcome $ltiOutcome   Outcome object
+     * @param UserResult $userResult   UserResult object
+     * @param string $url  URL to send request to
+     *
+     * @return bool    True if the request successfully obtained a response
+     */
+    private function doScoreService($ltiOutcome, $userResult, $url)
+    {
+        $ok = false;
+        $this->extRequest = '';
+        $this->extRequestHeaders = '';
+        $this->extResponse = '';
+        $this->extResponseHeaders = '';
+        $this->lastServiceRequest = null;
+        if (!empty($url)) {
+            $scoreService = new Service\Score($this->getConsumer(), $url);
+            $scoreService->submit($ltiOutcome, $userResult);
+            $http = $scoreService->getHttpMessage();
+            $this->extResponse = $http->response;
+            $this->extResponseHeaders = $http->responseHeaders;
+            $ok = $http->ok;
             $this->extRequest = $http->request;
             $this->extRequestHeaders = $http->requestHeaders;
             $this->lastServiceRequest = $http;

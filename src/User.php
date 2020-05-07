@@ -13,21 +13,21 @@ class User
 {
 
     /**
-     * UserResult's first name.
+     * User's first name.
      *
      * @var string $firstname
      */
     public $firstname = '';
 
     /**
-     * UserResult's last name (surname or family name).
+     * User's last name (surname or family name).
      *
      * @var string $lastname
      */
     public $lastname = '';
 
     /**
-     * UserResult's fullname.
+     * User's fullname.
      *
      * @var string $fullname
      */
@@ -41,14 +41,28 @@ class User
     public static $allowEmptyName = false;
 
     /**
-     * UserResult's email address.
+     * User's sourcedId.
+     *
+     * @var string $sourcedId
+     */
+    public $sourcedId = null;
+
+    /**
+     * User's username.
+     *
+     * @var string $username
+     */
+    public $username = null;
+
+    /**
+     * User's email address.
      *
      * @var string $email
      */
     public $email = '';
 
     /**
-     * UserResult's image URI.
+     * User's image URI.
      *
      * @var string $image
      */
@@ -91,6 +105,8 @@ class User
         $this->firstname = '';
         $this->lastname = '';
         $this->fullname = '';
+        $this->sourcedId = null;
+        $this->username = null;
         $this->email = '';
         $this->image = '';
         $this->roles = array();
@@ -110,9 +126,9 @@ class User
     /**
      * Set the user's name.
      *
-     * @param string $firstname UserResult's first name.
-     * @param string $lastname UserResult's last name.
-     * @param string $fullname UserResult's full name.
+     * @param string $firstname User's first name.
+     * @param string $lastname User's last name.
+     * @param string $fullname User's full name.
      */
     public function setNames($firstname, $lastname, $fullname)
     {

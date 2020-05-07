@@ -407,7 +407,7 @@ class Context
      */
     public function hasMembershipsService()
     {
-        $has = !empty($this->getSetting('custom_context_memberships_url'));
+        $has = !empty($this->getSetting('custom_context_memberships_url')) || !empty($this->getSetting('custom_context_memberships_v2_url'));
         if (!$has) {
             $has = self::hasApiHook(self::$MEMBERSHIPS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode());
         }
@@ -438,11 +438,17 @@ class Context
     {
         $ok = false;
         $userResults = array();
-        $hasLtiService = !empty($this->getSetting('custom_context_memberships_url'));
+        $hasLtiService = !empty($this->getSetting('custom_context_memberships_url')) || !empty($this->getSetting('custom_context_memberships_v2_url'));
         $hasApiHook = $this->hasApiHook(self::$MEMBERSHIPS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode());
         if ($hasLtiService && (!$withGroups || !$hasApiHook)) {
-            $url = $this->getSetting('custom_context_memberships_url');
-            $service = new Service\Membership($this, $url);
+            if (!empty($this->getSetting('custom_context_memberships_v2_url'))) {
+                $url = $this->getSetting('custom_context_memberships_v2_url');
+                $format = Service\Membership::MEMBERSHIPS_MEDIA_TYPE_NRPS;
+            } else {
+                $url = $this->getSetting('custom_context_memberships_url');
+                $format = Service\Membership::MEMBERSHIPS_MEDIA_TYPE_V1;
+            }
+            $service = new Service\Membership($this, $url, $format);
             $userResults = $service->get();
             $this->lastServiceRequest = $service->getHttpMessage();
             $ok = $userResults !== false;

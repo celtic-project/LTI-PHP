@@ -129,26 +129,29 @@ class Service
      */
     protected function parseContextsInArray($contexts, $arr)
     {
-        $contextdefs = array();
-        foreach ($contexts as $context) {
-            if (is_object($context)) {
-                $contextdefs = array_merge(get_object_vars($context), $contexts);
-            }
-        }
-        $parsed = array();
-        foreach ($arr as $key => $value) {
-            $parts = explode(':', $value, 2);
-            if (count($parts) > 1) {
-                if (array_key_exists($parts[0], $contextdefs)) {
-                    $parsed[$key] = $contextdefs[$parts[0]] . $parts[1];
-                    break;
+        if (is_array($contexts)) {
+            $contextdefs = array();
+            foreach ($contexts as $context) {
+                if (is_object($context)) {
+                    $contextdefs = array_merge(get_object_vars($context), $contexts);
                 }
             }
-            $parsed[$key] = $value;
+            $parsed = array();
+            foreach ($arr as $key => $value) {
+                $parts = explode(':', $value, 2);
+                if (count($parts) > 1) {
+                    if (array_key_exists($parts[0], $contextdefs)) {
+                        $parsed[$key] = $contextdefs[$parts[0]] . $parts[1];
+                        break;
+                    }
+                }
+                $parsed[$key] = $value;
+            }
+        } else {
+            $parsed = $arr;
         }
 
         return $parsed;
-
     }
 
 }

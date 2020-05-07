@@ -349,7 +349,9 @@ class ToolProvider
         if ($this->ok) {
             $this->getMessageParameters();
             if ($this->authenticate()) {
-                $this->doCallback();
+                if (empty($this->output)) {
+                    $this->doCallback();
+                }
             }
         }
         $this->result();
@@ -1019,248 +1021,276 @@ EOD;
             }
         }
 
-// Validate message parameter constraints
         if ($this->ok) {
-            $invalidParameters = array();
-            foreach ($this->constraints as $name => $constraint) {
-                if (empty($constraint['messages']) || in_array($this->messageParameters['lti_message_type'], $constraint['messages'])) {
-                    $ok = true;
-                    if ($constraint['required']) {
-                        if (!isset($this->messageParameters[$name]) || (strlen(trim($this->messageParameters[$name])) <= 0)) {
-                            $invalidParameters[] = "{$name} (missing)";
-                            $ok = false;
-                        }
-                    }
-                    if ($ok && !is_null($constraint['max_length']) && isset($this->messageParameters[$name])) {
-                        if (strlen(trim($this->messageParameters[$name])) > $constraint['max_length']) {
-                            $invalidParameters[] = "{$name} (too long)";
-                        }
-                    }
-                }
-            }
-            if (count($invalidParameters) > 0) {
-                $this->ok = false;
-                if (empty($this->reason)) {
-                    $this->reason = 'Invalid parameter(s): ' . implode(', ', $invalidParameters) . '.';
-                }
-            }
-        }
 
-        if ($this->ok) {
+// Check if a relaunch is being requested
+            if (isset($this->messageParameters['relaunch_url'])) {
+                if (empty($this->messageParameters['platform_state'])) {
+                    $this->ok = false;
+                    $this->reason = 'Missing or empty platform_state parameter';
+                } else {
+                    $this->sendRelaunchRequest();
+                }
+            } else {
+
+// Validate message parameter constraints
+                $invalidParameters = array();
+                foreach ($this->constraints as $name => $constraint) {
+                    if (empty($constraint['messages']) || in_array($this->messageParameters['lti_message_type'], $constraint['messages'])) {
+                        $ok = true;
+                        if ($constraint['required']) {
+                            if (!isset($this->messageParameters[$name]) || (strlen(trim($this->messageParameters[$name])) <= 0)) {
+                                $invalidParameters[] = "{$name} (missing)";
+                                $ok = false;
+                            }
+                        }
+                        if ($ok && !is_null($constraint['max_length']) && isset($this->messageParameters[$name])) {
+                            if (strlen(trim($this->messageParameters[$name])) > $constraint['max_length']) {
+                                $invalidParameters[] = "{$name} (too long)";
+                            }
+                        }
+                    }
+                }
+                if (count($invalidParameters) > 0) {
+                    $this->ok = false;
+                    if (empty($this->reason)) {
+                        $this->reason = 'Invalid parameter(s): ' . implode(', ', $invalidParameters) . '.';
+                    }
+                }
+
+                if ($this->ok) {
 
 // Set the request context
-            $contextId = '';
-            if ($this->hasApiHook(self::$CONTEXT_ID_HOOK, $this->consumer->getFamilyCode())) {
-                $className = $this->getApiHook(self::$CONTEXT_ID_HOOK, $this->consumer->getFamilyCode());
-                $tpHook = new $className($this);
-                $contextId = $tpHook->getContextId();
-            }
-            if (empty($contextId) && isset($this->messageParameters['context_id'])) {
-                $contextId = trim($this->messageParameters['context_id']);
-            }
-            if (!empty($contextId)) {
-                $this->context = Context::fromConsumer($this->consumer, $contextId);
-                $title = '';
-                if (isset($this->messageParameters['context_title'])) {
-                    $title = trim($this->messageParameters['context_title']);
-                }
-                if (empty($title)) {
-                    $title = "Course {$this->context->getId()}";
-                }
-                $this->context->title = $title;
-                if (isset($this->messageParameters['context_type'])) {
-                    $this->context->type = trim($this->messageParameters['context_type']);
-                }
-            }
+                    $contextId = '';
+                    if ($this->hasApiHook(self::$CONTEXT_ID_HOOK, $this->consumer->getFamilyCode())) {
+                        $className = $this->getApiHook(self::$CONTEXT_ID_HOOK, $this->consumer->getFamilyCode());
+                        $tpHook = new $className($this);
+                        $contextId = $tpHook->getContextId();
+                    }
+                    if (empty($contextId) && isset($this->messageParameters['context_id'])) {
+                        $contextId = trim($this->messageParameters['context_id']);
+                    }
+                    if (!empty($contextId)) {
+                        $this->context = Context::fromConsumer($this->consumer, $contextId);
+                        $title = '';
+                        if (isset($this->messageParameters['context_title'])) {
+                            $title = trim($this->messageParameters['context_title']);
+                        }
+                        if (empty($title)) {
+                            $title = "Course {$this->context->getId()}";
+                        }
+                        $this->context->title = $title;
+                        if (isset($this->messageParameters['context_type'])) {
+                            $this->context->type = trim($this->messageParameters['context_type']);
+                        }
+                    }
 
 // Set the request resource link
-            if (isset($this->messageParameters['resource_link_id'])) {
-                $contentItemId = '';
-                if (isset($this->messageParameters['custom_content_item_id'])) {
-                    $contentItemId = $this->messageParameters['custom_content_item_id'];
-                }
-                $this->resourceLink = ResourceLink::fromConsumer($this->consumer,
-                        trim($this->messageParameters['resource_link_id']), $contentItemId);
-                if (!empty($this->context)) {
-                    $this->resourceLink->setContextId($this->context->getRecordId());
-                }
-                $title = '';
-                if (isset($this->messageParameters['resource_link_title'])) {
-                    $title = trim($this->messageParameters['resource_link_title']);
-                }
-                if (empty($title)) {
-                    $title = "Resource {$this->resourceLink->getId()}";
-                }
-                $this->resourceLink->title = $title;
+                    if (isset($this->messageParameters['resource_link_id'])) {
+                        $contentItemId = '';
+                        if (isset($this->messageParameters['custom_content_item_id'])) {
+                            $contentItemId = $this->messageParameters['custom_content_item_id'];
+                        }
+                        $this->resourceLink = ResourceLink::fromConsumer($this->consumer,
+                                trim($this->messageParameters['resource_link_id']), $contentItemId);
+                        if (!empty($this->context)) {
+                            $this->resourceLink->setContextId($this->context->getRecordId());
+                        }
+                        $title = '';
+                        if (isset($this->messageParameters['resource_link_title'])) {
+                            $title = trim($this->messageParameters['resource_link_title']);
+                        }
+                        if (empty($title)) {
+                            $title = "Resource {$this->resourceLink->getId()}";
+                        }
+                        $this->resourceLink->title = $title;
 // Delete any existing custom parameters
-                foreach ($this->consumer->getSettings() as $name => $value) {
-                    if (strpos($name, 'custom_') === 0) {
-                        $this->consumer->setSetting($name);
+                        foreach ($this->consumer->getSettings() as $name => $value) {
+                            if (strpos($name, 'custom_') === 0) {
+                                $this->consumer->setSetting($name);
+                                $doSaveConsumer = true;
+                            }
+                        }
+                        if (!empty($this->context)) {
+                            foreach ($this->context->getSettings() as $name => $value) {
+                                if (strpos($name, 'custom_') === 0) {
+                                    $this->context->setSetting($name);
+                                }
+                            }
+                        }
+                        foreach ($this->resourceLink->getSettings() as $name => $value) {
+                            if (strpos($name, 'custom_') === 0) {
+                                $this->resourceLink->setSetting($name);
+                            }
+                        }
+// Save LTI parameters
+                        foreach (self::$LTI_CONSUMER_SETTING_NAMES as $name) {
+                            if (isset($this->messageParameters[$name])) {
+                                $this->consumer->setSetting($name, $this->messageParameters[$name]);
+                            } else {
+                                $this->consumer->setSetting($name);
+                            }
+                        }
+                        if (!empty($this->context)) {
+                            foreach (self::$LTI_CONTEXT_SETTING_NAMES as $name) {
+                                if (isset($this->messageParameters[$name])) {
+                                    $this->context->setSetting($name, $this->messageParameters[$name]);
+                                } else {
+                                    $this->context->setSetting($name);
+                                }
+                            }
+                        }
+                        foreach (self::$LTI_RESOURCE_LINK_SETTING_NAMES as $name) {
+                            if (isset($this->messageParameters[$name])) {
+                                $this->resourceLink->setSetting($name, $this->messageParameters[$name]);
+                            } else {
+                                $this->resourceLink->setSetting($name);
+                            }
+                        }
+// Save other custom parameters at all levels
+                        foreach ($this->messageParameters as $name => $value) {
+                            if ((strpos($name, 'custom_') === 0) &&
+                                !in_array($name,
+                                    array_merge(self::$LTI_CONSUMER_SETTING_NAMES, self::$LTI_CONTEXT_SETTING_NAMES,
+                                        self::$LTI_RESOURCE_LINK_SETTING_NAMES))) {
+                                $this->consumer->setSetting($name, $value);
+                                if (!empty($this->context)) {
+                                    $this->context->setSetting($name, $value);
+                                }
+                                $this->resourceLink->setSetting($name, $value);
+                            }
+                        }
+                    }
+
+// Set the user instance
+                    $userId = '';
+                    if ($this->hasApiHook(self::$USER_ID_HOOK, $this->consumer->getFamilyCode())) {
+                        $className = $this->getApiHook(self::$USER_ID_HOOK, $this->consumer->getFamilyCode());
+                        $tpHook = new $className($this);
+                        $userId = $tpHook->getUserId();
+                    }
+                    if (empty($userId) && isset($this->messageParameters['user_id'])) {
+                        $userId = trim($this->messageParameters['user_id']);
+                    }
+
+                    $this->userResult = UserResult::fromResourceLink($this->resourceLink, $userId);
+
+// Set the user name
+                    $firstname = (isset($this->messageParameters['lis_person_name_given'])) ? $this->messageParameters['lis_person_name_given'] : '';
+                    $lastname = (isset($this->messageParameters['lis_person_name_family'])) ? $this->messageParameters['lis_person_name_family'] : '';
+                    $fullname = (isset($this->messageParameters['lis_person_name_full'])) ? $this->messageParameters['lis_person_name_full'] : '';
+                    $this->userResult->setNames($firstname, $lastname, $fullname);
+
+// Set the sourcedId
+                    if (isset($this->messageParameters['lis_person_sourcedid'])) {
+                        $this->userResult->sourcedId = $this->messageParameters['lis_person_sourcedid'];
+                    }
+
+// Set the username
+                    if (isset($this->messageParameters['ext_username'])) {
+                        $this->userResult->username = $this->messageParameters['ext_username'];
+                    } elseif (isset($this->messageParameters['ext_user_username'])) {
+                        $this->userResult->username = $this->messageParameters['ext_user_username'];
+                    } elseif (isset($this->messageParameters['custom_username'])) {
+                        $this->userResult->username = $this->messageParameters['custom_username'];
+                    } elseif (isset($this->messageParameters['custom_user_username'])) {
+                        $this->userResult->username = $this->messageParameters['custom_user_username'];
+                    }
+
+// Set the user email
+                    $email = (isset($this->messageParameters['lis_person_contact_email_primary'])) ? $this->messageParameters['lis_person_contact_email_primary'] : '';
+                    $this->userResult->setEmail($email, $this->defaultEmail);
+
+// Set the user image URI
+                    if (isset($this->messageParameters['user_image'])) {
+                        $this->userResult->image = $this->messageParameters['user_image'];
+                    }
+
+// Set the user roles
+                    if (isset($this->messageParameters['roles'])) {
+                        $this->userResult->roles = self::parseRoles($this->messageParameters['roles'], $this->consumer->ltiVersion);
+                    }
+
+// Initialise the consumer and check for changes
+                    $this->consumer->defaultEmail = $this->defaultEmail;
+                    if ($this->consumer->ltiVersion !== $this->messageParameters['lti_version']) {
+                        $this->consumer->ltiVersion = $this->messageParameters['lti_version'];
+                        $doSaveConsumer = true;
+                    }
+                    if (isset($this->messageParameters['tool_consumer_instance_name'])) {
+                        if ($this->consumer->consumerName !== $this->messageParameters['tool_consumer_instance_name']) {
+                            $this->consumer->consumerName = $this->messageParameters['tool_consumer_instance_name'];
+                            $doSaveConsumer = true;
+                        }
+                    }
+                    if (isset($this->messageParameters['tool_consumer_info_product_family_code'])) {
+                        $version = $this->messageParameters['tool_consumer_info_product_family_code'];
+                        if (isset($this->messageParameters['tool_consumer_info_version'])) {
+                            $version .= "-{$this->messageParameters['tool_consumer_info_version']
+                                }";
+                        }
+// do not delete any existing consumer version if none is passed
+                        if ($this->consumer->consumerVersion !== $version) {
+                            $this->consumer->consumerVersion = $version;
+                            $doSaveConsumer = true;
+                        }
+                    } elseif (isset($this->messageParameters['ext_lms']) && ($this->consumer->consumerName !== $this->messageParameters['ext_lms'])) {
+                        $this->consumer->consumerVersion = $this->messageParameters['ext_lms'];
+                        $doSaveConsumer = true;
+                    }
+                    if (isset($this->messageParameters['tool_consumer_instance_guid'])) {
+                        if (is_null($this->consumer->consumerGuid)) {
+                            $this->consumer->consumerGuid = $this->messageParameters['tool_consumer_instance_guid'];
+                            $doSaveConsumer = true;
+                        } elseif (!$this->consumer->protected) {
+                            $doSaveConsumer = ($this->consumer->consumerGuid !== $this->messageParameters['tool_consumer_instance_guid']);
+                            if ($doSaveConsumer) {
+                                $this->consumer->consumerGuid = $this->messageParameters['tool_consumer_instance_guid'];
+                            }
+                        }
+                    }
+                    if (isset($this->messageParameters['launch_presentation_css_url'])) {
+                        if ($this->consumer->cssPath !== $this->messageParameters['launch_presentation_css_url']) {
+                            $this->consumer->cssPath = $this->messageParameters['launch_presentation_css_url'];
+                            $doSaveConsumer = true;
+                        }
+                    } elseif (isset($this->messageParameters['ext_launch_presentation_css_url']) &&
+                        ($this->consumer->cssPath !== $this->messageParameters['ext_launch_presentation_css_url'])) {
+                        $this->consumer->cssPath = $this->messageParameters['ext_launch_presentation_css_url'];
+                        $doSaveConsumer = true;
+                    } elseif (!empty($this->consumer->cssPath)) {
+                        $this->consumer->cssPath = null;
                         $doSaveConsumer = true;
                     }
                 }
-                if (!empty($this->context)) {
-                    foreach ($this->context->getSettings() as $name => $value) {
-                        if (strpos($name, 'custom_') === 0) {
-                            $this->context->setSetting($name);
-                        }
-                    }
-                }
-                foreach ($this->resourceLink->getSettings() as $name => $value) {
-                    if (strpos($name, 'custom_') === 0) {
-                        $this->resourceLink->setSetting($name);
-                    }
-                }
-// Save LTI parameters
-                foreach (self::$LTI_CONSUMER_SETTING_NAMES as $name) {
-                    if (isset($this->messageParameters[$name])) {
-                        $this->consumer->setSetting($name, $this->messageParameters[$name]);
-                    } else {
-                        $this->consumer->setSetting($name);
-                    }
-                }
-                if (!empty($this->context)) {
-                    foreach (self::$LTI_CONTEXT_SETTING_NAMES as $name) {
-                        if (isset($this->messageParameters[$name])) {
-                            $this->context->setSetting($name, $this->messageParameters[$name]);
-                        } else {
-                            $this->context->setSetting($name);
-                        }
-                    }
-                }
-                foreach (self::$LTI_RESOURCE_LINK_SETTING_NAMES as $name) {
-                    if (isset($this->messageParameters[$name])) {
-                        $this->resourceLink->setSetting($name, $this->messageParameters[$name]);
-                    } else {
-                        $this->resourceLink->setSetting($name);
-                    }
-                }
-// Save other custom parameters at all levels
-                foreach ($this->messageParameters as $name => $value) {
-                    if ((strpos($name, 'custom_') === 0) &&
-                        !in_array($name,
-                            array_merge(self::$LTI_CONSUMER_SETTING_NAMES, self::$LTI_CONTEXT_SETTING_NAMES,
-                                self::$LTI_RESOURCE_LINK_SETTING_NAMES))) {
-                        $this->consumer->setSetting($name, $value);
-                        if (!empty($this->context)) {
-                            $this->context->setSetting($name, $value);
-                        }
-                        $this->resourceLink->setSetting($name, $value);
-                    }
-                }
-            }
-
-// Set the user instance
-            $userId = '';
-            if ($this->hasApiHook(self::$USER_ID_HOOK, $this->consumer->getFamilyCode())) {
-                $className = $this->getApiHook(self::$USER_ID_HOOK, $this->consumer->getFamilyCode());
-                $tpHook = new $className($this);
-                $userId = $tpHook->getUserId();
-            }
-            if (empty($userId) && isset($this->messageParameters['user_id'])) {
-                $userId = trim($this->messageParameters['user_id']);
-            }
-
-            $this->userResult = UserResult::fromResourceLink($this->resourceLink, $userId);
-
-// Set the user name
-            $firstname = (isset($this->messageParameters['lis_person_name_given'])) ? $this->messageParameters['lis_person_name_given'] : '';
-            $lastname = (isset($this->messageParameters['lis_person_name_family'])) ? $this->messageParameters['lis_person_name_family'] : '';
-            $fullname = (isset($this->messageParameters['lis_person_name_full'])) ? $this->messageParameters['lis_person_name_full'] : '';
-            $this->userResult->setNames($firstname, $lastname, $fullname);
-
-// Set the user email
-            $email = (isset($this->messageParameters['lis_person_contact_email_primary'])) ? $this->messageParameters['lis_person_contact_email_primary'] : '';
-            $this->userResult->setEmail($email, $this->defaultEmail);
-
-// Set the user image URI
-            if (isset($this->messageParameters['user_image'])) {
-                $this->userResult->image = $this->messageParameters['user_image'];
-            }
-
-// Set the user roles
-            if (isset($this->messageParameters['roles'])) {
-                $this->userResult->roles = self::parseRoles($this->messageParameters['roles'], $this->consumer->ltiVersion);
-            }
-
-// Initialise the consumer and check for changes
-            $this->consumer->defaultEmail = $this->defaultEmail;
-            if ($this->consumer->ltiVersion !== $this->messageParameters['lti_version']) {
-                $this->consumer->ltiVersion = $this->messageParameters['lti_version'];
-                $doSaveConsumer = true;
-            }
-            if (isset($this->messageParameters['tool_consumer_instance_name'])) {
-                if ($this->consumer->consumerName !== $this->messageParameters['tool_consumer_instance_name']) {
-                    $this->consumer->consumerName = $this->messageParameters['tool_consumer_instance_name'];
-                    $doSaveConsumer = true;
-                }
-            }
-            if (isset($this->messageParameters['tool_consumer_info_product_family_code'])) {
-                $version = $this->messageParameters['tool_consumer_info_product_family_code'];
-                if (isset($this->messageParameters['tool_consumer_info_version'])) {
-                    $version .= "-{$this->messageParameters['tool_consumer_info_version']
-                        }";
-                }
-// do not delete any existing consumer version if none is passed
-                if ($this->consumer->consumerVersion !== $version) {
-                    $this->consumer->consumerVersion = $version;
-                    $doSaveConsumer = true;
-                }
-            } elseif (isset($this->messageParameters['ext_lms']) && ($this->consumer->consumerName !== $this->messageParameters['ext_lms'])) {
-                $this->consumer->consumerVersion = $this->messageParameters['ext_lms'];
-                $doSaveConsumer = true;
-            }
-            if (isset($this->messageParameters['tool_consumer_instance_guid'])) {
-                if (is_null($this->consumer->consumerGuid)) {
-                    $this->consumer->consumerGuid = $this->messageParameters['tool_consumer_instance_guid'];
-                    $doSaveConsumer = true;
-                } elseif (!$this->consumer->protected) {
-                    $doSaveConsumer = ($this->consumer->consumerGuid !== $this->messageParameters['tool_consumer_instance_guid']);
-                    if ($doSaveConsumer) {
-                        $this->consumer->consumerGuid = $this->messageParameters['tool_consumer_instance_guid'];
-                    }
-                }
-            }
-            if (isset($this->messageParameters['launch_presentation_css_url'])) {
-                if ($this->consumer->cssPath !== $this->messageParameters['launch_presentation_css_url']) {
-                    $this->consumer->cssPath = $this->messageParameters['launch_presentation_css_url'];
-                    $doSaveConsumer = true;
-                }
-            } elseif (isset($this->messageParameters['ext_launch_presentation_css_url']) &&
-                ($this->consumer->cssPath !== $this->messageParameters['ext_launch_presentation_css_url'])) {
-                $this->consumer->cssPath = $this->messageParameters['ext_launch_presentation_css_url'];
-                $doSaveConsumer = true;
-            } elseif (!empty($this->consumer->cssPath)) {
-                $this->consumer->cssPath = null;
-                $doSaveConsumer = true;
-            }
-        }
 
 // Persist changes to consumer
-        if ($doSaveConsumer) {
-            $this->consumer->save();
-        }
-        if ($this->ok && isset($this->context)) {
-            $this->context->save();
-        }
-        if ($this->ok && isset($this->resourceLink)) {
+                if ($doSaveConsumer) {
+                    $this->consumer->save();
+                }
+                if ($this->ok && isset($this->context)) {
+                    $this->context->save();
+                }
+                if ($this->ok && isset($this->resourceLink)) {
 
 // Check if a share arrangement is in place for this resource link
-            $this->ok = $this->checkForShare();
+                    $this->ok = $this->checkForShare();
 
 // Persist changes to resource link
-            $this->resourceLink->save();
+                    $this->resourceLink->save();
 
 // Save the user instance
-            $this->userResult->setResourceLinkId($this->resourceLink->getRecordId());
-            if (isset($this->messageParameters['lis_result_sourcedid'])) {
-                if ($this->userResult->ltiResultSourcedId !== $this->messageParameters['lis_result_sourcedid']) {
-                    $this->userResult->ltiResultSourcedId = $this->messageParameters['lis_result_sourcedid'];
-                    $this->userResult->save();
+                    $this->userResult->setResourceLinkId($this->resourceLink->getRecordId());
+                    if (isset($this->messageParameters['lis_result_sourcedid'])) {
+                        if ($this->userResult->ltiResultSourcedId !== $this->messageParameters['lis_result_sourcedid']) {
+                            $this->userResult->ltiResultSourcedId = $this->messageParameters['lis_result_sourcedid'];
+                            $this->userResult->save();
+                        }
+                    } elseif (!empty($this->userResult->ltiResultSourcedId)) {
+                        $this->userResult->ltiResultSourcedId = '';
+                        $this->userResult->save();
+                    }
                 }
-            } elseif (!empty($this->userResult->ltiResultSourcedId)) {
-                $this->userResult->ltiResultSourcedId = '';
-                $this->userResult->save();
             }
         }
 
@@ -1351,6 +1381,28 @@ EOD;
         }
 
         return $ok;
+    }
+
+    /**
+     * Generate a form to perform a relaunch request.
+     */
+    private function sendRelaunchRequest()
+    {
+        do {
+            $nonce = new ConsumerNonce($this->consumer, DataConnector\DataConnector::getRandomString());
+            $ok = !$nonce->load();
+        } while (!$ok);
+        $ok = $nonce->save();
+        if ($ok) {
+            $params = array(
+                'tool_state' => $nonce->getValue(),
+                'platform_state' => $this->messageParameters['platform_state']
+            );
+            $params = $this->consumer->addSignature($this->messageParameters['relaunch_url'], $params);
+            $this->output = static::sendForm($this->messageParameters['relaunch_url'], $params);
+        } else {
+            $this->reason = 'Unavle to generate a state value';
+        }
     }
 
     /**
