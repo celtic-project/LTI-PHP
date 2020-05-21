@@ -2,6 +2,8 @@
 
 namespace ceLTIc\LTI\Http;
 
+use ceLTIc\LTI\Util;
+
 /**
  * Class to represent an HTTP message request
  *
@@ -163,8 +165,23 @@ class HttpMessage
         $this->ok = !empty($client);
         if ($this->ok) {
             $this->ok = $client->send($this);
+            $message = "Http\\HttpMessage->send {$this->method} request to '{$this->url}'";
+            if (!empty($this->params)) {
+                $message .= ' with ' . var_export($this->params, true);
+            }
+            $message .= "; response:\n{$this->responseHeaders}";
+            if (!empty($this->response)) {
+                $message .= "\n\n{$this->response}";
+            }
+            if ($this->ok) {
+                Util::logInfo($message);
+            } else {
+                Util::logError($message);
+            }
         } else {
-            $this->error = 'No HTTP client interface is available';
+            $message = 'No HTTP client interface is available';
+            $this->error = $message;
+            Util::log($message, true);
         }
 
         return $this->ok;

@@ -346,12 +346,16 @@ class ToolProvider
      */
     public function handleRequest()
     {
+        Util::logRequest();
         if ($this->ok) {
             $this->getMessageParameters();
             if ($this->authenticate()) {
                 if (empty($this->output)) {
                     $this->doCallback();
                 }
+            }
+            if (!$this->ok) {
+                Util::logError("Request failed with reason: '{$this->reason}'");
             }
         }
         $this->result();
@@ -1401,7 +1405,7 @@ EOD;
             $params = $this->consumer->addSignature($this->messageParameters['relaunch_url'], $params);
             $this->output = static::sendForm($this->messageParameters['relaunch_url'], $params);
         } else {
-            $this->reason = 'Unavle to generate a state value';
+            $this->reason = 'Unable to generate a state value';
         }
     }
 
