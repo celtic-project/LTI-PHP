@@ -70,7 +70,7 @@ class DataConnector_mysql extends DataConnector
                     $consumer->consumerGuid = $row->consumer_guid;
                     $consumer->profile = json_decode($row->profile);
                     $consumer->toolProxy = $row->tool_proxy;
-                    $settings = json_decode($row->settings, TRUE);
+                    $settings = json_decode($row->settings, true);
                     if (!is_array($settings)) {
                         $settings = @unserialize($row->settings);  // check for old serialized setting
                     }
@@ -295,7 +295,7 @@ class DataConnector_mysql extends DataConnector
                 $consumer->consumerGuid = $row->consumer_guid;
                 $consumer->profile = json_decode($row->profile);
                 $consumer->toolProxy = $row->tool_proxy;
-                $settings = json_decode($row->settings, TRUE);
+                $settings = json_decode($row->settings, true);
                 if (!is_array($settings)) {
                     $settings = @unserialize($row->settings);  // check for old serialized setting
                 }
@@ -360,7 +360,7 @@ class DataConnector_mysql extends DataConnector
                 $context->title = $row->title;
                 $context->ltiContextId = $row->lti_context_id;
                 $context->type = $row->type;
-                $settings = json_decode($row->settings, TRUE);
+                $settings = json_decode($row->settings, true);
                 if (!is_array($settings)) {
                     $settings = @unserialize($row->settings);  // check for old serialized setting
                 }
@@ -513,7 +513,7 @@ class DataConnector_mysql extends DataConnector
                 }
                 $resourceLink->title = $row->title;
                 $resourceLink->ltiResourceLinkId = $row->lti_resource_link_id;
-                $settings = json_decode($row->settings, TRUE);
+                $settings = json_decode($row->settings, true);
                 if (!is_array($settings)) {
                     $settings = @unserialize($row->settings);  // check for old serialized setting
                 }

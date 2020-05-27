@@ -932,7 +932,7 @@ EOD;
             }
             if ($this->ok) {
                 $url = $this->messageParameters['tc_profile_url'];
-                if (strpos($url, '?') === FALSE) {
+                if (strpos($url, '?') === false) {
                     $url .= '?';
                 } else {
                     $url .= '&';
@@ -1009,7 +1009,7 @@ EOD;
             }
         } elseif ($this->ok && !empty($this->messageParameters['custom_tc_profile_url']) && empty($this->consumer->profile)) {
             $url = $this->messageParameters['custom_tc_profile_url'];
-            if (strpos($url, '?') === FALSE) {
+            if (strpos($url, '?') === false) {
                 $url .= '?';
             } else {
                 $url .= '&';

@@ -90,7 +90,7 @@ class DataConnector_oci extends DataConnector
                     $consumer->toolProxy = $row['tool_proxy'];
                     $settingsValue = $row['settings']->load();
                     if (is_string($settingsValue)) {
-                        $settings = json_decode($settingsValue, TRUE);
+                        $settings = json_decode($settingsValue, true);
                         if (!is_array($settings)) {
                             $settings = @unserialize($settingsValue);  // check for old serialized setting
                         }
@@ -349,7 +349,7 @@ class DataConnector_oci extends DataConnector
             "FROM {$this->dbTableNamePrefix}" . static::CONSUMER_TABLE_NAME . ' ' .
             'ORDER BY name';
         $query = oci_parse($this->db, $sql);
-        $ok = ($query !== FALSE);
+        $ok = ($query !== false);
 
         if ($ok) {
             $ok = oci_execute($query);
@@ -372,7 +372,7 @@ class DataConnector_oci extends DataConnector
                 $consumer->toolProxy = $row['tool_proxy'];
                 $settingsValue = $row['settings']->load();
                 if (is_string($settingsValue)) {
-                    $settings = json_decode($settingsValue, TRUE);
+                    $settings = json_decode($settingsValue, true);
                     if (!is_array($settings)) {
                         $settings = @unserialize($settingsValue);  // check for old serialized setting
                     }
@@ -439,7 +439,7 @@ class DataConnector_oci extends DataConnector
         $ok = oci_execute($query);
         if ($ok) {
             $row = oci_fetch_assoc($query);
-            $ok = ($row !== FALSE);
+            $ok = ($row !== false);
         }
         if ($ok) {
             $row = array_change_key_case($row);
@@ -450,7 +450,7 @@ class DataConnector_oci extends DataConnector
             $context->type = $row['type'];
             $settingsValue = $row['settings']->load();
             if (is_string($settingsValue)) {
-                $settings = json_decode($settingsValue, TRUE);
+                $settings = json_decode($settingsValue, true);
                 if (!is_array($settings)) {
                     $settings = @unserialize($settingsValue);  // check for old serialized setting
                 }
@@ -623,7 +623,7 @@ class DataConnector_oci extends DataConnector
         $ok = oci_execute($query);
         if ($ok) {
             $row = oci_fetch_assoc($query);
-            $ok = ($row !== FALSE);
+            $ok = ($row !== false);
         }
 
         if ($ok) {
@@ -643,7 +643,7 @@ class DataConnector_oci extends DataConnector
             $settings = $row['settings']->load();
             $settingsValue = $row['settings']->load();
             if (is_string($settingsValue)) {
-                $settings = json_decode($settingsValue, TRUE);
+                $settings = json_decode($settingsValue, true);
                 if (!is_array($settings)) {
                     $settings = @unserialize($settingsValue);  // check for old serialized setting
                 }
@@ -991,7 +991,7 @@ class DataConnector_oci extends DataConnector
         oci_bind_by_name($query, 'id', $id);
         if (oci_execute($query)) {
             $row = oci_fetch_assoc($query);
-            if ($row !== FALSE) {
+            if ($row !== false) {
                 $row = array_change_key_case($row);
                 if (intval($row['resource_link_pk']) === $shareKey->resourceLinkId) {
                     $shareKey->autoApprove = ($row['auto_approve'] === 1);

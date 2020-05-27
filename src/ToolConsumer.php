@@ -658,19 +658,19 @@ class ToolConsumer
 // Calculate body hash
             switch ($this->signatureMethod) {
                 case 'HMAC-SHA224':
-                    $hash = base64_encode(hash('sha224', $data, TRUE));
+                    $hash = base64_encode(hash('sha224', $data, true));
                     break;
                 case 'HMAC-SHA256':
-                    $hash = base64_encode(hash('sha256', $data, TRUE));
+                    $hash = base64_encode(hash('sha256', $data, true));
                     break;
                 case 'HMAC-SHA384':
-                    $hash = base64_encode(hash('sha384', $data, TRUE));
+                    $hash = base64_encode(hash('sha384', $data, true));
                     break;
                 case 'HMAC-SHA512':
-                    $hash = base64_encode(hash('sha512', $data, TRUE));
+                    $hash = base64_encode(hash('sha512', $data, true));
                     break;
                 default:
-                    $hash = base64_encode(sha1($data, TRUE));
+                    $hash = base64_encode(sha1($data, true));
                     break;
             }
             $params['oauth_body_hash'] = $hash;

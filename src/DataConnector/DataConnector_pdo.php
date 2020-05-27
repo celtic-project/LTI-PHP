@@ -83,7 +83,7 @@ class DataConnector_pdo extends DataConnector
                     $consumer->consumerGuid = $row['consumer_guid'];
                     $consumer->profile = json_decode($row['profile']);
                     $consumer->toolProxy = $row['tool_proxy'];
-                    $settings = json_decode($row['settings'], TRUE);
+                    $settings = json_decode($row['settings'], true);
                     if (!is_array($settings)) {
                         $settings = @unserialize($row['settings']);  // check for old serialized setting
                     }
@@ -338,7 +338,7 @@ class DataConnector_pdo extends DataConnector
             "FROM {$this->dbTableNamePrefix}" . static::CONSUMER_TABLE_NAME . ' ' .
             'ORDER BY name';
         $query = $this->db->prepare($sql);
-        $ok = ($query !== FALSE);
+        $ok = ($query !== false);
 
         if ($ok) {
             $ok = $query->execute();
@@ -359,7 +359,7 @@ class DataConnector_pdo extends DataConnector
                 $consumer->consumerGuid = $row['consumer_guid'];
                 $consumer->profile = json_decode($row['profile']);
                 $consumer->toolProxy = $row['tool_proxy'];
-                $settings = json_decode($row['settings'], TRUE);
+                $settings = json_decode($row['settings'], true);
                 if (!is_array($settings)) {
                     $settings = @unserialize($row['settings']);  // check for old serialized setting
                 }
@@ -421,7 +421,7 @@ class DataConnector_pdo extends DataConnector
         $ok = $query->execute();
         if ($ok) {
             $row = $query->fetch(\PDO::FETCH_ASSOC);
-            $ok = ($row !== FALSE);
+            $ok = ($row !== false);
         }
         if ($ok) {
             $row = array_change_key_case($row);
@@ -430,7 +430,7 @@ class DataConnector_pdo extends DataConnector
             $context->title = $row['title'];
             $context->ltiContextId = $row['lti_context_id'];
             $context->type = $row['type'];
-            $settings = json_decode($row['settings'], TRUE);
+            $settings = json_decode($row['settings'], true);
             if (!is_array($settings)) {
                 $settings = @unserialize($row['settings']);  // check for old serialized setting
             }
@@ -586,7 +586,7 @@ class DataConnector_pdo extends DataConnector
         $ok = $query->execute();
         if ($ok) {
             $row = $query->fetch(\PDO::FETCH_ASSOC);
-            $ok = ($row !== FALSE);
+            $ok = ($row !== false);
         }
 
         if ($ok) {
@@ -604,7 +604,7 @@ class DataConnector_pdo extends DataConnector
             }
             $resourceLink->title = $row['title'];
             $resourceLink->ltiResourceLinkId = $row['lti_resource_link_id'];
-            $settings = json_decode($row['settings'], TRUE);
+            $settings = json_decode($row['settings'], true);
             if (!is_array($settings)) {
                 $settings = @unserialize($row['settings']);  // check for old serialized setting
             }
@@ -948,7 +948,7 @@ class DataConnector_pdo extends DataConnector
         $query->bindValue('id', $id, \PDO::PARAM_STR);
         if ($query->execute()) {
             $row = $query->fetch(\PDO::FETCH_ASSOC);
-            if ($row !== FALSE) {
+            if ($row !== false) {
                 $row = array_change_key_case($row);
                 if (intval($row['resource_link_pk']) === $shareKey->resourceLinkId) {
                     $shareKey->autoApprove = ($row['auto_approve'] === 1);

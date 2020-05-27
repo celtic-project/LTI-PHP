@@ -40,7 +40,7 @@ class OAuthServer
         $consumer = $this->get_consumer($request);
 
         // no token required for the initial token request
-        $token = NULL;
+        $token = null;
 
         $this->check_signature($request, $consumer, $token);
 
@@ -111,7 +111,7 @@ class OAuthServer
      */
     private function get_signature_method($request)
     {
-        $signature_method = $request instanceof OAuthRequest ? $request->get_parameter('oauth_signature_method') : NULL;
+        $signature_method = $request instanceof OAuthRequest ? $request->get_parameter('oauth_signature_method') : null;
 
         if (!$signature_method) {
             // According to chapter 7 ("Accessing Protected Ressources") the signature-method
@@ -135,7 +135,7 @@ class OAuthServer
      */
     private function get_consumer($request)
     {
-        $consumer_key = $request instanceof OAuthRequest ? $request->get_parameter('oauth_consumer_key') : NULL;
+        $consumer_key = $request instanceof OAuthRequest ? $request->get_parameter('oauth_consumer_key') : null;
 
         if (is_null($consumer_key) || (strlen($consumer_key) <= 0)) {
             throw new OAuthException('Invalid consumer key');
@@ -154,7 +154,7 @@ class OAuthServer
      */
     private function get_token($request, $consumer, $token_type = "access")
     {
-        $token_field = $request instanceof OAuthRequest ? $request->get_parameter('oauth_token') : NULL;
+        $token_field = $request instanceof OAuthRequest ? $request->get_parameter('oauth_token') : null;
 
         $token = $this->data_store->lookup_token($consumer, $token_type, $token_field);
         if (!$token) {
@@ -171,8 +171,8 @@ class OAuthServer
     private function check_signature($request, $consumer, $token)
     {
         // this should probably be in a different method
-        $timestamp = $request instanceof OAuthRequest ? $request->get_parameter('oauth_timestamp') : NULL;
-        $nonce = $request instanceof OAuthRequest ? $request->get_parameter('oauth_nonce') : NULL;
+        $timestamp = $request instanceof OAuthRequest ? $request->get_parameter('oauth_timestamp') : null;
+        $nonce = $request instanceof OAuthRequest ? $request->get_parameter('oauth_nonce') : null;
 
         $this->check_timestamp($timestamp);
         $this->check_nonce($consumer, $token, $nonce, $timestamp);
