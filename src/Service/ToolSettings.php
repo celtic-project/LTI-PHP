@@ -122,7 +122,7 @@ class ToolSettings extends Service
         if (!$this->simple) {
             if (is_a($this->source, 'ToolConsumer')) {
                 $type = 'ToolProxy';
-            } elseif (is_a($this->source, 'ToolConsumer')) {
+            } elseif (is_a($this->source, 'Context')) {
                 $type = 'ToolProxyBinding';
             } else {
                 $type = 'LtiLink';

@@ -32,7 +32,7 @@ class AssignmentGrade extends Service
      * @param string       $endpoint   Service endpoint
      * @param string       $path       Path
      *
-     * @return string The endpint with the path added
+     * @return string The endpoint with the path added
      */
     private static function addPath($endpoint, $path)
     {
