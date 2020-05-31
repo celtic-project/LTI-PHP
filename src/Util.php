@@ -25,9 +25,14 @@ final class Util
     const LOGLEVEL_ERROR = 1;
 
     /**
-     * Log all messages.
+     * Log error and information messages.
      */
     const LOGLEVEL_INFO = 2;
+
+    /**
+     * Log all messages.
+     */
+    const LOGLEVEL_DEBUG = 3;
 
     /**
      * Current logging level.
@@ -45,7 +50,7 @@ final class Util
     public static function logError($message, $showSource = true)
     {
         if (self::$logLevel >= self::LOGLEVEL_ERROR) {
-            self::log($message, $showSource);
+            self::log("[ERROR] {$message}", $showSource);
         }
     }
 
@@ -58,7 +63,20 @@ final class Util
     public static function logInfo($message, $showSource = false)
     {
         if (self::$logLevel >= self::LOGLEVEL_INFO) {
-            self::log($message, $showSource);
+            self::log("[INFO] {$message}", $showSource);
+        }
+    }
+
+    /**
+     * Log a debug message.
+     *
+     * @param string  $message     Message to be logged
+     * @param bool    $showSource  True if the name and line number of the current file are to be included
+     */
+    public static function logDebug($message, $showSource = false)
+    {
+        if (self::$logLevel >= self::LOGLEVEL_DEBUG) {
+            self::log("[DEBUG] {$message}", $showSource);
         }
     }
 

@@ -56,7 +56,7 @@ class DataConnector_pdo_pgsql extends DataConnector_pdo
             $query->bindValue('id', $id, \PDO::PARAM_INT);
             $query->bindValue('pid', $id, \PDO::PARAM_INT);
         }
-        if ($query->execute()) {
+        if ($this->executeQuery($sql, $query)) {
             while ($row = $query->fetch(\PDO::FETCH_ASSOC)) {
                 $row = array_change_key_case($row);
                 $userresult = LTI\UserResult::fromRecordId($row['user_result_pk'], $resourceLink->getDataConnector());
@@ -98,7 +98,7 @@ class DataConnector_pdo_pgsql extends DataConnector_pdo
         $query->bindValue('prlid', $shareKey->resourceLinkId, \PDO::PARAM_INT);
         $query->bindValue('approve', $shareKey->autoApprove, \PDO::PARAM_INT);
         $query->bindValue('expires', $expires, \PDO::PARAM_STR);
-        $ok = $query->execute();
+        $ok = $this->executeQuery($sql, $query);
 
         return $ok;
     }

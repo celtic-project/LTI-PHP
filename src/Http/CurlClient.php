@@ -42,22 +42,19 @@ class CurlClient implements ClientInterface
         curl_setopt($ch, CURLINFO_HEADER_OUT, true);
         curl_setopt($ch, CURLOPT_HEADER, true);
         $chResp = curl_exec($ch);
-        $message->ok = $chResp !== false;
-        if ($message->ok) {
-            $chResp = str_replace("\r\n", "\n", $chResp);
-            $chRespSplit = explode("\n\n", $chResp, 2);
-            if ((count($chRespSplit) > 1) && (substr($chRespSplit[1], 0, 5) === 'HTTP/')) {
-                $chRespSplit = explode("\n\n", $chRespSplit[1], 2);
-            }
-            $message->responseHeaders = $chRespSplit[0];
-            $message->response = $chRespSplit[1];
-            $message->status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            $message->ok = $message->status < 400;
-            if (!$message->ok) {
-                $message->error = curl_error($ch);
-            }
+        $message->requestHeaders = trim(str_replace("\r\n", "\n", curl_getinfo($ch, CURLINFO_HEADER_OUT)));
+        $chResp = str_replace("\r\n", "\n", $chResp);
+        $chRespSplit = explode("\n\n", $chResp, 2);
+        if ((count($chRespSplit) > 1) && (substr($chRespSplit[1], 0, 5) === 'HTTP/')) {
+            $chRespSplit = explode("\n\n", $chRespSplit[1], 2);
         }
-        $message->requestHeaders = str_replace("\r\n", "\n", curl_getinfo($ch, CURLINFO_HEADER_OUT));
+        $message->responseHeaders = trim($chRespSplit[0]);
+        $message->response = $chRespSplit[1];
+        $message->status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $message->ok = $message->status < 400;
+        if (!$message->ok) {
+            $message->error = curl_error($ch);
+        }
         curl_close($ch);
 
         return $message->ok;

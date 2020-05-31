@@ -46,7 +46,7 @@ class StreamClient implements ClientInterface
                     $message->response = $resp;
                     // see http://php.net/manual/en/reserved.variables.httpresponseheader.php
                     if (isset($http_response_header[0])) {
-                        $message->responseHeaders = implode("\n", $http_response_header);
+                        $message->responseHeaders = trim(implode("\n", $http_response_header));
                         if (preg_match("/HTTP\/\d.\d\s+(\d+)/", $http_response_header[0], $out)) {
                             $message->status = $out[1];
                         }

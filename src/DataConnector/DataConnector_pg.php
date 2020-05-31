@@ -10,6 +10,7 @@ use ceLTIc\LTI\ResourceLinkShare;
 use ceLTIc\LTI\ResourceLinkShareKey;
 use ceLTIc\LTI\ToolConsumer;
 use ceLTIc\LTI\UserResult;
+use ceLTIc\LTI\Util;
 
 /**
  * Class to represent an LTI Data Connector for PostgreSQL
@@ -55,7 +56,7 @@ class DataConnector_pg extends DataConnector
                 "FROM {$this->dbTableNamePrefix}" . static::CONSUMER_TABLE_NAME . ' ' .
                 "WHERE consumer_key256 = %s", $this->escape($key256));
         }
-        $rsConsumer = pg_query($this->db, $sql);
+        $rsConsumer = $this->executeQuery($sql);
         if ($rsConsumer) {
             while ($row = pg_fetch_object($rsConsumer)) {
                 if (empty($key256) || empty($row->consumer_key) || ($consumer->getKey() === $row->consumer_key)) {
@@ -162,7 +163,7 @@ class DataConnector_pg extends DataConnector
                 $this->escape($settingsValue), $protected, $enabled, $this->escape($from), $this->escape($until),
                 $this->escape($last), $this->escape($now), $consumer->getRecordId());
         }
-        $ok = pg_query($this->db, $sql);
+        $ok = $this->executeQuery($sql);
         if ($ok) {
             if (empty($id)) {
                 $consumer->setRecordId($this->insert_id());
@@ -186,33 +187,33 @@ class DataConnector_pg extends DataConnector
 // Delete any nonce values for this consumer
         $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' WHERE consumer_pk = %d',
             $consumer->getRecordId());
-        pg_query($this->db, $sql);
+        $this->executeQuery($sql);
 
 // Delete any outstanding share keys for resource links for this consumer
         $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME . ' ' .
             "WHERE resource_link_pk IN (SELECT resource_link_pk FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
             'WHERE consumer_pk = %d)', $consumer->getRecordId());
-        pg_query($this->db, $sql);
+        $this->executeQuery($sql);
 
 // Delete any outstanding share keys for resource links for contexts in this consumer
         $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME . ' ' .
             "WHERE resource_link_pk IN (SELECT resource_link_pk FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' rl ' .
             "INNER JOIN {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' c ON rl.context_pk = c.context_pk WHERE c.consumer_pk = %d)',
             $consumer->getRecordId());
-        pg_query($this->db, $sql);
+        $this->executeQuery($sql);
 
 // Delete any users in resource links for this consumer
         $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' ' .
             "WHERE resource_link_pk IN (SELECT resource_link_pk FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
             'WHERE consumer_pk = %d)', $consumer->getRecordId());
-        pg_query($this->db, $sql);
+        $this->executeQuery($sql);
 
 // Delete any users in resource links for contexts in this consumer
         $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' ' .
             "WHERE resource_link_pk IN (SELECT resource_link_pk FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' rl ' .
             "INNER JOIN {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' c ON rl.context_pk = c.context_pk WHERE c.consumer_pk = %d)',
             $consumer->getRecordId());
-        pg_query($this->db, $sql);
+        $this->executeQuery($sql);
 
 // Update any resource links for which this consumer is acting as a primary resource link
         $sql = sprintf("UPDATE {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
@@ -220,7 +221,7 @@ class DataConnector_pg extends DataConnector
             'WHERE primary_resource_link_pk IN ' .
             "(SELECT resource_link_pk FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
             'WHERE consumer_pk = %d)', $consumer->getRecordId());
-        $ok = pg_query($this->db, $sql);
+        $ok = $this->executeQuery($sql);
 
 // Update any resource links for contexts in which this consumer is acting as a primary resource link
         $sql = sprintf("UPDATE {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
@@ -229,29 +230,29 @@ class DataConnector_pg extends DataConnector
             "(SELECT rl.resource_link_pk FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' rl ' .
             "INNER JOIN {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' c ON rl.context_pk = c.context_pk ' .
             'WHERE c.consumer_pk = %d)', $consumer->getRecordId());
-        $ok = pg_query($this->db, $sql);
+        $ok = $this->executeQuery($sql);
 
 // Delete any resource links for this consumer
         $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
             'WHERE consumer_pk = %d', $consumer->getRecordId());
-        pg_query($this->db, $sql);
+        $this->executeQuery($sql);
 
 // Delete any resource links for contexts in this consumer
         $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
             'WHERE context_pk IN (' .
             "SELECT context_pk FROM {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' ' . 'WHERE consumer_pk = %d)',
             $consumer->getRecordId());
-        pg_query($this->db, $sql);
+        $this->executeQuery($sql);
 
 // Delete any contexts for this consumer
         $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' ' .
             'WHERE consumer_pk = %d', $consumer->getRecordId());
-        pg_query($this->db, $sql);
+        $this->executeQuery($sql);
 
 // Delete consumer
         $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . static::CONSUMER_TABLE_NAME . ' ' .
             'WHERE consumer_pk = %d', $consumer->getRecordId());
-        $ok = pg_query($this->db, $sql);
+        $ok = $this->executeQuery($sql);
 
         if ($ok) {
             $consumer->initialize();
@@ -275,7 +276,7 @@ class DataConnector_pg extends DataConnector
             'protected, enabled, enable_from, enable_until, last_access, created, updated ' .
             "FROM {$this->dbTableNamePrefix}" . static::CONSUMER_TABLE_NAME . ' ' .
             'ORDER BY name';
-        $rsConsumers = pg_query($this->db, $sql);
+        $rsConsumers = $this->executeQuery($sql);
         if ($rsConsumers) {
             while ($row = pg_fetch_object($rsConsumers)) {
                 $key = empty($row->consumer_key) ? $row->consumer_key256 : $row->consumer_key;
@@ -346,7 +347,7 @@ class DataConnector_pg extends DataConnector
                 'WHERE (consumer_pk = %d) AND (lti_context_id = %s)', $context->getConsumer()->getRecordId(),
                 $this->escape($context->ltiContextId));
         }
-        $rs_context = pg_query($this->db, $sql);
+        $rs_context = $this->executeQuery($sql);
         if ($rs_context) {
             $row = pg_fetch_object($rs_context);
             if ($row) {
@@ -400,7 +401,7 @@ class DataConnector_pg extends DataConnector
                 $this->escape($context->ltiContextId), $this->escape($context->type), $this->escape($settingsValue),
                 $this->escape($now), $consumer_pk, $id);
         }
-        $ok = pg_query($this->db, $sql);
+        $ok = $this->executeQuery($sql);
         if ($ok) {
             if (empty($id)) {
                 $context->setRecordId($this->insert_id());
@@ -425,13 +426,13 @@ class DataConnector_pg extends DataConnector
         $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME . ' ' .
             "WHERE resource_link_pk IN (SELECT resource_link_pk FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
             'WHERE context_pk = %d)', $context->getRecordId());
-        pg_query($this->db, $sql);
+        $this->executeQuery($sql);
 
 // Delete any users in resource links for this context
         $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' ' .
             "WHERE resource_link_pk IN (SELECT resource_link_pk FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
             'WHERE context_pk = %d)', $context->getRecordId());
-        pg_query($this->db, $sql);
+        $this->executeQuery($sql);
 
 // Update any resource links for which this consumer is acting as a primary resource link
         $sql = sprintf("UPDATE {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
@@ -439,17 +440,17 @@ class DataConnector_pg extends DataConnector
             'WHERE primary_resource_link_pk IN ' .
             "(SELECT resource_link_pk FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' WHERE context_pk = %d)',
             $context->getRecordId());
-        $ok = pg_query($this->db, $sql);
+        $ok = $this->executeQuery($sql);
 
 // Delete any resource links for this consumer
         $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
             'WHERE context_pk = %d', $context->getRecordId());
-        pg_query($this->db, $sql);
+        $this->executeQuery($sql);
 
 // Delete context
         $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' ', 'WHERE context_pk = %d',
             $context->getRecordId());
-        $ok = pg_query($this->db, $sql);
+        $ok = $this->executeQuery($sql);
         if ($ok) {
             $context->initialize();
         }
@@ -488,9 +489,9 @@ class DataConnector_pg extends DataConnector
                 $resourceLink->getConsumer()->getRecordId(), $resourceLink->getConsumer()->getRecordId(),
                 $this->escape($resourceLink->getId()));
         }
-        $rsContext = pg_query($this->db, $sql);
-        if ($rsContext) {
-            $row = pg_fetch_object($rsContext);
+        $rsResourceLink = $this->executeQuery($sql);
+        if ($rsResourceLink) {
+            $row = pg_fetch_object($rsResourceLink);
             if ($row) {
                 $resourceLink->setRecordId(intval($row->resource_link_pk));
                 if (!is_null($row->context_pk)) {
@@ -584,7 +585,7 @@ class DataConnector_pg extends DataConnector
                 $this->escape($resourceLink->getId()), $this->escape($settingsValue), $primaryResourceLinkId, $approved,
                 $this->escape($now), $consumerId, $id);
         }
-        $ok = pg_query($this->db, $sql);
+        $ok = $this->executeQuery($sql);
         if ($ok) {
             if (empty($id)) {
                 $resourceLink->setRecordId($this->insert_id());
@@ -608,13 +609,13 @@ class DataConnector_pg extends DataConnector
 // Delete any outstanding share keys for resource links for this consumer
         $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME . ' ' .
             'WHERE (resource_link_pk = %d)', $resourceLink->getRecordId());
-        $ok = pg_query($this->db, $sql);
+        $ok = $this->executeQuery($sql);
 
 // Delete users
         if ($ok) {
             $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' ' .
                 'WHERE (resource_link_pk = %d)', $resourceLink->getRecordId());
-            $ok = pg_query($this->db, $sql);
+            $ok = $this->executeQuery($sql);
         }
 
 // Update any resource links for which this is the primary resource link
@@ -622,14 +623,14 @@ class DataConnector_pg extends DataConnector
             $sql = sprintf("UPDATE {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
                 'SET primary_resource_link_pk = NULL ' .
                 'WHERE (primary_resource_link_pk = %d)', $resourceLink->getRecordId());
-            $ok = pg_query($this->db, $sql);
+            $ok = $this->executeQuery($sql);
         }
 
 // Delete resource link
         if ($ok) {
             $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
                 'WHERE (resource_link_pk = %s)', $resourceLink->getRecordId());
-            $ok = pg_query($this->db, $sql);
+            $ok = $this->executeQuery($sql);
         }
 
         if ($ok) {
@@ -670,7 +671,7 @@ class DataConnector_pg extends DataConnector
                 '((rl.primary_resource_link_pk = %d) AND share_approved)', $resourceLink->getRecordId(),
                 $resourceLink->getRecordId());
         }
-        $rsUser = pg_query($this->db, $sql);
+        $rsUser = $this->executeQuery($sql);
         if ($rsUser) {
             while ($row = pg_fetch_object($rsUser)) {
                 $userresult = LTI\UserResult::fromResourceLink($resourceLink, $row->lti_user_id);
@@ -707,7 +708,7 @@ class DataConnector_pg extends DataConnector
             "INNER JOIN {$this->dbTableNamePrefix}" . static::CONSUMER_TABLE_NAME . ' AS c2 ON x.consumer_pk = c2.consumer_pk ' .
             'WHERE (r2.primary_resource_link_pk = %d) ' .
             'ORDER BY consumer_name, title', $resourceLink->getRecordId(), $resourceLink->getRecordId());
-        $rsShare = pg_query($this->db, $sql);
+        $rsShare = $this->executeQuery($sql);
         if ($rsShare) {
             while ($row = pg_fetch_object($rsShare)) {
                 $share = new LTI\ResourceLinkShare();
@@ -738,12 +739,12 @@ class DataConnector_pg extends DataConnector
 // Delete any expired nonce values
         $now = date("{$this->dateFormat} {$this->timeFormat}", time());
         $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . " WHERE expires <= '{$now}'";
-        pg_query($this->db, $sql);
+        $this->executeQuery($sql);
 
 // Load the nonce
         $sql = sprintf("SELECT value AS T FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' WHERE (consumer_pk = %d) AND (value = %s)',
             $nonce->getConsumer()->getRecordId(), $this->escape($nonce->getValue()));
-        $rs_nonce = pg_query($this->db, $sql);
+        $rs_nonce = $this->executeQuery($sql, false);
         if ($rs_nonce) {
             if (pg_fetch_object($rs_nonce)) {
                 $ok = true;
@@ -765,7 +766,7 @@ class DataConnector_pg extends DataConnector
         $expires = date("{$this->dateFormat} {$this->timeFormat}", $nonce->expires);
         $sql = sprintf("INSERT INTO {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . " (consumer_pk, value, expires) VALUES (%d, %s, %s)",
             $nonce->getConsumer()->getRecordId(), $this->escape($nonce->getValue()), $this->escape($expires));
-        $ok = pg_query($this->db, $sql);
+        $ok = $this->executeQuery($sql);
 
         return $ok;
     }
@@ -788,14 +789,14 @@ class DataConnector_pg extends DataConnector
 // Clear expired share keys
         $now = date("{$this->dateFormat} {$this->timeFormat}", time());
         $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME . " WHERE expires <= '{$now}'";
-        pg_query($this->db, $sql);
+        $this->executeQuery($sql);
 
 // Load share key
         $id = pg_escape_string($this->db, $shareKey->getId());
         $sql = 'SELECT resource_link_pk, auto_approve, expires ' .
             "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME . ' ' .
             "WHERE share_key_id = '{$id}'";
-        $rsShareKey = pg_query($this->db, $sql);
+        $rsShareKey = $this->executeQuery($sql);
         if ($rsShareKey) {
             $row = pg_fetch_object($rsShareKey);
             if ($row && (intval($row->resource_link_pk) === $shareKey->resourceLinkId)) {
@@ -826,7 +827,7 @@ class DataConnector_pg extends DataConnector
         $sql = sprintf("INSERT INTO {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME . ' ' .
             '(share_key_id, resource_link_pk, auto_approve, expires) ' .
             "VALUES (%s, %d, {$approve}, '{$expires}')", $this->escape($shareKey->getId()), $shareKey->resourceLinkId);
-        $ok = pg_query($this->db, $sql);
+        $ok = $this->executeQuery($sql);
 
         return $ok;
     }
@@ -842,7 +843,7 @@ class DataConnector_pg extends DataConnector
     {
         $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME . " WHERE share_key_id = '{$shareKey->getId()}'";
 
-        $ok = pg_query($this->db, $sql);
+        $ok = $this->executeQuery($sql);
 
         if ($ok) {
             $shareKey->initialize();
@@ -875,7 +876,7 @@ class DataConnector_pg extends DataConnector
                 'WHERE (resource_link_pk = %d) AND (lti_user_id = %s)', $userresult->getResourceLink()->getRecordId(),
                 $this->escape($userresult->getId(LTI\ToolProvider::ID_SCOPE_ID_ONLY)));
         }
-        $rsUser = pg_query($this->db, $sql);
+        $rsUser = $this->executeQuery($sql);
         if ($rsUser) {
             $row = pg_fetch_object($rsUser);
             if ($row) {
@@ -915,7 +916,7 @@ class DataConnector_pg extends DataConnector
                 'WHERE (user_result_pk = %d)', $this->escape($userresult->ltiResultSourcedId), $this->escape($now),
                 $userresult->getRecordId());
         }
-        $ok = pg_query($this->db, $sql);
+        $ok = $this->executeQuery($sql);
         if ($ok) {
             if (is_null($userresult->created)) {
                 $userresult->setRecordId($this->insert_id());
@@ -938,7 +939,7 @@ class DataConnector_pg extends DataConnector
     {
         $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' ' .
             'WHERE (user_result_pk = %d)', $userresult->getRecordId());
-        $ok = pg_query($this->db, $sql);
+        $ok = $this->executeQuery($sql);
 
         if ($ok) {
             $userresult->initialize();
@@ -949,7 +950,7 @@ class DataConnector_pg extends DataConnector
 
     private function insert_id()
     {
-        $rsId = pg_query('SELECT lastval();');
+        $rsId = $this->executeQuery('SELECT lastval();');
         $row = pg_fetch_row($rsId);
         return intval($row[0]);
     }
@@ -977,6 +978,28 @@ class DataConnector_pg extends DataConnector
         }
 
         return $value;
+    }
+
+    /**
+     * Execute a database query.
+     *
+     * Info and debug messages are generated.
+     *
+     * @param string $sql          SQL statement
+     * @param bool   $reportError  True if errors are to be reported
+     *
+     * @return resource|bool  The result resource, or false on error.
+     */
+    private function executeQuery($sql, $reportError = true)
+    {
+        $res = pg_query($this->db, $sql);
+        if (($res === false) && $reportError) {
+            Util::logError($sql . PHP_EOL . pg_last_error($this->db));
+        } else {
+            Util::logDebug($sql);
+        }
+
+        return $res;
     }
 
 }

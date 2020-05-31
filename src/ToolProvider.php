@@ -346,6 +346,9 @@ class ToolProvider
      */
     public function handleRequest()
     {
+        if ($this->debugMode) {
+            Util::$logLevel = Util::LOGLEVEL_DEBUG;
+        }
         Util::logRequest();
         if ($this->ok) {
             $this->getMessageParameters();
@@ -459,9 +462,17 @@ class ToolProvider
             if (!empty($this->messageParameters['oauth_consumer_key'])) {
                 $this->consumer = new ToolConsumer($this->messageParameters['oauth_consumer_key'], $this->dataConnector);
             }
-
 // Set debug mode
-            $this->debugMode = isset($this->messageParameters['custom_debug']) && (strtolower($this->messageParameters['custom_debug']) === 'true');
+            if (!$this->debugMode) {
+                $this->debugMode = isset($this->messageParameters['custom_debug']) && (strtolower($this->messageParameters['custom_debug']) === 'true');
+                if ($this->debugMode) {
+                    $currentLogLevel = Util::$logLevel;
+                    Util::$logLevel = Util::LOGLEVEL_DEBUG;
+                    if ($currentLogLevel < Util::LOGLEVEL_INFO) {
+                        Util::logRequest();
+                    }
+                }
+            }
 // Set return URL if available
             if (isset($this->messageParameters['launch_presentation_return_url'])) {
                 $this->returnUrl = $this->messageParameters['launch_presentation_return_url'];

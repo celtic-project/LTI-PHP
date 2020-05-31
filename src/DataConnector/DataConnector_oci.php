@@ -10,6 +10,7 @@ use ceLTIc\LTI\ResourceLinkShare;
 use ceLTIc\LTI\ResourceLinkShareKey;
 use ceLTIc\LTI\ToolConsumer;
 use ceLTIc\LTI\UserResult;
+use ceLTIc\LTI\Util;
 
 /**
  * Class to represent an LTI Data Connector for Oracle connections
@@ -73,7 +74,7 @@ class DataConnector_oci extends DataConnector
             oci_bind_by_name($query, 'key256', $key256);
         }
 
-        if (oci_execute($query)) {
+        if ($this->executeQuery($sql, $query)) {
             while ($row = oci_fetch_assoc($query)) {
                 $row = array_change_key_case($row);
                 if (empty($key256) || empty($row['consumer_key']) || ($consumer->getKey() === $row['consumer_key'])) {
@@ -215,7 +216,7 @@ class DataConnector_oci extends DataConnector
             oci_bind_by_name($query, 'updated', $now);
             oci_bind_by_name($query, 'id', $id);
         }
-        $ok = oci_execute($query);
+        $ok = $this->executeQuery($sql, $query);
         if ($ok) {
             if (empty($id)) {
                 $consumer->setRecordId(intval($pk));
@@ -242,7 +243,7 @@ class DataConnector_oci extends DataConnector
         $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' WHERE consumer_pk = :id';
         $query = oci_parse($this->db, $sql);
         oci_bind_by_name($query, 'id', $id);
-        oci_execute($query);
+        $this->executeQuery($sql, $query);
 
 // Delete any outstanding share keys for resource links for this consumer
         $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME . ' ' .
@@ -250,7 +251,7 @@ class DataConnector_oci extends DataConnector
             'WHERE consumer_pk = :id)';
         $query = oci_parse($this->db, $sql);
         oci_bind_by_name($query, 'id', $id);
-        oci_execute($query);
+        $this->executeQuery($sql, $query);
 
 // Delete any outstanding share keys for resource links for contexts in this consumer
         $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME . ' ' .
@@ -258,7 +259,7 @@ class DataConnector_oci extends DataConnector
             "INNER JOIN {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' c ON rl.context_pk = c.context_pk WHERE c.consumer_pk = :id)';
         $query = oci_parse($this->db, $sql);
         oci_bind_by_name($query, 'id', $id);
-        oci_execute($query);
+        $this->executeQuery($sql, $query);
 
 // Delete any users in resource links for this consumer
         $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' ' .
@@ -266,7 +267,7 @@ class DataConnector_oci extends DataConnector
             'WHERE consumer_pk = :id)';
         $query = oci_parse($this->db, $sql);
         oci_bind_by_name($query, 'id', $id);
-        oci_execute($query);
+        $this->executeQuery($sql, $query);
 
 // Delete any users in resource links for contexts in this consumer
         $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' ' .
@@ -274,7 +275,7 @@ class DataConnector_oci extends DataConnector
             "INNER JOIN {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' c ON rl.context_pk = c.context_pk WHERE c.consumer_pk = :id)';
         $query = oci_parse($this->db, $sql);
         oci_bind_by_name($query, 'id', $id);
-        oci_execute($query);
+        $this->executeQuery($sql, $query);
 
 // Update any resource links for which this consumer is acting as a primary resource link
         $sql = "UPDATE {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
@@ -284,7 +285,7 @@ class DataConnector_oci extends DataConnector
             'WHERE consumer_pk = :id)';
         $query = oci_parse($this->db, $sql);
         oci_bind_by_name($query, 'id', $id);
-        oci_execute($query);
+        $this->executeQuery($sql, $query);
 
 // Update any resource links for contexts in which this consumer is acting as a primary resource link
         $sql = "UPDATE {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
@@ -295,14 +296,14 @@ class DataConnector_oci extends DataConnector
             'WHERE c.consumer_pk = :id)';
         $query = oci_parse($this->db, $sql);
         oci_bind_by_name($query, 'id', $id);
-        oci_execute($query);
+        $this->executeQuery($sql, $query);
 
 // Delete any resource links for this consumer
         $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
             'WHERE consumer_pk = :id';
         $query = oci_parse($this->db, $sql);
         oci_bind_by_name($query, 'id', $id);
-        oci_execute($query);
+        $this->executeQuery($sql, $query);
 
 // Delete any resource links for contexts in this consumer
         $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
@@ -310,21 +311,21 @@ class DataConnector_oci extends DataConnector
             "SELECT context_pk FROM {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' ' . 'WHERE consumer_pk = :id)';
         $query = oci_parse($this->db, $sql);
         oci_bind_by_name($query, 'id', $id);
-        oci_execute($query);
+        $this->executeQuery($sql, $query);
 
 // Delete any contexts for this consumer
         $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' ' .
             'WHERE consumer_pk = :id';
         $query = oci_parse($this->db, $sql);
         oci_bind_by_name($query, 'id', $id);
-        oci_execute($query);
+        $this->executeQuery($sql, $query);
 
 // Delete consumer
         $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::CONSUMER_TABLE_NAME . ' ' .
             'WHERE consumer_pk = :id';
         $query = oci_parse($this->db, $sql);
         oci_bind_by_name($query, 'id', $id);
-        $ok = oci_execute($query);
+        $ok = $this->executeQuery($sql, $query);
 
         if ($ok) {
             $consumer->initialize();
@@ -352,7 +353,7 @@ class DataConnector_oci extends DataConnector
         $ok = ($query !== false);
 
         if ($ok) {
-            $ok = oci_execute($query);
+            $ok = $this->executeQuery($sql, $query);
         }
 
         if ($ok) {
@@ -436,7 +437,7 @@ class DataConnector_oci extends DataConnector
             oci_bind_by_name($query, 'cid', $id);
             oci_bind_by_name($query, 'ctx', $context->ltiContextId);
         }
-        $ok = oci_execute($query);
+        $ok = $this->executeQuery($sql, $query);
         if ($ok) {
             $row = oci_fetch_assoc($query);
             $ok = ($row !== false);
@@ -509,7 +510,7 @@ class DataConnector_oci extends DataConnector
             oci_bind_by_name($query, 'cid', $consumer_pk);
             oci_bind_by_name($query, 'ctxid', $id);
         }
-        $ok = oci_execute($query);
+        $ok = $this->executeQuery($sql, $query);
         if ($ok) {
             if (empty($id)) {
                 $context->setRecordId(intval($pk));
@@ -538,7 +539,7 @@ class DataConnector_oci extends DataConnector
             'WHERE context_pk = :id)';
         $query = oci_parse($this->db, $sql);
         oci_bind_by_name($query, 'id', $id);
-        oci_execute($query);
+        $this->executeQuery($sql, $query);
 
 // Delete any users in resource links for this context
         $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' ' .
@@ -546,7 +547,7 @@ class DataConnector_oci extends DataConnector
             'WHERE context_pk = :id)';
         $query = oci_parse($this->db, $sql);
         oci_bind_by_name($query, 'id', $id);
-        oci_execute($query);
+        $this->executeQuery($sql, $query);
 
 // Update any resource links for which this consumer is acting as a primary resource link
         $sql = "UPDATE {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
@@ -555,21 +556,21 @@ class DataConnector_oci extends DataConnector
             "(SELECT resource_link_pk FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' WHERE context_pk = :id)';
         $query = oci_parse($this->db, $sql);
         oci_bind_by_name($query, 'id', $id);
-        oci_execute($query);
+        $this->executeQuery($sql, $query);
 
 // Delete any resource links for this consumer
         $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
             'WHERE context_pk = :id';
         $query = oci_parse($this->db, $sql);
         oci_bind_by_name($query, 'id', $id);
-        oci_execute($query);
+        $this->executeQuery($sql, $query);
 
 // Delete context
         $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' ' .
             'WHERE context_pk = :id';
         $query = oci_parse($this->db, $sql);
         oci_bind_by_name($query, 'id', $id);
-        $ok = oci_execute($query);
+        $ok = $this->executeQuery($sql, $query);
 
         if ($ok) {
             $context->initialize();
@@ -620,7 +621,7 @@ class DataConnector_oci extends DataConnector
             $id = $resourceLink->getId();
             oci_bind_by_name($query, 'rlid', $id);
         }
-        $ok = oci_execute($query);
+        $ok = $this->executeQuery($sql, $query);
         if ($ok) {
             $row = oci_fetch_assoc($query);
             $ok = ($row !== false);
@@ -740,7 +741,7 @@ class DataConnector_oci extends DataConnector
             oci_bind_by_name($query, 'cid', $consumerId);
             oci_bind_by_name($query, 'id', $id);
         }
-        $ok = oci_execute($query);
+        $ok = $this->executeQuery($sql, $query);
         if ($ok) {
             if (empty($id)) {
                 $resourceLink->setRecordId(intval($pk));
@@ -768,7 +769,7 @@ class DataConnector_oci extends DataConnector
             'WHERE (resource_link_pk = :id)';
         $query = oci_parse($this->db, $sql);
         oci_bind_by_name($query, 'id', $id);
-        $ok = oci_execute($query);
+        $ok = $this->executeQuery($sql, $query);
 
 // Delete users
         if ($ok) {
@@ -776,7 +777,7 @@ class DataConnector_oci extends DataConnector
                 'WHERE (resource_link_pk = :id)';
             $query = oci_parse($this->db, $sql);
             oci_bind_by_name($query, 'id', $id);
-            $ok = oci_execute($query);
+            $ok = $this->executeQuery($sql, $query);
         }
 
 // Update any resource links for which this is the primary resource link
@@ -786,7 +787,7 @@ class DataConnector_oci extends DataConnector
                 'WHERE (primary_resource_link_pk = :id)';
             $query = oci_parse($this->db, $sql);
             oci_bind_by_name($query, 'id', $id);
-            $ok = oci_execute($query);
+            $ok = $this->executeQuery($sql, $query);
         }
 
 // Delete resource link
@@ -795,7 +796,7 @@ class DataConnector_oci extends DataConnector
                 'WHERE (resource_link_pk = :id)';
             $query = oci_parse($this->db, $sql);
             oci_bind_by_name($query, 'id', $id);
-            $ok = oci_execute($query);
+            $ok = $this->executeQuery($sql, $query);
         }
 
         if ($ok) {
@@ -841,7 +842,7 @@ class DataConnector_oci extends DataConnector
             oci_bind_by_name($query, 'id', $id);
             oci_bind_by_name($query, 'pid', $id);
         }
-        if (oci_execute($query)) {
+        if ($this->executeQuery($sql, $query)) {
             while ($row = oci_fetch_assoc($query)) {
                 $row = array_change_key_case($row);
                 $userresult = LTI\UserResult::fromRecordId($row['user_result_pk'], $resourceLink->getDataConnector());
@@ -887,7 +888,7 @@ class DataConnector_oci extends DataConnector
         $query = oci_parse($this->db, $sql);
         oci_bind_by_name($query, 'id1', $id);
         oci_bind_by_name($query, 'id2', $id);
-        if (oci_execute($query)) {
+        if ($this->executeQuery($sql, $query)) {
             while ($row = oci_fetch_assoc($query)) {
                 $row = array_change_key_case($row);
                 $share = new LTI\ResourceLinkShare();
@@ -918,7 +919,7 @@ class DataConnector_oci extends DataConnector
         $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' WHERE expires <= :now';
         $query = oci_parse($this->db, $sql);
         oci_bind_by_name($query, 'now', $now);
-        oci_execute($query);
+        $this->executeQuery($sql, $query);
 
 // Load the nonce
         $id = $nonce->getConsumer()->getRecordId();
@@ -927,7 +928,7 @@ class DataConnector_oci extends DataConnector
         $query = oci_parse($this->db, $sql);
         oci_bind_by_name($query, 'id', $id);
         oci_bind_by_name($query, 'value', $value);
-        $ok = oci_execute($query);
+        $ok = $this->executeQuery($sql, $query, false);
         if ($ok) {
             $row = oci_fetch_assoc($query);
             if ($row === false) {
@@ -955,7 +956,7 @@ class DataConnector_oci extends DataConnector
         oci_bind_by_name($query, 'id', $id);
         oci_bind_by_name($query, 'value', $value);
         oci_bind_by_name($query, 'expires', $expires);
-        $ok = oci_execute($query);
+        $ok = $this->executeQuery($sql, $query);
 
         return $ok;
     }
@@ -980,7 +981,7 @@ class DataConnector_oci extends DataConnector
         $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME . ' WHERE expires <= :now';
         $query = oci_parse($this->db, $sql);
         oci_bind_by_name($query, 'now', $now);
-        oci_execute($query);
+        $this->executeQuery($sql, $query);
 
 // Load share key
         $id = $shareKey->getId();
@@ -989,7 +990,7 @@ class DataConnector_oci extends DataConnector
             'WHERE share_key_id = :id';
         $query = oci_parse($this->db, $sql);
         oci_bind_by_name($query, 'id', $id);
-        if (oci_execute($query)) {
+        if ($this->executeQuery($sql, $query)) {
             $row = oci_fetch_assoc($query);
             if ($row !== false) {
                 $row = array_change_key_case($row);
@@ -1028,7 +1029,7 @@ class DataConnector_oci extends DataConnector
         oci_bind_by_name($query, 'prlid', $shareKey->resourceLinkId);
         oci_bind_by_name($query, 'approve', $approve);
         oci_bind_by_name($query, 'expires', $expires);
-        $ok = oci_execute($query);
+        $ok = $this->executeQuery($sql, $query);
 
         return $ok;
     }
@@ -1046,7 +1047,7 @@ class DataConnector_oci extends DataConnector
         $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME . ' WHERE share_key_id = :id';
         $query = oci_parse($this->db, $sql);
         oci_bind_by_name($query, 'id', $id);
-        $ok = oci_execute($query);
+        $ok = $this->executeQuery($sql, $query);
 
         if ($ok) {
             $shareKey->initialize();
@@ -1086,7 +1087,7 @@ class DataConnector_oci extends DataConnector
             oci_bind_by_name($query, 'id', $id);
             oci_bind_by_name($query, 'u_id', $uid);
         }
-        if (oci_execute($query)) {
+        if ($this->executeQuery($sql, $query)) {
             $row = oci_fetch_assoc($query);
             if ($row !== false) {
                 $row = array_change_key_case($row);
@@ -1139,7 +1140,7 @@ class DataConnector_oci extends DataConnector
             $id = $userresult->getRecordId();
             oci_bind_by_name($query, 'id', $id);
         }
-        $ok = oci_execute($query);
+        $ok = $this->executeQuery($sql, $query);
         if ($ok) {
             if (is_null($userresult->created)) {
                 $userresult->setRecordId(intval($pk));
@@ -1165,10 +1166,33 @@ class DataConnector_oci extends DataConnector
         $query = oci_parse($this->db, $sql);
         $id = $userresult->getRecordId();
         oci_bind_by_name($query, 'id', $id);
-        $ok = oci_execute($query);
+        $ok = $this->executeQuery($sql, $query);
 
         if ($ok) {
             $userresult->initialize();
+        }
+
+        return $ok;
+    }
+
+    /**
+     * Execute a database query.
+     *
+     * Info and debug messages are generated.
+     *
+     * @param string   $sql          SQL statement
+     * @param resource $query        SQL query
+     * @param bool     $reportError  True if errors are to be reported
+     *
+     * @return bool  True if the query was successful
+     */
+    private function executeQuery($sql, $query, $reportError = true)
+    {
+        $ok = oci_execute($query);
+        if (!$ok && $reportError) {
+            Util::logError($sql . PHP_EOL . var_export(oci_error($query), true));
+        } else {
+            Util::logDebug($sql);
         }
 
         return $ok;

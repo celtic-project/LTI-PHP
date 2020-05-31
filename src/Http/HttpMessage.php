@@ -165,18 +165,26 @@ class HttpMessage
         $this->ok = !empty($client);
         if ($this->ok) {
             $this->ok = $client->send($this);
-            $message = "Http\\HttpMessage->send {$this->method} request to '{$this->url}'";
-            if (!empty($this->params)) {
-                $message .= ' with ' . var_export($this->params, true);
-            }
-            $message .= "; response:\n{$this->responseHeaders}";
-            if (!empty($this->response)) {
-                $message .= "\n\n{$this->response}";
-            }
-            if ($this->ok) {
-                Util::logInfo($message);
-            } else {
-                Util::logError($message);
+            if (Util::$logLevel > Util::LOGLEVEL_NONE) {
+                $message = "Http\\HttpMessage->send {$this->method} request to '{$this->url}'";
+                if (!empty($this->requestHeaders)) {
+                    $message .= "\n{$this->requestHeaders}";
+                }
+                if (!empty($this->request)) {
+                    $message .= "\n\n{$this->request}";
+                }
+                $message .= "\nResponse:";
+                if (!empty($this->responseHeaders)) {
+                    $message .= "\n{$this->responseHeaders}";
+                }
+                if (!empty($this->response)) {
+                    $message .= "\n\n{$this->response}";
+                }
+                if ($this->ok) {
+                    Util::logInfo($message);
+                } else {
+                    Util::logError($message);
+                }
             }
         } else {
             $message = 'No HTTP client interface is available';
