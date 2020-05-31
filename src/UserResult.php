@@ -161,6 +161,7 @@ class UserResult extends User
      */
     public function setResourceLinkId($resourceLinkId)
     {
+        $this->resourceLink = null;
         $this->resourceLinkId = $resourceLinkId;
     }
 
