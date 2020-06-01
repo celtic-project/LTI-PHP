@@ -7,8 +7,8 @@ use ceLTIc\LTI\Http\HttpMessage;
 /**
  * Class to represent an HTTP message request
  *
- * @deprecated Use HttpMessage instead
- * @see HttpMessage
+ * @deprecated Use Http::HttpMessage instead
+ * @see Http::HttpMessage
  *
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
  * @copyright  SPV Software Products

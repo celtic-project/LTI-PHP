@@ -704,7 +704,7 @@ EOF;
      *
      * The userResult table is updated with any user objects with lis_result_sourcedid values.
      *
-     * @deprecated Use getMemberships instead
+     * @deprecated Use getMemberships() instead
      * @see ResourceLink::getMemberships()
      *
      * @param bool    $withGroups True is group information is to be requested as well
@@ -844,7 +844,7 @@ EOF;
     /**
      * Check if the Membership service is supported.
      *
-     * @deprecated Use hasMembershipsService instead
+     * @deprecated Use hasMembershipsService() instead
      * @see ResourceLink::hasMembershipsService()
      *
      * @return bool    True if this resource link supports the Membership service
@@ -857,7 +857,7 @@ EOF;
     /**
      * Get Membership.
      *
-     * @deprecated Use getMemberships instead
+     * @deprecated Use getMemberships() instead
      * @see ResourceLink::getMemberships()
      *
      * @return mixed The array of UserResult objects if successful, otherwise false

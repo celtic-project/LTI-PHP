@@ -390,7 +390,7 @@ class Context
     /**
      * Check if the Membership service is supported.
      *
-     * @deprecated Use hasMembershipsService instead
+     * @deprecated Use hasMembershipsService() instead
      * @see Context::hasMembershipsService()
      *
      * @return bool    True if this resource link supports the Membership service
@@ -417,7 +417,7 @@ class Context
     /**
      * Get Membership.
      *
-     * @deprecated Use getMemberships instead
+     * @deprecated Use getMemberships() instead
      * @see Context::getMemberships()
      *
      * @return mixed The array of UserResult objects if successful, otherwise false
