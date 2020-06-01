@@ -105,7 +105,7 @@ ALTER TABLE lti2_user
 
 CREATE TABLE lti2_user_result (
   user_result_pk int(11) AUTO_INCREMENT,
-  user_pk int(11) NOT NULL,
+  lti_user_id int(11) NOT NULL,
   resource_link_pk int(11) NOT NULL,
   lti_result_sourcedid varchar(1024) NOT NULL,
   created datetime NOT NULL,
@@ -114,7 +114,7 @@ CREATE TABLE lti2_user_result (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE lti2_user_result
-  ADD CONSTRAINT lti2_user_result_lti2_user_FK1 FOREIGN KEY (user_pk)
+  ADD CONSTRAINT lti2_user_result_lti2_user_FK1 FOREIGN KEY (lti_user_id)
   REFERENCES lti2_user (user_pk);
 
 ALTER TABLE lti2_user_result
