@@ -474,7 +474,7 @@ class DataConnector_pdo extends DataConnector
             $query->bindValue('updated', $now, \PDO::PARAM_STR);
         } else {
             $sql = "UPDATE {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' SET ' .
-                'title =  :title, lti_context_id = :ctx, type = :type, settings = :settings, ' .
+                'title = :title, lti_context_id = :ctx, type = :type, settings = :settings, ' .
                 'updated = :updated ' .
                 'WHERE (consumer_pk = :cid) AND (context_pk = :ctxid)';
             $query = $this->db->prepare($sql);
@@ -568,12 +568,17 @@ class DataConnector_pdo extends DataConnector
             $query = $this->db->prepare($sql);
             $query->bindValue('id', $resourceLink->getRecordId(), \PDO::PARAM_INT);
         } elseif (!is_null($resourceLink->getContext())) {
-            $sql = 'SELECT resource_link_pk, context_pk, consumer_pk, title, lti_resource_link_id, settings, primary_resource_link_pk, share_approved, created, updated ' .
-                "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
-                'WHERE (context_pk = :id) AND (lti_resource_link_id = :rlid)';
+            $sql = 'SELECT r.resource_link_pk, r.context_pk, r.consumer_pk, r.title, r.lti_resource_link_id, r.settings, r.primary_resource_link_pk, r.share_approved, r.created, r.updated ' .
+                "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' r ' .
+                'WHERE (r.lti_resource_link_id = :rlid) AND ((r.context_pk = :id1) OR (r.consumer_pk IN (' .
+                'SELECT c.consumer_pk ' .
+                "FROM {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' c ' .
+                'WHERE (c.context_pk = :id2)' .
+                ')))';
             $query = $this->db->prepare($sql);
-            $query->bindValue('id', $resourceLink->getContext()->getRecordId(), \PDO::PARAM_INT);
             $query->bindValue('rlid', $resourceLink->getId(), \PDO::PARAM_STR);
+            $query->bindValue('id1', $resourceLink->getContext()->getRecordId(), \PDO::PARAM_INT);
+            $query->bindValue('id2', $resourceLink->getContext()->getRecordId(), \PDO::PARAM_INT);
         } else {
             $sql = 'SELECT r.resource_link_pk, r.context_pk, r.consumer_pk, r.title, r.lti_resource_link_id, r.settings, r.primary_resource_link_pk, r.share_approved, r.created, r.updated ' .
                 "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' r LEFT OUTER JOIN ' .
@@ -635,17 +640,24 @@ class DataConnector_pdo extends DataConnector
      */
     public function saveResourceLink($resourceLink)
     {
+        if (is_null($resourceLink->shareApproved)) {
+            $approved = null;
+        } elseif ($resourceLink->shareApproved) {
+            $approved = 1;
+        } else {
+            $approved = 0;
+        }
         $time = time();
         $now = date("{$this->dateFormat} {$this->timeFormat}", $time);
         $settingsValue = json_encode($resourceLink->getSettings());
         if (!is_null($resourceLink->getContext())) {
             $consumerId = null;
-            $contextId = strval($resourceLink->getContext()->getRecordId());
+            $contextId = $resourceLink->getContext()->getRecordId();
         } elseif (!is_null($resourceLink->getContextId())) {
             $consumerId = null;
-            $contextId = strval($resourceLink->getContextId());
+            $contextId = $resourceLink->getContextId();
         } else {
-            $consumerId = strval($resourceLink->getConsumer()->getRecordId());
+            $consumerId = $resourceLink->getConsumer()->getRecordId();
             $contextId = null;
         }
         if (empty($resourceLink->primaryResourceLinkId)) {
@@ -665,7 +677,7 @@ class DataConnector_pdo extends DataConnector
             $query->bindValue('rlid', $resourceLink->getId(), \PDO::PARAM_STR);
             $query->bindValue('settings', $settingsValue, \PDO::PARAM_STR);
             $query->bindValue('prlid', $primaryResourceLinkId, \PDO::PARAM_INT);
-            $query->bindValue('share_approved', $resourceLink->shareApproved, \PDO::PARAM_INT);
+            $query->bindValue('share_approved', $approved, \PDO::PARAM_INT);
             $query->bindValue('created', $now, \PDO::PARAM_STR);
             $query->bindValue('updated', $now, \PDO::PARAM_STR);
         } elseif (!is_null($contextId)) {
@@ -679,21 +691,20 @@ class DataConnector_pdo extends DataConnector
             $query->bindValue('rlid', $resourceLink->getId(), \PDO::PARAM_STR);
             $query->bindValue('settings', $settingsValue, \PDO::PARAM_STR);
             $query->bindValue('prlid', $primaryResourceLinkId, \PDO::PARAM_INT);
-            $query->bindValue('share_approved', $resourceLink->shareApproved, \PDO::PARAM_INT);
+            $query->bindValue('share_approved', $approved, \PDO::PARAM_INT);
             $query->bindValue('updated', $now, \PDO::PARAM_STR);
             $query->bindValue('id', $id, \PDO::PARAM_INT);
         } else {
             $sql = "UPDATE {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' SET ' .
-                'context_pk = :ctx, title = :title, lti_resource_link_id = :rlid, settings = :settings, ' .
+                'context_pk = NULL, title = :title, lti_resource_link_id = :rlid, settings = :settings, ' .
                 'primary_resource_link_pk = :prlid, share_approved = :share_approved, updated = :updated ' .
                 'WHERE (consumer_pk = :cid) AND (resource_link_pk = :id)';
             $query = $this->db->prepare($sql);
-            $query->bindValue('ctx', $contextId, \PDO::PARAM_INT);
             $query->bindValue('title', $resourceLink->title, \PDO::PARAM_STR);
             $query->bindValue('rlid', $resourceLink->getId(), \PDO::PARAM_STR);
             $query->bindValue('settings', $settingsValue, \PDO::PARAM_STR);
             $query->bindValue('prlid', $primaryResourceLinkId, \PDO::PARAM_INT);
-            $query->bindValue('share_approved', $resourceLink->shareApproved, \PDO::PARAM_INT);
+            $query->bindValue('share_approved', $approved, \PDO::PARAM_INT);
             $query->bindValue('updated', $now, \PDO::PARAM_STR);
             $query->bindValue('cid', $consumerId, \PDO::PARAM_INT);
             $query->bindValue('id', $id, \PDO::PARAM_INT);
@@ -849,7 +860,9 @@ class DataConnector_pdo extends DataConnector
             while ($row = $query->fetch(\PDO::FETCH_ASSOC)) {
                 $row = array_change_key_case($row);
                 $share = new LTI\ResourceLinkShare();
+                $share->consumerName = $row['consumer_name'];
                 $share->resourceLinkId = intval($row['resource_link_pk']);
+                $share->title = $row['title'];
                 $share->approved = (intval($row['share_approved']) === 1);
                 $shares[] = $share;
             }
@@ -951,11 +964,10 @@ class DataConnector_pdo extends DataConnector
             $row = $query->fetch(\PDO::FETCH_ASSOC);
             if ($row !== false) {
                 $row = array_change_key_case($row);
-                if (intval($row['resource_link_pk']) === $shareKey->resourceLinkId) {
-                    $shareKey->autoApprove = ($row['auto_approve'] === 1);
-                    $shareKey->expires = strtotime($row['expires']);
-                    $ok = true;
-                }
+                $shareKey->resourceLinkId = intval($row['resource_link_pk']);
+                $shareKey->autoApprove = (intval($row['auto_approve']) === 1);
+                $shareKey->expires = strtotime($row['expires']);
+                $ok = true;
             }
         }
 
@@ -971,6 +983,11 @@ class DataConnector_pdo extends DataConnector
      */
     public function saveResourceLinkShareKey($shareKey)
     {
+        if ($shareKey->autoApprove) {
+            $approve = 1;
+        } else {
+            $approve = 0;
+        }
         $id = $shareKey->getId();
         $expires = date("{$this->dateFormat} {$this->timeFormat}", $shareKey->expires);
         $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME . ' ' .
@@ -979,7 +996,7 @@ class DataConnector_pdo extends DataConnector
         $query = $this->db->prepare($sql);
         $query->bindValue('id', $id, \PDO::PARAM_STR);
         $query->bindValue('prlid', $shareKey->resourceLinkId, \PDO::PARAM_INT);
-        $query->bindValue('approve', $shareKey->autoApprove, \PDO::PARAM_INT);
+        $query->bindValue('approve', $approve, \PDO::PARAM_INT);
         $query->bindValue('expires', $expires, \PDO::PARAM_STR);
         $ok = $this->executeQuery($sql, $query);
 

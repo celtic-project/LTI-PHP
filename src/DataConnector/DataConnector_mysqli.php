@@ -485,10 +485,13 @@ class DataConnector_mysqli extends DataConnector
                 "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
                 'WHERE (resource_link_pk = %d)', $resourceLink->getRecordId());
         } elseif (!is_null($resourceLink->getContext())) {
-            $sql = sprintf('SELECT resource_link_pk, context_pk, consumer_pk, title, lti_resource_link_id, settings, primary_resource_link_pk, share_approved, created, updated ' .
-                "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
-                'WHERE (context_pk = %d) AND (lti_resource_link_id = %s)', $resourceLink->getContext()->getRecordId(),
-                $this->escape($resourceLink->getId()));
+            $sql = sprintf('SELECT r.resource_link_pk, r.context_pk, r.consumer_pk, r.title, r.lti_resource_link_id, r.settings, r.primary_resource_link_pk, r.share_approved, r.created, r.updated ' .
+                "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' r ' .
+                'WHERE (r.lti_resource_link_id = %s) AND ((r.context_pk = %d) OR (r.consumer_pk IN (' .
+                'SELECT c.consumer_pk ' .
+                "FROM {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' c ' .
+                'WHERE (c.context_pk = %d))))', $this->escape($resourceLink->getId()), $resourceLink->getContext()->getRecordId(),
+                $resourceLink->getContext()->getRecordId());
         } else {
             $sql = sprintf('SELECT r.resource_link_pk, r.context_pk, r.consumer_pk, r.title, r.lti_resource_link_id, r.settings, r.primary_resource_link_pk, r.share_approved, r.created, r.updated ' .
                 "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' r LEFT OUTER JOIN ' .
@@ -587,9 +590,9 @@ class DataConnector_mysqli extends DataConnector
                 $this->escape($now), $contextId, $id);
         } else {
             $sql = sprintf("UPDATE {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' SET ' .
-                'context_pk = %s, title = %s, lti_resource_link_id = %s, settings = %s, ' .
+                'context_pk = NULL, title = %s, lti_resource_link_id = %s, settings = %s, ' .
                 'primary_resource_link_pk = %s, share_approved = %s, updated = %s ' .
-                'WHERE (consumer_pk = %s) AND (resource_link_pk = %d)', $contextId, $this->escape($resourceLink->title),
+                'WHERE (consumer_pk = %s) AND (resource_link_pk = %d)', $this->escape($resourceLink->title),
                 $this->escape($resourceLink->getId()), $this->escape($settingsValue), $primaryResourceLinkId, $approved,
                 $this->escape($now), $consumerId, $id);
         }
@@ -809,7 +812,8 @@ class DataConnector_mysqli extends DataConnector
         $rsShareKey = $this->executeQuery($sql);
         if ($rsShareKey) {
             $row = mysqli_fetch_object($rsShareKey);
-            if ($row && (intval($row->resource_link_pk) === $shareKey->resourceLinkId)) {
+            if ($row) {
+                $shareKey->resourceLinkId = intval($row->resource_link_pk);
                 $shareKey->autoApprove = (intval($row->auto_approve) === 1);
                 $shareKey->expires = strtotime($row->expires);
                 $ok = true;

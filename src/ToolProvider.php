@@ -85,7 +85,7 @@ class ToolProvider
      */
     private static $LTI_CONTEXT_SETTING_NAMES = array('custom_context_setting_url',
         'custom_lineitems_url', 'custom_results_url',
-        'custom_context_memberships_url');
+        'custom_context_memberships_url', 'custom_context_memberships_v2_url');
 
     /**
      * Names of LTI parameters to be retained in the resource link settings property.
@@ -94,7 +94,7 @@ class ToolProvider
         'ext_ims_lis_basic_outcome_url', 'ext_ims_lis_resultvalue_sourcedids',
         'ext_ims_lis_memberships_id', 'ext_ims_lis_memberships_url',
         'ext_ims_lti_tool_setting', 'ext_ims_lti_tool_setting_id', 'ext_ims_lti_tool_setting_url',
-        'custom_link_setting_url',
+        'custom_link_setting_url', 'custom_link_memberships_url',
         'custom_lineitem_url', 'custom_result_url');
 
     /**
@@ -1106,10 +1106,12 @@ EOD;
                         if (isset($this->messageParameters['custom_content_item_id'])) {
                             $contentItemId = $this->messageParameters['custom_content_item_id'];
                         }
-                        $this->resourceLink = ResourceLink::fromConsumer($this->consumer,
-                                trim($this->messageParameters['resource_link_id']), $contentItemId);
-                        if (!empty($this->context)) {
-                            $this->resourceLink->setContextId($this->context->getRecordId());
+                        if (empty($this->context)) {
+                            $this->resourceLink = ResourceLink::fromConsumer($this->consumer,
+                                    trim($this->messageParameters['resource_link_id']), $contentItemId);
+                        } else {
+                            $this->resourceLink = ResourceLink::fromContext($this->context,
+                                    trim($this->messageParameters['resource_link_id']), $contentItemId);
                         }
                         $title = '';
                         if (isset($this->messageParameters['resource_link_title'])) {
@@ -1283,27 +1285,30 @@ EOD;
                 if ($doSaveConsumer) {
                     $this->consumer->save();
                 }
-                if ($this->ok && isset($this->context)) {
-                    $this->context->save();
-                }
-                if ($this->ok && isset($this->resourceLink)) {
+                if ($this->ok) {
 
-// Check if a share arrangement is in place for this resource link
-                    $this->ok = $this->checkForShare();
+                    if (isset($this->context)) {
+                        $this->context->save();
+                    }
 
+                    if (isset($this->resourceLink)) {
 // Persist changes to resource link
-                    $this->resourceLink->save();
+                        $this->resourceLink->save();
 
 // Save the user instance
-                    $this->userResult->setResourceLinkId($this->resourceLink->getRecordId());
-                    if (isset($this->messageParameters['lis_result_sourcedid'])) {
-                        if ($this->userResult->ltiResultSourcedId !== $this->messageParameters['lis_result_sourcedid']) {
-                            $this->userResult->ltiResultSourcedId = $this->messageParameters['lis_result_sourcedid'];
+                        $this->userResult->setResourceLinkId($this->resourceLink->getRecordId());
+                        if (isset($this->messageParameters['lis_result_sourcedid'])) {
+                            if ($this->userResult->ltiResultSourcedId !== $this->messageParameters['lis_result_sourcedid']) {
+                                $this->userResult->ltiResultSourcedId = $this->messageParameters['lis_result_sourcedid'];
+                                $this->userResult->save();
+                            }
+                        } elseif (!empty($this->userResult->ltiResultSourcedId)) {
+                            $this->userResult->ltiResultSourcedId = '';
                             $this->userResult->save();
                         }
-                    } elseif (!empty($this->userResult->ltiResultSourcedId)) {
-                        $this->userResult->ltiResultSourcedId = '';
-                        $this->userResult->save();
+
+// Check if a share arrangement is in place for this resource link
+                        $this->ok = $this->checkForShare();
                     }
                 }
             }
@@ -1332,19 +1337,16 @@ EOD;
             } else {
 // Check if this is a new share key
                 $shareKey = new ResourceLinkShareKey($this->resourceLink, $this->messageParameters['custom_share_key']);
-                if (!is_null($shareKey->primaryConsumerKey) && !is_null($shareKey->primaryResourceLinkId)) {
+                if (!is_null($shareKey->resourceLinkId)) {
 // Update resource link with sharing primary resource link details
-                    $key = $shareKey->primaryConsumerKey;
-                    $id = $shareKey->primaryResourceLinkId;
-                    $ok = ($key !== $this->consumer->getKey()) || ($id != $this->resourceLink->getId());
+                    $id = $shareKey->resourceLinkId;
+                    $ok = ($id != $this->resourceLink->getRecordId());
                     if ($ok) {
-                        $this->resourceLink->primaryConsumerKey = $key;
                         $this->resourceLink->primaryResourceLinkId = $id;
                         $this->resourceLink->shareApproved = $shareKey->autoApprove;
                         $ok = $this->resourceLink->save();
                         if ($ok) {
                             $doSaveResourceLink = false;
-                            $this->userResult->getResourceLink()->primaryConsumerKey = $key;
                             $this->userResult->getResourceLink()->primaryResourceLinkId = $id;
                             $this->userResult->getResourceLink()->shareApproved = $shareKey->autoApprove;
                             $this->userResult->getResourceLink()->updated = time();
@@ -1358,7 +1360,7 @@ EOD;
                     }
                 }
                 if ($ok) {
-                    $ok = !is_null($key);
+                    $ok = !is_null($id);
                     if (!$ok) {
                         $this->reason = 'You have requested to share a resource link but none is available.';
                     } else {
@@ -1379,12 +1381,8 @@ EOD;
 
 // Look up primary resource link
         if ($ok && !is_null($id)) {
-            $consumer = new ToolConsumer($key, $this->dataConnector);
-            $ok = !is_null($consumer->created);
-            if ($ok) {
-                $resourceLink = ResourceLink::fromConsumer($consumer, $id);
-                $ok = !is_null($resourceLink->created);
-            }
+            $resourceLink = ResourceLink::fromRecordId($id, $this->dataConnector);
+            $ok = !is_null($resourceLink->created);
             if ($ok) {
                 if ($doSaveResourceLink) {
                     $this->resourceLink->save();

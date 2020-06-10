@@ -363,14 +363,27 @@ class ResourceLink
     }
 
     /**
+     * Set context.
+     *
+     * @param Context $context   Context for this resource link.
+     */
+    public function setContext($context)
+    {
+        $this->context = $context;
+        $this->contextId = $context->getRecordId();
+    }
+
+    /**
      * Set context ID.
      *
      * @param int $contextId   Context ID for this resource link.
      */
     public function setContextId($contextId)
     {
-        $this->context = null;
-        $this->contextId = $contextId;
+        if ($this->contextId !== $contextId) {
+            $this->context = null;
+            $this->contextId = $contextId;
+        }
     }
 
     /**
@@ -529,6 +542,7 @@ class ResourceLink
         if (!$has) {
             $has = self::hasApiHook(self::$MEMBERSHIPS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode());
         }
+
         return $has;
     }
 
@@ -928,6 +942,11 @@ EOF;
                     $fullname = (isset($members[$i]['person_name_full'])) ? $members[$i]['person_name_full'] : '';
                     $userresult->setNames($firstname, $lastname, $fullname);
 
+// Set the sourcedId
+                    if (isset($members[$i]['person_sourcedid'])) {
+                        $userresult->sourcedId = $members[$i]['person_sourcedid'];
+                    }
+
 // Set the user email
                     $email = (isset($members[$i]['person_contact_email_primary'])) ? $members[$i]['person_contact_email_primary'] : '';
                     $userresult->setEmail($email, $this->getConsumer()->defaultEmail);
@@ -1070,8 +1089,7 @@ EOF;
     public static function fromContext($context, $ltiResourceLinkId, $tempId = null)
     {
         $resourceLink = new ResourceLink();
-        $resourceLink->setContextId($context->getRecordId());
-        $resourceLink->context = $context;
+        $resourceLink->setContext($context);
         $resourceLink->dataConnector = $context->getDataConnector();
         $resourceLink->ltiResourceLinkId = $ltiResourceLinkId;
         if (!empty($ltiResourceLinkId)) {
@@ -1081,6 +1099,7 @@ EOF;
                 $resourceLink->load();
                 $resourceLink->ltiResourceLinkId = $ltiResourceLinkId;
             }
+            $resourceLink->setContext($context);  // Ensure context remains set
         }
 
         return $resourceLink;

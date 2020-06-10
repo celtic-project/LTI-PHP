@@ -93,10 +93,11 @@ class ResourceLinkShareKey
     {
         $this->initialize();
         $this->dataConnector = $resourceLink->getDataConnector();
-        $this->resourceLinkId = $resourceLink->getRecordId();
         $this->id = $id;
         if (!empty($id)) {
             $this->load();
+        } else {
+            $this->resourceLinkId = $resourceLink->getRecordId();
         }
     }
 

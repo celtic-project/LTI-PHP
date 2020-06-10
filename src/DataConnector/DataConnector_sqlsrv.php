@@ -220,17 +220,19 @@ class DataConnector_sqlsrv extends DataConnector
         $this->executeQuery($sql);
 
 // Update any resource links for which this consumer is acting as a primary resource link
-        $sql = sprintf("UPDATE {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' prl ' .
-            "INNER JOIN {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' rl ON prl.primary_resource_link_pk = rl.resource_link_pk ' .
+        $sql = sprintf('UPDATE prl ' .
             'SET prl.primary_resource_link_pk = NULL, prl.share_approved = NULL ' .
+            "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' prl ' .
+            "INNER JOIN {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' rl ON prl.primary_resource_link_pk = rl.resource_link_pk ' .
             'WHERE rl.consumer_pk = %d', $consumer->getRecordId());
         $ok = $this->executeQuery($sql);
 
 // Update any resource links for contexts in which this consumer is acting as a primary resource link
-        $sql = sprintf("UPDATE {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' prl ' .
+        $sql = sprintf('UPDATE prl ' .
+            'SET prl.primary_resource_link_pk = NULL, prl.share_approved = NULL ' .
+            "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' prl ' .
             "INNER JOIN {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' rl ON prl.primary_resource_link_pk = rl.resource_link_pk ' .
             "INNER JOIN {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' c ON rl.context_pk = c.context_pk ' .
-            'SET prl.primary_resource_link_pk = NULL, prl.share_approved = NULL ' .
             'WHERE c.consumer_pk = %d', $consumer->getRecordId());
         $ok = $this->executeQuery($sql);
 
@@ -442,9 +444,10 @@ class DataConnector_sqlsrv extends DataConnector
         $this->executeQuery($sql);
 
 // Update any resource links for which this consumer is acting as a primary resource link
-        $sql = sprintf("UPDATE {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' prl ' .
-            "INNER JOIN {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' rl ON prl.primary_resource_link_pk = rl.resource_link_pk ' .
+        $sql = sprintf('UPDATE prl ' .
             'SET prl.primary_resource_link_pk = null, prl.share_approved = null ' .
+            "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' prl ' .
+            "INNER JOIN {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' rl ON prl.primary_resource_link_pk = rl.resource_link_pk ' .
             'WHERE rl.context_pk = %d', $context->getRecordId());
         $ok = $this->executeQuery($sql);
 
@@ -485,10 +488,13 @@ class DataConnector_sqlsrv extends DataConnector
                 "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
                 'WHERE (resource_link_pk = %d)', $resourceLink->getRecordId());
         } elseif (!is_null($resourceLink->getContext())) {
-            $sql = sprintf('SELECT resource_link_pk, context_pk, consumer_pk, title, lti_resource_link_id, settings, primary_resource_link_pk, share_approved, created, updated ' .
-                "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
-                'WHERE (context_pk = %d) AND (lti_resource_link_id = %s)', $resourceLink->getContext()->getRecordId(),
-                $this->escape($resourceLink->getId()));
+            $sql = sprintf('SELECT r.resource_link_pk, r.context_pk, r.consumer_pk, r.title, r.lti_resource_link_id, r.settings, r.primary_resource_link_pk, r.share_approved, r.created, r.updated ' .
+                "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' r ' .
+                'WHERE (r.lti_resource_link_id = %s) AND ((r.context_pk = %d) OR (r.consumer_pk IN (' .
+                'SELECT c.consumer_pk ' .
+                "FROM {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' c ' .
+                'WHERE (c.context_pk = %d))))', $this->escape($resourceLink->getId()), $resourceLink->getContext()->getRecordId(),
+                $resourceLink->getContext()->getRecordId());
         } else {
             $sql = sprintf('SELECT r.resource_link_pk, r.context_pk, r.consumer_pk, r.title, r.lti_resource_link_id, r.settings, r.primary_resource_link_pk, r.share_approved, r.created, r.updated ' .
                 "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' r LEFT OUTER JOIN ' .
@@ -587,9 +593,9 @@ class DataConnector_sqlsrv extends DataConnector
                 $this->escape($now), $contextId, $id);
         } else {
             $sql = sprintf("UPDATE {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' SET ' .
-                'context_pk = %s, title = %s, lti_resource_link_id = %s, settings = %s, ' .
+                'context_pk = NULL, title = %s, lti_resource_link_id = %s, settings = %s, ' .
                 'primary_resource_link_pk = %s, share_approved = %s, updated = %s ' .
-                'WHERE (consumer_pk = %s) AND (resource_link_pk = %d)', $contextId, $this->escape($resourceLink->title),
+                'WHERE (consumer_pk = %s) AND (resource_link_pk = %d)', $this->escape($resourceLink->title),
                 $this->escape($resourceLink->getId()), $this->escape($settingsValue), $primaryResourceLinkId, $approved,
                 $this->escape($now), $consumerId, $id);
         }
@@ -720,7 +726,9 @@ class DataConnector_sqlsrv extends DataConnector
         if ($rsShare) {
             while ($row = sqlsrv_fetch_object($rsShare)) {
                 $share = new LTI\ResourceLinkShare();
+                $share->consumerName = $row->consumer_name;
                 $share->resourceLinkId = intval($row->resource_link_pk);
+                $share->title = $row->title;
                 $share->approved = (intval($row->share_approved) === 1);
                 $shares[] = $share;
             }
@@ -808,7 +816,8 @@ class DataConnector_sqlsrv extends DataConnector
         $rsShareKey = $this->executeQuery($sql);
         if ($rsShareKey) {
             $row = sqlsrv_fetch_object($rsShareKey);
-            if ($row && (intval($row->resource_link_pk) === $shareKey->resourceLinkId)) {
+            if ($row) {
+                $shareKey->resourceLinkId = intval($row->resource_link_pk);
                 $shareKey->autoApprove = (intval($row->auto_approve) === 1);
                 $shareKey->expires = date_timestamp_get($row->expires);
                 $ok = true;

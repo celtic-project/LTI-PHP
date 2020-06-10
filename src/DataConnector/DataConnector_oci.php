@@ -600,14 +600,19 @@ class DataConnector_oci extends DataConnector
             $id = $resourceLink->getRecordId();
             oci_bind_by_name($query, 'id', $id);
         } elseif (!is_null($resourceLink->getContext())) {
-            $sql = 'SELECT resource_link_pk, context_pk, consumer_pk, lti_resource_link_id, settings, primary_resource_link_pk, share_approved, created, updated ' .
-                "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
-                'WHERE (context_pk = :id) AND (lti_resource_link_id = :rlid)';
+            $sql = 'SELECT r.resource_link_pk, r.context_pk, r.consumer_pk, r.title, r.lti_resource_link_id, r.settings, r.primary_resource_link_pk, r.share_approved, r.created, r.updated ' .
+                "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' r ' .
+                'WHERE (r.lti_resource_link_id = :rlid) AND ((r.context_pk = :id1) OR (r.consumer_pk IN (' .
+                'SELECT c.consumer_pk ' .
+                "FROM {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' c ' .
+                'WHERE (c.context_pk = :id2)' .
+                ')))';
             $query = oci_parse($this->db, $sql);
-            $id = $resourceLink->getContext()->getRecordId();
-            oci_bind_by_name($query, 'id', $id);
             $rlid = $resourceLink->getId();
             oci_bind_by_name($query, 'rlid', $rlid);
+            $id = $resourceLink->getContext()->getRecordId();
+            oci_bind_by_name($query, 'id1', $id);
+            oci_bind_by_name($query, 'id2', $id);
         } else {
             $sql = 'SELECT r.resource_link_pk, r.context_pk, r.consumer_pk, r.lti_resource_link_id, r.settings, r.primary_resource_link_pk, r.share_approved, r.created, r.updated ' .
                 "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' r LEFT OUTER JOIN ' .
@@ -677,17 +682,24 @@ class DataConnector_oci extends DataConnector
      */
     public function saveResourceLink($resourceLink)
     {
+        if (is_null($resourceLink->shareApproved)) {
+            $approved = null;
+        } elseif ($resourceLink->shareApproved) {
+            $approved = 1;
+        } else {
+            $approved = 0;
+        }
         $time = time();
         $now = date("{$this->dateFormat} {$this->timeFormat}", $time);
         $settingsValue = json_encode($resourceLink->getSettings());
         if (!is_null($resourceLink->getContext())) {
             $consumerId = null;
-            $contextId = strval($resourceLink->getContext()->getRecordId());
+            $contextId = $resourceLink->getContext()->getRecordId();
         } elseif (!is_null($resourceLink->getContextId())) {
             $consumerId = null;
-            $contextId = strval($resourceLink->getContextId());
+            $contextId = $resourceLink->getContextId();
         } else {
-            $consumerId = strval($resourceLink->getConsumer()->getRecordId());
+            $consumerId = $resourceLink->getConsumer()->getRecordId();
             $contextId = null;
         }
         if (empty($resourceLink->primaryResourceLinkId)) {
@@ -707,7 +719,7 @@ class DataConnector_oci extends DataConnector
             oci_bind_by_name($query, 'rlid', $rlid);
             oci_bind_by_name($query, 'settings', $settingsValue);
             oci_bind_by_name($query, 'prlid', $primaryResourceLinkId);
-            oci_bind_by_name($query, 'share_approved', $resourceLink->shareApproved);
+            oci_bind_by_name($query, 'share_approved', $approved);
             oci_bind_by_name($query, 'created', $now);
             oci_bind_by_name($query, 'updated', $now);
             oci_bind_by_name($query, 'pk', $pk);
@@ -722,21 +734,20 @@ class DataConnector_oci extends DataConnector
             oci_bind_by_name($query, 'rlid', $rlid);
             oci_bind_by_name($query, 'settings', $settingsValue);
             oci_bind_by_name($query, 'prlid', $primaryResourceLinkId);
-            oci_bind_by_name($query, 'share_approved', $resourceLink->shareApproved);
+            oci_bind_by_name($query, 'share_approved', $approved);
             oci_bind_by_name($query, 'updated', $now);
             oci_bind_by_name($query, 'id', $id);
         } else {
             $sql = "UPDATE {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' SET ' .
-                'context_pk = :ctx, lti_resource_link_id = :rlid, settings = :settings, ' .
+                'context_pk = NULL, lti_resource_link_id = :rlid, settings = :settings, ' .
                 'primary_resource_link_pk = :prlid, share_approved = :share_approved, updated = :updated ' .
                 'WHERE (consumer_pk = :cid) AND (resource_link_pk = :id)';
             $query = oci_parse($this->db, $sql);
-            oci_bind_by_name($query, 'ctx', $contextId);
             $rlid = $resourceLink->getId();
             oci_bind_by_name($query, 'rlid', $rlid);
             oci_bind_by_name($query, 'settings', $settingsValue);
             oci_bind_by_name($query, 'prlid', $primaryResourceLinkId);
-            oci_bind_by_name($query, 'share_approved', $resourceLink->shareApproved);
+            oci_bind_by_name($query, 'share_approved', $approved);
             oci_bind_by_name($query, 'updated', $now);
             oci_bind_by_name($query, 'cid', $consumerId);
             oci_bind_by_name($query, 'id', $id);
@@ -892,7 +903,9 @@ class DataConnector_oci extends DataConnector
             while ($row = oci_fetch_assoc($query)) {
                 $row = array_change_key_case($row);
                 $share = new LTI\ResourceLinkShare();
+                $share->consumer_name = $row['consumer_name'];
                 $share->resourceLinkId = intval($row['resource_link_pk']);
+                $share->title = $row['title'];
                 $share->approved = (intval($row['share_approved']) === 1);
                 $shares[] = $share;
             }
@@ -994,11 +1007,10 @@ class DataConnector_oci extends DataConnector
             $row = oci_fetch_assoc($query);
             if ($row !== false) {
                 $row = array_change_key_case($row);
-                if (intval($row['resource_link_pk']) === $shareKey->resourceLinkId) {
-                    $shareKey->autoApprove = ($row['auto_approve'] === 1);
-                    $shareKey->expires = strtotime($row['expires']);
-                    $ok = true;
-                }
+                $shareKey->resourceLinkId = intval($row['resource_link_pk']);
+                $shareKey->autoApprove = (intval($row['auto_approve']) === 1);
+                $shareKey->expires = strtotime($row['expires']);
+                $ok = true;
             }
         }
 
