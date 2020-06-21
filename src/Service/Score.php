@@ -56,7 +56,8 @@ class Score extends AssignmentGrade
             );
         }
         $json['userId'] = $user->ltiUserId;
-        $json['timestamp'] = date('Y-m-d\TH:i:sP');
+        $date = new \DateTime();
+        $json['timestamp'] = date_format($date, 'Y-m-d\TH:i:s.uP');
         $data = json_encode($json);
         $http = $this->send('POST', null, $data);
 

@@ -49,7 +49,11 @@ class CurlClient implements ClientInterface
             $chRespSplit = explode("\n\n", $chRespSplit[1], 2);
         }
         $message->responseHeaders = trim($chRespSplit[0]);
-        $message->response = $chRespSplit[1];
+        if (count($chRespSplit) > 1) {
+            $message->response = $chRespSplit[1];
+        } else {
+            $message->response = '';
+        }
         $message->status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $message->ok = $message->status < 400;
         if (!$message->ok) {

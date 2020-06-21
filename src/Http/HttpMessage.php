@@ -162,8 +162,16 @@ class HttpMessage
     public function send()
     {
         $client = self::getHttpClient();
-        $this->ok = !empty($client);
-        if ($this->ok) {
+        $this->ok = false;
+        if (empty($client)) {
+            $message = 'No HTTP client interface is available';
+            $this->error = $message;
+            Util::logError($message, true);
+        } elseif (empty($this->url)) {
+            $message = 'No URL provided for HTTP request';
+            $this->error = $message;
+            Util::logError($message, true);
+        } else {
             $this->ok = $client->send($this);
             if (Util::$logLevel > Util::LOGLEVEL_NONE) {
                 $message = "Http\\HttpMessage->send {$this->method} request to '{$this->url}'";
@@ -186,10 +194,6 @@ class HttpMessage
                     Util::logError($message);
                 }
             }
-        } else {
-            $message = 'No HTTP client interface is available';
-            $this->error = $message;
-            Util::log($message, true);
         }
 
         return $this->ok;

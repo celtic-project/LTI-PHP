@@ -25,7 +25,7 @@ class StreamClient implements ClientInterface
     {
         if (empty($message->requestHeaders)) {
             $message->requestHeaders = ["Accept: */*"];
-        } elseif (count(preg_grep("/^Accept:/", $message->requestHeaders)) == 0) {
+        } elseif (count(preg_grep("/^Accept:/", $message->requestHeaders)) === 0) {
             $message->requestHeaders[] = "Accept: */*";
         }
         $opts = [
