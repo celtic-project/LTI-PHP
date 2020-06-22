@@ -456,14 +456,14 @@ class ToolConsumer
         if (!empty($this->getSetting('custom_system_setting_url'))) {
             $url = $this->getSetting('custom_system_setting_url');
             $service = new Service\ToolSettings($this, $url, $simple);
-            $settings = $service->get($mode);
+            $settings = $service->get();
             $this->lastServiceRequest = $service->getHttpMessage();
             $ok = $settings !== false;
         }
         if (!$ok && $this->hasApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getFamilyCode())) {
             $className = $this->getApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getFamilyCode());
             $hook = new $className($this);
-            $settings = $hook->getToolSettings($mode, $simple);
+            $settings = $hook->getToolSettings($simple);
         }
 
         return $settings;
