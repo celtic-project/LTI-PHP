@@ -359,6 +359,10 @@ class ResourceLink
      */
     public function getContextId()
     {
+        if (is_null($this->contextId) && !is_null($this->context)) {
+            $this->contextId = $this->context->getRecordId();
+        }
+
         return $this->contextId;
     }
 
@@ -533,7 +537,7 @@ class ResourceLink
     public function hasMembershipsService()
     {
         $has = false;
-        if (!empty($this->contextId)) {
+        if (!empty($this->getContextId())) {
             $has = !empty($this->getContext()->getSetting('custom_context_memberships_url')) || !empty($this->getContext()->getSetting('custom_context_memberships_v2_url'));
         }
         if (!$has) {
@@ -892,7 +896,7 @@ EOF;
     {
         $ok = false;
         $userResults = array();
-        $hasLtiservice = !empty($this->contextId) &&
+        $hasLtiservice = !empty($this->getContextId()) &&
             (!empty($this->getContext()->getSetting('custom_context_memberships_url')) || !empty($this->getContext()->getSetting('custom_context_memberships_v2_url')));
         $hasExtService = !empty($this->getSetting('ext_ims_lis_memberships_url'));
         $hasApiHook = $this->hasApiHook(self::$MEMBERSHIPS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode());
