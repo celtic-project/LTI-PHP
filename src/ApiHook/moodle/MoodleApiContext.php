@@ -17,6 +17,17 @@ class MoodleApiContext extends ApiContext
     use MoodleApi;
 
     /**
+     * Class constructor.
+     *
+     * @param \ceLTIc\LTI\Context $context
+     */
+    public function __construct($context)
+    {
+        parent::__construct($context);
+        $this->sourceObject = $context;
+    }
+
+    /**
      * Get Memberships.
      *
      * @param bool    $withGroups True is group information is to be requested as well
@@ -25,7 +36,6 @@ class MoodleApiContext extends ApiContext
      */
     public function getMemberships($withGroups = false)
     {
-        $this->sourceObject = $this->context;
         $this->courseId = $this->context->ltiContextId;
 
         return $this->get($withGroups);

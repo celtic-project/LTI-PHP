@@ -30,6 +30,14 @@ class ApiContext
     }
 
     /**
+     * Check if the API hook has been configured.
+     */
+    public function isConfigured()
+    {
+        return true;
+    }
+
+    /**
      * Get Memberships.
      *
      * @param bool    $withGroups True is group information is to be requested as well

@@ -17,6 +17,17 @@ class MoodleApiResourceLink extends ApiResourceLink
     use MoodleApi;
 
     /**
+     * Class constructor.
+     *
+     * @param \ceLTIc\LTI\ResourceLink $resourceLink
+     */
+    public function __construct($resourceLink)
+    {
+        parent::__construct($resourceLink);
+        $this->sourceObject = $resourceLink;
+    }
+
+    /**
      * Get memberships.
      *
      * @param bool    $withGroups True is group information is to be requested as well
@@ -25,7 +36,6 @@ class MoodleApiResourceLink extends ApiResourceLink
      */
     public function getMemberships($withGroups)
     {
-        $this->sourceObject = $this->resourceLink;
         if (!empty($this->resourceLink->getContextId())) {
             $this->courseId = $this->resourceLink->getContext()->ltiContextId;
         }

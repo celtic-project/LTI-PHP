@@ -30,6 +30,14 @@ class ApiToolProvider
     }
 
     /**
+     * Check if the API hook has been configured.
+     */
+    public function isConfigured()
+    {
+        return true;
+    }
+
+    /**
      * Get the User ID.
      *
      * @return string User ID value, or empty string if not available.

@@ -42,6 +42,16 @@ trait CanvasApi
     private $sourceObject = null;
 
     /**
+     * Check if the API hook has been configured.
+     */
+    public function isConfigured()
+    {
+        $consumer = $this->sourceObject->getConsumer();
+
+        return !empty($consumer->getSetting('canvas.domain')) && !empty($consumer->getSetting('canvas.token'));
+    }
+
+    /**
      * Get memberships.
      *
      * @param bool    $withGroups True is group information is to be requested as well
@@ -190,6 +200,8 @@ trait CanvasApi
                     }
                     $user->setNames('', '', $enrolment->name);
                     $user->setEmail($enrolment->email, $this->sourceObject->getConsumer()->defaultEmail);
+                    $user->username = $enrolment->login_id;
+                    $user->sourcedId = $enrolment->sis_user_id;
                     if (!empty($enrolment->group_ids)) {
                         foreach ($enrolment->group_ids as $groupId) {
                             $user->groups[] = strval($groupId);
@@ -257,12 +269,12 @@ trait CanvasApi
                         $this->sourceObject->groups[$groupId] = array('title' => $group->name, 'set' => $setId);
                         foreach ($users as $user) {
                             if (in_array($groupId, $user->groups)) {
-                                $this->sourceObject->groupSets[$setId]['num_members'] ++;
+                                $this->sourceObject->groupSets[$setId]['num_members']++;
                                 if ($user->isStaff()) {
-                                    $this->sourceObject->groupSets[$setId]['num_staff'] ++;
+                                    $this->sourceObject->groupSets[$setId]['num_staff']++;
                                 }
                                 if ($user->isLearner()) {
-                                    $this->sourceObject->groupSets[$setId]['num_learners'] ++;
+                                    $this->sourceObject->groupSets[$setId]['num_learners']++;
                                 }
                                 if (!in_array($groupId, $this->sourceObject->groupSets[$setId]['groups'])) {
                                     $this->sourceObject->groupSets[$setId]['groups'][] = $groupId;

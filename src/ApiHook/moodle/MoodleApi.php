@@ -42,6 +42,16 @@ trait MoodleApi
     private $sourceObject = null;
 
     /**
+     * Check if the API hook has been configured.
+     */
+    public function isConfigured()
+    {
+        $consumer = $this->sourceObject->getConsumer();
+
+        return !empty($consumer->getSetting('moodle.url')) && !empty($consumer->getSetting('moodle.token'));
+    }
+
+    /**
      * Get memberships.
      *
      * @param bool    $withGroups True is group information is to be requested as well
@@ -151,7 +161,7 @@ trait MoodleApi
                 $teachers[] = $enrolment->id;
             }
         }
-        $userFields = 'id, username, firstname, lastname, email, roles';
+        $userFields = 'id, username, idnumber, firstname, lastname, fullname, email, roles';
         if ($withGroups) {
             $userFields .= ', groups';
         }
@@ -198,6 +208,8 @@ trait MoodleApi
                     }
                     $user->setEmail($enrolment->email, $this->sourceObject->getConsumer()->defaultEmail);
                     $user->setNames($enrolment->firstname, $enrolment->lastname, $enrolment->fullname);
+                    $user->username = $enrolment->username;
+                    $user->sourcedId = $enrolment->idnumber;
                     if (!empty($enrolment->groups)) {
                         foreach ($enrolment->groups as $group) {
                             $groupId = strval($group->id);
@@ -254,12 +266,12 @@ trait MoodleApi
                         }
                         unset($this->sourceObject->groupSets[$setId]);
                     } elseif (array_key_exists($group, $this->sourceObject->groups)) {
-                        $this->sourceObject->groupSets[$setId]['num_members'] ++;
+                        $this->sourceObject->groupSets[$setId]['num_members']++;
                         if ($user->isStaff()) {
-                            $this->sourceObject->groupSets[$setId]['num_staff'] ++;
+                            $this->sourceObject->groupSets[$setId]['num_staff']++;
                         }
                         if ($user->isLearner()) {
-                            $this->sourceObject->groupSets[$setId]['num_learners'] ++;
+                            $this->sourceObject->groupSets[$setId]['num_learners']++;
                         }
                         $sets[] = $setId;
                     }

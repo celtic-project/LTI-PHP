@@ -30,6 +30,14 @@ class ApiToolConsumer
     }
 
     /**
+     * Check if the API hook has been configured.
+     */
+    public function isConfigured()
+    {
+        return true;
+    }
+
+    /**
      * Get Tool Settings.
      *
      * @param bool     $simple     True if all the simple media type is to be used (optional, default is true)

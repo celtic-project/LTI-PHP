@@ -17,6 +17,17 @@ class CanvasApiContext extends ApiContext
     use CanvasApi;
 
     /**
+     * Class constructor.
+     *
+     * @param \ceLTIc\LTI\Context $context
+     */
+    public function __construct($context)
+    {
+        parent::__construct($context);
+        $this->sourceObject = $context;
+    }
+
+    /**
      * Get memberships.
      *
      * @param bool    $withGroups True is group information is to be requested as well
@@ -25,8 +36,6 @@ class CanvasApiContext extends ApiContext
      */
     public function getMemberships($withGroups)
     {
-        $this->sourceObject = $this->context;
-
         return $this->get($withGroups);
     }
 

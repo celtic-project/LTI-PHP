@@ -30,6 +30,14 @@ class ApiResourceLink
     }
 
     /**
+     * Check if the API hook has been configured.
+     */
+    public function isConfigured()
+    {
+        return true;
+    }
+
+    /**
      * Perform an Outcomes service request.
      *
      * @param int $action The action type constant
