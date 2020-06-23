@@ -437,7 +437,7 @@ class ToolConsumer
     {
         $has = !empty($this->getSetting('custom_system_setting_url'));
         if (!$has) {
-            $has = self::hasApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getFamilyCode());
+            $has = self::hasConfiguredApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getFamilyCode());
         }
         return $has;
     }
@@ -460,7 +460,7 @@ class ToolConsumer
             $this->lastServiceRequest = $service->getHttpMessage();
             $ok = $settings !== false;
         }
-        if (!$ok && $this->hasApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getFamilyCode())) {
+        if (!$ok && $this->hasConfiguredApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getFamilyCode())) {
             $className = $this->getApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getFamilyCode());
             $hook = new $className($this);
             $settings = $hook->getToolSettings($simple);
@@ -485,7 +485,7 @@ class ToolConsumer
             $ok = $service->set($settings);
             $this->lastServiceRequest = $service->getHttpMessage();
         }
-        if (!$ok && $this->hasApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getFamilyCode())) {
+        if (!$ok && $this->hasConfiguredApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getFamilyCode())) {
             $className = $this->getApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getFamilyCode());
             $hook = new $className($this);
             $ok = $hook->setToolSettings($settings);

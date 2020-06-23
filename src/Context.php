@@ -329,7 +329,7 @@ class Context
     {
         $has = !empty($this->getSetting('custom_context_setting_url'));
         if (!$has) {
-            $has = self::hasApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode());
+            $has = self::hasConfiguredApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode());
         }
         return $has;
     }
@@ -353,7 +353,7 @@ class Context
             $this->lastServiceRequest = $service->getHttpMessage();
             $ok = $settings !== false;
         }
-        if (!$ok && $this->hasApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode())) {
+        if (!$ok && $this->hasConfiguredApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode())) {
             $className = $this->getApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode());
             $hook = new $className($this);
             $settings = $hook->getToolSettings($mode, $simple);
@@ -378,7 +378,7 @@ class Context
             $ok = $service->set($settings);
             $this->lastServiceRequest = $service->getHttpMessage();
         }
-        if (!$ok && $this->hasApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode())) {
+        if (!$ok && $this->hasConfiguredApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode())) {
             $className = $this->getApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode());
             $hook = new $className($this);
             $ok = $hook->setToolSettings($settings);
@@ -409,7 +409,7 @@ class Context
     {
         $has = !empty($this->getSetting('custom_context_memberships_url')) || !empty($this->getSetting('custom_context_memberships_v2_url'));
         if (!$has) {
-            $has = self::hasApiHook(self::$MEMBERSHIPS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode());
+            $has = self::hasConfiguredApiHook(self::$MEMBERSHIPS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode());
         }
         return $has;
     }
@@ -439,7 +439,7 @@ class Context
         $ok = false;
         $userResults = array();
         $hasLtiService = !empty($this->getSetting('custom_context_memberships_url')) || !empty($this->getSetting('custom_context_memberships_v2_url'));
-        $hasApiHook = $this->hasApiHook(self::$MEMBERSHIPS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode());
+        $hasApiHook = $this->hasConfiguredApiHook(self::$MEMBERSHIPS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode());
         if ($hasLtiService && (!$withGroups || !$hasApiHook)) {
             if (!empty($this->getSetting('custom_context_memberships_v2_url'))) {
                 $url = $this->getSetting('custom_context_memberships_v2_url');
