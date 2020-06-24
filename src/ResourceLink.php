@@ -524,7 +524,7 @@ class ResourceLink
         $has = !empty($this->getSetting('ext_ims_lis_basic_outcome_url')) || !empty($this->getSetting('lis_outcome_service_url')) ||
             !empty($this->getSetting('custom_lineitem_url'));
         if (!$has) {
-            $has = self::hasConfiguredApiHook(self::$OUTCOMES_SERVICE_HOOK, $this->getConsumer()->getFamilyCode());
+            $has = self::hasConfiguredApiHook(self::$OUTCOMES_SERVICE_HOOK, $this->getConsumer()->getFamilyCode(), $this);
         }
         return $has;
     }
@@ -708,7 +708,7 @@ EOF;
                 $response = '';
             }
         }
-        if (($response === false) && $this->hasConfiguredApiHook(self::$OUTCOMES_SERVICE_HOOK, $this->getConsumer()->getFamilyCode())) {
+        if (($response === false) && $this->hasConfiguredApiHook(self::$OUTCOMES_SERVICE_HOOK, $this->getConsumer()->getFamilyCode(), $this)) {
             $className = $this->getApiHook(self::$OUTCOMES_SERVICE_HOOK, $this->getConsumer()->getFamilyCode());
             $hook = new $className($this);
             $response = $hook->doOutcomesService($action, $ltiOutcome, $userresult);
@@ -801,7 +801,7 @@ EOF;
     {
         $has = !empty($this->getSetting('custom_link_setting_url'));
         if (!$has) {
-            $has = self::hasConfiguredApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode());
+            $has = self::hasConfiguredApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode(), $this);
         }
         return $has;
     }
@@ -825,7 +825,7 @@ EOF;
             $this->lastServiceRequest = $service->getHttpMessage();
             $ok = $settings !== false;
         }
-        if (!$ok && $this->hasConfiguredApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode())) {
+        if (!$ok && $this->hasConfiguredApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode(), $this)) {
             $className = $this->getApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode());
             $hook = new $className($this);
             $settings = $hook->getToolSettings($mode, $simple);
@@ -850,7 +850,7 @@ EOF;
             $ok = $service->set($settings);
             $this->lastServiceRequest = $service->getHttpMessage();
         }
-        if (!$ok && $this->hasConfiguredApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode())) {
+        if (!$ok && $this->hasConfiguredApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode(), $this)) {
             $className = $this->getApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode());
             $hook = new $className($this);
             $ok = $hook->setToolSettings($settings);
@@ -899,7 +899,7 @@ EOF;
         $hasLtiservice = !empty($this->getContextId()) &&
             (!empty($this->getContext()->getSetting('custom_context_memberships_url')) || !empty($this->getContext()->getSetting('custom_context_memberships_v2_url')));
         $hasExtService = !empty($this->getSetting('ext_ims_lis_memberships_url'));
-        $hasApiHook = $this->hasConfiguredApiHook(self::$MEMBERSHIPS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode());
+        $hasApiHook = $this->hasConfiguredApiHook(self::$MEMBERSHIPS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode(), $this);
         if ($hasLtiservice && (!$withGroups || (!$hasExtService && !$hasApiHook))) {
             if (!empty($this->getContext()->getSetting('custom_context_memberships_v2_url'))) {
                 $url = $this->getContext()->getSetting('custom_context_memberships_v2_url');

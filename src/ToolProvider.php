@@ -1074,7 +1074,7 @@ EOD;
 
 // Set the request context
                     $contextId = '';
-                    if ($this->hasConfiguredApiHook(self::$CONTEXT_ID_HOOK, $this->consumer->getFamilyCode())) {
+                    if ($this->hasConfiguredApiHook(self::$CONTEXT_ID_HOOK, $this->consumer->getFamilyCode(), $this)) {
                         $className = $this->getApiHook(self::$CONTEXT_ID_HOOK, $this->consumer->getFamilyCode());
                         $tpHook = new $className($this);
                         $contextId = $tpHook->getContextId();
@@ -1178,7 +1178,7 @@ EOD;
 
 // Set the user instance
                     $userId = '';
-                    if ($this->hasConfiguredApiHook(self::$USER_ID_HOOK, $this->consumer->getFamilyCode())) {
+                    if ($this->hasConfiguredApiHook(self::$USER_ID_HOOK, $this->consumer->getFamilyCode(), $this)) {
                         $className = $this->getApiHook(self::$USER_ID_HOOK, $this->consumer->getFamilyCode());
                         $tpHook = new $className($this);
                         $userId = $tpHook->getUserId();
