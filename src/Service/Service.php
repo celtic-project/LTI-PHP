@@ -31,18 +31,18 @@ class Service
     protected $endpoint;
 
     /**
+     * Media type of message body.
+     *
+     * @var string $mediaType
+     */
+    protected $mediaType;
+
+    /**
      * Tool Consumer for this service request.
      *
      * @var ToolConsumer $consumer
      */
     private $consumer;
-
-    /**
-     * Media type of message body.
-     *
-     * @var string $mediaType
-     */
-    private $mediaType;
 
     /**
      * HttpMessage object for last service request.
@@ -63,6 +63,16 @@ class Service
         $this->consumer = $consumer;
         $this->endpoint = $endpoint;
         $this->mediaType = $mediaType;
+    }
+
+    /**
+     * Get tool consumer.
+     *
+     * @return ToolConsumer Consumer for this service
+     */
+    public function getConsumer()
+    {
+        return $this->consumer;
     }
 
     /**

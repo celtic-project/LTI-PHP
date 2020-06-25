@@ -522,7 +522,7 @@ class ResourceLink
     public function hasOutcomesService()
     {
         $has = !empty($this->getSetting('ext_ims_lis_basic_outcome_url')) || !empty($this->getSetting('lis_outcome_service_url')) ||
-            !empty($this->getSetting('custom_lineitem_url'));
+            (!empty($this->getSetting('custom_lineitems_url')) && !empty($this->getSetting('custom_lineitem_url')));
         if (!$has) {
             $has = self::hasConfiguredApiHook(self::$OUTCOMES_SERVICE_HOOK, $this->getConsumer()->getFamilyCode(), $this);
         }
@@ -558,6 +558,18 @@ class ResourceLink
     public function hasSettingService()
     {
         $url = $this->getSetting('ext_ims_lti_tool_setting_url');
+
+        return !empty($url);
+    }
+
+    /**
+     * Check if the Line Item service is available.
+     *
+     * @return bool    True if this resource link supports the Line Item service
+     */
+    public function hasLineItemService()
+    {
+        $url = $this->getSetting('custom_lineitems_url');
 
         return !empty($url);
     }
@@ -1055,6 +1067,86 @@ EOF;
     }
 
     /**
+     * Get line items.
+     *
+     * @param string|null  $resourceId         Tool resource ID
+     * @param string|null  $tag                Tag
+     * @param int|null     $limit              Limit of line items to be returned, null for service default
+     *
+     * @return LineItem[]|bool  Array of LineItem objects or false on error
+     */
+    public function getLineItems($resourceId = null, $tag = null, $limit = null)
+    {
+        $lineItems = false;
+        $this->extRequest = '';
+        $this->extRequestHeaders = '';
+        $this->extResponse = '';
+        $this->extResponseHeaders = '';
+        $this->lastServiceRequest = null;
+        $lineItemService = $this->getLineItemService();
+        if (!empty($lineItemService)) {
+            $lineItems = $lineItemService->getAll($this->ltiResourceLinkId, $resourceId, $tag, $limit);
+            $http = $lineItemService->getHttpMessage();
+            $this->extResponse = $http->response;
+            $this->extResponseHeaders = $http->responseHeaders;
+            $this->extRequest = $http->request;
+            $this->extRequestHeaders = $http->requestHeaders;
+            $this->lastServiceRequest = $http;
+        }
+
+        return $lineItems;
+    }
+
+    /**
+     * Create a new line item.
+     *
+     * @param LineItem  $lineItem         Line item object
+     *
+     * @return bool  True if successful
+     */
+    public function createLineItem($lineItem)
+    {
+        $ok = false;
+        $lineItemService = $this->getLineItemService();
+        if (!empty($lineItemService)) {
+            $lineItem->ltiResourceLinkId = $this->ltiResourceLinkId;
+            $ok = $lineItemService->createLineItem($lineItem);
+        }
+
+        return $ok;
+    }
+
+    /**
+     * Get all outcomes.
+     *
+     * @param int|null     $limit              Limit of outcomes to be returned, null for service default
+     *
+     * @return Outcome[]|bool  Array of Outcome objects or false on error
+     */
+    public function getOutcomes($limit = null)
+    {
+        $outcomes = false;
+        $this->extRequest = '';
+        $this->extRequestHeaders = '';
+        $this->extResponse = '';
+        $this->extResponseHeaders = '';
+        $this->lastServiceRequest = null;
+        $url = $this->getSetting('custom_lineitem_url');
+        if (!empty($url)) {
+            $resultService = new Service\Result($this->getConsumer(), $url);
+            $outcomes = $resultService->getAll($limit);
+            $http = $resultService->getHttpMessage();
+            $this->extResponse = $http->response;
+            $this->extResponseHeaders = $http->responseHeaders;
+            $this->extRequest = $http->request;
+            $this->extRequestHeaders = $http->requestHeaders;
+            $this->lastServiceRequest = $http;
+        }
+
+        return $outcomes;
+    }
+
+    /**
      * Class constructor from consumer.
      *
      * @param ToolConsumer $consumer            Consumer object
@@ -1390,6 +1482,23 @@ EOD;
         }
 
         return $ok;
+    }
+
+    /**
+     * Get the Line Item service object.
+     *
+     * @return Service\\LineItem    Line Item service, or false if not available
+     */
+    private function getLineItemService()
+    {
+        $url = $this->getSetting('custom_lineitems_url');
+        if (!empty($url)) {
+            $lineItemService = new Service\LineItem($this->getConsumer(), $url);
+        } else {
+            $lineItemService = false;
+        }
+
+        return $lineItemService;
     }
 
     /**

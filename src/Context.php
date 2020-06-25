@@ -463,6 +463,68 @@ class Context
     }
 
     /**
+     * Check if the Line Item service is available.
+     *
+     * @return bool    True if this resource link supports the Line Item service
+     */
+    public function hasLineItemService()
+    {
+        $url = $this->getSetting('custom_lineitems_url');
+
+        return !empty($url);
+    }
+
+    /**
+     * Get line items.
+     *
+     * @param string|null  $resourceId         Tool resource ID
+     * @param string|null  $tag                Tag
+     * @param int|null     $limit              Limit of line items to be returned, null for service default
+     *
+     * @return LineItem[]|bool  Array of LineItem objects or false on error
+     */
+    public function getLineItems($resourceId = null, $tag = null, $limit = null)
+    {
+        $lineItems = false;
+        $this->extRequest = '';
+        $this->extRequestHeaders = '';
+        $this->extResponse = '';
+        $this->extResponseHeaders = '';
+        $this->lastServiceRequest = null;
+        $url = $this->getSetting('custom_lineitems_url');
+        if (!empty($url)) {
+            $lineItemService = new Service\LineItem($this->getConsumer(), $url, $limit);
+            $lineItems = $lineItemService->getAll(null, $resourceId, $tag);
+            $http = $lineItemService->getHttpMessage();
+            $this->extResponse = $http->response;
+            $this->extResponseHeaders = $http->responseHeaders;
+            $this->extRequest = $http->request;
+            $this->extRequestHeaders = $http->requestHeaders;
+            $this->lastServiceRequest = $http;
+        }
+
+        return $lineItems;
+    }
+
+    /**
+     * Create a new line item.
+     *
+     * @param LineItem  $lineItem         Line item object
+     *
+     * @return bool  True if successful
+     */
+    public function createLineItem($lineItem)
+    {
+        $ok = false;
+        $lineItemService = $this->getLineItemService();
+        if (!empty($lineItemService)) {
+            $ok = $lineItemService->createLineItem($lineItem);
+        }
+
+        return $ok;
+    }
+
+    /**
      * Load the context from the database.
      *
      * @param int             $id               Record ID of context
@@ -516,6 +578,23 @@ class Context
         $this->initialize();
         $this->id = $id;
         return $this->getDataConnector()->loadContext($this);
+    }
+
+    /**
+     * Get the Line Item service object.
+     *
+     * @return Service\\LineItem    Line Item service, or false if not available
+     */
+    private function getLineItemService()
+    {
+        $url = $this->getSetting('custom_lineitems_url');
+        if (!empty($url)) {
+            $lineItemService = new Service\LineItem($this->getConsumer(), $url);
+        } else {
+            $lineItemService = false;
+        }
+
+        return $lineItemService;
     }
 
 }

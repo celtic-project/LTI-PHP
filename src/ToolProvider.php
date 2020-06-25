@@ -97,6 +97,11 @@ class ToolProvider
         'custom_lineitems_url', 'custom_lineitem_url');
 
     /**
+     * Names of LTI parameters to be retained even when not passed.
+     */
+    private static $LTI_RETAIN_SETTING_NAMES = array('custom_lineitem_url');
+
+    /**
      * Names of LTI custom parameter substitution variables (or capabilities) and their associated default message parameter names.
      */
     private static $CUSTOM_SUBSTITUTION_VARIABLES = array('User.id' => 'user_id',
@@ -1120,20 +1125,20 @@ EOD;
                         $this->resourceLink->title = $title;
 // Delete any existing custom parameters
                         foreach ($this->consumer->getSettings() as $name => $value) {
-                            if (strpos($name, 'custom_') === 0) {
+                            if ((strpos($name, 'custom_') === 0) && (!in_array($name, self::$LTI_RETAIN_SETTING_NAMES))) {
                                 $this->consumer->setSetting($name);
                                 $doSaveConsumer = true;
                             }
                         }
                         if (!empty($this->context)) {
                             foreach ($this->context->getSettings() as $name => $value) {
-                                if (strpos($name, 'custom_') === 0) {
+                                if ((strpos($name, 'custom_') === 0) && (!in_array($name, self::$LTI_RETAIN_SETTING_NAMES))) {
                                     $this->context->setSetting($name);
                                 }
                             }
                         }
                         foreach ($this->resourceLink->getSettings() as $name => $value) {
-                            if (strpos($name, 'custom_') === 0) {
+                            if ((strpos($name, 'custom_') === 0) && (!in_array($name, self::$LTI_RETAIN_SETTING_NAMES))) {
                                 $this->resourceLink->setSetting($name);
                             }
                         }
@@ -1141,7 +1146,7 @@ EOD;
                         foreach (self::$LTI_CONSUMER_SETTING_NAMES as $name) {
                             if (isset($this->messageParameters[$name])) {
                                 $this->consumer->setSetting($name, $this->messageParameters[$name]);
-                            } else {
+                            } else if (!in_array($name, self::$LTI_RETAIN_SETTING_NAMES)) {
                                 $this->consumer->setSetting($name);
                             }
                         }
@@ -1149,7 +1154,7 @@ EOD;
                             foreach (self::$LTI_CONTEXT_SETTING_NAMES as $name) {
                                 if (isset($this->messageParameters[$name])) {
                                     $this->context->setSetting($name, $this->messageParameters[$name]);
-                                } else {
+                                } else if (!in_array($name, self::$LTI_RETAIN_SETTING_NAMES)) {
                                     $this->context->setSetting($name);
                                 }
                             }
@@ -1157,7 +1162,7 @@ EOD;
                         foreach (self::$LTI_RESOURCE_LINK_SETTING_NAMES as $name) {
                             if (isset($this->messageParameters[$name])) {
                                 $this->resourceLink->setSetting($name, $this->messageParameters[$name]);
-                            } else {
+                            } else if (!in_array($name, self::$LTI_RETAIN_SETTING_NAMES)) {
                                 $this->resourceLink->setSetting($name);
                             }
                         }
