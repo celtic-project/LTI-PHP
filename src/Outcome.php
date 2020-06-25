@@ -100,19 +100,19 @@ class Outcome
     /**
      * Points possible value.
      *
-     * @var int|null $pointsPossible
+     * @var int $pointsPossible
      */
-    private $pointsPossible = null;
+    private $pointsPossible = 1;
 
     /**
      * Class constructor.
      *
      * @param string $value             Outcome value (optional, default is none)
-     * @param string $pointsPossible    Points possible value (optional, default is none)
+     * @param string $pointsPossible    Points possible value (optional, default is 1)
      * @param string $activityProgress  Activity progress (optional, default is 'Completed')
      * @param string $gradingProgress  Grading progress (optional, default is 'FullyGraded')
      */
-    public function __construct($value = null, $pointsPossible = null, $activityProgress = 'Completed',
+    public function __construct($value = null, $pointsPossible = 1, $activityProgress = 'Completed',
         $gradingProgress = 'FullyGraded')
     {
         $this->value = $value;
