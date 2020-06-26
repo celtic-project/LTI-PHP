@@ -2,20 +2,21 @@
 
 namespace ceLTIc\LTI;
 
+use ceLTIc\LTI\Content\Item;
+use ceLTIc\LTI\Content\ContentItemPlacement;
+
 /**
  * Class to represent a content-item object
+ *
+ * @deprecated Use Content::Item instead
+ * @see Content::Item
  *
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
  * @copyright  SPV Software Products
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3
  */
-class ContentItem
+class ContentItem extends Item
 {
-
-    /**
-     * Media type for LTI launch links.
-     */
-    const LTI_LINK_MEDIA_TYPE = 'application/vnd.ims.lti.v1.ltilink';
 
     /**
      * Class constructor.
@@ -26,90 +27,8 @@ class ContentItem
      */
     function __construct($type, $placementAdvice = null, $id = null)
     {
-        $this->{'@type'} = $type;
-        if (is_object($placementAdvice) && (count(get_object_vars($placementAdvice)) > 0)) {
-            $this->placementAdvice = $placementAdvice;
-        }
-        if (!empty($id)) {
-            $this->{'@id'} = $id;
-        }
-    }
-
-    /**
-     * Set a URL value for the content-item.
-     *
-     * @param string $url  URL value
-     */
-    public function setUrl($url)
-    {
-        if (!empty($url)) {
-            $this->url = $url;
-        } else {
-            unset($this->url);
-        }
-    }
-
-    /**
-     * Set a media type value for the content-item.
-     *
-     * @param string $mediaType  Media type value
-     */
-    public function setMediaType($mediaType)
-    {
-        if (!empty($mediaType)) {
-            $this->mediaType = $mediaType;
-        } else {
-            unset($this->mediaType);
-        }
-    }
-
-    /**
-     * Set a title value for the content-item.
-     *
-     * @param string $title  Title value
-     */
-    public function setTitle($title)
-    {
-        if (!empty($title)) {
-            $this->title = $title;
-        } elseif (isset($this->title)) {
-            unset($this->title);
-        }
-    }
-
-    /**
-     * Set a link text value for the content-item.
-     *
-     * @param string $text  Link text value
-     */
-    public function setText($text)
-    {
-        if (!empty($text)) {
-            $this->text = $text;
-        } elseif (isset($this->text)) {
-            unset($this->text);
-        }
-    }
-
-    /**
-     * Wrap the content items to form a complete application/vnd.ims.lti.v1.contentitems+json media type instance.
-     *
-     * @param mixed $items  An array of content items or a single item
-     *
-     * @return string
-     */
-    public static function toJson($items)
-    {
-        $obj = new \stdClass();
-        $obj->{'@context'} = 'http://purl.imsglobal.org/ctx/lti/v1/ContentItem';
-        if (!is_array($items)) {
-            $obj->{'@graph'} = array();
-            $obj->{'@graph'}[] = $items;
-        } else {
-            $obj->{'@graph'} = $items;
-        }
-
-        return json_encode($obj);
+        parent::__construct($type, $placementAdvice, $id);
+        Util::logDebug('Class ceLTIc\LTI\ContentItem has been deprecated; please use ceLTIc\LTI\Content\Item instead.', true);
     }
 
 }

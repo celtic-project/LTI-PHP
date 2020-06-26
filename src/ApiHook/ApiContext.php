@@ -3,7 +3,7 @@
 namespace ceLTIc\LTI\ApiHook;
 
 /**
- * Class to implement context services for a tool consumer via its proprietary API
+ * Class to implement context services for a platform via its proprietary API
  *
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
  * @copyright  SPV Software Products

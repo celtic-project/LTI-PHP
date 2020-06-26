@@ -16,7 +16,7 @@ class CanvasApiToolProvider extends \ceLTIc\LTI\ApiHook\ApiToolProvider
     public function getUserId()
     {
         $userId = '';
-        $messageParameters = $this->toolProvider->getMessageParameters();
+        $messageParameters = $this->tool->getMessageParameters();
         if (isset($messageParameters['custom_canvas_user_id'])) {
             $userId = trim($messageParameters['custom_canvas_user_id']);
         }

@@ -162,12 +162,13 @@ class HttpMessage
     public function send()
     {
         $client = self::getHttpClient();
-        $this->ok = false;
         if (empty($client)) {
+            $this->ok = false;
             $message = 'No HTTP client interface is available';
             $this->error = $message;
             Util::logError($message, true);
         } elseif (empty($this->url)) {
+            $this->ok = false;
             $message = 'No URL provided for HTTP request';
             $this->error = $message;
             Util::logError($message, true);

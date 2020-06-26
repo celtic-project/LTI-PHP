@@ -21,7 +21,7 @@ class Message
     public $type = null;
 
     /**
-     * Path to send message request to (used in conjunction with a base URL for the Tool Provider).
+     * Path to send message request to (used in conjunction with a base URL for the Tool).
      *
      * @var string|null $path
      */

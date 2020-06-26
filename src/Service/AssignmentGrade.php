@@ -15,15 +15,14 @@ class AssignmentGrade extends Service
     /**
      * Class constructor.
      *
-     * @param ToolConsumer $consumer   Tool consumer object for this service request
+     * @param Platform     $platform   Platform object for this service request
      * @param string       $endpoint   Service endpoint
-     * @param string       $mediaType  Media type of message body
      * @param string       $path       Path (optional)
      */
-    public function __construct($consumer, $endpoint, $mediaType, $path = '')
+    public function __construct($platform, $endpoint, $path = '')
     {
         $endpoint = self::addPath($endpoint, $path);
-        parent::__construct($consumer, $endpoint, $mediaType);
+        parent::__construct($platform, $endpoint);
     }
 
     /**

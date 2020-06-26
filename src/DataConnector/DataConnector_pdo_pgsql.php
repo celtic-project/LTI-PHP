@@ -3,9 +3,6 @@
 namespace ceLTIc\LTI\DataConnector;
 
 use ceLTIc\LTI;
-use ceLTIc\LTI\Context;
-use ceLTIc\LTI\ToolConsumer;
-use PDO;
 
 /**
  * Class to represent an LTI Data Connector for PDO variations for PostgreSQL connections

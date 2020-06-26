@@ -107,8 +107,8 @@ class Outcome
     /**
      * Class constructor.
      *
-     * @param string $value             Outcome value (optional, default is none)
-     * @param string $pointsPossible    Points possible value (optional, default is 1)
+     * @param mixed  $value             Outcome value (optional, default is none)
+     * @param int    $pointsPossible    Points possible value (optional, default is none)
      * @param string $activityProgress  Activity progress (optional, default is 'Completed')
      * @param string $gradingProgress  Grading progress (optional, default is 'FullyGraded')
      */

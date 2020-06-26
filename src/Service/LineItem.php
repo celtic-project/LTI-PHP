@@ -3,7 +3,7 @@
 namespace ceLTIc\LTI\Service;
 
 use ceLTIc\LTI;
-use ceLTIc\LTI\ToolConsumer;
+use ceLTIc\LTI\Platform;
 
 /**
  * Class to implement the Line Item service
@@ -45,14 +45,14 @@ class LineItem extends AssignmentGrade
     /**
      * Class constructor.
      *
-     * @param ToolConsumer $consumer   ToolConsumer object for this service request
+     * @param Platform     $platform   Platform object for this service request
      * @param string       $endpoint   Service endpoint
      * @param int|null     $limit      Limit of lineitems to be returned per request, null for all
      */
-    public function __construct($consumer, $endpoint, $limit = null)
+    public function __construct($platform, $endpoint, $limit = null)
     {
         $this->limit = $limit;
-        parent::__construct($consumer, $endpoint, null);
+        parent::__construct($platform, $endpoint);
         $this->scope = self::$SCOPE_READONLY;
     }
 
@@ -95,7 +95,7 @@ class LineItem extends AssignmentGrade
             if ($http->ok) {
                 if (!empty($http->responseJson)) {
                     foreach ($http->responseJson as $lineItem) {
-                        $lineItems[] = self::toLineItem($this->getConsumer(), $lineItem);
+                        $lineItems[] = self::toLineItem($this->getPlatform(), $lineItem);
                     }
                 }
                 if (!empty($limit) && preg_match('/\<([^\>]+)\>; *rel=[\"next\"|next]/', $http->responseHeaders, $matches)) {
@@ -126,7 +126,7 @@ class LineItem extends AssignmentGrade
         $this->scope = self::$SCOPE_READONLY;
         $ok = $http->ok && !empty($http->responseJson);
         if ($ok) {
-            $newLineItem = self::toLineItem($this->getConsumer(), $http->responseJson);
+            $newLineItem = self::toLineItem($this->getPlatform(), $http->responseJson);
             foreach (get_object_vars($newLineItem) as $key => $value) {
                 $lineItem->$key = $value;
             }
@@ -138,18 +138,18 @@ class LineItem extends AssignmentGrade
     /**
      * Retrieve a line item.
      *
-     * @param ToolConsumer $consumer   ToolConsumer object for this service request
+     * @param Platform     $platform   Platform object for this service request
      * @param string       $endpoint   Line item endpoint
      *
      * @return LTI\\LineItem|bool  LineItem object, or false on error
      */
-    public static function getLineItem($consumer, $endpoint)
+    public static function getLineItem($platform, $endpoint)
     {
-        $service = new self($consumer, $endpoint);
+        $service = new self($platform, $endpoint);
         $service->mediaType = self::$MEDIA_TYPE_LINE_ITEM;
         $http = $service->send('GET');
         if ($http->ok && !empty($http->responseJson)) {
-            $lineItem = self::toLineItem($consumer, $http->responseJson);
+            $lineItem = self::toLineItem($platform, $http->responseJson);
         } else {
             $lineItem = false;
         }
@@ -164,15 +164,15 @@ class LineItem extends AssignmentGrade
     /**
      * Create a line item from a JSON object.
      *
-     * @param ToolConsumer $consumer   Tool consumer object for this service request
+     * @param Platform     $platform   Platform object for this service request
      * @param object       $json       JSON object to convert
      *
      * @return LTI\\LineItem|null  LineItem object, or null on error
      */
-    private static function toLineItem($consumer, $json)
+    private static function toLineItem($platform, $json)
     {
         if (!empty($json->id) && !empty($json->label) && !empty($json->scoreMaximum)) {
-            $lineItem = new LTI\LineItem($consumer, $json->label, $json->scoreMaximum);
+            $lineItem = new LTI\LineItem($platform, $json->label, $json->scoreMaximum);
             if (!empty($json->id)) {
                 $lineItem->endpoint = $json->id;
             }

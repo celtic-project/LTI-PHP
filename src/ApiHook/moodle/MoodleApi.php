@@ -46,9 +46,9 @@ trait MoodleApi
      */
     public function isConfigured()
     {
-        $consumer = $this->sourceObject->getConsumer();
+        $platform = $this->sourceObject->getPlatform();
 
-        return !empty($consumer->getSetting('moodle.url')) && !empty($consumer->getSetting('moodle.token'));
+        return !empty($platform->getSetting('moodle.url')) && !empty($platform->getSetting('moodle.token'));
     }
 
     /**
@@ -60,16 +60,16 @@ trait MoodleApi
      */
     private function get($withGroups)
     {
-        $consumer = $this->sourceObject->getConsumer();
-        $this->url = $consumer->getSetting('moodle.url');
-        $this->token = $consumer->getSetting('moodle.token');
-        $perPage = $consumer->getSetting('moodle.per_page', '');
+        $platform = $this->sourceObject->getPlatform();
+        $this->url = $platform->getSetting('moodle.url');
+        $this->token = $platform->getSetting('moodle.token');
+        $perPage = $platform->getSetting('moodle.per_page', '');
         if (!is_numeric($perPage)) {
             $perPage = self::$DEFAULT_PER_PAGE;
         } else {
             $perPage = intval($perPage);
         }
-        $prefix = $consumer->getSetting('moodle.grouping_prefix');
+        $prefix = $platform->getSetting('moodle.grouping_prefix');
         if ($this->url && $this->token && $this->courseId) {
             if ($withGroups) {
                 $this->setGroupings($prefix);
@@ -206,7 +206,7 @@ trait MoodleApi
                         $user = new UserResult();
                         $user->ltiUserId = $userId;
                     }
-                    $user->setEmail($enrolment->email, $this->sourceObject->getConsumer()->defaultEmail);
+                    $user->setEmail($enrolment->email, $this->sourceObject->getPlatform()->defaultEmail);
                     $user->setNames($enrolment->firstname, $enrolment->lastname, $enrolment->fullname);
                     $user->username = $enrolment->username;
                     $user->sourcedId = $enrolment->idnumber;

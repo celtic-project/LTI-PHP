@@ -17,20 +17,20 @@ class OAuthDataStore extends OAuth\OAuthDataStore
 {
 
     /**
-     * Tool Provider object.
+     * Tool object.
      *
-     * @var ToolProvider|null $toolProvider
+     * @var Tool|null $tool
      */
-    private $toolProvider = null;
+    private $tool = null;
 
     /**
      * Class constructor.
      *
-     * @param ToolProvider $toolProvider Tool_Provider object
+     * @param Tool $tool Tool object
      */
-    public function __construct($toolProvider)
+    public function __construct($tool)
     {
-        $this->toolProvider = $toolProvider;
+        $this->tool = $tool;
     }
 
     /**
@@ -42,7 +42,7 @@ class OAuthDataStore extends OAuth\OAuthDataStore
      */
     function lookup_consumer($consumerKey)
     {
-        return new OAuthConsumer($this->toolProvider->consumer->getKey(), $this->toolProvider->consumer->secret);
+        return new OAuthConsumer($this->tool->platform->getKey(), $this->tool->platform->secret);
     }
 
     /**
@@ -71,13 +71,13 @@ class OAuthDataStore extends OAuth\OAuthDataStore
      */
     function lookup_nonce($consumer, $token, $value, $timestamp)
     {
-        $nonce = new ConsumerNonce($this->toolProvider->consumer, $value);
+        $nonce = new PlatformNonce($this->tool->platform, $value);
         $ok = !$nonce->load();
         if ($ok) {
             $ok = $nonce->save();
         }
         if (!$ok) {
-            $this->toolProvider->reason = 'Invalid nonce.';
+            $this->tool->reason = 'Invalid nonce.';
         }
 
         return !$ok;

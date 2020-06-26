@@ -2,14 +2,14 @@
 
 namespace ceLTIc\LTI\DataConnector;
 
-use ceLTIc\LTI;
-use ceLTIc\LTI\ConsumerNonce;
+use ceLTIc\LTI\PlatformNonce;
 use ceLTIc\LTI\Context;
 use ceLTIc\LTI\ResourceLink;
 use ceLTIc\LTI\ResourceLinkShare;
 use ceLTIc\LTI\ResourceLinkShareKey;
-use ceLTIc\LTI\ToolConsumer;
+use ceLTIc\LTI\Platform;
 use ceLTIc\LTI\UserResult;
+use ceLTIc\LTI\Util;
 
 /**
  * Class to provide a connection to a persistent store for LTI objects
@@ -24,9 +24,17 @@ class DataConnector
 {
 
     /**
-     * Default name for database table used to store tool consumers.
+     * Default name for database table used to store platforms.
      */
-    const CONSUMER_TABLE_NAME = 'lti2_consumer';
+    const PLATFORM_TABLE_NAME = 'lti2_consumer';
+
+    /**
+     * Default name for database table used to store platforms.
+     *
+     * @deprecated Use DataConnector::PLATFORM_TABLE_NAME instead
+     * @see DataConnector::PLATFORM_TABLE_NAME
+     */
+    const CONSUMER_TABLE_NAME = self::PLATFORM_TABLE_NAME;
 
     /**
      * Default name for database table used to store contexts.
@@ -52,6 +60,11 @@ class DataConnector
      * Default name for database table used to store nonce values.
      */
     const NONCE_TABLE_NAME = 'lti2_nonce';
+
+    /**
+     * Default name for database table used to store access token values.
+     */
+    const ACCESS_TOKEN_TABLE_NAME = 'lti2_access_token';
 
     /**
      * Database connection.
@@ -94,61 +107,127 @@ class DataConnector
     }
 
 ###
-###  ToolConsumer methods
+###  Platform methods
 ###
 
     /**
      * Load tool consumer object.
      *
-     * @param ToolConsumer $consumer ToolConsumer object
+     * @deprecated Use loadPlatform() instead
+     * @see DataConnector::loadPlatform()
+     *
+     * @param ToolConsumer $consumer  Tool consumer object
      *
      * @return bool    True if the tool consumer object was successfully loaded
      */
     public function loadToolConsumer($consumer)
     {
-        $consumer->secret = 'secret';
-        $consumer->enabled = true;
-        $now = time();
-        $consumer->created = $now;
-        $consumer->updated = $now;
-
-        return true;
+        Util::logDebug('Method ceLTIc\LTI\DataConnector\DataConnector::loadToolConsumer() has been deprecated; please use ceLTIc\LTI\DataConnector\DataConnector::loadPlatform() instead.',
+            true);
+        return $this->loadPlatform($consumer);
     }
 
     /**
      * Save tool consumer object.
      *
-     * @param ToolConsumer $consumer Consumer object
+     * @deprecated Use savePlatform() instead
+     * @see DataConnector::savePlatform()
+     *
+     * @param ToolConsumer $consumer  Tool consumer object
      *
      * @return bool    True if the tool consumer object was successfully saved
      */
     public function saveToolConsumer($consumer)
     {
-        $consumer->updated = time();
-
-        return true;
+        Util::logDebug('Method ceLTIc\LTI\DataConnector\DataConnector::saveToolConsumer() has been deprecated; please use ceLTIc\LTI\DataConnector\DataConnector::savePlatform() instead.',
+            true);
+        return $this->savePlatform($consumer);
     }
 
     /**
      * Delete tool consumer object.
      *
-     * @param ToolConsumer $consumer Consumer object
+     * @deprecated Use deletePlatform() instead
+     * @see DataConnector::deletePlatform()
+     *
+     * @param ToolConsumer $consumer  Tool consumer object
      *
      * @return bool    True if the tool consumer object was successfully deleted
      */
     public function deleteToolConsumer($consumer)
     {
-        $consumer->initialize();
-
-        return true;
+        Util::logDebug('Method ceLTIc\LTI\DataConnector\DataConnector::deleteToolConsumer() has been deprecated; please use ceLTIc\LTI\DataConnector\DataConnector::deletePlatform() instead.',
+            true);
+        return $this->deletePlatform($consumer);
     }
 
     /**
      * Load tool consumer objects.
      *
-     * @return ToolConsumer[] Array of all defined ToolConsumer objects
+     * @deprecated Use getPlatforms() instead
+     * @see DataConnector::getPlatforms()
+     *
+     * @return ToolConsumer[] Array of all defined tool consumer objects
      */
     public function getToolConsumers()
+    {
+        Util::logDebug('Method ceLTIc\LTI\DataConnector\DataConnector::getToolConsumers() has been deprecated; please use ceLTIc\LTI\DataConnector\DataConnector::getPlatforms() instead.',
+            true);
+        return $this->getPlatforms();
+    }
+
+    /**
+     * Load platform object.
+     *
+     * @param Platform $platform  Platform object
+     *
+     * @return bool    True if the platform object was successfully loaded
+     */
+    public function loadPlatform($platform)
+    {
+        $platform->secret = 'secret';
+        $platform->enabled = true;
+        $now = time();
+        $platform->created = $now;
+        $platform->updated = $now;
+
+        return true;
+    }
+
+    /**
+     * Save platform object.
+     *
+     * @param Platform $platform  Platform object
+     *
+     * @return bool    True if the platform object was successfully saved
+     */
+    public function savePlatform($platform)
+    {
+        $platform->updated = time();
+
+        return true;
+    }
+
+    /**
+     * Delete platform object.
+     *
+     * @param Platform $platform  Platform object
+     *
+     * @return bool    True if the platform object was successfully deleted
+     */
+    public function deletePlatform($platform)
+    {
+        $platform->initialize();
+
+        return true;
+    }
+
+    /**
+     * Load platform objects.
+     *
+     * @return Platform[] Array of all defined Platform objects
+     */
+    public function getPlatforms()
     {
         return array();
     }
@@ -279,11 +358,14 @@ class DataConnector
     }
 
 ###
-###  ConsumerNonce methods
+###  PlatformNonce methods
 ###
 
     /**
      * Load nonce object.
+     *
+     * @deprecated Use loadPlatformNonce() instead
+     * @see DataConnector::loadPlatformNonce()
      *
      * @param ConsumerNonce $nonce Nonce object
      *
@@ -291,17 +373,105 @@ class DataConnector
      */
     public function loadConsumerNonce($nonce)
     {
-        return false;  // assume the nonce does not already exist
+        Util::logDebug('Method ceLTIc\LTI\DataConnector\DataConnector::loadConsumerNonce() has been deprecated; please use ceLTIc\LTI\DataConnector\DataConnector::loadPlatformNonce() instead.',
+            true);
+        return $this->loadPlatformNonce($nonce);
     }
 
     /**
      * Save nonce object.
+     *
+     * @deprecated Use savePlatformNonce() instead
+     * @see DataConnector::savePlatformNonce()
      *
      * @param ConsumerNonce $nonce Nonce object
      *
      * @return bool    True if the nonce object was successfully saved
      */
     public function saveConsumerNonce($nonce)
+    {
+        Util::logDebug('Method ceLTIc\LTI\DataConnector\DataConnector::saveConsumerNonce() has been deprecated; please use ceLTIc\LTI\DataConnector\DataConnector::savePlatformNonce() instead.',
+            true);
+        return $this->savePlatformNonce($nonce);
+    }
+
+    /**
+     * Delete nonce object.
+     *
+     * @deprecated Use deletePlatformNonce() instead
+     * @see DataConnector::deletePlatformNonce()
+     *
+     * @param ConsumerNonce $nonce Nonce object
+     *
+     * @return bool    True if the nonce object was successfully deleted
+     */
+    public function deleteConsumerNonce($nonce)
+    {
+        Util::logDebug('Method ceLTIc\LTI\DataConnector\DataConnector::deleteConsumerNonce() has been deprecated; please use ceLTIc\LTI\DataConnector\DataConnector::deletePlatformNonce() instead.',
+            true);
+        return $this->deletePlatformNonce($nonce);
+    }
+
+    /**
+     * Load nonce object.
+     *
+     * @param PlatformNonce $nonce Nonce object
+     *
+     * @return bool    True if the nonce object was successfully loaded
+     */
+    public function loadPlatformNonce($nonce)
+    {
+        return false;  // assume the nonce does not already exist
+    }
+
+    /**
+     * Save nonce object.
+     *
+     * @param PlatformNonce $nonce Nonce object
+     *
+     * @return bool    True if the nonce object was successfully saved
+     */
+    public function savePlatformNonce($nonce)
+    {
+        return true;
+    }
+
+    /**
+     * Delete nonce object.
+     *
+     * @param PlatformNonce $nonce Nonce object
+     *
+     * @return bool    True if the nonce object was successfully deleted
+     */
+    public function deletePlatformNonce($nonce)
+    {
+        return true;
+    }
+
+###
+###  AccessToken methods
+###
+
+    /**
+     * Load access token object.
+     *
+     * @param AccessToken $accessToken  Access token object
+     *
+     * @return bool    True if the nonce object was successfully loaded
+     */
+    public function loadAccessToken($accessToken)
+    {
+        return false;  // assume the access token does not already exist
+    }
+
+    /**
+     * Save access token object.
+     *
+     * @param AccessToken $accessToken  Access token object
+     *
+     * @return bool    True if the access token object was successfully saved
+     */
+    public function saveAccessToken($accessToken)
     {
         return true;
     }
@@ -450,22 +620,18 @@ class DataConnector
      *
      * The generated string will only comprise letters (upper- and lower-case) and digits.
      *
+     * @deprecated Use Util::getRandomString() instead
+     * @see Util::getRandomString()
+     *
      * @param int $length Length of string to be generated (optional, default is 8 characters)
      *
      * @return string Random string
      */
     public static function getRandomString($length = 8)
     {
-        $chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-
-        $value = '';
-        $charsLength = strlen($chars) - 1;
-
-        for ($i = 1; $i <= $length; $i++) {
-            $value .= $chars[rand(0, $charsLength)];
-        }
-
-        return $value;
+        Util::logDebug('Method ceLTIc\LTI\DataConnector::getRandomString() has been deprecated; please use ceLTIc\LTI\Util::getRandomString() instead.',
+            true);
+        return Util::getRandomString($length);
     }
 
     /**
@@ -510,19 +676,36 @@ class DataConnector
     }
 
     /**
-     * Return a hash of a consumer key for values longer than 255 characters.
+     * Adjust the settings for any platform properties being stored as a setting value.
      *
-     * @param string $key
-     * @return string
+     * @param Platform  $platform   Platform object
+     * @param bool      $isSave     True if the settings are being saved
      */
-    protected static function getConsumerKey($key)
+    protected function fixPlatformSettings($platform, $isSave)
     {
-        $len = strlen($key);
-        if ($len > 255) {
-            $key = 'sha512:' . hash('sha512', $key);
+        if (!$isSave) {
+            $platform->authorizationServerId = $platform->getSetting('_authorization_server_id', $platform->authorizationServerId);
+            $platform->setSetting('_authorization_server_id');
+            $platform->authenticationUrl = $platform->getSetting('_authentication_request_url', $platform->authenticationUrl);
+            $platform->setSetting('_authentication_request_url');
+            $platform->accessTokenUrl = $platform->getSetting('_oauth2_access_token_url', $platform->accessTokenUrl);
+            $platform->setSetting('_oauth2_access_token_url');
+            $platform->jku = $platform->getSetting('_jku', $platform->jku);
+            $platform->setSetting('_jku');
+            $platform->encryptionMethod = $platform->getSetting('_encryption_method', $platform->encryptionMethod);
+            $platform->setSetting('_encryption_method');
+            $platform->debugMode = $platform->getSetting('_debug', $platform->debugMode ? 'true' : 'false') === 'true';
+            $platform->setSetting('_debug');
+        } else {
+            $platform->setSetting('_authorization_server_id',
+                !empty($platform->authorizationServerId) ? $platform->authorizationServerId : null);
+            $platform->setSetting('_authentication_request_url',
+                !empty($platform->authenticationUrl) ? $platform->authenticationUrl : null);
+            $platform->setSetting('_oauth2_access_token_url', !empty($platform->accessTokenUrl) ? $platform->accessTokenUrl : null);
+            $platform->setSetting('_jku', !empty($platform->jku) ? $platform->jku : null);
+            $platform->setSetting('_encryption_method', !empty($platform->encryptionMethod) ? $platform->encryptionMethod : null);
+            $platform->setSetting('_debug', $platform->debugMode ? 'true' : null);
         }
-
-        return $key;
     }
 
 }

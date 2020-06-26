@@ -3,12 +3,12 @@
 namespace ceLTIc\LTI\DataConnector;
 
 use ceLTIc\LTI;
-use ceLTIc\LTI\ConsumerNonce;
+use ceLTIc\LTI\PlatformNonce;
 use ceLTIc\LTI\Context;
 use ceLTIc\LTI\ResourceLink;
 use ceLTIc\LTI\ResourceLinkShare;
 use ceLTIc\LTI\ResourceLinkShareKey;
-use ceLTIc\LTI\ToolConsumer;
+use ceLTIc\LTI\Platform;
 use ceLTIc\LTI\UserResult;
 use ceLTIc\LTI\Util;
 
@@ -21,153 +21,188 @@ use ceLTIc\LTI\Util;
  */
 class DataConnector_pdo extends DataConnector
 {
-
-    /**
-     * Class constructor
-     *
-     * @param object $db                 Database connection object
-     * @param string $dbTableNamePrefix  Prefix for database table names (optional, default is none)
-     */
-    public function __construct($db, $dbTableNamePrefix = '')
-    {
-        parent::__construct($db, $dbTableNamePrefix);
-    }
-
 ###
-###  ToolConsumer methods
+###  Platform methods
 ###
 
     /**
-     * Load tool consumer object.
+     * Load platform object.
      *
-     * @param ToolConsumer $consumer ToolConsumer object
+     * @param Platform $platform Platform object
      *
-     * @return bool    True if the tool consumer object was successfully loaded
+     * @return bool    True if the platform object was successfully loaded
      */
-    public function loadToolConsumer($consumer)
+    public function loadPlatform($platform)
     {
         $ok = false;
-        if (!is_null($consumer->getRecordId())) {
-            $sql = 'SELECT consumer_pk, name, consumer_key256, consumer_key, secret, lti_version, ' .
-                'signature_method, consumer_name, consumer_version, consumer_guid, ' .
+        $allowMultiple = false;
+        if (!is_null($platform->getRecordId())) {
+            $sql = 'SELECT consumer_pk, name, consumer_key, secret, ' .
+                'platform_id, client_id, deployment_id, public_key, ' .
+                'lti_version, signature_method, consumer_name, consumer_version, consumer_guid, ' .
                 'profile, tool_proxy, settings, protected, enabled, ' .
                 'enable_from, enable_until, last_access, created, updated ' .
-                "FROM {$this->dbTableNamePrefix}" . static::CONSUMER_TABLE_NAME . ' ' .
+                "FROM {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' ' .
                 'WHERE consumer_pk = :id';
             $query = $this->db->prepare($sql);
-            $id = $consumer->getRecordId();
+            $id = $platform->getRecordId();
             $query->bindValue('id', $id, \PDO::PARAM_INT);
+        } elseif (!empty($platform->platformId)) {
+            if (empty($platform->clientId)) {
+                $sql = 'SELECT consumer_pk, name, consumer_key, secret, ' .
+                    'platform_id, client_id, deployment_id, public_key, ' .
+                    'lti_version, signature_method, consumer_name, consumer_version, consumer_guid, ' .
+                    'profile, tool_proxy, settings, protected, enabled, ' .
+                    'enable_from, enable_until, last_access, created, updated ' .
+                    "FROM {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' ' .
+                    'WHERE (platform_id = :platform_id) ' .
+                    'GROUP BY platform_id, client_id';
+                $query = $this->db->prepare($sql);
+                $query->bindValue('platform_id', $platform->platformId, \PDO::PARAM_STR);
+            } elseif (empty($platform->deploymentId)) {
+                $allowMultiple = true;
+                $sql = 'SELECT consumer_pk, name, consumer_key, secret, ' .
+                    'platform_id, client_id, deployment_id, public_key, ' .
+                    'lti_version, signature_method, consumer_name, consumer_version, consumer_guid, ' .
+                    'profile, tool_proxy, settings, protected, enabled, ' .
+                    'enable_from, enable_until, last_access, created, updated ' .
+                    "FROM {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' ' .
+                    'WHERE (platform_id = :platform_id) AND (client_id = :client_id)';
+                $query = $this->db->prepare($sql);
+                $query->bindValue('platform_id', $platform->platformId, \PDO::PARAM_STR);
+                $query->bindValue('client_id', $platform->clientId, \PDO::PARAM_STR);
+            } else {
+                $sql = 'SELECT consumer_pk, name, consumer_key, secret, ' .
+                    'platform_id, client_id, deployment_id, public_key, ' .
+                    'lti_version, signature_method, consumer_name, consumer_version, consumer_guid, ' .
+                    'profile, tool_proxy, settings, protected, enabled, ' .
+                    'enable_from, enable_until, last_access, created, updated ' .
+                    "FROM {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' ' .
+                    'WHERE (platform_id = :platform_id) AND (client_id = :client_id) AND (deployment_id = :deployment_id)';
+                $query = $this->db->prepare($sql);
+                $query->bindValue('platform_id', $platform->platformId, \PDO::PARAM_STR);
+                $query->bindValue('client_id', $platform->clientId, \PDO::PARAM_STR);
+                $query->bindValue('deployment_id', $platform->deploymentId, \PDO::PARAM_STR);
+            }
         } else {
-            $sql = 'SELECT consumer_pk, name, consumer_key256, consumer_key, secret, lti_version, ' .
-                'signature_method, consumer_name, consumer_version, consumer_guid, ' .
+            $sql = 'SELECT consumer_pk, name, consumer_key, secret, ' .
+                'platform_id, client_id, deployment_id, public_key, ' .
+                'lti_version, signature_method, consumer_name, consumer_version, consumer_guid, ' .
                 'profile, tool_proxy, settings, protected, enabled, ' .
                 'enable_from, enable_until, last_access, created, updated ' .
-                "FROM {$this->dbTableNamePrefix}" . static::CONSUMER_TABLE_NAME . ' ' .
-                'WHERE consumer_key256 = :key256';
+                "FROM {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' ' .
+                'WHERE (consumer_key = :key)';
             $query = $this->db->prepare($sql);
-            $key256 = static::getConsumerKey($consumer->getKey());
-            $query->bindValue('key256', $key256, \PDO::PARAM_STR);
+            $query->bindValue('key', $platform->getKey(), \PDO::PARAM_STR);
         }
-
-        if ($this->executeQuery($sql, $query)) {
-            while ($row = $query->fetch(\PDO::FETCH_ASSOC)) {
-                $row = array_change_key_case($row);
-                if (empty($key256) || empty($row['consumer_key']) || ($consumer->getKey() === $row['consumer_key'])) {
-                    $consumer->setRecordId(intval($row['consumer_pk']));
-                    $consumer->name = $row['name'];
-                    $consumer->setkey(empty($row['consumer_key']) ? $row['consumer_key256'] : $row['consumer_key']);
-                    $consumer->secret = $row['secret'];
-                    $consumer->ltiVersion = $row['lti_version'];
-                    $consumer->signatureMethod = $row['signature_method'];
-                    $consumer->consumerName = $row['consumer_name'];
-                    $consumer->consumerVersion = $row['consumer_version'];
-                    $consumer->consumerGuid = $row['consumer_guid'];
-                    $consumer->profile = json_decode($row['profile']);
-                    $consumer->toolProxy = $row['tool_proxy'];
-                    $settings = json_decode($row['settings'], true);
-                    if (!is_array($settings)) {
-                        $settings = @unserialize($row['settings']);  // check for old serialized setting
-                    }
-                    if (!is_array($settings)) {
-                        $settings = array();
-                    }
-                    $consumer->setSettings($settings);
-                    $consumer->protected = (intval($row['protected']) === 1);
-                    $consumer->enabled = (intval($row['enabled']) === 1);
-                    $consumer->enableFrom = null;
-                    if (!is_null($row['enable_from'])) {
-                        $consumer->enableFrom = strtotime($row['enable_from']);
-                    }
-                    $consumer->enableUntil = null;
-                    if (!is_null($row['enable_until'])) {
-                        $consumer->enableUntil = strtotime($row['enable_until']);
-                    }
-                    $consumer->lastAccess = null;
-                    if (!is_null($row['last_access'])) {
-                        $consumer->lastAccess = strtotime($row['last_access']);
-                    }
-                    $consumer->created = strtotime($row['created']);
-                    $consumer->updated = strtotime($row['updated']);
-                    $ok = true;
-                    break;
-                }
+        $ok = $this->executeQuery($sql, $query);
+        if ($ok) {
+            $rows = $query->fetchAll(\PDO::FETCH_ASSOC);
+            $ok = ($rows !== false) && (count($rows) > 0) && ($allowMultiple || (count($rows) === 1));
+        }
+        if ($ok) {
+            $row = array_change_key_case($rows[0]);
+            $platform->setRecordId(intval($row['consumer_pk']));
+            $platform->name = $row['name'];
+            $platform->setkey($row['consumer_key']);
+            $platform->secret = $row['secret'];
+            $platform->platformId = $row['platform_id'];
+            $platform->clientId = $row['client_id'];
+            $platform->deploymentId = $row['deployment_id'];
+            $platform->rsaKey = $row['public_key'];
+            $platform->ltiVersion = $row['lti_version'];
+            $platform->signatureMethod = $row['signature_method'];
+            $platform->consumerName = $row['consumer_name'];
+            $platform->consumerVersion = $row['consumer_version'];
+            $platform->consumerGuid = $row['consumer_guid'];
+            $platform->profile = json_decode($row['profile']);
+            $platform->toolProxy = $row['tool_proxy'];
+            $settings = json_decode($row['settings'], true);
+            if (!is_array($settings)) {
+                $settings = @unserialize($row['settings']);  // check for old serialized setting
             }
+            if (!is_array($settings)) {
+                $settings = array();
+            }
+            $platform->setSettings($settings);
+            $platform->protected = (intval($row['protected']) === 1);
+            $platform->enabled = (intval($row['enabled']) === 1);
+            $platform->enableFrom = null;
+            if (!is_null($row['enable_from'])) {
+                $platform->enableFrom = strtotime($row['enable_from']);
+            }
+            $platform->enableUntil = null;
+            if (!is_null($row['enable_until'])) {
+                $platform->enableUntil = strtotime($row['enable_until']);
+            }
+            $platform->lastAccess = null;
+            if (!is_null($row['last_access'])) {
+                $platform->lastAccess = strtotime($row['last_access']);
+            }
+            $platform->created = strtotime($row['created']);
+            $platform->updated = strtotime($row['updated']);
+            $this->fixPlatformSettings($platform, false);
         }
 
         return $ok;
     }
 
     /**
-     * Save tool consumer object.
+     * Save platform object.
      *
-     * @param ToolConsumer $consumer Consumer object
+     * @param Platform $platform Platform object
      *
-     * @return bool    True if the tool consumer object was successfully saved
+     * @return bool    True if the platform object was successfully saved
      */
-    public function saveToolConsumer($consumer)
+    public function savePlatform($platform)
     {
-        $id = $consumer->getRecordId();
-        $key = $consumer->getKey();
-        $key256 = $this->getConsumerKey($key);
-        if ($key === $key256) {
-            $key = null;
-        }
-        $protected = ($consumer->protected) ? 1 : 0;
-        $enabled = ($consumer->enabled) ? 1 : 0;
-        $profile = (!empty($consumer->profile)) ? json_encode($consumer->profile) : null;
-        $settingsValue = json_encode($consumer->getSettings());
+        $id = $platform->getRecordId();
+        $protected = ($platform->protected) ? 1 : 0;
+        $enabled = ($platform->enabled) ? 1 : 0;
+        $profile = (!empty($platform->profile)) ? json_encode($platform->profile) : null;
+        $this->fixPlatformSettings($platform, true);
+        $settingsValue = json_encode($platform->getSettings());
+        $this->fixPlatformSettings($platform, false);
         $time = time();
         $now = date("{$this->dateFormat} {$this->timeFormat}", $time);
         $from = null;
-        if (!is_null($consumer->enableFrom)) {
-            $from = date("{$this->dateFormat} {$this->timeFormat}", $consumer->enableFrom);
+        if (!is_null($platform->enableFrom)) {
+            $from = date("{$this->dateFormat} {$this->timeFormat}", $platform->enableFrom);
         }
         $until = null;
-        if (!is_null($consumer->enableUntil)) {
-            $until = date("{$this->dateFormat} {$this->timeFormat}", $consumer->enableUntil);
+        if (!is_null($platform->enableUntil)) {
+            $until = date("{$this->dateFormat} {$this->timeFormat}", $platform->enableUntil);
         }
         $last = null;
-        if (!is_null($consumer->lastAccess)) {
-            $last = date($this->dateFormat, $consumer->lastAccess);
+        if (!is_null($platform->lastAccess)) {
+            $last = date($this->dateFormat, $platform->lastAccess);
         }
         if (empty($id)) {
-            $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::CONSUMER_TABLE_NAME . ' (consumer_key256, consumer_key, name, ' .
-                'secret, lti_version, signature_method, consumer_name, consumer_version, consumer_guid, profile, tool_proxy, settings, protected, enabled, ' .
+            $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' (consumer_key, name, secret, ' .
+                'platform_id, client_id, deployment_id, public_key, ' .
+                'lti_version, signature_method, consumer_name, consumer_version, consumer_guid, ' .
+                'profile, tool_proxy, settings, protected, enabled, ' .
                 'enable_from, enable_until, last_access, created, updated) ' .
-                'VALUES (:key256, :key, :name, :secret, :lti_version, :signature_method, :consumer_name, :consumer_version, :consumer_guid, :profile, :tool_proxy, :settings, ' .
+                'VALUES (:key, :name, :secret, ' .
+                ':platform_id, :client_id, :deployment_id, :public_key, ' .
+                ':lti_version, :signature_method, ' .
+                ':consumer_name, :consumer_version, :consumer_guid, :profile, :tool_proxy, :settings, ' .
                 ':protected, :enabled, :enable_from, :enable_until, :last_access, :created, :updated)';
             $query = $this->db->prepare($sql);
-            $query->bindValue('key256', $key256, \PDO::PARAM_STR);
-            $query->bindValue('key', $key, \PDO::PARAM_STR);
-            $query->bindValue('name', $consumer->name, \PDO::PARAM_STR);
-            $query->bindValue('secret', $consumer->secret, \PDO::PARAM_STR);
-            $query->bindValue('lti_version', $consumer->ltiVersion, \PDO::PARAM_STR);
-            $query->bindValue('signature_method', $consumer->signatureMethod, \PDO::PARAM_STR);
-            $query->bindValue('consumer_name', $consumer->consumerName, \PDO::PARAM_STR);
-            $query->bindValue('consumer_version', $consumer->consumerVersion, \PDO::PARAM_STR);
-            $query->bindValue('consumer_guid', $consumer->consumerGuid, \PDO::PARAM_STR);
+            $query->bindValue('key', $platform->getKey(), \PDO::PARAM_STR);
+            $query->bindValue('name', $platform->name, \PDO::PARAM_STR);
+            $query->bindValue('secret', $platform->secret, \PDO::PARAM_STR);
+            $query->bindValue('platform_id', $platform->platformId, \PDO::PARAM_STR);
+            $query->bindValue('client_id', $platform->clientId, \PDO::PARAM_STR);
+            $query->bindValue('deployment_id', $platform->deploymentId, \PDO::PARAM_STR);
+            $query->bindValue('public_key', $platform->rsaKey, \PDO::PARAM_STR);
+            $query->bindValue('lti_version', $platform->ltiVersion, \PDO::PARAM_STR);
+            $query->bindValue('signature_method', $platform->signatureMethod, \PDO::PARAM_STR);
+            $query->bindValue('consumer_name', $platform->consumerName, \PDO::PARAM_STR);
+            $query->bindValue('consumer_version', $platform->consumerVersion, \PDO::PARAM_STR);
+            $query->bindValue('consumer_guid', $platform->consumerGuid, \PDO::PARAM_STR);
             $query->bindValue('profile', $profile, \PDO::PARAM_STR);
-            $query->bindValue('tool_proxy', $consumer->toolProxy, \PDO::PARAM_STR);
+            $query->bindValue('tool_proxy', $platform->toolProxy, \PDO::PARAM_STR);
             $query->bindValue('settings', $settingsValue, \PDO::PARAM_STR);
             $query->bindValue('protected', $protected, \PDO::PARAM_INT);
             $query->bindValue('enabled', $enabled, \PDO::PARAM_INT);
@@ -177,25 +212,30 @@ class DataConnector_pdo extends DataConnector
             $query->bindValue('created', $now, \PDO::PARAM_STR);
             $query->bindValue('updated', $now, \PDO::PARAM_STR);
         } else {
-            $sql = 'UPDATE ' . $this->dbTableNamePrefix . static::CONSUMER_TABLE_NAME . ' ' .
-                'SET consumer_key256 = :key256, consumer_key = :key, name = :name, secret = :secret, lti_version = :lti_version, ' .
-                'signature_method = :signature_method, consumer_name = :consumer_name, ' .
-                'consumer_version = :consumer_version, consumer_guid = :consumer_guid, ' .
+            $sql = 'UPDATE ' . $this->dbTableNamePrefix . static::PLATFORM_TABLE_NAME . ' ' .
+                'SET consumer_key = :key, name = :name, secret = :secret, ' .
+                'platform_id = :platform_id, client_id = :client_id, deployment_id = :deployment_id, ' .
+                'public_key = :public_key, lti_version = :lti_version, signature_method = :signature_method, ' .
+                'consumer_name = :consumer_name, consumer_version = :consumer_version, consumer_guid = :consumer_guid, ' .
                 'profile = :profile, tool_proxy = :tool_proxy, settings = :settings, ' .
-                'protected = :protected, enabled = :enabled, enable_from = :enable_from, enable_until = :enable_until, last_access = :last_access, updated = :updated ' .
+                'protected = :protected, enabled = :enabled, enable_from = :enable_from, enable_until = :enable_until, ' .
+                'last_access = :last_access, updated = :updated ' .
                 'WHERE consumer_pk = :id';
             $query = $this->db->prepare($sql);
-            $query->bindValue('key256', $key256, \PDO::PARAM_STR);
-            $query->bindValue('key', $key, \PDO::PARAM_STR);
-            $query->bindValue('name', $consumer->name, \PDO::PARAM_STR);
-            $query->bindValue('secret', $consumer->secret, \PDO::PARAM_STR);
-            $query->bindValue('lti_version', $consumer->ltiVersion, \PDO::PARAM_STR);
-            $query->bindValue('signature_method', $consumer->signatureMethod, \PDO::PARAM_STR);
-            $query->bindValue('consumer_name', $consumer->consumerName, \PDO::PARAM_STR);
-            $query->bindValue('consumer_version', $consumer->consumerVersion, \PDO::PARAM_STR);
-            $query->bindValue('consumer_guid', $consumer->consumerGuid, \PDO::PARAM_STR);
+            $query->bindValue('key', $platform->getKey(), \PDO::PARAM_STR);
+            $query->bindValue('name', $platform->name, \PDO::PARAM_STR);
+            $query->bindValue('secret', $platform->secret, \PDO::PARAM_STR);
+            $query->bindValue('platform_id', $platform->platformId, \PDO::PARAM_STR);
+            $query->bindValue('client_id', $platform->clientId, \PDO::PARAM_STR);
+            $query->bindValue('deployment_id', $platform->deploymentId, \PDO::PARAM_STR);
+            $query->bindValue('public_key', $platform->rsaKey, \PDO::PARAM_STR);
+            $query->bindValue('lti_version', $platform->ltiVersion, \PDO::PARAM_STR);
+            $query->bindValue('signature_method', $platform->signatureMethod, \PDO::PARAM_STR);
+            $query->bindValue('consumer_name', $platform->consumerName, \PDO::PARAM_STR);
+            $query->bindValue('consumer_version', $platform->consumerVersion, \PDO::PARAM_STR);
+            $query->bindValue('consumer_guid', $platform->consumerGuid, \PDO::PARAM_STR);
             $query->bindValue('profile', $profile, \PDO::PARAM_STR);
-            $query->bindValue('tool_proxy', $consumer->toolProxy, \PDO::PARAM_STR);
+            $query->bindValue('tool_proxy', $platform->toolProxy, \PDO::PARAM_STR);
             $query->bindValue('settings', $settingsValue, \PDO::PARAM_STR);
             $query->bindValue('protected', $protected, \PDO::PARAM_INT);
             $query->bindValue('enabled', $enabled, \PDO::PARAM_INT);
@@ -208,25 +248,31 @@ class DataConnector_pdo extends DataConnector
         $ok = $this->executeQuery($sql, $query);
         if ($ok) {
             if (empty($id)) {
-                $consumer->setRecordId($this->getLastInsertId(static::CONSUMER_TABLE_NAME));
-                $consumer->created = $time;
+                $platform->setRecordId($this->getLastInsertId(static::PLATFORM_TABLE_NAME));
+                $platform->created = $time;
             }
-            $consumer->updated = $time;
+            $platform->updated = $time;
         }
 
         return $ok;
     }
 
     /**
-     * Delete tool consumer object.
+     * Delete platform object.
      *
-     * @param ToolConsumer $consumer Consumer object
+     * @param Platform $platform Platform object
      *
-     * @return bool    True if the tool consumer object was successfully deleted
+     * @return bool    True if the platform object was successfully deleted
      */
-    public function deleteToolConsumer($consumer)
+    public function deletePlatform($platform)
     {
-        $id = $consumer->getRecordId();
+        $id = $platform->getRecordId();
+
+// Delete any access token for this consumer
+        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::ACCESS_TOKEN_TABLE_NAME . ' WHERE consumer_pk = :id';
+        $query = $this->db->prepare($sql);
+        $query->bindValue('id', $id, \PDO::PARAM_INT);
+        $this->executeQuery($sql, $query);
 
 // Delete any nonce values for this consumer
         $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' WHERE consumer_pk = :id';
@@ -310,33 +356,34 @@ class DataConnector_pdo extends DataConnector
         $this->executeQuery($sql, $query);
 
 // Delete consumer
-        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::CONSUMER_TABLE_NAME . ' ' .
+        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' ' .
             'WHERE consumer_pk = :id';
         $query = $this->db->prepare($sql);
         $query->bindValue('id', $id, \PDO::PARAM_INT);
         $ok = $this->executeQuery($sql, $query);
 
         if ($ok) {
-            $consumer->initialize();
+            $platform->initialize();
         }
 
         return $ok;
     }
 
     /**
-     * Load tool consumer objects.
+     * Load platform objects.
      *
-     * @return ToolConsumer[] Array of all defined ToolConsumer objects
+     * @return Platform[] Array of all defined Platform objects
      */
-    public function getToolConsumers()
+    public function getPlatforms()
     {
         $consumers = array();
 
-        $sql = 'SELECT consumer_pk, name, consumer_key256, consumer_key, secret, lti_version, ' .
-            'signature_method, consumer_name, consumer_version, consumer_guid, ' .
+        $sql = 'SELECT consumer_pk, name, consumer_key, secret, ' .
+            'platform_id, client_id, deployment_id, public_key, ' .
+            'lti_version, signature_method, consumer_name, consumer_version, consumer_guid, ' .
             'profile, tool_proxy, settings, protected, enabled, ' .
             'enable_from, enable_until, last_access, created, updated ' .
-            "FROM {$this->dbTableNamePrefix}" . static::CONSUMER_TABLE_NAME . ' ' .
+            "FROM {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' ' .
             'ORDER BY name';
         $query = $this->db->prepare($sql);
         $ok = ($query !== false);
@@ -348,18 +395,21 @@ class DataConnector_pdo extends DataConnector
         if ($ok) {
             while ($row = $query->fetch(\PDO::FETCH_ASSOC)) {
                 $row = array_change_key_case($row);
-                $key = empty($row['consumer_key']) ? $row['consumer_key256'] : $row['consumer_key'];
-                $consumer = new LTI\ToolConsumer($key, $this);
-                $consumer->setRecordId(intval($row['consumer_pk']));
-                $consumer->name = $row['name'];
-                $consumer->secret = $row['secret'];
-                $consumer->ltiVersion = $row['lti_version'];
-                $consumer->signatureMethod = $row['signature_method'];
-                $consumer->consumerName = $row['consumer_name'];
-                $consumer->consumerVersion = $row['consumer_version'];
-                $consumer->consumerGuid = $row['consumer_guid'];
-                $consumer->profile = json_decode($row['profile']);
-                $consumer->toolProxy = $row['tool_proxy'];
+                $platform = Platform::fromConsumerKey($row['consumer_key'], $this);
+                $platform->setRecordId(intval($row['consumer_pk']));
+                $platform->name = $row['name'];
+                $platform->secret = $row['secret'];
+                $platform->platformId = $row['platform_id'];
+                $platform->clientId = $row['client_id'];
+                $platform->deploymentId = $row['deployment_id'];
+                $platform->rsaKey = $row['public_key'];
+                $platform->ltiVersion = $row['lti_version'];
+                $platform->signatureMethod = $row['signature_method'];
+                $platform->consumerName = $row['consumer_name'];
+                $platform->consumerVersion = $row['consumer_version'];
+                $platform->consumerGuid = $row['consumer_guid'];
+                $platform->profile = json_decode($row['profile']);
+                $platform->toolProxy = $row['tool_proxy'];
                 $settings = json_decode($row['settings'], true);
                 if (!is_array($settings)) {
                     $settings = @unserialize($row['settings']);  // check for old serialized setting
@@ -367,24 +417,25 @@ class DataConnector_pdo extends DataConnector
                 if (!is_array($settings)) {
                     $settings = array();
                 }
-                $consumer->setSettings($settings);
-                $consumer->protected = (intval($row['protected']) === 1);
-                $consumer->enabled = (intval($row['enabled']) === 1);
-                $consumer->enableFrom = null;
+                $platform->setSettings($settings);
+                $platform->protected = (intval($row['protected']) === 1);
+                $platform->enabled = (intval($row['enabled']) === 1);
+                $platform->enableFrom = null;
                 if (!is_null($row['enable_from'])) {
-                    $consumer->enableFrom = strtotime($row['enable_from']);
+                    $platform->enableFrom = strtotime($row['enable_from']);
                 }
-                $consumer->enableUntil = null;
+                $platform->enableUntil = null;
                 if (!is_null($row['enable_until'])) {
-                    $consumer->enableUntil = strtotime($row['enable_until']);
+                    $platform->enableUntil = strtotime($row['enable_until']);
                 }
-                $consumer->lastAccess = null;
+                $platform->lastAccess = null;
                 if (!is_null($row['last_access'])) {
-                    $consumer->lastAccess = strtotime($row['last_access']);
+                    $platform->lastAccess = strtotime($row['last_access']);
                 }
-                $consumer->created = strtotime($row['created']);
-                $consumer->updated = strtotime($row['updated']);
-                $consumers[] = $consumer;
+                $platform->created = strtotime($row['created']);
+                $platform->updated = strtotime($row['updated']);
+                $this->fixPlatformSettings($platform, false);
+                $consumers[] = $platform;
             }
         }
 
@@ -416,7 +467,7 @@ class DataConnector_pdo extends DataConnector
                 "FROM {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' ' .
                 'WHERE (consumer_pk = :cid) AND (lti_context_id = :ctx)';
             $query = $this->db->prepare($sql);
-            $query->bindValue('cid', $context->getConsumer()->getRecordId(), \PDO::PARAM_INT);
+            $query->bindValue('cid', $context->getPlatform()->getRecordId(), \PDO::PARAM_INT);
             $query->bindValue('ctx', $context->ltiContextId, \PDO::PARAM_STR);
         }
         $ok = $this->executeQuery($sql, $query);
@@ -427,7 +478,7 @@ class DataConnector_pdo extends DataConnector
         if ($ok) {
             $row = array_change_key_case($row);
             $context->setRecordId(intval($row['context_pk']));
-            $context->setConsumerId(intval($row['consumer_pk']));
+            $context->setPlatformId(intval($row['consumer_pk']));
             $context->title = $row['title'];
             $context->ltiContextId = $row['lti_context_id'];
             $context->type = $row['type'];
@@ -459,7 +510,7 @@ class DataConnector_pdo extends DataConnector
         $now = date("{$this->dateFormat} {$this->timeFormat}", $time);
         $settingsValue = json_encode($context->getSettings());
         $id = $context->getRecordId();
-        $consumer_pk = $context->getConsumer()->getRecordId();
+        $consumer_pk = $context->getPlatform()->getRecordId();
         if (empty($id)) {
             $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' (consumer_pk, title, ' .
                 'lti_context_id, type, settings, created, updated) ' .
@@ -585,8 +636,8 @@ class DataConnector_pdo extends DataConnector
                 $this->dbTableNamePrefix . static::CONTEXT_TABLE_NAME . ' c ON r.context_pk = c.context_pk ' .
                 ' WHERE ((r.consumer_pk = :id1) OR (c.consumer_pk = :id2)) AND (lti_resource_link_id = :rlid)';
             $query = $this->db->prepare($sql);
-            $query->bindValue('id1', $resourceLink->getConsumer()->getRecordId(), \PDO::PARAM_INT);
-            $query->bindValue('id2', $resourceLink->getConsumer()->getRecordId(), \PDO::PARAM_INT);
+            $query->bindValue('id1', $resourceLink->getPlatform()->getRecordId(), \PDO::PARAM_INT);
+            $query->bindValue('id2', $resourceLink->getPlatform()->getRecordId(), \PDO::PARAM_INT);
             $query->bindValue('rlid', $resourceLink->getId(), \PDO::PARAM_STR);
         }
         $ok = $this->executeQuery($sql, $query);
@@ -604,9 +655,9 @@ class DataConnector_pdo extends DataConnector
                 $resourceLink->setContextId(null);
             }
             if (!is_null($row['consumer_pk'])) {
-                $resourceLink->setConsumerId(intval($row['consumer_pk']));
+                $resourceLink->setPlatformId(intval($row['consumer_pk']));
             } else {
-                $resourceLink->setConsumerId(null);
+                $resourceLink->setPlatformId(null);
             }
             $resourceLink->title = $row['title'];
             $resourceLink->ltiResourceLinkId = $row['lti_resource_link_id'];
@@ -657,7 +708,7 @@ class DataConnector_pdo extends DataConnector
             $consumerId = null;
             $contextId = $resourceLink->getContextId();
         } else {
-            $consumerId = $resourceLink->getConsumer()->getRecordId();
+            $consumerId = $resourceLink->getPlatform()->getRecordId();
             $contextId = null;
         }
         if (empty($resourceLink->primaryResourceLinkId)) {
@@ -844,13 +895,13 @@ class DataConnector_pdo extends DataConnector
 
         $sql = 'SELECT c.consumer_name, r.resource_link_pk, r.title, r.share_approved ' .
             "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' r ' .
-            "INNER JOIN {$this->dbTableNamePrefix}" . static::CONSUMER_TABLE_NAME . ' c ON r.consumer_pk = c.consumer_pk ' .
+            "INNER JOIN {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' c ON r.consumer_pk = c.consumer_pk ' .
             'WHERE (r.primary_resource_link_pk = :id1) ' .
             'UNION ' .
             'SELECT c2.consumer_name, r2.resource_link_pk, r2.title, r2.share_approved ' .
             "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' r2 ' .
             "INNER JOIN {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' x ON r2.context_pk = x.context_pk ' .
-            "INNER JOIN {$this->dbTableNamePrefix}" . static::CONSUMER_TABLE_NAME . ' c2 ON x.consumer_pk = c2.consumer_pk ' .
+            "INNER JOIN {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' c2 ON x.consumer_pk = c2.consumer_pk ' .
             'WHERE (r2.primary_resource_link_pk = :id2) ' .
             'ORDER BY consumer_name, title';
         $query = $this->db->prepare($sql);
@@ -872,17 +923,17 @@ class DataConnector_pdo extends DataConnector
     }
 
 ###
-###  ConsumerNonce methods
+###  PlatformNonce methods
 ###
 
     /**
      * Load nonce object.
      *
-     * @param ConsumerNonce $nonce Nonce object
+     * @param PlatformNonce $nonce Nonce object
      *
      * @return bool    True if the nonce object was successfully loaded
      */
-    public function loadConsumerNonce($nonce)
+    public function loadPlatformNonce($nonce)
     {
 // Delete any expired nonce values
         $now = date("{$this->dateFormat} {$this->timeFormat}", time());
@@ -892,7 +943,7 @@ class DataConnector_pdo extends DataConnector
         $this->executeQuery($sql, $query);
 
 // Load the nonce
-        $id = $nonce->getConsumer()->getRecordId();
+        $id = $nonce->getPlatform()->getRecordId();
         $value = $nonce->getValue();
         $sql = "SELECT value T FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' WHERE (consumer_pk = :id) AND (value = :value)';
         $query = $this->db->prepare($sql);
@@ -912,13 +963,13 @@ class DataConnector_pdo extends DataConnector
     /**
      * Save nonce object.
      *
-     * @param ConsumerNonce $nonce Nonce object
+     * @param PlatformNonce $nonce Nonce object
      *
      * @return bool    True if the nonce object was successfully saved
      */
-    public function saveConsumerNonce($nonce)
+    public function savePlatformNonce($nonce)
     {
-        $id = $nonce->getConsumer()->getRecordId();
+        $id = $nonce->getPlatform()->getRecordId();
         $value = $nonce->getValue();
         $expires = date("{$this->dateFormat} {$this->timeFormat}", $nonce->expires);
         $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' (consumer_pk, value, expires) VALUES (:id, :value, :expires)';
@@ -926,6 +977,109 @@ class DataConnector_pdo extends DataConnector
         $query->bindValue('id', $id, \PDO::PARAM_INT);
         $query->bindValue('value', $value, \PDO::PARAM_STR);
         $query->bindValue('expires', $expires, \PDO::PARAM_STR);
+        $ok = $this->executeQuery($sql, $query);
+
+        return $ok;
+    }
+
+    /**
+     * Delete nonce object.
+     *
+     * @param PlatformNonce $nonce Nonce object
+     *
+     * @return bool    True if the nonce object was successfully deleted
+     */
+    public function deletePlatformNonce($nonce)
+    {
+        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' ' .
+            'WHERE (consumer_pk = :id) AND (value = :value)';
+        $query = $this->db->prepare($sql);
+        $id = $nonce->getPlatform()->getRecordId();
+        $query->bindValue('id', $id, \PDO::PARAM_STR);
+        $value = $nonce->getValue();
+        $query->bindValue('value', $value, \PDO::PARAM_STR);
+        $ok = $this->executeQuery($sql, $query);
+
+        return $ok;
+    }
+
+###
+###  AccessToken methods
+###
+
+    /**
+     * Load access token object.
+     *
+     * @param AccessToken $accessToken  Access token object
+     *
+     * @return bool    True if the nonce object was successfully loaded
+     */
+    public function loadAccessToken($accessToken)
+    {
+        $ok = false;
+
+        $consumer_pk = $accessToken->getPlatform()->getRecordId();
+        $sql = "SELECT scopes, token, expires, created, updated FROM {$this->dbTableNamePrefix}" . static::ACCESS_TOKEN_TABLE_NAME . ' ' .
+            'WHERE (consumer_pk = :consumer_pk)';
+        $query = $this->db->prepare($sql);
+        $query->bindValue('consumer_pk', $consumer_pk, \PDO::PARAM_INT);
+        if ($this->executeQuery($sql, $query, false)) {
+            $row = $query->fetch(\PDO::FETCH_ASSOC);
+            if ($row !== false) {
+                $row = array_change_key_case($row);
+                $scopes = json_decode($row['scopes'], true);
+                if (!is_array($scopes)) {
+                    $scopes = array();
+                }
+                $accessToken->scopes = $scopes;
+                $accessToken->token = $row['token'];
+                $accessToken->expires = strtotime($row['expires']);
+                $accessToken->created = strtotime($row['created']);
+                $accessToken->updated = strtotime($row['updated']);
+                $ok = true;
+            }
+        }
+
+        return $ok;
+    }
+
+    /**
+     * Save access token object.
+     *
+     * @param AccessToken $accessToken  Access token object
+     *
+     * @return bool    True if the access token object was successfully saved
+     */
+    public function saveAccessToken($accessToken)
+    {
+        $consumer_pk = $accessToken->getPlatform()->getRecordId();
+        $scopes = json_encode($accessToken->scopes, JSON_UNESCAPED_SLASHES);
+        $token = $accessToken->token;
+        $expires = date("{$this->dateFormat} {$this->timeFormat}", $accessToken->expires);
+        $time = time();
+        $now = date("{$this->dateFormat} {$this->timeFormat}", $time);
+        if (empty($accessToken->created)) {
+            $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::ACCESS_TOKEN_TABLE_NAME . ' ' .
+                '(consumer_pk, scopes, token, expires, created, updated) ' .
+                'VALUES (:consumer_pk, :scopes, :token, :expires, :created, :updated)';
+            $query = $this->db->prepare($sql);
+            $query->bindValue('consumer_pk', $consumer_pk, \PDO::PARAM_INT);
+            $query->bindValue('scopes', $scopes, \PDO::PARAM_STR);
+            $query->bindValue('token', $token, \PDO::PARAM_STR);
+            $query->bindValue('expires', $expires, \PDO::PARAM_STR);
+            $query->bindValue('created', $now, \PDO::PARAM_STR);
+            $query->bindValue('updated', $now, \PDO::PARAM_STR);
+        } else {
+            $sql = 'UPDATE ' . $this->dbTableNamePrefix . static::ACCESS_TOKEN_TABLE_NAME . ' ' .
+                'SET scopes = :scopes, token = :token, expires = :expires, updated = :updated ' .
+                'WHERE consumer_pk = :consumer_pk';
+            $query = $this->db->prepare($sql);
+            $query->bindValue('scopes', $scopes, \PDO::PARAM_STR);
+            $query->bindValue('token', $token, \PDO::PARAM_STR);
+            $query->bindValue('expires', $expires, \PDO::PARAM_STR);
+            $query->bindValue('updated', $now, \PDO::PARAM_STR);
+            $query->bindValue('consumer_pk', $consumer_pk, \PDO::PARAM_INT);
+        }
         $ok = $this->executeQuery($sql, $query);
 
         return $ok;
@@ -983,12 +1137,8 @@ class DataConnector_pdo extends DataConnector
      */
     public function saveResourceLinkShareKey($shareKey)
     {
-        if ($shareKey->autoApprove) {
-            $approve = 1;
-        } else {
-            $approve = 0;
-        }
         $id = $shareKey->getId();
+        $autoApprove = ($shareKey->autoApprove) ? 1 : 0;
         $expires = date("{$this->dateFormat} {$this->timeFormat}", $shareKey->expires);
         $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME . ' ' .
             '(share_key_id, resource_link_pk, auto_approve, expires) ' .
@@ -996,7 +1146,7 @@ class DataConnector_pdo extends DataConnector
         $query = $this->db->prepare($sql);
         $query->bindValue('id', $id, \PDO::PARAM_STR);
         $query->bindValue('prlid', $shareKey->resourceLinkId, \PDO::PARAM_INT);
-        $query->bindValue('approve', $approve, \PDO::PARAM_INT);
+        $query->bindValue('approve', $autoApprove, \PDO::PARAM_INT);
         $query->bindValue('expires', $expires, \PDO::PARAM_STR);
         $ok = $this->executeQuery($sql, $query);
 
@@ -1048,7 +1198,7 @@ class DataConnector_pdo extends DataConnector
             $query->bindValue('id', $id, \PDO::PARAM_INT);
         } else {
             $id = $userresult->getResourceLink()->getRecordId();
-            $uid = $userresult->getId(LTI\ToolProvider::ID_SCOPE_ID_ONLY);
+            $uid = $userresult->getId(LTI\Tool::ID_SCOPE_ID_ONLY);
             $sql = 'SELECT user_result_pk, resource_link_pk, lti_user_id, lti_result_sourcedid, created, updated ' .
                 "FROM {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' ' .
                 'WHERE (resource_link_pk = :id) AND (lti_user_id = :u_id)';
@@ -1090,7 +1240,7 @@ class DataConnector_pdo extends DataConnector
                 'VALUES (:rlid, :u_id, :sourcedid, :created, :updated)';
             $query = $this->db->prepare($sql);
             $query->bindValue('rlid', $userresult->getResourceLink()->getRecordId(), \PDO::PARAM_INT);
-            $query->bindValue('u_id', $userresult->getId(LTI\ToolProvider::ID_SCOPE_ID_ONLY), \PDO::PARAM_STR);
+            $query->bindValue('u_id', $userresult->getId(LTI\Tool::ID_SCOPE_ID_ONLY), \PDO::PARAM_STR);
             $query->bindValue('sourcedid', $userresult->ltiResultSourcedId, \PDO::PARAM_STR);
             $query->bindValue('created', $now, \PDO::PARAM_STR);
             $query->bindValue('updated', $now, \PDO::PARAM_STR);

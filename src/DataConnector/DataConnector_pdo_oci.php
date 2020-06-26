@@ -2,15 +2,6 @@
 
 namespace ceLTIc\LTI\DataConnector;
 
-use ceLTIc\LTI;
-use ceLTIc\LTI\ConsumerNonce;
-use ceLTIc\LTI\Context;
-use ceLTIc\LTI\ResourceLink;
-use ceLTIc\LTI\ResourceLinkShare;
-use ceLTIc\LTI\ResourceLinkShareKey;
-use ceLTIc\LTI\ToolConsumer;
-use ceLTIc\LTI\UserResult;
-
 /**
  * Class to represent an LTI Data Connector for PDO variations for Oracle connections
  *
@@ -20,6 +11,7 @@ use ceLTIc\LTI\UserResult;
  */
 class DataConnector_pdo_oci extends DataConnector_pdo
 {
+
     /**
      * Array of identity field sequence names
      *

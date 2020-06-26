@@ -3,12 +3,12 @@
 namespace ceLTIc\LTI\DataConnector;
 
 use ceLTIc\LTI;
-use ceLTIc\LTI\ConsumerNonce;
+use ceLTIc\LTI\PlatformNonce;
 use ceLTIc\LTI\Context;
 use ceLTIc\LTI\ResourceLink;
 use ceLTIc\LTI\ResourceLinkShare;
 use ceLTIc\LTI\ResourceLinkShareKey;
-use ceLTIc\LTI\ToolConsumer;
+use ceLTIc\LTI\Platform;
 use ceLTIc\LTI\UserResult;
 use ceLTIc\LTI\Util;
 
@@ -27,192 +27,231 @@ use ceLTIc\LTI\Util;
 class DataConnector_pg extends DataConnector
 {
 ###
-###  ToolConsumer methods
+###  Platform methods
 ###
 
     /**
-     * Load tool consumer object.
+     * Load platform object.
      *
-     * @param ToolConsumer $consumer ToolConsumer object
+     * @param Platform $platform Platform object
      *
-     * @return bool    True if the tool consumer object was successfully loaded
+     * @return bool    True if the platform object was successfully loaded
      */
-    public function loadToolConsumer($consumer)
+    public function loadPlatform($platform)
     {
         $ok = false;
-        if (!is_null($consumer->getRecordId())) {
-            $sql = sprintf('SELECT consumer_pk, name, consumer_key256, consumer_key, secret, lti_version, ' .
-                'signature_method, consumer_name, consumer_version, consumer_guid, ' .
+        if (!is_null($platform->getRecordId())) {
+            $sql = sprintf('SELECT consumer_pk, name, consumer_key, secret, ' .
+                'platform_id, client_id, deployment_id, public_key, ' .
+                'lti_version, signature_method, consumer_name, consumer_version, consumer_guid, ' .
                 'profile, tool_proxy, settings, protected, enabled, ' .
                 'enable_from, enable_until, last_access, created, updated ' .
-                "FROM {$this->dbTableNamePrefix}" . static::CONSUMER_TABLE_NAME . ' ' .
-                "WHERE consumer_pk = %d", $consumer->getRecordId());
+                "FROM {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' ' .
+                'WHERE consumer_pk = %d', $platform->getRecordId());
+        } elseif (!empty($platform->platformId)) {
+            if (empty($platform->clientId)) {
+                $sql = sprintf('SELECT consumer_pk, name, consumer_key, secret, ' .
+                    'platform_id, client_id, deployment_id, public_key, ' .
+                    'lti_version, signature_method, consumer_name, consumer_version, consumer_guid, ' .
+                    'profile, tool_proxy, settings, protected, enabled, ' .
+                    'enable_from, enable_until, last_access, created, updated ' .
+                    "FROM {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' ' .
+                    'WHERE (platform_id = %s) ' .
+                    'GROUP BY platform_id, client_id', $this->escape($platform->platformId));
+            } elseif (empty($platform->deploymentId)) {
+                $sql = sprintf('SELECT consumer_pk, name, consumer_key, secret, ' .
+                    'platform_id, client_id, deployment_id, public_key, ' .
+                    'lti_version, signature_method, consumer_name, consumer_version, consumer_guid, ' .
+                    'profile, tool_proxy, settings, protected, enabled, ' .
+                    'enable_from, enable_until, last_access, created, updated ' .
+                    "FROM {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' ' .
+                    'WHERE (platform_id = %s) AND (client_id = %s)', $this->escape($platform->platformId),
+                    $this->escape($platform->clientId));
+            } else {
+                $sql = sprintf('SELECT consumer_pk, name, consumer_key, secret, ' .
+                    'platform_id, client_id, deployment_id, public_key, ' .
+                    'lti_version, signature_method, consumer_name, consumer_version, consumer_guid, ' .
+                    'profile, tool_proxy, settings, protected, enabled, ' .
+                    'enable_from, enable_until, last_access, created, updated ' .
+                    "FROM {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' ' .
+                    'WHERE (platform_id = %s) AND (client_id = %s) AND (deployment_id = %s)', $this->escape($platform->platformId),
+                    $this->escape($platform->clientId), $this->escape($platform->deploymentId));
+            }
         } else {
-            $key256 = static::getConsumerKey($consumer->getKey());
-            $sql = sprintf('SELECT consumer_pk, name, consumer_key256, consumer_key, secret, lti_version, ' .
-                'signature_method, consumer_name, consumer_version, consumer_guid, ' .
+            $sql = sprintf('SELECT consumer_pk, name, consumer_key, secret, ' .
+                'platform_id, client_id, deployment_id, public_key, ' .
+                'lti_version, signature_method, consumer_name, consumer_version, consumer_guid, ' .
                 'profile, tool_proxy, settings, protected, enabled, ' .
                 'enable_from, enable_until, last_access, created, updated ' .
-                "FROM {$this->dbTableNamePrefix}" . static::CONSUMER_TABLE_NAME . ' ' .
-                "WHERE consumer_key256 = %s", $this->escape($key256));
+                "FROM {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' ' .
+                "WHERE consumer_key = %s", $this->escape($platform->getKey()));
         }
         $rsConsumer = $this->executeQuery($sql);
         if ($rsConsumer) {
-            while ($row = pg_fetch_object($rsConsumer)) {
-                if (empty($key256) || empty($row->consumer_key) || ($consumer->getKey() === $row->consumer_key)) {
-                    $consumer->setRecordId(intval($row->consumer_pk));
-                    $consumer->name = $row->name;
-                    $consumer->setkey(empty($row->consumer_key) ? $row->consumer_key256 : $row->consumer_key);
-                    $consumer->secret = $row->secret;
-                    $consumer->ltiVersion = $row->lti_version;
-                    $consumer->signatureMethod = $row->signature_method;
-                    $consumer->consumerName = $row->consumer_name;
-                    $consumer->consumerVersion = $row->consumer_version;
-                    $consumer->consumerGuid = $row->consumer_guid;
-                    $consumer->profile = json_decode($row->profile);
-                    $consumer->toolProxy = $row->tool_proxy;
-                    $settings = json_decode($row->settings, true);
-                    if (!is_array($settings)) {
-                        $settings = @unserialize($row->settings);  // check for old serialized setting
-                    }
-                    if (!is_array($settings)) {
-                        $settings = array();
-                    }
-                    $consumer->setSettings($settings);
-                    $consumer->protected = $row->protected;
-                    $consumer->enabled = $row->enabled;
-                    $consumer->enableFrom = null;
-                    if (!is_null($row->enable_from)) {
-                        $consumer->enableFrom = strtotime($row->enable_from);
-                    }
-                    $consumer->enableUntil = null;
-                    if (!is_null($row->enable_until)) {
-                        $consumer->enableUntil = strtotime($row->enable_until);
-                    }
-                    $consumer->lastAccess = null;
-                    if (!is_null($row->last_access)) {
-                        $consumer->lastAccess = strtotime($row->last_access);
-                    }
-                    $consumer->created = strtotime($row->created);
-                    $consumer->updated = strtotime($row->updated);
-                    $ok = true;
-                    break;
+            $row = pg_fetch_object($rsConsumer);
+            if ($row) {
+                $platform->setRecordId(intval($row->consumer_pk));
+                $platform->name = $row->name;
+                $platform->setkey($row->consumer_key);
+                $platform->secret = $row->secret;
+                $platform->platformId = $row->platform_id;
+                $platform->clientId = $row->client_id;
+                $platform->deploymentId = $row->deployment_id;
+                $platform->rsaKey = $row->public_key;
+                $platform->ltiVersion = $row->lti_version;
+                $platform->signatureMethod = $row->signature_method;
+                $platform->consumerName = $row->consumer_name;
+                $platform->consumerVersion = $row->consumer_version;
+                $platform->consumerGuid = $row->consumer_guid;
+                $platform->profile = json_decode($row->profile);
+                $platform->toolProxy = $row->tool_proxy;
+                $settings = json_decode($row->settings, true);
+                if (!is_array($settings)) {
+                    $settings = @unserialize($row->settings);  // check for old serialized setting
                 }
+                if (!is_array($settings)) {
+                    $settings = array();
+                }
+                $platform->setSettings($settings);
+                $platform->protected = $row->protected;
+                $platform->enabled = $row->enabled;
+                $platform->enableFrom = null;
+                if (!is_null($row->enable_from)) {
+                    $platform->enableFrom = strtotime($row->enable_from);
+                }
+                $platform->enableUntil = null;
+                if (!is_null($row->enable_until)) {
+                    $platform->enableUntil = strtotime($row->enable_until);
+                }
+                $platform->lastAccess = null;
+                if (!is_null($row->last_access)) {
+                    $platform->lastAccess = strtotime($row->last_access);
+                }
+                $platform->created = strtotime($row->created);
+                $platform->updated = strtotime($row->updated);
+                $this->fixPlatformSettings($platform, false);
+                $ok = true;
             }
-            pg_free_result($rsConsumer);
         }
 
         return $ok;
     }
 
     /**
-     * Save tool consumer object.
+     * Save platform object.
      *
-     * @param ToolConsumer $consumer Consumer object
+     * @param Platform $platform Platform object
      *
-     * @return bool    True if the tool consumer object was successfully saved
+     * @return bool    True if the platform object was successfully saved
      */
-    public function saveToolConsumer($consumer)
+    public function savePlatform($platform)
     {
-        $id = $consumer->getRecordId();
-        $key = $consumer->getKey();
-        $key256 = static::getConsumerKey($key);
-        if ($key === $key256) {
-            $key = null;
-        }
-        $protected = ($consumer->protected) ? 'true' : 'false';
-        $enabled = ($consumer->enabled) ? 'true' : 'false';
-        $profile = (!empty($consumer->profile)) ? json_encode($consumer->profile) : null;
-        $settingsValue = json_encode($consumer->getSettings());
+        $id = $platform->getRecordId();
+        $protected = ($platform->protected) ? 'true' : 'false';
+        $enabled = ($platform->enabled) ? 'true' : 'false';
+        $profile = (!empty($platform->profile)) ? json_encode($platform->profile) : null;
+        $this->fixPlatformSettings($platform, true);
+        $settingsValue = json_encode($platform->getSettings());
+        $this->fixPlatformSettings($platform, false);
         $time = time();
         $now = date("{$this->dateFormat} {$this->timeFormat}", $time);
         $from = null;
-        if (!is_null($consumer->enableFrom)) {
-            $from = date("{$this->dateFormat} {$this->timeFormat}", $consumer->enableFrom);
+        if (!is_null($platform->enableFrom)) {
+            $from = date("{$this->dateFormat} {$this->timeFormat}", $platform->enableFrom);
         }
         $until = null;
-        if (!is_null($consumer->enableUntil)) {
-            $until = date("{$this->dateFormat} {$this->timeFormat}", $consumer->enableUntil);
+        if (!is_null($platform->enableUntil)) {
+            $until = date("{$this->dateFormat} {$this->timeFormat}", $platform->enableUntil);
         }
         $last = null;
-        if (!is_null($consumer->lastAccess)) {
-            $last = date($this->dateFormat, $consumer->lastAccess);
+        if (!is_null($platform->lastAccess)) {
+            $last = date($this->dateFormat, $platform->lastAccess);
         }
         if (empty($id)) {
-            $sql = sprintf("INSERT INTO {$this->dbTableNamePrefix}" . static::CONSUMER_TABLE_NAME . ' (consumer_key256, consumer_key, name, ' .
-                'secret, lti_version, signature_method, consumer_name, consumer_version, consumer_guid, profile, ' .
-                'tool_proxy, settings, protected, enabled, ' .
+            $sql = sprintf("INSERT INTO {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' (consumer_key, name, secret, ' .
+                'platform_id, client_id, deployment_id, public_key, ' .
+                'lti_version, signature_method, consumer_name, consumer_version, consumer_guid, ' .
+                'profile, tool_proxy, settings, protected, enabled, ' .
                 'enable_from, enable_until, last_access, created, updated) ' .
-                'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)', $this->escape($key256),
-                $this->escape($key), $this->escape($consumer->name), $this->escape($consumer->secret),
-                $this->escape($consumer->ltiVersion), $this->escape($consumer->signatureMethod),
-                $this->escape($consumer->consumerName), $this->escape($consumer->consumerVersion),
-                $this->escape($consumer->consumerGuid), $this->escape($profile), $this->escape($consumer->toolProxy),
+                'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)',
+                $this->escape($platform->getKey()), $this->escape($platform->name), $this->escape($platform->secret),
+                $this->escape($platform->platformId), $this->escape($platform->clientId), $this->escape($platform->deploymentId),
+                $this->escape($platform->rsaKey), $this->escape($platform->ltiVersion), $this->escape($platform->signatureMethod),
+                $this->escape($platform->consumerName), $this->escape($platform->consumerVersion),
+                $this->escape($platform->consumerGuid), $this->escape($profile), $this->escape($platform->toolProxy),
                 $this->escape($settingsValue), $protected, $enabled, $this->escape($from), $this->escape($until),
                 $this->escape($last), $this->escape($now), $this->escape($now));
         } else {
-            $sql = sprintf("UPDATE {$this->dbTableNamePrefix}" . static::CONSUMER_TABLE_NAME . ' SET ' .
-                'consumer_key256 = %s, consumer_key = %s, ' .
-                'name = %s, secret= %s, lti_version = %s, signature_method = %s, consumer_name = %s, consumer_version = %s, consumer_guid = %s, ' .
+            $sql = sprintf("UPDATE {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' SET ' .
+                'consumer_key = %s, name = %s, secret= %s, ' .
+                'platform_id = %s, client_id = %s, deployment_id = %s, public_key = %s, ' .
+                'lti_version = %s, signature_method = %s, ' .
+                'consumer_name = %s, consumer_version = %s, consumer_guid = %s, ' .
                 'profile = %s, tool_proxy = %s, settings = %s, ' .
                 'protected = %s, enabled = %s, enable_from = %s, enable_until = %s, last_access = %s, updated = %s ' .
-                'WHERE consumer_pk = %d', $this->escape($key256), $this->escape($key), $this->escape($consumer->name),
-                $this->escape($consumer->secret), $this->escape($consumer->ltiVersion), $this->escape($consumer->signatureMethod),
-                $this->escape($consumer->consumerName), $this->escape($consumer->consumerVersion),
-                $this->escape($consumer->consumerGuid), $this->escape($profile), $this->escape($consumer->toolProxy),
-                $this->escape($settingsValue), $protected, $enabled, $this->escape($from), $this->escape($until),
-                $this->escape($last), $this->escape($now), $consumer->getRecordId());
+                'WHERE consumer_pk = %d', $this->escape($platform->getKey()), $this->escape($platform->name),
+                $this->escape($platform->secret), $this->escape($platform->platformId), $this->escape($platform->clientId),
+                $this->escape($platform->deploymentId), $this->escape($platform->rsaKey), $this->escape($platform->ltiVersion),
+                $this->escape($platform->signatureMethod), $this->escape($platform->consumerName),
+                $this->escape($platform->consumerVersion), $this->escape($platform->consumerGuid), $this->escape($profile),
+                $this->escape($platform->toolProxy), $this->escape($settingsValue), $protected, $enabled, $this->escape($from),
+                $this->escape($until), $this->escape($last), $this->escape($now), $platform->getRecordId());
         }
         $ok = $this->executeQuery($sql);
         if ($ok) {
             if (empty($id)) {
-                $consumer->setRecordId($this->insert_id());
-                $consumer->created = $time;
+                $platform->setRecordId($this->insert_id());
+                $platform->created = $time;
             }
-            $consumer->updated = $time;
+            $platform->updated = $time;
         }
 
         return $ok;
     }
 
     /**
-     * Delete tool consumer object.
+     * Delete platform object.
      *
-     * @param ToolConsumer $consumer Consumer object
+     * @param Platform $platform Platform object
      *
-     * @return bool    True if the tool consumer object was successfully deleted
+     * @return bool    True if the platform object was successfully deleted
      */
-    public function deleteToolConsumer($consumer)
+    public function deletePlatform($platform)
     {
+// Delete any access token value for this consumer
+        $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . static::ACCESS_TOKEN_TABLE_NAME . ' WHERE consumer_pk = %d',
+            $platform->getRecordId());
+        $this->executeQuery($sql);
+
 // Delete any nonce values for this consumer
         $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' WHERE consumer_pk = %d',
-            $consumer->getRecordId());
+            $platform->getRecordId());
         $this->executeQuery($sql);
 
 // Delete any outstanding share keys for resource links for this consumer
         $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME . ' ' .
             "WHERE resource_link_pk IN (SELECT resource_link_pk FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
-            'WHERE consumer_pk = %d)', $consumer->getRecordId());
+            'WHERE consumer_pk = %d)', $platform->getRecordId());
         $this->executeQuery($sql);
 
 // Delete any outstanding share keys for resource links for contexts in this consumer
         $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME . ' ' .
             "WHERE resource_link_pk IN (SELECT resource_link_pk FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' rl ' .
             "INNER JOIN {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' c ON rl.context_pk = c.context_pk WHERE c.consumer_pk = %d)',
-            $consumer->getRecordId());
+            $platform->getRecordId());
         $this->executeQuery($sql);
 
 // Delete any users in resource links for this consumer
         $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' ' .
             "WHERE resource_link_pk IN (SELECT resource_link_pk FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
-            'WHERE consumer_pk = %d)', $consumer->getRecordId());
+            'WHERE consumer_pk = %d)', $platform->getRecordId());
         $this->executeQuery($sql);
 
 // Delete any users in resource links for contexts in this consumer
         $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' ' .
             "WHERE resource_link_pk IN (SELECT resource_link_pk FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' rl ' .
             "INNER JOIN {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' c ON rl.context_pk = c.context_pk WHERE c.consumer_pk = %d)',
-            $consumer->getRecordId());
+            $platform->getRecordId());
         $this->executeQuery($sql);
 
 // Update any resource links for which this consumer is acting as a primary resource link
@@ -220,7 +259,7 @@ class DataConnector_pg extends DataConnector
             'SET primary_resource_link_pk = NULL, share_approved = NULL ' .
             'WHERE primary_resource_link_pk IN ' .
             "(SELECT resource_link_pk FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
-            'WHERE consumer_pk = %d)', $consumer->getRecordId());
+            'WHERE consumer_pk = %d)', $platform->getRecordId());
         $ok = $this->executeQuery($sql);
 
 // Update any resource links for contexts in which this consumer is acting as a primary resource link
@@ -229,68 +268,73 @@ class DataConnector_pg extends DataConnector
             'WHERE primary_resource_link_pk IN ' .
             "(SELECT rl.resource_link_pk FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' rl ' .
             "INNER JOIN {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' c ON rl.context_pk = c.context_pk ' .
-            'WHERE c.consumer_pk = %d)', $consumer->getRecordId());
+            'WHERE c.consumer_pk = %d)', $platform->getRecordId());
         $ok = $this->executeQuery($sql);
 
 // Delete any resource links for this consumer
         $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
-            'WHERE consumer_pk = %d', $consumer->getRecordId());
+            'WHERE consumer_pk = %d', $platform->getRecordId());
         $this->executeQuery($sql);
 
 // Delete any resource links for contexts in this consumer
         $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
             'WHERE context_pk IN (' .
             "SELECT context_pk FROM {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' ' . 'WHERE consumer_pk = %d)',
-            $consumer->getRecordId());
+            $platform->getRecordId());
         $this->executeQuery($sql);
 
 // Delete any contexts for this consumer
         $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' ' .
-            'WHERE consumer_pk = %d', $consumer->getRecordId());
+            'WHERE consumer_pk = %d', $platform->getRecordId());
         $this->executeQuery($sql);
 
 // Delete consumer
-        $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . static::CONSUMER_TABLE_NAME . ' ' .
-            'WHERE consumer_pk = %d', $consumer->getRecordId());
+        $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' ' .
+            'WHERE consumer_pk = %d', $platform->getRecordId());
         $ok = $this->executeQuery($sql);
 
         if ($ok) {
-            $consumer->initialize();
+            $platform->initialize();
         }
 
         return $ok;
     }
 
     /**
-     * Load all tool consumers from the database.
+     * Load all platforms from the database.
      *
-     * @return ToolConsumer[]    An array of the ToolConsumer objects
+     * @return Platform[]    An array of the Platform objects
      */
-    public function getToolConsumers()
+    public function getPlatforms()
     {
         $consumers = array();
 
-        $sql = 'SELECT consumer_pk, consumer_key256, consumer_key, name, secret, lti_version, ' .
-            'signature_method, consumer_name, consumer_version, consumer_guid, ' .
-            'profile, tool_proxy, settings, ' .
-            'protected, enabled, enable_from, enable_until, last_access, created, updated ' .
-            "FROM {$this->dbTableNamePrefix}" . static::CONSUMER_TABLE_NAME . ' ' .
+        $sql = 'SELECT consumer_pk, consumer_key, name, secret, ' .
+            'platform_id, client_id, deployment_id, public_key, ' .
+            'lti_version, signature_method, consumer_name, consumer_version, consumer_guid, ' .
+            'profile, tool_proxy, settings, protected, enabled, ' .
+            'enable_from, enable_until, last_access, created, updated ' .
+            "FROM {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' ' .
             'ORDER BY name';
         $rsConsumers = $this->executeQuery($sql);
         if ($rsConsumers) {
             while ($row = pg_fetch_object($rsConsumers)) {
-                $key = empty($row->consumer_key) ? $row->consumer_key256 : $row->consumer_key;
-                $consumer = new ToolConsumer($key, $this);
-                $consumer->setRecordId(intval($row->consumer_pk));
-                $consumer->name = $row->name;
-                $consumer->secret = $row->secret;
-                $consumer->ltiVersion = $row->lti_version;
-                $consumer->signatureMethod = $row->signature_method;
-                $consumer->consumerName = $row->consumer_name;
-                $consumer->consumerVersion = $row->consumer_version;
-                $consumer->consumerGuid = $row->consumer_guid;
-                $consumer->profile = json_decode($row->profile);
-                $consumer->toolProxy = $row->tool_proxy;
+                $platform = new Platform($this);
+                $platform->setRecordId(intval($row->consumer_pk));
+                $platform->name = $row->name;
+                $platform->setKey($row->consumer_key);
+                $platform->secret = $row->secret;
+                $platform->platformId = $row->platform_id;
+                $platform->clientId = $row->client_id;
+                $platform->deploymentId = $row->deployment_id;
+                $platform->rsaKey = $row->public_key;
+                $platform->ltiVersion = $row->lti_version;
+                $platform->signatureMethod = $row->signature_method;
+                $platform->consumerName = $row->consumer_name;
+                $platform->consumerVersion = $row->consumer_version;
+                $platform->consumerGuid = $row->consumer_guid;
+                $platform->profile = json_decode($row->profile);
+                $platform->toolProxy = $row->tool_proxy;
                 $settings = json_decode($row->settings, true);
                 if (!is_array($settings)) {
                     $settings = @unserialize($row->settings);  // check for old serialized setting
@@ -298,24 +342,25 @@ class DataConnector_pg extends DataConnector
                 if (!is_array($settings)) {
                     $settings = array();
                 }
-                $consumer->setSettings($settings);
-                $consumer->protected = (intval($row->protected) === 1);
-                $consumer->enabled = (intval($row->enabled) === 1);
-                $consumer->enableFrom = null;
+                $platform->setSettings($settings);
+                $platform->protected = (intval($row->protected) === 1);
+                $platform->enabled = (intval($row->enabled) === 1);
+                $platform->enableFrom = null;
                 if (!is_null($row->enable_from)) {
-                    $consumer->enableFrom = strtotime($row->enable_from);
+                    $platform->enableFrom = strtotime($row->enable_from);
                 }
-                $consumer->enableUntil = null;
+                $platform->enableUntil = null;
                 if (!is_null($row->enable_until)) {
-                    $consumer->enableUntil = strtotime($row->enable_until);
+                    $platform->enableUntil = strtotime($row->enable_until);
                 }
-                $consumer->lastAccess = null;
+                $platform->lastAccess = null;
                 if (!is_null($row->last_access)) {
-                    $consumer->lastAccess = strtotime($row->last_access);
+                    $platform->lastAccess = strtotime($row->last_access);
                 }
-                $consumer->created = strtotime($row->created);
-                $consumer->updated = strtotime($row->updated);
-                $consumers[] = $consumer;
+                $platform->created = strtotime($row->created);
+                $platform->updated = strtotime($row->updated);
+                $this->fixPlatformSettings($platform, false);
+                $consumers[] = $platform;
             }
             pg_free_result($rsConsumers);
         }
@@ -344,15 +389,15 @@ class DataConnector_pg extends DataConnector
         } else {
             $sql = sprintf('SELECT context_pk, consumer_pk, title, lti_context_id, type, settings, created, updated ' .
                 "FROM {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' ' .
-                'WHERE (consumer_pk = %d) AND (lti_context_id = %s)', $context->getConsumer()->getRecordId(),
+                'WHERE (consumer_pk = %d) AND (lti_context_id = %s)', $context->getPlatform()->getRecordId(),
                 $this->escape($context->ltiContextId));
         }
-        $rs_context = $this->executeQuery($sql);
-        if ($rs_context) {
-            $row = pg_fetch_object($rs_context);
+        $rsContext = $this->executeQuery($sql);
+        if ($rsContext) {
+            $row = pg_fetch_object($rsContext);
             if ($row) {
                 $context->setRecordId(intval($row->context_pk));
-                $context->setConsumerId(intval($row->consumer_pk));
+                $context->setPlatformId(intval($row->consumer_pk));
                 $context->title = $row->title;
                 $context->ltiContextId = $row->lti_context_id;
                 $context->type = $row->type;
@@ -386,7 +431,7 @@ class DataConnector_pg extends DataConnector
         $now = date("{$this->dateFormat} {$this->timeFormat}", $time);
         $settingsValue = json_encode($context->getSettings());
         $id = $context->getRecordId();
-        $consumer_pk = $context->getConsumer()->getRecordId();
+        $consumer_pk = $context->getPlatform()->getRecordId();
         if (empty($id)) {
             $sql = sprintf("INSERT INTO {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' (consumer_pk, title, ' .
                 'lti_context_id, type, settings, created, updated) ' .
@@ -489,7 +534,7 @@ class DataConnector_pg extends DataConnector
                 "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' r LEFT OUTER JOIN ' .
                 $this->dbTableNamePrefix . static::CONTEXT_TABLE_NAME . ' c ON r.context_pk = c.context_pk ' .
                 ' WHERE ((r.consumer_pk = %d) OR (c.consumer_pk = %d)) AND (lti_resource_link_id = %s)',
-                $resourceLink->getConsumer()->getRecordId(), $resourceLink->getConsumer()->getRecordId(),
+                $resourceLink->getPlatform()->getRecordId(), $resourceLink->getPlatform()->getRecordId(),
                 $this->escape($resourceLink->getId()));
         }
         $rsResourceLink = $this->executeQuery($sql);
@@ -503,9 +548,9 @@ class DataConnector_pg extends DataConnector
                     $resourceLink->setContextId(null);
                 }
                 if (!is_null($row->consumer_pk)) {
-                    $resourceLink->setConsumerId(intval($row->consumer_pk));
+                    $resourceLink->setPlatformId(intval($row->consumer_pk));
                 } else {
-                    $resourceLink->setConsumerId(null);
+                    $resourceLink->setPlatformId(null);
                 }
                 $resourceLink->title = $row->title;
                 $resourceLink->ltiResourceLinkId = $row->lti_resource_link_id;
@@ -563,7 +608,7 @@ class DataConnector_pg extends DataConnector
             $consumerId = 'NULL';
             $contextId = strval($resourceLink->getContextId());
         } else {
-            $consumerId = strval($resourceLink->getConsumer()->getRecordId());
+            $consumerId = strval($resourceLink->getPlatform()->getRecordId());
             $contextId = 'NULL';
         }
         $id = $resourceLink->getRecordId();
@@ -702,13 +747,13 @@ class DataConnector_pg extends DataConnector
 
         $sql = sprintf('SELECT c.consumer_name, r.resource_link_pk, r.title, r.share_approved ' .
             "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' AS r ' .
-            "INNER JOIN {$this->dbTableNamePrefix}" . static::CONSUMER_TABLE_NAME . ' AS c ON r.consumer_pk = c.consumer_pk ' .
+            "INNER JOIN {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' AS c ON r.consumer_pk = c.consumer_pk ' .
             'WHERE (r.primary_resource_link_pk = %d) ' .
             'UNION ' .
             'SELECT c2.consumer_name, r2.resource_link_pk, r2.title, r2.share_approved ' .
             "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' AS r2 ' .
             "INNER JOIN {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' AS x ON r2.context_pk = x.context_pk ' .
-            "INNER JOIN {$this->dbTableNamePrefix}" . static::CONSUMER_TABLE_NAME . ' AS c2 ON x.consumer_pk = c2.consumer_pk ' .
+            "INNER JOIN {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' AS c2 ON x.consumer_pk = c2.consumer_pk ' .
             'WHERE (r2.primary_resource_link_pk = %d) ' .
             'ORDER BY consumer_name, title', $resourceLink->getRecordId(), $resourceLink->getRecordId());
         $rsShare = $this->executeQuery($sql);
@@ -727,17 +772,17 @@ class DataConnector_pg extends DataConnector
     }
 
 ###
-###  ConsumerNonce methods
+###  PlatformNonce methods
 ###
 
     /**
      * Load nonce object.
      *
-     * @param ConsumerNonce $nonce Nonce object
+     * @param PlatformNonce $nonce Nonce object
      *
      * @return bool    True if the nonce object was successfully loaded
      */
-    public function loadConsumerNonce($nonce)
+    public function loadPlatformNonce($nonce)
     {
         $ok = false;
 
@@ -748,10 +793,10 @@ class DataConnector_pg extends DataConnector
 
 // Load the nonce
         $sql = sprintf("SELECT value AS T FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' WHERE (consumer_pk = %d) AND (value = %s)',
-            $nonce->getConsumer()->getRecordId(), $this->escape($nonce->getValue()));
-        $rs_nonce = $this->executeQuery($sql, false);
-        if ($rs_nonce) {
-            if (pg_fetch_object($rs_nonce)) {
+            $nonce->getPlatform()->getRecordId(), $this->escape($nonce->getValue()));
+        $rsNonce = $this->executeQuery($sql, false);
+        if ($rsNonce) {
+            if (pg_fetch_object($rsNonce)) {
                 $ok = true;
             }
         }
@@ -762,15 +807,100 @@ class DataConnector_pg extends DataConnector
     /**
      * Save nonce object.
      *
-     * @param ConsumerNonce $nonce Nonce object
+     * @param PlatformNonce $nonce Nonce object
      *
      * @return bool    True if the nonce object was successfully saved
      */
-    public function saveConsumerNonce($nonce)
+    public function savePlatformNonce($nonce)
     {
         $expires = date("{$this->dateFormat} {$this->timeFormat}", $nonce->expires);
         $sql = sprintf("INSERT INTO {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . " (consumer_pk, value, expires) VALUES (%d, %s, %s)",
-            $nonce->getConsumer()->getRecordId(), $this->escape($nonce->getValue()), $this->escape($expires));
+            $nonce->getPlatform()->getRecordId(), $this->escape($nonce->getValue()), $this->escape($expires));
+        $ok = $this->executeQuery($sql);
+
+        return $ok;
+    }
+
+    /**
+     * Delete nonce object.
+     *
+     * @param PlatformNonce $nonce Nonce object
+     *
+     * @return bool    True if the nonce object was successfully deleted
+     */
+    public function deletePlatformNonce($nonce)
+    {
+        $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' WHERE (consumer_pk = %d) AND (value = %s)',
+            $nonce->getPlatform()->getRecordId(), $this->escape($nonce->getValue()));
+        $ok = $this->executeQuery($sql);
+
+        return $ok;
+    }
+
+###
+###  AccessToken methods
+###
+
+    /**
+     * Load access token object.
+     *
+     * @param AccessToken $accessToken  Access token object
+     *
+     * @return bool    True if the nonce object was successfully loaded
+     */
+    public function loadAccessToken($accessToken)
+    {
+        $ok = false;
+
+        $consumer_pk = $accessToken->getPlatform()->getRecordId();
+        $sql = sprintf('SELECT scopes, token, expires, created, updated ' .
+            "FROM {$this->dbTableNamePrefix}" . static::ACCESS_TOKEN_TABLE_NAME . ' ' .
+            'WHERE (consumer_pk = %d)', $consumer_pk);
+        $rsAccessToken = $this->executeQuery($sql, false);
+        if ($rsAccessToken) {
+            $row = pg_fetch_object($rsAccessToken);
+            if ($row) {
+                $scopes = json_decode($row->scopes, true);
+                if (!is_array($scopes)) {
+                    $scopes = array();
+                }
+                $accessToken->scopes = $scopes;
+                $accessToken->token = $row->token;
+                $accessToken->expires = strtotime($row->expires);
+                $accessToken->created = strtotime($row->created);
+                $accessToken->updated = strtotime($row->updated);
+                $ok = true;
+            }
+        }
+
+        return $ok;
+    }
+
+    /**
+     * Save access token object.
+     *
+     * @param AccessToken $accessToken  Access token object
+     *
+     * @return bool    True if the access token object was successfully saved
+     */
+    public function saveAccessToken($accessToken)
+    {
+        $consumer_pk = $accessToken->getPlatform()->getRecordId();
+        $scopes = json_encode($accessToken->scopes, JSON_UNESCAPED_SLASHES);
+        $token = $accessToken->token;
+        $expires = date("{$this->dateFormat} {$this->timeFormat}", $accessToken->expires);
+        $time = time();
+        $now = date("{$this->dateFormat} {$this->timeFormat}", $time);
+        if (empty($accessToken->created)) {
+            $sql = sprintf("INSERT INTO {$this->dbTableNamePrefix}" . static::ACCESS_TOKEN_TABLE_NAME . ' ' .
+                '(consumer_pk, scopes, token, expires, created, updated) ' .
+                'VALUES (%d, %s, %s, %s, %s, %s)', $consumer_pk, $this->escape($scopes), $this->escape($token),
+                $this->escape($expires), $this->escape($now), $this->escape($now));
+        } else {
+            $sql = sprintf('UPDATE ' . $this->dbTableNamePrefix . static::ACCESS_TOKEN_TABLE_NAME . ' ' .
+                'SET scopes = %s, token = %s, expires = %s, updated = %s WHERE consumer_pk = %d', $this->escape($scopes),
+                $this->escape($token), $this->escape($expires), $this->escape($now), $consumer_pk);
+        }
         $ok = $this->executeQuery($sql);
 
         return $ok;
@@ -880,11 +1010,11 @@ class DataConnector_pg extends DataConnector
             $sql = sprintf('SELECT user_result_pk, resource_link_pk, lti_user_id, lti_result_sourcedid, created, updated ' .
                 "FROM {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' ' .
                 'WHERE (resource_link_pk = %d) AND (lti_user_id = %s)', $userresult->getResourceLink()->getRecordId(),
-                $this->escape($userresult->getId(LTI\ToolProvider::ID_SCOPE_ID_ONLY)));
+                $this->escape($userresult->getId(LTI\Tool::ID_SCOPE_ID_ONLY)));
         }
-        $rsUser = $this->executeQuery($sql);
-        if ($rsUser) {
-            $row = pg_fetch_object($rsUser);
+        $rsUserResult = $this->executeQuery($sql);
+        if ($rsUserResult) {
+            $row = pg_fetch_object($rsUserResult);
             if ($row) {
                 $userresult->setRecordId(intval($row->user_result_pk));
                 $userresult->setResourceLinkId(intval($row->resource_link_pk));
@@ -914,8 +1044,8 @@ class DataConnector_pg extends DataConnector
             $sql = sprintf("INSERT INTO {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' (resource_link_pk, ' .
                 'lti_user_id, lti_result_sourcedid, created, updated) ' .
                 'VALUES (%d, %s, %s, %s, %s)', $userresult->getResourceLink()->getRecordId(),
-                $this->escape($userresult->getId(LTI\ToolProvider::ID_SCOPE_ID_ONLY)),
-                $this->escape($userresult->ltiResultSourcedId), $this->escape($now), $this->escape($now));
+                $this->escape($userresult->getId(LTI\Tool::ID_SCOPE_ID_ONLY)), $this->escape($userresult->ltiResultSourcedId),
+                $this->escape($now), $this->escape($now));
         } else {
             $sql = sprintf("UPDATE {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' ' .
                 'SET lti_result_sourcedid = %s, updated = %s ' .

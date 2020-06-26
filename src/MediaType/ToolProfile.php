@@ -2,7 +2,7 @@
 
 namespace ceLTIc\LTI\MediaType;
 
-use ceLTIc\LTI\ToolProvider;
+use ceLTIc\LTI\Tool;
 
 /**
  * Class to represent an LTI Tool Profile
@@ -19,71 +19,71 @@ class ToolProfile
     /**
      * Class constructor.
      *
-     * @param ToolProvider $toolProvider   Tool Provider object
+     * @param Tool $tool   Tool object
      */
-    function __construct($toolProvider)
+    function __construct($tool)
     {
         $this->lti_version = 'LTI-2p0';
 
-        if (!empty($toolProvider->product)) {
+        if (!empty($tool->product)) {
             $this->product_instance = new \stdClass;
         }
-        if (!empty($toolProvider->product->id)) {
-            $this->product_instance->guid = $toolProvider->product->id;
+        if (!empty($tool->product->id)) {
+            $this->product_instance->guid = $tool->product->id;
         }
-        if (!empty($toolProvider->product->name)) {
+        if (!empty($tool->product->name)) {
             $this->product_instance->product_info = new \stdClass;
             $this->product_instance->product_info->product_name = new \stdClass;
-            $this->product_instance->product_info->product_name->default_value = $toolProvider->product->name;
+            $this->product_instance->product_info->product_name->default_value = $tool->product->name;
             $this->product_instance->product_info->product_name->key = 'tool.name';
         }
-        if (!empty($toolProvider->product->description)) {
+        if (!empty($tool->product->description)) {
             $this->product_instance->product_info->description = new \stdClass;
-            $this->product_instance->product_info->description->default_value = $toolProvider->product->description;
+            $this->product_instance->product_info->description->default_value = $tool->product->description;
             $this->product_instance->product_info->description->key = 'tool.description';
         }
-        if (!empty($toolProvider->product->url)) {
-            $this->product_instance->guid = $toolProvider->product->url;
+        if (!empty($tool->product->url)) {
+            $this->product_instance->guid = $tool->product->url;
         }
-        if (!empty($toolProvider->product->version)) {
-            $this->product_instance->product_info->product_version = $toolProvider->product->version;
+        if (!empty($tool->product->version)) {
+            $this->product_instance->product_info->product_version = $tool->product->version;
         }
-        if (!empty($toolProvider->vendor)) {
+        if (!empty($tool->vendor)) {
             $this->product_instance->product_info->product_family = new \stdClass;
             $this->product_instance->product_info->product_family->vendor = new \stdClass;
-            if (!empty($toolProvider->product->id)) {
-                $this->product_instance->product_info->product_family->code = $toolProvider->product->id;
+            if (!empty($tool->product->id)) {
+                $this->product_instance->product_info->product_family->code = $tool->product->id;
             }
         }
-        if (!empty($toolProvider->vendor->id)) {
-            $this->product_instance->product_info->product_family->vendor->code = $toolProvider->vendor->id;
+        if (!empty($tool->vendor->id)) {
+            $this->product_instance->product_info->product_family->vendor->code = $tool->vendor->id;
         }
-        if (!empty($toolProvider->vendor->name)) {
+        if (!empty($tool->vendor->name)) {
             $this->product_instance->product_info->product_family->vendor->vendor_name = new \stdClass;
-            $this->product_instance->product_info->product_family->vendor->vendor_name->default_value = $toolProvider->vendor->name;
+            $this->product_instance->product_info->product_family->vendor->vendor_name->default_value = $tool->vendor->name;
             $this->product_instance->product_info->product_family->vendor->vendor_name->key = 'tool.vendor.name';
         }
-        if (!empty($toolProvider->vendor->description)) {
+        if (!empty($tool->vendor->description)) {
             $this->product_instance->product_info->product_family->vendor->description = new \stdClass;
-            $this->product_instance->product_info->product_family->vendor->description->default_value = $toolProvider->vendor->description;
+            $this->product_instance->product_info->product_family->vendor->description->default_value = $tool->vendor->description;
             $this->product_instance->product_info->product_family->vendor->description->key = 'tool.vendor.description';
         }
-        if (!empty($toolProvider->vendor->url)) {
-            $this->product_instance->product_info->product_family->vendor->website = $toolProvider->vendor->url;
+        if (!empty($tool->vendor->url)) {
+            $this->product_instance->product_info->product_family->vendor->website = $tool->vendor->url;
         }
-        if (!empty($toolProvider->vendor->timestamp)) {
+        if (!empty($tool->vendor->timestamp)) {
             $this->product_instance->product_info->product_family->vendor->timestamp = date('Y-m-d\TH:i:sP',
-                $toolProvider->vendor->timestamp);
+                $tool->vendor->timestamp);
         }
 
         $this->resource_handler = array();
-        foreach ($toolProvider->resourceHandlers as $resourceHandler) {
-            $this->resource_handler[] = new ResourceHandler($toolProvider, $resourceHandler);
+        foreach ($tool->resourceHandlers as $resourceHandler) {
+            $this->resource_handler[] = new ResourceHandler($tool, $resourceHandler);
         }
-        if (!empty($toolProvider->baseUrl)) {
+        if (!empty($tool->baseUrl)) {
             $this->base_url_choice = array();
             $this->base_url_choice[] = new \stdClass;
-            $this->base_url_choice[0]->default_base_url = $toolProvider->baseUrl;
+            $this->base_url_choice[0]->default_base_url = $tool->baseUrl;
         }
     }
 

@@ -2,7 +2,7 @@
 
 namespace ceLTIc\LTI\MediaType;
 
-use ceLTIc\LTI\ToolProvider;
+use ceLTIc\LTI\Tool;
 
 /**
  * Class to represent an LTI Security Contract document
@@ -17,13 +17,13 @@ class SecurityContract
     /**
      * Class constructor.
      *
-     * @param ToolProvider $toolProvider  Tool Provider instance
+     * @param Tool    $tool  Tool instance
      * @param string $secret Shared secret
      */
-    function __construct($toolProvider, $secret)
+    function __construct($tool, $secret)
     {
         $tcContexts = array();
-        foreach ($toolProvider->consumer->profile->{'@context'} as $context) {
+        foreach ($tool->platform->profile->{'@context'} as $context) {
             if (is_object($context)) {
                 $tcContexts = array_merge(get_object_vars($context), $tcContexts);
             }
@@ -31,9 +31,9 @@ class SecurityContract
 
         $this->shared_secret = $secret;
         $toolServices = array();
-        foreach ($toolProvider->requiredServices as $requiredService) {
+        foreach ($tool->requiredServices as $requiredService) {
             foreach ($requiredService->formats as $format) {
-                $service = $toolProvider->findService($format, $requiredService->actions);
+                $service = $tool->findService($format, $requiredService->actions);
                 if (($service !== false) && !array_key_exists($service->{'@id'}, $toolServices)) {
                     $id = $service->{'@id'};
                     $parts = explode(':', $id, 2);
@@ -50,9 +50,9 @@ class SecurityContract
                 }
             }
         }
-        foreach ($toolProvider->optionalServices as $optionalService) {
+        foreach ($tool->optionalServices as $optionalService) {
             foreach ($optionalService->formats as $format) {
-                $service = $toolProvider->findService($format, $optionalService->actions);
+                $service = $tool->findService($format, $optionalService->actions);
                 if (($service !== false) && !array_key_exists($service->{'@id'}, $toolServices)) {
                     $id = $service->{'@id'};
                     $parts = explode(':', $id, 2);

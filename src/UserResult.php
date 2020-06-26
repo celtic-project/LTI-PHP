@@ -5,7 +5,7 @@ namespace ceLTIc\LTI;
 use ceLTIc\LTI\DataConnector;
 
 /**
- * Class to represent a tool consumer user
+ * Class to represent a platform user
  *
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
  * @copyright  SPV Software Products
@@ -186,7 +186,7 @@ class UserResult extends User
     }
 
     /**
-     * Get the user ID (which may be a compound of the tool consumer and resource link IDs).
+     * Get the user ID (which may be a compound of the platform and resource link IDs).
      *
      * @param int $idScope Scope to use for user ID (optional, default is null for consumer default setting)
      *
@@ -196,28 +196,28 @@ class UserResult extends User
     {
         if (empty($idScope)) {
             if (!is_null($this->resourceLink)) {
-                $idScope = $this->resourceLink->getConsumer()->idScope;
+                $idScope = $this->resourceLink->getPlatform()->idScope;
             } else {
-                $idScope = ToolProvider::ID_SCOPE_ID_ONLY;
+                $idScope = Tool::ID_SCOPE_ID_ONLY;
             }
         }
         switch ($idScope) {
-            case ToolProvider::ID_SCOPE_GLOBAL:
-                $id = $this->getResourceLink()->getKey() . ToolProvider::ID_SCOPE_SEPARATOR . $this->ltiUserId;
+            case Tool::ID_SCOPE_GLOBAL:
+                $id = $this->getResourceLink()->getConsumer()->getId() . Tool::ID_SCOPE_SEPARATOR . $this->ltiUserId;
                 break;
-            case ToolProvider::ID_SCOPE_CONTEXT:
-                $id = $this->getResourceLink()->getKey();
+            case Tool::ID_SCOPE_CONTEXT:
+                $id = $this->getResourceLink()->getConsumer()->getId();
                 if ($this->resourceLink->ltiContextId) {
-                    $id .= ToolProvider::ID_SCOPE_SEPARATOR . $this->resourceLink->ltiContextId;
+                    $id .= Tool::ID_SCOPE_SEPARATOR . $this->resourceLink->ltiContextId;
                 }
-                $id .= ToolProvider::ID_SCOPE_SEPARATOR . $this->ltiUserId;
+                $id .= Tool::ID_SCOPE_SEPARATOR . $this->ltiUserId;
                 break;
-            case ToolProvider::ID_SCOPE_RESOURCE:
-                $id = $this->getResourceLink()->getKey();
+            case Tool::ID_SCOPE_RESOURCE:
+                $id = $this->getResourceLink()->getConsumer()->getId();
                 if ($this->resourceLink->ltiResourceLinkId) {
-                    $id .= ToolProvider::ID_SCOPE_SEPARATOR . $this->resourceLink->ltiResourceLinkId;
+                    $id .= Tool::ID_SCOPE_SEPARATOR . $this->resourceLink->ltiResourceLinkId;
                 }
-                $id .= ToolProvider::ID_SCOPE_SEPARATOR . $this->ltiUserId;
+                $id .= Tool::ID_SCOPE_SEPARATOR . $this->ltiUserId;
                 break;
             default:
                 $id = $this->ltiUserId;

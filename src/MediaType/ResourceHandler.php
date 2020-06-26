@@ -2,7 +2,7 @@
 
 namespace ceLTIc\LTI\MediaType;
 
-use ceLTIc\LTI\ToolProvider;
+use ceLTIc\LTI\Tool;
 use ceLTIc\LTI\Profile;
 
 /**
@@ -18,10 +18,10 @@ class ResourceHandler
     /**
      * Class constructor.
      *
-     * @param ToolProvider $toolProvider   Tool Provider object
+     * @param Tool                    $tool   Tool object
      * @param Profile\ResourceHandler $resourceHandler   Profile resource handler object
      */
-    function __construct($toolProvider, $resourceHandler)
+    function __construct($tool, $resourceHandler)
     {
         $this->resource_type = new \stdClass;
         $this->resource_type->code = $resourceHandler->item->id;
@@ -39,11 +39,11 @@ class ResourceHandler
         $this->icon_info[] = $icon_info;
         $this->message = array();
         foreach ($resourceHandler->requiredMessages as $message) {
-            $this->message[] = new Message($message, $toolProvider->consumer->profile->capability_offered);
+            $this->message[] = new Message($message, $tool->platform->profile->capability_offered);
         }
         foreach ($resourceHandler->optionalMessages as $message) {
-            if (in_array($message->type, $toolProvider->consumer->profile->capability_offered)) {
-                $this->message[] = new Message($message, $toolProvider->consumer->profile->capability_offered);
+            if (in_array($message->type, $tool->platform->profile->capability_offered)) {
+                $this->message[] = new Message($message, $tool->platform->profile->capability_offered);
             }
         }
     }

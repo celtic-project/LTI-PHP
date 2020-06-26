@@ -5,7 +5,7 @@ namespace ceLTIc\LTI;
 use ceLTIc\LTI\DataConnector\DataConnector;
 
 /**
- * Class to represent a tool consumer resource link share key
+ * Class to represent a platform resource link share key
  *
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
  * @copyright  SPV Software Products
@@ -141,7 +141,7 @@ class ResourceLinkShareKey
             } else {
                 $this->length = max(min($this->length, self::MAX_SHARE_KEY_LENGTH), self::MIN_SHARE_KEY_LENGTH);
             }
-            $this->id = DataConnector::getRandomString($this->length);
+            $this->id = Util::getRandomString($this->length);
         }
 
         return $this->dataConnector->saveResourceLinkShareKey($this);

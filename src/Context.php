@@ -5,9 +5,10 @@ namespace ceLTIc\LTI;
 use ceLTIc\LTI\Service;
 use ceLTIc\LTI\Http\HttpMessage;
 use ceLTIc\LTI\ApiHook\ApiHook;
+use ceLTIc\LTI\Util;
 
 /**
- * Class to represent a tool consumer context
+ * Class to represent a platform context
  *
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
  * @copyright  SPV Software Products
@@ -39,14 +40,14 @@ class Context
     public $type = null;
 
     /**
-     * UserResult group sets (null if the consumer does not support the groups enhancement)
+     * UserResult group sets (null if the platform does not support the groups enhancement)
      *
      * @var array|null $groupSets
      */
     public $groupSets = null;
 
     /**
-     * UserResult groups (null if the consumer does not support the groups enhancement)
+     * UserResult groups (null if the platform does not support the groups enhancement)
      *
      * @var array|null $groups
      */
@@ -74,18 +75,18 @@ class Context
     public $updated = null;
 
     /**
-     * Tool Consumer for this context.
+     * Platform for this context.
      *
-     * @var ToolConsumer|null $consumer
+     * @var Platform|null $platform
      */
-    private $consumer = null;
+    private $platform = null;
 
     /**
-     * Tool Consumer ID for this context.
+     * Platform ID for this context.
      *
-     * @var int|null $consumerId
+     * @var int|null $platformId
      */
-    private $consumerId = null;
+    private $platformId = null;
 
     /**
      * ID for this context.
@@ -174,36 +175,66 @@ class Context
     /**
      * Get tool consumer.
      *
+     * @deprecated Use getPlatform() instead
+     * @see Context::getPlatform()
+     *
      * @return ToolConsumer Tool consumer object for this context.
      */
     public function getConsumer()
     {
-        if (is_null($this->consumer)) {
-            $this->consumer = ToolConsumer::fromRecordId($this->consumerId, $this->getDataConnector());
-        }
-
-        return $this->consumer;
+        Util::logDebug('Method ceLTIc\LTI\Context::getConsumer() has been deprecated; please use ceLTIc\LTI\Context::getPlatform() instead.',
+            true);
+        return $this->getPlatform();
     }
 
     /**
      * Set tool consumer ID.
      *
+     * @deprecated Use setPlatformId() instead
+     * @see Context::setPlatformId()
+     *
      * @param int $consumerId  Tool Consumer ID for this resource link.
      */
     public function setConsumerId($consumerId)
     {
-        $this->consumer = null;
-        $this->consumerId = $consumerId;
+        Util::logDebug('Method ceLTIc\LTI\Context::setConsumerId() has been deprecated; please use ceLTIc\LTI\Context::setPlatformId() instead.',
+            true);
+        $this->setPlatformId($consumerId);
     }
 
     /**
-     * Get tool consumer key.
+     * Get platform.
      *
-     * @return string Consumer key value for this context.
+     * @return Platform  Platform object for this context.
+     */
+    public function getPlatform()
+    {
+        if (is_null($this->platform)) {
+            $this->platform = Platform::fromRecordId($this->platformId, $this->getDataConnector());
+        }
+
+        return $this->platform;
+    }
+
+    /**
+     * Set platform ID.
+     *
+     * @param int $platformId  Platform ID for this resource link.
+     */
+    public function setPlatformId($platformId)
+    {
+        $this->platform = null;
+        $this->platformId = $platformId;
+    }
+
+    /**
+     * Get consumer key.
+     *
+     * @return string  Consumer key value for this context.
      */
     public function getKey()
     {
-        return $this->getConsumer()->getKey();
+        return $this->getPlatform()->getKey();
     }
 
     /**
@@ -329,7 +360,7 @@ class Context
     {
         $has = !empty($this->getSetting('custom_context_setting_url'));
         if (!$has) {
-            $has = self::hasConfiguredApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode(), $this);
+            $has = self::hasConfiguredApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode(), $this);
         }
         return $has;
     }
@@ -353,8 +384,8 @@ class Context
             $this->lastServiceRequest = $service->getHttpMessage();
             $ok = $settings !== false;
         }
-        if (!$ok && $this->hasConfiguredApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode(), $this)) {
-            $className = $this->getApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode());
+        if (!$ok && $this->hasConfiguredApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode(), $this)) {
+            $className = $this->getApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode());
             $hook = new $className($this);
             $settings = $hook->getToolSettings($mode, $simple);
         }
@@ -363,7 +394,7 @@ class Context
     }
 
     /**
-     * Perform a Tool Settings service request.
+     * Set Tool Settings.
      *
      * @param array    $settings   An associative array of settings (optional, default is none)
      *
@@ -378,8 +409,8 @@ class Context
             $ok = $service->set($settings);
             $this->lastServiceRequest = $service->getHttpMessage();
         }
-        if (!$ok && $this->hasConfiguredApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode(), $this)) {
-            $className = $this->getApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode());
+        if (!$ok && $this->hasConfiguredApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode(), $this)) {
+            $className = $this->getApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode());
             $hook = new $className($this);
             $ok = $hook->setToolSettings($settings);
         }
@@ -397,6 +428,8 @@ class Context
      */
     public function hasMembershipService()
     {
+        Util::logDebug('Method ceLTIc\LTI\Context::hasMembershipService() has been deprecated; please use ceLTIc\LTI\Context::hasMembershipsService() instead.',
+            true);
         return $this->hasMembershipsService();
     }
 
@@ -409,7 +442,7 @@ class Context
     {
         $has = !empty($this->getSetting('custom_context_memberships_url')) || !empty($this->getSetting('custom_context_memberships_v2_url'));
         if (!$has) {
-            $has = self::hasConfiguredApiHook(self::$MEMBERSHIPS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode(), $this);
+            $has = self::hasConfiguredApiHook(self::$MEMBERSHIPS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode(), $this);
         }
         return $has;
     }
@@ -424,6 +457,8 @@ class Context
      */
     public function getMembership()
     {
+        Util::logDebug('Method ceLTIc\LTI\Context::getMembership() has been deprecated; please use ceLTIc\LTI\Context::getMemberships() instead.',
+            true);
         return $this->getMemberships();
     }
 
@@ -439,14 +474,14 @@ class Context
         $ok = false;
         $userResults = array();
         $hasLtiService = !empty($this->getSetting('custom_context_memberships_url')) || !empty($this->getSetting('custom_context_memberships_v2_url'));
-        $hasApiHook = $this->hasConfiguredApiHook(self::$MEMBERSHIPS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode(), $this);
+        $hasApiHook = $this->hasConfiguredApiHook(self::$MEMBERSHIPS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode(), $this);
         if ($hasLtiService && (!$withGroups || !$hasApiHook)) {
             if (!empty($this->getSetting('custom_context_memberships_v2_url'))) {
                 $url = $this->getSetting('custom_context_memberships_v2_url');
-                $format = Service\Membership::MEMBERSHIPS_MEDIA_TYPE_NRPS;
+                $format = Service\Membership::MEDIA_TYPE_MEMBERSHIPS_NRPS;
             } else {
                 $url = $this->getSetting('custom_context_memberships_url');
-                $format = Service\Membership::MEMBERSHIPS_MEDIA_TYPE_V1;
+                $format = Service\Membership::MEDIA_TYPE_MEMBERSHIPS_V1;
             }
             $service = new Service\Membership($this, $url, $format);
             $userResults = $service->get();
@@ -454,7 +489,7 @@ class Context
             $ok = $userResults !== false;
         }
         if (!$ok && $hasApiHook) {
-            $className = $this->getApiHook(self::$MEMBERSHIPS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode());
+            $className = $this->getApiHook(self::$MEMBERSHIPS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode());
             $hook = new $className($this);
             $userResults = $hook->getMemberships($withGroups);
         }
@@ -491,9 +526,8 @@ class Context
         $this->extResponse = '';
         $this->extResponseHeaders = '';
         $this->lastServiceRequest = null;
-        $url = $this->getSetting('custom_lineitems_url');
-        if (!empty($url)) {
-            $lineItemService = new Service\LineItem($this->getConsumer(), $url, $limit);
+        $lineItemService = $this->getLineItemService();
+        if (!empty($lineItemService)) {
             $lineItems = $lineItemService->getAll(null, $resourceId, $tag);
             $http = $lineItemService->getHttpMessage();
             $this->extResponse = $http->response;
@@ -544,6 +578,9 @@ class Context
     /**
      * Class constructor from consumer.
      *
+     * @deprecated Use fromPlatform() instead
+     * @see Context::fromPlatform()
+     *
      * @param ToolConsumer    $consumer       Consumer instance
      * @param string          $ltiContextId   LTI Context ID value
      *
@@ -551,9 +588,22 @@ class Context
      */
     public static function fromConsumer($consumer, $ltiContextId)
     {
+        return self::fromPlatform($consumer, $ltiContextId);
+    }
+
+    /**
+     * Class constructor from platform.
+     *
+     * @param Platform        $platform       Platform instance
+     * @param string          $ltiContextId   LTI Context ID value
+     *
+     * @return Context
+     */
+    public static function fromPlatform($platform, $ltiContextId)
+    {
         $context = new Context();
-        $context->consumer = $consumer;
-        $context->dataConnector = $consumer->getDataConnector();
+        $context->platform = $platform;
+        $context->dataConnector = $platform->getDataConnector();
         $context->ltiContextId = $ltiContextId;
         if (!empty($ltiContextId)) {
             $context->load();
@@ -589,7 +639,7 @@ class Context
     {
         $url = $this->getSetting('custom_lineitems_url');
         if (!empty($url)) {
-            $lineItemService = new Service\LineItem($this->getConsumer(), $url);
+            $lineItemService = new Service\LineItem($this->getPlatform(), $url);
         } else {
             $lineItemService = false;
         }

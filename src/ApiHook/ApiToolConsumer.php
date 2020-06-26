@@ -2,63 +2,31 @@
 
 namespace ceLTIc\LTI\ApiHook;
 
+use ceLTIc\LTI\Util;
+
 /**
- * Class to implement Tool Consumer services for a tool consumer via its proprietary API
+ * Class to implement services for a tool consumer via its proprietary API
+ *
+ * @deprecated Use ApiPlatform instead
+ * @see ApiPlatform
  *
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
  * @copyright  SPV Software Products
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3
  */
-class ApiToolConsumer
+class ApiToolConsumer extends ApiPlatform
 {
-
-    /**
-     * Tool Consumer object.
-     *
-     * @var \ceLTIc\LTI\ToolConsumer|null $consumer
-     */
-    protected $consumer = null;
 
     /**
      * Class constructor.
      *
-     * @param \ceLTIc\LTI\ToolConsmumer $consumer
+     * @param \ceLTIc\LTI\ToolConsumer $consumer
      */
     public function __construct($consumer)
     {
-        $this->consumer = $consumer;
-    }
-
-    /**
-     * Check if the API hook has been configured.
-     */
-    public function isConfigured()
-    {
-        return true;
-    }
-
-    /**
-     * Get Tool Settings.
-     *
-     * @param bool     $simple     True if all the simple media type is to be used (optional, default is true)
-     *
-     * @return mixed The array of settings if successful, otherwise false
-     */
-    public function getToolSettings($simple = true)
-    {
-        return false;
-    }
-
-    /**
-     * Perform a Tool Settings service request.
-     *
-     * @param array    $settings   An associative array of settings (optional, default is none)
-     *
-     * @return bool    True if action was successful, otherwise false
-     */
-    public function setToolSettings($settings = array())
-    {
-        return false;
+        parent::__construct($consumer);
+        Util::logDebug('Class ceLTIc\LTI\ApiHook\ApiToolConsumer has been deprecated; please use ceLTIc\LTI\ApiHook\ApiPlatform instead.',
+            true);
     }
 
 }

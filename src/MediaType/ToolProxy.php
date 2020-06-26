@@ -2,7 +2,7 @@
 
 namespace ceLTIc\LTI\MediaType;
 
-use ceLTIc\LTI\ToolProvider;
+use ceLTIc\LTI\Tool;
 use ceLTIc\LTI\Profile\ServiceDefinition;
 
 /**
@@ -18,11 +18,11 @@ class ToolProxy
     /**
      * Class constructor.
      *
-     * @param ToolProvider $toolProvider   Tool Provider object
+     * @param Tool              $tool   Tool  object
      * @param ServiceDefinition $toolProxyService  Tool Proxy service
-     * @param string $secret  Shared secret
+     * @param string            $secret  Shared secret
      */
-    function __construct($toolProvider, $toolProxyService, $secret)
+    function __construct($tool, $toolProxyService, $secret)
     {
         $contexts = array();
 
@@ -30,9 +30,9 @@ class ToolProxy
         $this->{'@type'} = 'ToolProxy';
         $this->{'@id'} = "{$toolProxyService->endpoint}";
         $this->lti_version = 'LTI-2p0';
-        $this->tool_consumer_profile = $toolProvider->consumer->profile->{'@id'};
-        $this->tool_profile = new ToolProfile($toolProvider);
-        $this->security_contract = new SecurityContract($toolProvider, $secret);
+        $this->tool_consumer_profile = $tool->platform->profile->{'@id'};
+        $this->tool_profile = new ToolProfile($tool);
+        $this->security_contract = new SecurityContract($tool, $secret);
     }
 
 }

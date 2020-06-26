@@ -16,9 +16,9 @@ class Result extends AssignmentGrade
 {
 
     /**
-     * Media type.
+     * Access scope.
      */
-    const RESULT_CONTAINER_MEDIA_TYPE = 'application/vnd.ims.lis.v2.resultcontainer+json';
+    public static $SCOPE = 'https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly';
 
     /**
      * Limit on size of container to be returned from requests.
@@ -30,18 +30,20 @@ class Result extends AssignmentGrade
     /**
      * Class constructor.
      *
-     * @param ToolConsumer $consumer   Tool consumer object for this service request
+     * @param Platform     $platform   Platform object for this service request
      * @param string       $endpoint   Service endpoint
      * @param int|null     $limit      Limit of results to be returned per request, null for all
      */
-    public function __construct($consumer, $endpoint, $limit = null)
+    public function __construct($platform, $endpoint, $limit = null)
     {
         $this->limit = $limit;
-        parent::__construct($consumer, $endpoint, self::RESULT_CONTAINER_MEDIA_TYPE, '/results');
+        parent::__construct($platform, $endpoint, '/results');
+        $this->scope = self::$SCOPE;
+        $this->mediaType = 'application/vnd.ims.lis.v2.resultcontainer+json';
     }
 
     /**
-     * Retrieve all user outcome for a lineitem.
+     * Retrieve all outcomes for a line item.
      *
      * @param int|null     $limit      Limit of results to be returned, null for service default
      *
@@ -99,6 +101,10 @@ class Result extends AssignmentGrade
             return false;
         }
     }
+
+###
+###  PRIVATE METHOD
+###
 
     private static function getOutcome($json)
     {

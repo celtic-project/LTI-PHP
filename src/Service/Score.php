@@ -15,19 +15,21 @@ class Score extends AssignmentGrade
 {
 
     /**
-     * Media type.
+     * Access scope.
      */
-    const SCORE_MEDIA_TYPE = 'application/vnd.ims.lis.v1.score+json';
+    public static $SCOPE = 'https://purl.imsglobal.org/spec/lti-ags/scope/score';
 
     /**
      * Class constructor.
      *
-     * @param ToolConsumer $consumer   Tool consumer object for this service request
+     * @param Tool         $tool       Tool object for this service request
      * @param string       $endpoint   Service endpoint
      */
-    public function __construct($consumer, $endpoint)
+    public function __construct($tool, $endpoint)
     {
-        parent::__construct($consumer, $endpoint, self::SCORE_MEDIA_TYPE, '/scores');
+        parent::__construct($tool, $endpoint, '/scores');
+        $this->scope = self::$SCOPE;
+        $this->mediaType = 'application/vnd.ims.lis.v1.score+json';
     }
 
     /**

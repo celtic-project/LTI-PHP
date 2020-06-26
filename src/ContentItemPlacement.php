@@ -2,14 +2,19 @@
 
 namespace ceLTIc\LTI;
 
+use ceLTIc\LTI\Content\Placement;
+
 /**
  * Class to represent a content-item placement object
+ *
+ * @deprecated Use Content::Placement instead
+ * @see Content::Placement
  *
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
  * @copyright  SPV Software Products
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3
  */
-class ContentItemPlacement
+class ContentItemPlacement extends Placement
 {
 
     /**
@@ -22,18 +27,9 @@ class ContentItemPlacement
      */
     function __construct($displayWidth, $displayHeight, $documentTarget, $windowTarget)
     {
-        if (!empty($displayWidth)) {
-            $this->displayWidth = $displayWidth;
-        }
-        if (!empty($displayHeight)) {
-            $this->displayHeight = $displayHeight;
-        }
-        if (!empty($documentTarget)) {
-            $this->documentTarget = $documentTarget;
-        }
-        if (!empty($windowTarget)) {
-            $this->windowTarget = $windowTarget;
-        }
+        parent::__construct($documentTarget, $displayWidth, $displayHeight, $windowTarget);
+        Util::logDebug('Class ceLTIc\LTI\ContentItemPlacement has been deprecated; please use ceLTIc\LTI\Content\Placement instead ' .
+            '(note change in parameter order for constructor).', true);
     }
 
 }

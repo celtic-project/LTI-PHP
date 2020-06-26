@@ -2,22 +2,20 @@
 
 namespace ceLTIc\LTI\ApiHook;
 
+use ceLTIc\LTI\Util;
+
 /**
- * Class to implement tool consumer specific functions for LTI messages
+ * Class to implement tool provider specific functions for LTI messages
+ *
+ * @deprecated Use ApiTool instead
+ * @see ApiTool
  *
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
  * @copyright  SPV Software Products
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3
  */
-class ApiToolProvider
+class ApiToolProvider extends ApiTool
 {
-
-    /**
-     * Tool Provider object.
-     *
-     * @var \ceLtic\LTI\ToolProvider|null $toolProvider
-     */
-    protected $toolProvider = null;
 
     /**
      * Class constructor.
@@ -26,35 +24,9 @@ class ApiToolProvider
      */
     public function __construct($toolProvider)
     {
-        $this->toolProvider = $toolProvider;
-    }
-
-    /**
-     * Check if the API hook has been configured.
-     */
-    public function isConfigured()
-    {
-        return true;
-    }
-
-    /**
-     * Get the User ID.
-     *
-     * @return string User ID value, or empty string if not available.
-     */
-    public function getUserId()
-    {
-        return '';
-    }
-
-    /**
-     * Get the Context ID.
-     *
-     * @return string Context ID value, or empty string if not available.
-     */
-    public function getContextId()
-    {
-        return '';
+        parent::__construct($toolProvider);
+        Util::logDebug('Class ceLTIc\LTI\ApiHook\ApiToolProvider has been deprecated; please use ceLTIc\LTI\ApiHook\ApiTool instead.',
+            true);
     }
 
 }

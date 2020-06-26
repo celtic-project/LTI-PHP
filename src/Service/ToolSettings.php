@@ -2,7 +2,7 @@
 
 namespace ceLTIc\LTI\Service;
 
-use ceLTIc\LTI\ToolConsumer;
+use ceLTIc\LTI\Platform;
 use ceLTIc\LTI\Context;
 use ceLTIc\LTI\ResourceLink;
 
@@ -32,6 +32,11 @@ class ToolSettings extends Service
     const MODE_DISTINCT_NAMES = 3;
 
     /**
+     * Access scope.
+     */
+    public static $SCOPE = 'https://purl.imsglobal.org/spec/lti-ts/scope/toolsetting';
+
+    /**
      * Names of LTI parameters to be retained in the consumer settings property.
      *
      * @var array $LEVEL_NAMES
@@ -41,9 +46,9 @@ class ToolSettings extends Service
         'LtiLink' => 'link');
 
     /**
-     * The object to which the settings apply (ResourceLink, Context or ToolConsumer).
+     * The object to which the settings apply (ResourceLink, Context or Platform).
      *
-     * @var ToolConsumer|Context|ResourceLink  $source
+     * @var Platform|Context|ResourceLink  $source
      */
     private $source;
 
@@ -57,23 +62,24 @@ class ToolSettings extends Service
     /**
      * Class constructor.
      *
-     * @param ToolConsumer|Context|ResourceLink       $source     The object to which the settings apply (ResourceLink, Context or ToolConsumer)
-     * @param string       $endpoint   Service endpoint
-     * @param bool         $simple     True if the simple media type is to be used (optional, default is true)
+     * @param Platform|Context|ResourceLink       $source     The object to which the settings apply (ResourceLink, Context or Platform)
+     * @param string                              $endpoint   Service endpoint
+     * @param bool                                $simple     True if the simple media type is to be used (optional, default is true)
      */
     public function __construct($source, $endpoint, $simple = true)
     {
-        if (is_a($source, 'ceLTIc\LTI\ToolConsumer')) {
-            $consumer = $source;
+        if (is_a($source, 'ceLTIc\LTI\Platform')) {
+            $platform = $source;
         } else {
-            $consumer = $source->getConsumer();
+            $platform = $source->getPlatform();
         }
+        parent::__construct($platform, $endpoint);
+        $this->scope = self::$SCOPE;
         if ($simple) {
-            $mediaType = 'application/vnd.ims.lti.v2.toolsettings.simple+json';
+            $this->mediaType = 'application/vnd.ims.lti.v2.toolsettings.simple+json';
         } else {
-            $mediaType = 'application/vnd.ims.lti.v2.toolsettings+json';
+            $this->mediaType = 'application/vnd.ims.lti.v2.toolsettings+json';
         }
-        parent::__construct($consumer, $endpoint, $mediaType);
         $this->source = $source;
         $this->simple = $simple;
     }
@@ -120,7 +126,7 @@ class ToolSettings extends Service
     public function set($settings)
     {
         if (!$this->simple) {
-            if (is_a($this->source, 'ToolConsumer')) {
+            if (is_a($this->source, 'Platform')) {
                 $type = 'ToolProxy';
             } elseif (is_a($this->source, 'Context')) {
                 $type = 'ToolProxyBinding';

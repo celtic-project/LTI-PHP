@@ -38,6 +38,11 @@ trait ApiHook
     public static $TOOL_SETTINGS_SERVICE_HOOK = "ToolSettings";
 
     /**
+     * Access Token service hook name.
+     */
+    public static $ACCESS_TOKEN_SERVICE_HOOK = "AccessToken";
+
+    /**
      * API hook class names.
      */
     private static $API_HOOKS = array();
@@ -84,8 +89,8 @@ trait ApiHook
     /**
      * Check if an API hook is registered and configured.
      *
-     * @param string                             $hookName        Name of hook
-     * @param ToolConsumer|Context|ResourceLink  $sourceObject    Source object for which hook is to be used
+     * @param string                         $hookName        Name of hook
+     * @param Platform|Context|ResourceLink  $sourceObject    Source object for which hook is to be used
      *
      * @return bool    True if the API hook is registered and configured
      */
@@ -100,27 +105,6 @@ trait ApiHook
         }
 
         return $ok;
-    }
-
-    /**
-     * Check if a service is available.
-     *
-     * @param string $serviceName  Name of service
-     * @param string|array $endpointSettingNames  Name of setting or array of setting names
-     *
-     * @return bool    True if the service is available
-     */
-    private function hasService($serviceName, $endpointSettingNames)
-    {
-        $found = false;
-        if (!is_array($endpointSettingNames)) {
-            $found = !empty($this->getSetting($endpointSettingNames));
-        } else {
-            foreach ($endpointSettingNames as $endpointSettingName) {
-                $found = $found || !empty($this->getSetting($endpointSettingName));
-            }
-        }
-        return $found || self::hasApiHook($serviceName, $this->getConsumer()->getFamilyCode());
     }
 
 }

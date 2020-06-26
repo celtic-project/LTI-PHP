@@ -71,48 +71,48 @@ class LineItem
     public $endpoint = null;
 
     /**
-     * Tool Consumer for this line item.
+     * Platform for this line item.
      *
-     * @var ToolConsumer|null $consumer
+     * @var Platform|null $platform
      */
-    private $consumer = null;
+    private $platform = null;
 
     /**
      * Class constructor.
      *
-     * @param ToolConsumer $consumer          ToolConsumer object
-     * @param string       $label             Label
-     * @param int          $pointsPossible    Points possible value
+     * @param Platform $platform          Platform object
+     * @param string   $label             Label
+     * @param int      $pointsPossible    Points possible value
      */
-    public function __construct($consumer, $label, $pointsPossible)
+    public function __construct($platform, $label, $pointsPossible)
     {
-        $this->consumer = $consumer;
+        $this->platform = $platform;
         $this->label = $label;
         $this->pointsPossible = $pointsPossible;
     }
 
     /**
-     * Get Tool Consumer.
+     * Get platform.
      *
-     * @return ToolConsumer  ToolConsumer object for this line item.
+     * @return Platform  Platform object for this line item.
      */
-    public function getConsumer()
+    public function getPlatform()
     {
-        return $this->consumer;
+        return $this->platform;
     }
 
     /**
-     * Save the line item to the tool consumer.
+     * Save the line item to the platform.
      *
      * @return bool  True if successful
      */
     public function save()
     {
-        $service = new Service\LineItem($this->consumer, $this->endpoint);
+        $service = new Service\LineItem($this->platform, $this->endpoint);
         $http = $this->send('PUT', null, Service\LineItem::toJson($lineItem));
         $ok = $http->ok;
         if ($ok && !empty($http->responseJson)) {
-            $lineItem = Service\LineItem::toLineItem($this->consumer, $http->responseJson);
+            $lineItem = Service\LineItem::toLineItem($this->platform, $http->responseJson);
             foreach (get_object_vars($lineItem) as $key => $value) {
                 $this->$key = $value;
             }
@@ -122,13 +122,13 @@ class LineItem
     }
 
     /**
-     * Delete the line item on the tool consumer.
+     * Delete the line item on the platform.
      *
      * @return bool  True if successful
      */
     public function delete()
     {
-        $service = new Service\LineItem($this->consumer, $this->endpoint);
+        $service = new Service\LineItem($this->platform, $this->endpoint);
         $http = $service->send('DELETE');
 
         return $http->ok;
@@ -143,7 +143,7 @@ class LineItem
      */
     public function getOutcomes($limit = null)
     {
-        $resultService = new Service\Result($this->consumer, $this->endpoint);
+        $resultService = new Service\Result($this->platform, $this->endpoint);
         return $resultService->getAll();
     }
 
@@ -156,7 +156,7 @@ class LineItem
      */
     public function readOutcome($user)
     {
-        $resultService = new Service\Result($this->consumer, $this->endpoint);
+        $resultService = new Service\Result($this->platform, $this->endpoint);
         return $resultService->get($user);
     }
 
@@ -170,7 +170,7 @@ class LineItem
      */
     public function submitOutcome($ltiOutcome, $user)
     {
-        $scoreService = new Service\Score($this->consumer, $this->endpoint);
+        $scoreService = new Service\Score($this->platform, $this->endpoint);
         return $scoreService->submit($ltiOutcome, $user);
     }
 
@@ -184,21 +184,21 @@ class LineItem
     public function deleteOutcome($user)
     {
         $ltiOutcome = new Outcome();
-        $scoreService = new Service\Score($this->consumer, $this->endpoint);
+        $scoreService = new Service\Score($this->platform, $this->endpoint);
         return $scoreService->submit($ltiOutcome, $user);
     }
 
     /**
      * Retrieve a line item definition.
      *
-     * @param ToolConsumer $consumer          ToolConsumer object
-     * @param string       $endpoint          ID value
+     * @param Platform $platform          Platform object
+     * @param string   $endpoint          ID value
      *
      * @return LineItem|bool  LineItem object or false on error
      */
-    public static function fromEndpoint($consumer, $endpoint)
+    public static function fromEndpoint($platform, $endpoint)
     {
-        return Service\LineItem::getLineItem($consumer, $endpoint);
+        return Service\LineItem::getLineItem($platform, $endpoint);
     }
 
 }

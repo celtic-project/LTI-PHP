@@ -19,19 +19,24 @@ class Membership extends Service
     /**
      * Media type for version 1 of Memberships service.
      */
-    const MEMBERSHIPS_MEDIA_TYPE_V1 = 'application/vnd.ims.lis.v2.membershipcontainer+json';
+    const MEDIA_TYPE_MEMBERSHIPS_V1 = 'application/vnd.ims.lis.v2.membershipcontainer+json';
 
     /**
      * Media type for Names and Role Provisioning service.
      */
-    const MEMBERSHIPS_MEDIA_TYPE_NRPS = 'application/vnd.ims.lti-nrps.v2.membershipcontainer+json';
+    const MEDIA_TYPE_MEMBERSHIPS_NRPS = 'application/vnd.ims.lti-nrps.v2.membershipcontainer+json';
+
+    /**
+     * Access scope.
+     */
+    public static $SCOPE = 'https://purl.imsglobal.org/spec/lti-nrps/scope/contextmembership.readonly';
 
     /**
      * The object to which the memberships apply (ResourceLink or Context).
      *
      * @var Context|ResourceLink $source
      */
-    private $source;
+    private $source = null;
 
     /**
      * Class constructor.
@@ -40,10 +45,12 @@ class Membership extends Service
      * @param string       $endpoint   Service endpoint
      * @param string       $format     Format to request
      */
-    public function __construct($source, $endpoint, $format = self::MEMBERSHIPS_MEDIA_TYPE_V1)
+    public function __construct($source, $endpoint, $format = self::MEDIA_TYPE_MEMBERSHIPS_V1)
     {
-        $consumer = $source->getConsumer();
-        parent::__construct($consumer, $endpoint, $format);
+        $platform = $source->getPlatform();
+        parent::__construct($platform, $endpoint);
+        $this->scope = self::$SCOPE;
+        $this->mediaType = $format;
         $this->source = $source;
     }
 
@@ -74,7 +81,7 @@ class Membership extends Service
         } else {
             $userResults = array();
             if ($isLink) {
-                $oldUsers = $this->source->getUserResultSourcedIDs(true, LTI\ToolProvider::ID_SCOPE_RESOURCE);
+                $oldUsers = $this->source->getUserResultSourcedIDs(true, LTI\Tool::ID_SCOPE_RESOURCE);
             }
             if (isset($http->responseJson->pageOf) && isset($http->responseJson->pageOf->membershipSubject) &&
                 isset($http->responseJson->pageOf->membershipSubject->membership)) {
@@ -111,12 +118,12 @@ class Membership extends Service
 
 // Set the user email
                     $email = (isset($member->email)) ? $member->email : '';
-                    $userresult->setEmail($email, $this->source->getConsumer()->defaultEmail);
+                    $userresult->setEmail($email, $this->source->getPlatform()->defaultEmail);
 
 // Set the user roles
                     if (isset($membership->role)) {
                         $roles = $this->parseContextsInArray($http->responseJson->{'@context'}, $membership->role);
-                        $userresult->roles = LTI\ToolProvider::parseRoles($roles, LTI\ToolProvider::LTI_VERSION2);
+                        $userresult->roles = LTI\Tool::parseRoles($roles, LTI\Util::LTI_VERSION2);
                     }
 
 // If a result sourcedid is provided save the user
@@ -164,7 +171,7 @@ class Membership extends Service
 
 // Remove old user (if it exists)
                     if ($isLink) {
-                        unset($oldUsers[$userresult->getId(LTI\ToolProvider::ID_SCOPE_RESOURCE)]);
+                        unset($oldUsers[$userresult->getId(LTI\Tool::ID_SCOPE_RESOURCE)]);
                     }
                 }
             } elseif (isset($http->responseJson->members)) {
@@ -189,11 +196,11 @@ class Membership extends Service
 
 // Set the user email
                     $email = (isset($member->email)) ? $member->email : '';
-                    $userresult->setEmail($email, $this->source->getConsumer()->defaultEmail);
+                    $userresult->setEmail($email, $this->source->getPlatform()->defaultEmail);
 
 // Set the user roles
                     if (isset($member->roles)) {
-                        $userresult->roles = LTI\ToolProvider::parseRoles($member->roles, LTI\ToolProvider::LTI_VERSION2);
+                        $userresult->roles = LTI\Tool::parseRoles($member->roles, LTI\Util::LTI_VERSION2);
                     }
 
 // If a result sourcedid is provided save the user
@@ -237,12 +244,12 @@ class Membership extends Service
 
 // Remove old user (if it exists)
                     if ($isLink) {
-                        unset($oldUsers[$userresult->getId(LTI\ToolProvider::ID_SCOPE_RESOURCE)]);
+                        unset($oldUsers[$userresult->getId(LTI\Tool::ID_SCOPE_RESOURCE)]);
                     }
                 }
             }
 
-/// Delete any old users which were not in the latest list from the tool consumer
+/// Delete any old users which were not in the latest list from the platform
             if ($isLink) {
                 foreach ($oldUsers as $id => $userresult) {
                     $userresult->delete();

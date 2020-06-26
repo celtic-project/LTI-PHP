@@ -3,7 +3,7 @@
 namespace ceLTIc\LTI;
 
 /**
- * Class to represent a tool consumer resource link share
+ * Class to represent a platform resource link share
  *
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
  * @copyright  SPV Software Products

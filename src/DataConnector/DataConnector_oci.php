@@ -3,12 +3,12 @@
 namespace ceLTIc\LTI\DataConnector;
 
 use ceLTIc\LTI;
-use ceLTIc\LTI\ConsumerNonce;
+use ceLTIc\LTI\PlatformNonce;
 use ceLTIc\LTI\Context;
 use ceLTIc\LTI\ResourceLink;
 use ceLTIc\LTI\ResourceLinkShare;
 use ceLTIc\LTI\ResourceLinkShareKey;
-use ceLTIc\LTI\ToolConsumer;
+use ceLTIc\LTI\Platform;
 use ceLTIc\LTI\UserResult;
 use ceLTIc\LTI\Util;
 
@@ -39,145 +39,192 @@ class DataConnector_oci extends DataConnector
     }
 
 ###
-###  ToolConsumer methods
+###  Platform methods
 ###
 
     /**
-     * Load tool consumer object.
+     * Load platform object.
      *
-     * @param ToolConsumer $consumer ToolConsumer object
+     * @param Platform $platform Platform object
      *
-     * @return bool    True if the tool consumer object was successfully loaded
+     * @return bool    True if the platform object was successfully loaded
      */
-    public function loadToolConsumer($consumer)
+    public function loadPlatform($platform)
     {
         $ok = false;
-        if (!is_null($consumer->getRecordId())) {
-            $sql = 'SELECT consumer_pk, name, consumer_key256, consumer_key, secret, lti_version, ' .
-                'signature_method, consumer_name, consumer_version, consumer_guid, ' .
+        if (!is_null($platform->getRecordId())) {
+            $sql = 'SELECT consumer_pk, name, consumer_key, secret, ' .
+                'platform_id, client_id, deployment_id, public_key, ' .
+                'lti_version, signature_method, consumer_name, consumer_version, consumer_guid, ' .
                 'profile, tool_proxy, settings, protected, enabled, ' .
                 'enable_from, enable_until, last_access, created, updated ' .
-                "FROM {$this->dbTableNamePrefix}" . static::CONSUMER_TABLE_NAME . ' ' .
+                "FROM {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' ' .
                 'WHERE consumer_pk = :id';
             $query = oci_parse($this->db, $sql);
-            $id = $consumer->getRecordId();
+            $id = $platform->getRecordId();
             oci_bind_by_name($query, 'id', $id);
+        } elseif (!empty($platform->platformId)) {
+            if (empty($platform->clientId)) {
+                $sql = 'SELECT consumer_pk, name, consumer_key, secret, ' .
+                    'platform_id, client_id, deployment_id, public_key, ' .
+                    'lti_version, signature_method, consumer_name, consumer_version, consumer_guid, ' .
+                    'profile, tool_proxy, settings, protected, enabled, ' .
+                    'enable_from, enable_until, last_access, created, updated ' .
+                    "FROM {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' ' .
+                    'WHERE (platform_id = :platform_id) ' .
+                    'GROUP BY platform_id, client_id';
+                $query = oci_parse($this->db, $sql);
+                oci_bind_by_name($query, 'platform_id', $platform->platformId);
+            } elseif (empty($platform->deploymentId)) {
+                $sql = 'SELECT consumer_pk, name, consumer_key, secret, ' .
+                    'platform_id, client_id, deployment_id, public_key, ' .
+                    'lti_version, signature_method, consumer_name, consumer_version, consumer_guid, ' .
+                    'profile, tool_proxy, settings, protected, enabled, ' .
+                    'enable_from, enable_until, last_access, created, updated ' .
+                    "FROM {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' ' .
+                    'WHERE (platform_id = :platform_id) AND (client_id = :client_id)';
+                $query = oci_parse($this->db, $sql);
+                oci_bind_by_name($query, 'platform_id', $platform->platformId);
+                oci_bind_by_name($query, 'client_id', $platform->clientId);
+            } else {
+                $sql = 'SELECT consumer_pk, name, consumer_key, secret, ' .
+                    'platform_id, client_id, deployment_id, public_key, ' .
+                    'lti_version, signature_method, consumer_name, consumer_version, consumer_guid, ' .
+                    'profile, tool_proxy, settings, protected, enabled, ' .
+                    'enable_from, enable_until, last_access, created, updated ' .
+                    "FROM {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' ' .
+                    'WHERE (platform_id = :platform_id) AND (client_id = :client_id) AND (deployment_id = :deployment_id)';
+                $query = oci_parse($this->db, $sql);
+                oci_bind_by_name($query, 'platform_id', $platform->platformId);
+                oci_bind_by_name($query, 'client_id', $platform->clientId);
+                oci_bind_by_name($query, 'deployment_id', $platform->deploymentId);
+            }
         } else {
-            $sql = 'SELECT consumer_pk, name, consumer_key256, consumer_key, secret, lti_version, ' .
-                'signature_method, consumer_name, consumer_version, consumer_guid, ' .
+            $sql = 'SELECT consumer_pk, name, consumer_key, secret, ' .
+                'platform_id, client_id, deployment_id, public_key, ' .
+                'lti_version, signature_method, consumer_name, consumer_version, consumer_guid, ' .
                 'profile, tool_proxy, settings, protected, enabled, ' .
                 'enable_from, enable_until, last_access, created, updated ' .
-                "FROM {$this->dbTableNamePrefix}" . static::CONSUMER_TABLE_NAME . ' ' .
-                'WHERE consumer_key256 = :key256';
+                "FROM {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' ' .
+                'WHERE consumer_key = :key';
             $query = oci_parse($this->db, $sql);
-            $key256 = static::getConsumerKey($consumer->getKey());
-            oci_bind_by_name($query, 'key256', $key256);
+            $consumer_key = $platform->getKey();
+            oci_bind_by_name($query, 'key', $consumer_key);
         }
-
-        if ($this->executeQuery($sql, $query)) {
-            while ($row = oci_fetch_assoc($query)) {
-                $row = array_change_key_case($row);
-                if (empty($key256) || empty($row['consumer_key']) || ($consumer->getKey() === $row['consumer_key'])) {
-                    $consumer->setRecordId(intval($row['consumer_pk']));
-                    $consumer->name = $row['name'];
-                    $consumer->setkey(empty($row['consumer_key']) ? $row['consumer_key256'] : $row['consumer_key']);
-                    $consumer->secret = $row['secret'];
-                    $consumer->ltiVersion = $row['lti_version'];
-                    $consumer->signatureMethod = $row['signature_method'];
-                    $consumer->consumerName = $row['consumer_name'];
-                    $consumer->consumerVersion = $row['consumer_version'];
-                    $consumer->consumerGuid = $row['consumer_guid'];
-                    $consumer->profile = json_decode($row['profile']);
-                    $consumer->toolProxy = $row['tool_proxy'];
-                    $settingsValue = $row['settings']->load();
-                    if (is_string($settingsValue)) {
-                        $settings = json_decode($settingsValue, true);
-                        if (!is_array($settings)) {
-                            $settings = @unserialize($settingsValue);  // check for old serialized setting
-                        }
-                        if (!is_array($settings)) {
-                            $settings = array();
-                        }
-                    } else {
-                        $settings = array();
-                    }
-                    $consumer->setSettings($settings);
-                    $consumer->protected = (intval($row['protected']) === 1);
-                    $consumer->enabled = (intval($row['enabled']) === 1);
-                    $consumer->enableFrom = null;
-                    if (!is_null($row['enable_from'])) {
-                        $consumer->enableFrom = strtotime($row['enable_from']);
-                    }
-                    $consumer->enableUntil = null;
-                    if (!is_null($row['enable_until'])) {
-                        $consumer->enableUntil = strtotime($row['enable_until']);
-                    }
-                    $consumer->lastAccess = null;
-                    if (!is_null($row['last_access'])) {
-                        $consumer->lastAccess = strtotime($row['last_access']);
-                    }
-                    $consumer->created = strtotime($row['created']);
-                    $consumer->updated = strtotime($row['updated']);
-                    $ok = true;
-                    break;
+        $ok = $this->executeQuery($sql, $query);
+        if ($ok) {
+            $row = oci_fetch_assoc($query);
+            $ok = ($row !== false);
+        }
+        if ($ok) {
+            $row = array_change_key_case($row);
+            $platform->setRecordId(intval($row['consumer_pk']));
+            $platform->name = $row['name'];
+            $platform->setkey($row['consumer_key']);
+            $platform->secret = $row['secret'];
+            $platform->platformId = $row['platform_id'];
+            $platform->clientId = $row['client_id'];
+            $platform->deploymentId = $row['deployment_id'];
+            $platform->rsaKey = $row['public_key'];
+            $platform->ltiVersion = $row['lti_version'];
+            $platform->signatureMethod = $row['signature_method'];
+            $platform->consumerName = $row['consumer_name'];
+            $platform->consumerVersion = $row['consumer_version'];
+            $platform->consumerGuid = $row['consumer_guid'];
+            $platform->profile = json_decode($row['profile']);
+            $platform->toolProxy = $row['tool_proxy'];
+            $settingsValue = $row['settings']->load();
+            if (is_string($settingsValue)) {
+                $settings = json_decode($settingsValue, true);
+                if (!is_array($settings)) {
+                    $settings = @unserialize($settingsValue);  // check for old serialized setting
                 }
+                if (!is_array($settings)) {
+                    $settings = array();
+                }
+            } else {
+                $settings = array();
             }
+            $platform->setSettings($settings);
+            $platform->protected = (intval($row['protected']) === 1);
+            $platform->enabled = (intval($row['enabled']) === 1);
+            $platform->enableFrom = null;
+            if (!is_null($row['enable_from'])) {
+                $platform->enableFrom = strtotime($row['enable_from']);
+            }
+            $platform->enableUntil = null;
+            if (!is_null($row['enable_until'])) {
+                $platform->enableUntil = strtotime($row['enable_until']);
+            }
+            $platform->lastAccess = null;
+            if (!is_null($row['last_access'])) {
+                $platform->lastAccess = strtotime($row['last_access']);
+            }
+            $platform->created = strtotime($row['created']);
+            $platform->updated = strtotime($row['updated']);
+            $this->fixPlatformSettings($platform, false);
         }
 
         return $ok;
     }
 
     /**
-     * Save tool consumer object.
+     * Save platform object.
      *
-     * @param ToolConsumer $consumer Consumer object
+     * @param Platform $platform Platform object
      *
-     * @return bool    True if the tool consumer object was successfully saved
+     * @return bool    True if the platform object was successfully saved
      */
-    public function saveToolConsumer($consumer)
+    public function savePlatform($platform)
     {
-        $id = $consumer->getRecordId();
-        $key = $consumer->getKey();
-        $key256 = $this->getConsumerKey($key);
-        if ($key === $key256) {
-            $key = null;
-        }
-        $protected = ($consumer->protected) ? 1 : 0;
-        $enabled = ($consumer->enabled) ? 1 : 0;
-        $profile = (!empty($consumer->profile)) ? json_encode($consumer->profile) : null;
-        $settingsValue = json_encode($consumer->getSettings());
+        $id = $platform->getRecordId();
+        $consumer_key = $platform->getKey();
+        $protected = ($platform->protected) ? 1 : 0;
+        $enabled = ($platform->enabled) ? 1 : 0;
+        $profile = (!empty($platform->profile)) ? json_encode($platform->profile) : null;
+        $this->fixPlatformSettings($platform, true);
+        $settingsValue = json_encode($platform->getSettings());
+        $this->fixPlatformSettings($platform, false);
         $time = time();
         $now = date("{$this->dateFormat} {$this->timeFormat}", $time);
         $from = null;
-        if (!is_null($consumer->enableFrom)) {
-            $from = date("{$this->dateFormat} {$this->timeFormat}", $consumer->enableFrom);
+        if (!is_null($platform->enableFrom)) {
+            $from = date("{$this->dateFormat} {$this->timeFormat}", $platform->enableFrom);
         }
         $until = null;
-        if (!is_null($consumer->enableUntil)) {
-            $until = date("{$this->dateFormat} {$this->timeFormat}", $consumer->enableUntil);
+        if (!is_null($platform->enableUntil)) {
+            $until = date("{$this->dateFormat} {$this->timeFormat}", $platform->enableUntil);
         }
         $last = null;
-        if (!is_null($consumer->lastAccess)) {
-            $last = date($this->dateFormat, $consumer->lastAccess);
+        if (!is_null($platform->lastAccess)) {
+            $last = date($this->dateFormat, $platform->lastAccess);
         }
         if (empty($id)) {
-            $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::CONSUMER_TABLE_NAME . ' (consumer_key256, consumer_key, name, ' .
-                'secret, lti_version, signature_method, consumer_name, consumer_version, consumer_guid, profile, tool_proxy, settings, protected, enabled, ' .
+            $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' (consumer_key, name, secret, ' .
+                'platform_id, client_id, deployment_id, public_key, ' .
+                'lti_version, signature_method, consumer_name, consumer_version, consumer_guid, ' .
+                'profile, tool_proxy, settings, protected, enabled, ' .
                 'enable_from, enable_until, last_access, created, updated) ' .
-                'VALUES (:key256, :key, :name, :secret, :lti_version, :signature_method, :consumer_name, :consumer_version, :consumer_guid, :profile, :tool_proxy, :settings, ' .
+                'VALUES (:key, :name, :secret, ' .
+                ':platform_id, :client_id, :deployment_id, :public_key, ' .
+                ':lti_version, :signature_method, ' .
+                ':consumer_name, :consumer_version, :consumer_guid, :profile, :tool_proxy, :settings, ' .
                 ':protected, :enabled, :enable_from, :enable_until, :last_access, :created, :updated) returning consumer_pk into :pk';
             $query = oci_parse($this->db, $sql);
-            oci_bind_by_name($query, 'key256', $key256);
-            oci_bind_by_name($query, 'key', $key);
-            oci_bind_by_name($query, 'name', $consumer->name);
-            oci_bind_by_name($query, 'secret', $consumer->secret);
-            oci_bind_by_name($query, 'lti_version', $consumer->ltiVersion);
-            oci_bind_by_name($query, 'signature_method', $consumer->signatureMethod);
-            oci_bind_by_name($query, 'consumer_name', $consumer->consumerName);
-            oci_bind_by_name($query, 'consumer_version', $consumer->consumerVersion);
-            oci_bind_by_name($query, 'consumer_guid', $consumer->consumerGuid);
+            oci_bind_by_name($query, 'key', $consumer_key);
+            oci_bind_by_name($query, 'name', $platform->name);
+            oci_bind_by_name($query, 'secret', $platform->secret);
+            oci_bind_by_name($query, 'platform_id', $platform->platformId);
+            oci_bind_by_name($query, 'client_id', $platform->clientId);
+            oci_bind_by_name($query, 'deployment_id', $platform->deploymentId);
+            oci_bind_by_name($query, 'public_key', $platform->rsaKey);
+            oci_bind_by_name($query, 'lti_version', $platform->ltiVersion);
+            oci_bind_by_name($query, 'signature_method', $platform->signatureMethod);
+            oci_bind_by_name($query, 'consumer_name', $platform->consumerName);
+            oci_bind_by_name($query, 'consumer_version', $platform->consumerVersion);
+            oci_bind_by_name($query, 'consumer_guid', $platform->consumerGuid);
             oci_bind_by_name($query, 'profile', $profile);
-            oci_bind_by_name($query, 'tool_proxy', $consumer->toolProxy);
+            oci_bind_by_name($query, 'tool_proxy', $platform->toolProxy);
             oci_bind_by_name($query, 'settings', $settingsValue);
             oci_bind_by_name($query, 'protected', $protected);
             oci_bind_by_name($query, 'enabled', $enabled);
@@ -188,25 +235,29 @@ class DataConnector_oci extends DataConnector
             oci_bind_by_name($query, 'updated', $now);
             oci_bind_by_name($query, 'pk', $pk);
         } else {
-            $sql = 'UPDATE ' . $this->dbTableNamePrefix . static::CONSUMER_TABLE_NAME . ' ' .
-                'SET consumer_key256 = :key256, consumer_key = :key, name = :name, secret = :secret, lti_version = :lti_version, ' .
-                'signature_method = :signature_method, consumer_name = :consumer_name, ' .
-                'consumer_version = :consumer_version, consumer_guid = :consumer_guid, ' .
+            $sql = 'UPDATE ' . $this->dbTableNamePrefix . static::PLATFORM_TABLE_NAME . ' ' .
+                'SET consumer_key = :key, name = :name, secret = :secret, ' .
+                'platform_id = :platform_id, client_id = :client_id, deployment_id = :deployment_id, ' .
+                'public_key = :public_key, lti_version = :lti_version, signature_method = :signature_method, ' .
+                'consumer_name = :consumer_name, consumer_version = :consumer_version, consumer_guid = :consumer_guid, ' .
                 'profile = :profile, tool_proxy = :tool_proxy, settings = :settings, ' .
                 'protected = :protected, enabled = :enabled, enable_from = :enable_from, enable_until = :enable_until, last_access = :last_access, updated = :updated ' .
                 'WHERE consumer_pk = :id';
             $query = oci_parse($this->db, $sql);
-            oci_bind_by_name($query, 'key256', $key256);
-            oci_bind_by_name($query, 'key', $key);
-            oci_bind_by_name($query, 'name', $consumer->name);
-            oci_bind_by_name($query, 'secret', $consumer->secret);
-            oci_bind_by_name($query, 'lti_version', $consumer->ltiVersion);
-            oci_bind_by_name($query, 'signature_method', $consumer->signatureMethod);
-            oci_bind_by_name($query, 'consumer_name', $consumer->consumerName);
-            oci_bind_by_name($query, 'consumer_version', $consumer->consumerVersion);
-            oci_bind_by_name($query, 'consumer_guid', $consumer->consumerGuid);
+            oci_bind_by_name($query, 'key', $consumer_key);
+            oci_bind_by_name($query, 'name', $platform->name);
+            oci_bind_by_name($query, 'secret', $platform->secret);
+            oci_bind_by_name($query, 'platform_id', $platform->platformId);
+            oci_bind_by_name($query, 'client_id', $platform->clientId);
+            oci_bind_by_name($query, 'deployment_id', $platform->deploymentId);
+            oci_bind_by_name($query, 'public_key', $platform->rsaKey);
+            oci_bind_by_name($query, 'lti_version', $platform->ltiVersion);
+            oci_bind_by_name($query, 'signature_method', $platform->signatureMethod);
+            oci_bind_by_name($query, 'consumer_name', $platform->consumerName);
+            oci_bind_by_name($query, 'consumer_version', $platform->consumerVersion);
+            oci_bind_by_name($query, 'consumer_guid', $platform->consumerGuid);
             oci_bind_by_name($query, 'profile', $profile);
-            oci_bind_by_name($query, 'tool_proxy', $consumer->toolProxy);
+            oci_bind_by_name($query, 'tool_proxy', $platform->toolProxy);
             oci_bind_by_name($query, 'settings', $settingsValue);
             oci_bind_by_name($query, 'protected', $protected);
             oci_bind_by_name($query, 'enabled', $enabled);
@@ -219,25 +270,31 @@ class DataConnector_oci extends DataConnector
         $ok = $this->executeQuery($sql, $query);
         if ($ok) {
             if (empty($id)) {
-                $consumer->setRecordId(intval($pk));
-                $consumer->created = $time;
+                $platform->setRecordId(intval($pk));
+                $platform->created = $time;
             }
-            $consumer->updated = $time;
+            $platform->updated = $time;
         }
 
         return $ok;
     }
 
     /**
-     * Delete tool consumer object.
+     * Delete platform object.
      *
-     * @param ToolConsumer $consumer Consumer object
+     * @param Platform $platform Platform object
      *
-     * @return bool    True if the tool consumer object was successfully deleted
+     * @return bool    True if the platform object was successfully deleted
      */
-    public function deleteToolConsumer($consumer)
+    public function deletePlatform($platform)
     {
-        $id = $consumer->getRecordId();
+        $id = $platform->getRecordId();
+
+// Delete any access token for this consumer
+        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::ACCESS_TOKEN_TABLE_NAME . ' WHERE consumer_pk = :id';
+        $query = oci_parse($this->db, $sql);
+        oci_bind_by_name($query, 'id', $id);
+        $this->executeQuery($sql, $query);
 
 // Delete any nonce values for this consumer
         $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' WHERE consumer_pk = :id';
@@ -321,33 +378,34 @@ class DataConnector_oci extends DataConnector
         $this->executeQuery($sql, $query);
 
 // Delete consumer
-        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::CONSUMER_TABLE_NAME . ' ' .
+        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' ' .
             'WHERE consumer_pk = :id';
         $query = oci_parse($this->db, $sql);
         oci_bind_by_name($query, 'id', $id);
         $ok = $this->executeQuery($sql, $query);
 
         if ($ok) {
-            $consumer->initialize();
+            $platform->initialize();
         }
 
         return $ok;
     }
 
     /**
-     * Load tool consumer objects.
+     * Load platform objects.
      *
-     * @return ToolConsumer[] Array of all defined ToolConsumer objects
+     * @return Platform[] Array of all defined Platform objects
      */
-    public function getToolConsumers()
+    public function getPlatforms()
     {
         $consumers = array();
 
-        $sql = 'SELECT consumer_pk, name, consumer_key256, consumer_key, secret, lti_version, ' .
-            'signature_method, consumer_name, consumer_version, consumer_guid, ' .
+        $sql = 'SELECT consumer_pk, name, consumer_key, secret, ' .
+            'platform_id, client_id, deployment_id, public_key, ' .
+            'lti_version, signature_method, consumer_name, consumer_version, consumer_guid, ' .
             'profile, tool_proxy, settings, protected, enabled, ' .
             'enable_from, enable_until, last_access, created, updated ' .
-            "FROM {$this->dbTableNamePrefix}" . static::CONSUMER_TABLE_NAME . ' ' .
+            "FROM {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' ' .
             'ORDER BY name';
         $query = oci_parse($this->db, $sql);
         $ok = ($query !== false);
@@ -359,18 +417,22 @@ class DataConnector_oci extends DataConnector
         if ($ok) {
             while ($row = oci_fetch_assoc($query)) {
                 $row = array_change_key_case($row);
-                $key = empty($row['consumer_key']) ? $row['consumer_key256'] : $row['consumer_key'];
-                $consumer = new LTI\ToolConsumer($key, $this);
-                $consumer->setRecordId(intval($row['consumer_pk']));
-                $consumer->name = $row['name'];
-                $consumer->secret = $row['secret'];
-                $consumer->ltiVersion = $row['lti_version'];
-                $consumer->signatureMethod = $row['signature_method'];
-                $consumer->consumerName = $row['consumer_name'];
-                $consumer->consumerVersion = $row['consumer_version'];
-                $consumer->consumerGuid = $row['consumer_guid'];
-                $consumer->profile = json_decode($row['profile']);
-                $consumer->toolProxy = $row['tool_proxy'];
+                $platform = new Platform($this);
+                $platform->setRecordId(intval($row['consumer_pk']));
+                $platform->name = $row['name'];
+                $platform->setKey($row['consumer_key']);
+                $platform->secret = $row['secret'];
+                $platform->platformId = $row['platform_id'];
+                $platform->clientId = $row['client_id'];
+                $platform->deploymentId = $row['deployment_id'];
+                $platform->rsaKey = $row['public_key'];
+                $platform->ltiVersion = $row['lti_version'];
+                $platform->signatureMethod = $row['signature_method'];
+                $platform->consumerName = $row['consumer_name'];
+                $platform->consumerVersion = $row['consumer_version'];
+                $platform->consumerGuid = $row['consumer_guid'];
+                $platform->profile = json_decode($row['profile']);
+                $platform->toolProxy = $row['tool_proxy'];
                 $settingsValue = $row['settings']->load();
                 if (is_string($settingsValue)) {
                     $settings = json_decode($settingsValue, true);
@@ -383,24 +445,25 @@ class DataConnector_oci extends DataConnector
                 } else {
                     $settings = array();
                 }
-                $consumer->setSettings($settings);
-                $consumer->protected = (intval($row['protected']) === 1);
-                $consumer->enabled = (intval($row['enabled']) === 1);
-                $consumer->enableFrom = null;
+                $platform->setSettings($settings);
+                $platform->protected = (intval($row['protected']) === 1);
+                $platform->enabled = (intval($row['enabled']) === 1);
+                $platform->enableFrom = null;
                 if (!is_null($row['enable_from'])) {
-                    $consumer->enableFrom = strtotime($row['enable_from']);
+                    $platform->enableFrom = strtotime($row['enable_from']);
                 }
-                $consumer->enableUntil = null;
+                $platform->enableUntil = null;
                 if (!is_null($row['enable_until'])) {
-                    $consumer->enableUntil = strtotime($row['enable_until']);
+                    $platform->enableUntil = strtotime($row['enable_until']);
                 }
-                $consumer->lastAccess = null;
+                $platform->lastAccess = null;
                 if (!is_null($row['last_access'])) {
-                    $consumer->lastAccess = strtotime($row['last_access']);
+                    $platform->lastAccess = strtotime($row['last_access']);
                 }
-                $consumer->created = strtotime($row['created']);
-                $consumer->updated = strtotime($row['updated']);
-                $consumers[] = $consumer;
+                $platform->created = strtotime($row['created']);
+                $platform->updated = strtotime($row['updated']);
+                $this->fixPlatformSettings($platform, true);
+                $consumers[] = $platform;
             }
         }
 
@@ -433,7 +496,7 @@ class DataConnector_oci extends DataConnector
                 "FROM {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' ' .
                 'WHERE (consumer_pk = :cid) AND (lti_context_id = :ctx)';
             $query = oci_parse($this->db, $sql);
-            $id = $context->getConsumer()->getRecordId();
+            $id = $context->getPlatform()->getRecordId();
             oci_bind_by_name($query, 'cid', $id);
             oci_bind_by_name($query, 'ctx', $context->ltiContextId);
         }
@@ -445,7 +508,7 @@ class DataConnector_oci extends DataConnector
         if ($ok) {
             $row = array_change_key_case($row);
             $context->setRecordId(intval($row['context_pk']));
-            $context->setConsumerId(intval($row['consumer_pk']));
+            $context->setPlatformId(intval($row['consumer_pk']));
             $context->ltiContextId = $row['title'];
             $context->ltiContextId = $row['lti_context_id'];
             $context->type = $row['type'];
@@ -482,7 +545,7 @@ class DataConnector_oci extends DataConnector
         $now = date("{$this->dateFormat} {$this->timeFormat}", $time);
         $settingsValue = json_encode($context->getSettings());
         $id = $context->getRecordId();
-        $consumer_pk = $context->getConsumer()->getRecordId();
+        $consumer_pk = $context->getPlatform()->getRecordId();
         if (empty($id)) {
             $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' (consumer_pk, title, ' .
                 'lti_context_id, type, settings, created, updated) ' .
@@ -619,9 +682,9 @@ class DataConnector_oci extends DataConnector
                 $this->dbTableNamePrefix . static::CONTEXT_TABLE_NAME . ' c ON r.context_pk = c.context_pk ' .
                 ' WHERE ((r.consumer_pk = :id1) OR (c.consumer_pk = :id2)) AND (lti_resource_link_id = :rlid)';
             $query = oci_parse($this->db, $sql);
-            $id1 = $resourceLink->getConsumer()->getRecordId();
+            $id1 = $resourceLink->getPlatform()->getRecordId();
             oci_bind_by_name($query, 'id1', $id1);
-            $id2 = $resourceLink->getConsumer()->getRecordId();
+            $id2 = $resourceLink->getPlatform()->getRecordId();
             oci_bind_by_name($query, 'id2', $id2);
             $id = $resourceLink->getId();
             oci_bind_by_name($query, 'rlid', $id);
@@ -641,9 +704,9 @@ class DataConnector_oci extends DataConnector
                 $resourceLink->setContextId(null);
             }
             if (!is_null($row['consumer_pk'])) {
-                $resourceLink->setConsumerId(intval($row['consumer_pk']));
+                $resourceLink->setPlatformId(intval($row['consumer_pk']));
             } else {
-                $resourceLink->setConsumerId(null);
+                $resourceLink->setPlatformId(null);
             }
             $resourceLink->ltiResourceLinkId = $row['lti_resource_link_id'];
             $settings = $row['settings']->load();
@@ -699,7 +762,7 @@ class DataConnector_oci extends DataConnector
             $consumerId = null;
             $contextId = $resourceLink->getContextId();
         } else {
-            $consumerId = $resourceLink->getConsumer()->getRecordId();
+            $consumerId = $resourceLink->getPlatform()->getRecordId();
             $contextId = null;
         }
         if (empty($resourceLink->primaryResourceLinkId)) {
@@ -887,13 +950,13 @@ class DataConnector_oci extends DataConnector
 
         $sql = 'SELECT c.consumer_name, r.resource_link_pk, r.title, r.share_approved ' .
             "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' r ' .
-            "INNER JOIN {$this->dbTableNamePrefix}" . static::CONSUMER_TABLE_NAME . ' c ON r.consumer_pk = c.consumer_pk ' .
+            "INNER JOIN {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' c ON r.consumer_pk = c.consumer_pk ' .
             'WHERE (r.primary_resource_link_pk = :id1) ' .
             'UNION ' .
             'SELECT c2.consumer_name, r2.resource_link_pk, r2.title, r2.share_approved ' .
             "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' r2 ' .
             "INNER JOIN {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' x ON r2.context_pk = x.context_pk ' .
-            "INNER JOIN {$this->dbTableNamePrefix}" . static::CONSUMER_TABLE_NAME . ' c2 ON x.consumer_pk = c2.consumer_pk ' .
+            "INNER JOIN {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' c2 ON x.consumer_pk = c2.consumer_pk ' .
             'WHERE (r2.primary_resource_link_pk = :id2) ' .
             'ORDER BY consumer_name, title';
         $query = oci_parse($this->db, $sql);
@@ -903,7 +966,7 @@ class DataConnector_oci extends DataConnector
             while ($row = oci_fetch_assoc($query)) {
                 $row = array_change_key_case($row);
                 $share = new LTI\ResourceLinkShare();
-                $share->consumer_name = $row['consumer_name'];
+                $share->consumerName = $row['consumer_name'];
                 $share->resourceLinkId = intval($row['resource_link_pk']);
                 $share->title = $row['title'];
                 $share->approved = (intval($row['share_approved']) === 1);
@@ -915,17 +978,17 @@ class DataConnector_oci extends DataConnector
     }
 
 ###
-###  ConsumerNonce methods
+###  PlatformNonce methods
 ###
 
     /**
      * Load nonce object.
      *
-     * @param ConsumerNonce $nonce Nonce object
+     * @param PlatformNonce $nonce Nonce object
      *
      * @return bool    True if the nonce object was successfully loaded
      */
-    public function loadConsumerNonce($nonce)
+    public function loadPlatformNonce($nonce)
     {
 // Delete any expired nonce values
         $now = date("{$this->dateFormat} {$this->timeFormat}", time());
@@ -935,7 +998,7 @@ class DataConnector_oci extends DataConnector
         $this->executeQuery($sql, $query);
 
 // Load the nonce
-        $id = $nonce->getConsumer()->getRecordId();
+        $id = $nonce->getPlatform()->getRecordId();
         $value = $nonce->getValue();
         $sql = "SELECT value T FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' WHERE (consumer_pk = :id) AND (value = :value)';
         $query = oci_parse($this->db, $sql);
@@ -955,13 +1018,13 @@ class DataConnector_oci extends DataConnector
     /**
      * Save nonce object.
      *
-     * @param ConsumerNonce $nonce Nonce object
+     * @param PlatformNonce $nonce Nonce object
      *
      * @return bool    True if the nonce object was successfully saved
      */
-    public function saveConsumerNonce($nonce)
+    public function savePlatformNonce($nonce)
     {
-        $id = $nonce->getConsumer()->getRecordId();
+        $id = $nonce->getPlatform()->getRecordId();
         $value = $nonce->getValue();
         $expires = date("{$this->dateFormat} {$this->timeFormat}", $nonce->expires);
         $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' (consumer_pk, value, expires) VALUES (:id, :value, :expires)';
@@ -969,6 +1032,109 @@ class DataConnector_oci extends DataConnector
         oci_bind_by_name($query, 'id', $id);
         oci_bind_by_name($query, 'value', $value);
         oci_bind_by_name($query, 'expires', $expires);
+        $ok = $this->executeQuery($sql, $query);
+
+        return $ok;
+    }
+
+    /**
+     * Delete nonce object.
+     *
+     * @param PlatformNonce $nonce Nonce object
+     *
+     * @return bool    True if the nonce object was successfully deleted
+     */
+    public function deletePlatformNonce($nonce)
+    {
+        $id = $nonce->getPlatform()->getRecordId();
+        $value = $nonce->getValue();
+        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' WHERE (consumer_pk = :id) AND (value = :value)';
+        $query = oci_parse($this->db, $sql);
+        oci_bind_by_name($query, 'id', $id);
+        oci_bind_by_name($query, 'value', $value);
+        $ok = $this->executeQuery($sql, $query);
+
+        return $ok;
+    }
+
+###
+###  AccessToken methods
+###
+
+    /**
+     * Load access token object.
+     *
+     * @param AccessToken $accessToken  Access token object
+     *
+     * @return bool    True if the nonce object was successfully loaded
+     */
+    public function loadAccessToken($accessToken)
+    {
+        $ok = false;
+
+        $consumer_pk = $accessToken->getPlatform()->getRecordId();
+        $sql = "SELECT scopes, token, expires, created, updated FROM {$this->dbTableNamePrefix}" . static::ACCESS_TOKEN_TABLE_NAME . ' ' .
+            'WHERE (consumer_pk = :consumer_pk)';
+        $query = oci_parse($this->db, $sql);
+        oci_bind_by_name($query, 'consumer_pk', $consumer_pk);
+        $this->executeQuery($sql, $query, false);
+        if ($this->executeQuery($sql, $query)) {
+            $row = oci_fetch_assoc($query);
+            if ($row !== false) {
+                $row = array_change_key_case($row);
+                $scopes = json_decode($row['scopes']->load(), true);
+                if (!is_array($scopes)) {
+                    $scopes = array();
+                }
+                $accessToken->scopes = $scopes;
+                $accessToken->token = $row['token'];
+                $accessToken->expires = strtotime($row['expires']);
+                $accessToken->created = strtotime($row['created']);
+                $accessToken->updated = strtotime($row['updated']);
+                $ok = true;
+            }
+        }
+
+        return $ok;
+    }
+
+    /**
+     * Save access token object.
+     *
+     * @param AccessToken $accessToken  Access token object
+     *
+     * @return bool    True if the access token object was successfully saved
+     */
+    public function saveAccessToken($accessToken)
+    {
+        $consumer_pk = $accessToken->getPlatform()->getRecordId();
+        $scopes = json_encode($accessToken->scopes, JSON_UNESCAPED_SLASHES);
+        $token = $accessToken->token;
+        $expires = date("{$this->dateFormat} {$this->timeFormat}", $accessToken->expires);
+        $time = time();
+        $now = date("{$this->dateFormat} {$this->timeFormat}", $time);
+        if (empty($accessToken->created)) {
+            $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::ACCESS_TOKEN_TABLE_NAME . ' ' .
+                '(consumer_pk, scopes, token, expires, created, updated) ' .
+                'VALUES (:consumer_pk, :scopes, :token, :expires, :created, :updated)';
+            $query = oci_parse($this->db, $sql);
+            oci_bind_by_name($query, 'consumer_pk', $consumer_pk);
+            oci_bind_by_name($query, 'scopes', $scopes);
+            oci_bind_by_name($query, 'token', $token);
+            oci_bind_by_name($query, 'expires', $expires);
+            oci_bind_by_name($query, 'created', $now);
+            oci_bind_by_name($query, 'updated', $now);
+        } else {
+            $sql = 'UPDATE ' . $this->dbTableNamePrefix . static::ACCESS_TOKEN_TABLE_NAME . ' ' .
+                'SET scopes = :scopes, token = :token, expires = :expires, updated = :updated ' .
+                'WHERE consumer_pk = :consumer_pk';
+            $query = oci_parse($this->db, $sql);
+            oci_bind_by_name($query, 'scopes', $scopes);
+            oci_bind_by_name($query, 'token', $token);
+            oci_bind_by_name($query, 'expires', $expires);
+            oci_bind_by_name($query, 'updated', $now);
+            oci_bind_by_name($query, 'consumer_pk', $consumer_pk);
+        }
         $ok = $this->executeQuery($sql, $query);
 
         return $ok;
@@ -1008,7 +1174,7 @@ class DataConnector_oci extends DataConnector
             if ($row !== false) {
                 $row = array_change_key_case($row);
                 $shareKey->resourceLinkId = intval($row['resource_link_pk']);
-                $shareKey->autoApprove = (intval($row['auto_approve']) === 1);
+                $shareKey->autoApprove = ($row['auto_approve'] === 1);
                 $shareKey->expires = strtotime($row['expires']);
                 $ok = true;
             }
@@ -1091,7 +1257,7 @@ class DataConnector_oci extends DataConnector
             oci_bind_by_name($query, 'id', $id);
         } else {
             $id = $userresult->getResourceLink()->getRecordId();
-            $uid = $userresult->getId(LTI\ToolProvider::ID_SCOPE_ID_ONLY);
+            $uid = $userresult->getId(LTI\Tool::ID_SCOPE_ID_ONLY);
             $sql = 'SELECT user_result_pk, resource_link_pk, lti_user_id, lti_result_sourcedid, created, updated ' .
                 "FROM {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' ' .
                 'WHERE (resource_link_pk = :id) AND (lti_user_id = :u_id)';
@@ -1134,7 +1300,7 @@ class DataConnector_oci extends DataConnector
             $query = oci_parse($this->db, $sql);
             $rlid = $userresult->getResourceLink()->getRecordId();
             oci_bind_by_name($query, 'rlid', $rlid);
-            $uid = $userresult->getId(LTI\ToolProvider::ID_SCOPE_ID_ONLY);
+            $uid = $userresult->getId(LTI\Tool::ID_SCOPE_ID_ONLY);
             oci_bind_by_name($query, 'u_id', $uid);
             $sourcedid = $userresult->ltiResultSourcedId;
             oci_bind_by_name($query, 'sourcedid', $sourcedid);

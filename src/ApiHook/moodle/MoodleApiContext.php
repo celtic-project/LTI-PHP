@@ -5,7 +5,7 @@ namespace ceLTIc\LTI\ApiHook\moodle;
 use ceLTIc\LTI\ApiHook\ApiContext;
 
 /**
- * Class to implement Context services for a Moodle tool consumer via its web services.
+ * Class to implement Context services for a Moodle platform via its web services.
  *
  * @author  Tony Butler <a.butler4@lancaster.ac.uk>
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>

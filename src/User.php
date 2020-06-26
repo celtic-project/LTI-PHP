@@ -3,7 +3,7 @@
 namespace ceLTIc\LTI;
 
 /**
- * Class to represent a tool consumer user
+ * Class to represent a platform user
  *
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
  * @copyright  SPV Software Products

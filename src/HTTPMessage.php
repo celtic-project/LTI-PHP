@@ -2,7 +2,7 @@
 
 namespace ceLTIc\LTI;
 
-use ceLTIc\LTI\Http\HttpMessage;
+use ceLTIc\LTI\Http;
 
 /**
  * Class to represent an HTTP message request
@@ -14,7 +14,7 @@ use ceLTIc\LTI\Http\HttpMessage;
  * @copyright  SPV Software Products
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3
  */
-class HTTPMessage extends HttpMessage
+class HTTPMessage extends Http\HttpMessage
 {
 
     /**
@@ -28,7 +28,7 @@ class HTTPMessage extends HttpMessage
     function __construct($url, $method = 'GET', $params = null, $header = null)
     {
         parent::__construct($url, $method, $params, $header);
-        Util::log('Class ceLTIc\LTI\HTTPMessage has been deprecated; please use ceLTIc\LTI\Http\HttpMessage instead.', true);
+        Util::logDebug('Class ceLTIc\LTI\HTTPMessage has been deprecated; please use ceLTIc\LTI\Http\HttpMessage instead.', true);
     }
 
 }

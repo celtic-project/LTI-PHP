@@ -46,9 +46,9 @@ trait CanvasApi
      */
     public function isConfigured()
     {
-        $consumer = $this->sourceObject->getConsumer();
+        $platform = $this->sourceObject->getPlatform();
 
-        return !empty($consumer->getSetting('canvas.domain')) && !empty($consumer->getSetting('canvas.token'));
+        return !empty($platform->getSetting('canvas.domain')) && !empty($platform->getSetting('canvas.token'));
     }
 
     /**
@@ -60,15 +60,15 @@ trait CanvasApi
      */
     private function get($withGroups)
     {
-        $consumer = $this->sourceObject->getConsumer();
-        $this->domain = $consumer->getSetting('canvas.domain');
-        $this->token = $consumer->getSetting('canvas.token');
+        $platform = $this->sourceObject->getPlatform();
+        $this->domain = $platform->getSetting('canvas.domain');
+        $this->token = $platform->getSetting('canvas.token');
         $this->courseId = $this->sourceObject->getSetting('custom_canvas_course_id');
-        $perPage = $consumer->getSetting('canvas.per_page', strval(self::$DEFAULT_PER_PAGE));
+        $perPage = $platform->getSetting('canvas.per_page', strval(self::$DEFAULT_PER_PAGE));
         if (!is_numeric($perPage)) {
             $perPage = self::$DEFAULT_PER_PAGE;
         }
-        $prefix = $consumer->getSetting('canvas.group_set_prefix');
+        $prefix = $platform->getSetting('canvas.group_set_prefix');
         if ($this->domain && $this->token && $this->courseId) {
             if ($withGroups) {
                 $this->setGroupSets($perPage, $prefix);
@@ -199,7 +199,7 @@ trait CanvasApi
                         }
                     }
                     $user->setNames('', '', $enrolment->name);
-                    $user->setEmail($enrolment->email, $this->sourceObject->getConsumer()->defaultEmail);
+                    $user->setEmail($enrolment->email, $this->sourceObject->getPlatform()->defaultEmail);
                     $user->username = $enrolment->login_id;
                     $user->sourcedId = $enrolment->sis_user_id;
                     if (!empty($enrolment->group_ids)) {

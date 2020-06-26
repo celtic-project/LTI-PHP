@@ -2,7 +2,8 @@
 
 namespace ceLTIc\LTI\Service;
 
-use ceLTIc\LTI;
+use ceLTIc\LTI\AccessToken;
+use ceLTIc\LTI\Platform;
 use ceLTIc\LTI\ToolConsumer;
 use ceLTIc\LTI\Http\HttpMessage;
 
@@ -28,21 +29,28 @@ class Service
      *
      * @var string $endpoint
      */
-    protected $endpoint;
+    protected $endpoint = null;
+
+    /**
+     * Service access scope.
+     *
+     * @var string $scope
+     */
+    protected $scope = null;
 
     /**
      * Media type of message body.
      *
      * @var string $mediaType
      */
-    protected $mediaType;
+    protected $mediaType = null;
 
     /**
-     * Tool Consumer for this service request.
+     * Platform for this service request.
      *
-     * @var ToolConsumer $consumer
+     * @var Platform $platform
      */
-    private $consumer;
+    private $platform = null;
 
     /**
      * HttpMessage object for last service request.
@@ -54,25 +62,48 @@ class Service
     /**
      * Class constructor.
      *
-     * @param ToolConsumer $consumer   Tool consumer object for this service request
+     * @param Platform     $platform   Platform object for this service request
      * @param string       $endpoint   Service endpoint
-     * @param string       $mediaType  Media type of message body
      */
-    public function __construct($consumer, $endpoint, $mediaType)
+    public function __construct($platform, $endpoint)
     {
-        $this->consumer = $consumer;
+        $this->platform = $platform;
         $this->endpoint = $endpoint;
-        $this->mediaType = $mediaType;
     }
 
     /**
      * Get tool consumer.
      *
+     * @deprecated Use getPlatform() instead
+     * @see Service::getPlatform()
+     *
      * @return ToolConsumer Consumer for this service
      */
     public function getConsumer()
     {
-        return $this->consumer;
+        Util::logDebug('Method ceLTIc\LTI\Service::getConsumer() has been deprecated; please use ceLTIc\LTI\Service::getPlatform() instead.',
+            true);
+        return $this->getPlatform();
+    }
+
+    /**
+     * Get platform.
+     *
+     * @return Platform  Platform for this service
+     */
+    public function getPlatform()
+    {
+        return $this->platform;
+    }
+
+    /**
+     * Get access scope.
+     *
+     * @return string Access scope
+     */
+    public function getScope()
+    {
+        return $this->scope;
     }
 
     /**
@@ -98,19 +129,36 @@ class Service
                 $sep = '&';
             }
         }
-        if (!$this->unsigned) {
-            $header = $this->consumer->signServiceRequest($url, $method, $this->mediaType, $body);
-        } else {
-            $header = null;
-        }
-
-// Connect to tool consumer
-        $this->http = new HttpMessage($url, $method, $body, $header);
+        $header = null;
+        $retry = !$this->platform->useOAuth1();
+        do {
+            if (!$this->unsigned) {
+                $accessToken = $this->platform->getAccessToken();
+                if (!$this->platform->useOAuth1()) {
+                    if (empty($accessToken)) {
+                        $accessToken = new AccessToken($this->platform);
+                        $this->platform->setAccessToken($accessToken);
+                    }
+                    if (!$accessToken->hasScope($this->scope)) {
+                        $accessToken->get($this->scope);
+                        $retry = false;
+                    }
+                }
+                $header = $this->platform->signServiceRequest($url, $method, $this->mediaType, $body);
+            }
+// Connect to platform
+            $this->http = new HttpMessage($url, $method, $body, $header);
 // Parse JSON response
-        if ($this->http->send() && !empty($this->http->response)) {
-            $this->http->responseJson = json_decode($this->http->response);
-            $this->http->ok = !is_null($this->http->responseJson);
-        }
+            if ($this->http->send() && !empty($this->http->response)) {
+                $this->http->responseJson = json_decode($this->http->response);
+                $this->http->ok = !is_null($this->http->responseJson);
+            }
+            $retry = $retry && !$this->http->ok;
+            if ($retry) {  // Invalidate existing token to force a new one to be obtained
+                $accessToken->expires = time();
+                $this->platform->setAccessToken($accessToken);
+            }
+        } while ($retry);
 
         return $this->http;
     }

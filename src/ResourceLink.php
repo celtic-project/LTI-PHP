@@ -10,7 +10,7 @@ use DOMDocument;
 use DOMElement;
 
 /**
- * Class to represent a tool consumer resource link
+ * Class to represent a platform resource link
  *
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
  * @copyright  SPV Software Products
@@ -95,14 +95,14 @@ class ResourceLink
     public $ltiResourceLinkId = null;
 
     /**
-     * UserResult group sets (null if the consumer does not support the groups enhancement)
+     * UserResult group sets (null if the platform does not support the groups enhancement)
      *
      * @var array|null $groupSets
      */
     public $groupSets = null;
 
     /**
-     * UserResult groups (null if the consumer does not support the groups enhancement)
+     * UserResult groups (null if the platform does not support the groups enhancement)
      *
      * @var array|null $groups
      */
@@ -144,7 +144,7 @@ class ResourceLink
     public $extResponseHeaders = null;
 
     /**
-     * Consumer key value for resource link being shared (if any).
+     * Primary key value for resource link being shared (if any).
      *
      * @var string|null $primaryResourceLinkId
      */
@@ -179,18 +179,18 @@ class ResourceLink
     private $id = null;
 
     /**
-     * Tool Consumer for this resource link.
+     * Platform for this resource link.
      *
-     * @var ToolConsumer|null $consumer
+     * @var Platform|null $platform
      */
-    private $consumer = null;
+    private $platform = null;
 
     /**
-     * Tool Consumer ID for this resource link.
+     * Platform ID for this resource link.
      *
-     * @var int|null $consumerId
+     * @var int|null $platformId
      */
-    private $consumerId = null;
+    private $platformId = null;
 
     /**
      * Context for this resource link.
@@ -302,40 +302,85 @@ class ResourceLink
     /**
      * Get tool consumer.
      *
+     * @deprecated Use getPlatform() instead
+     * @see Context::getPlatform()
+     *
      * @return ToolConsumer Tool consumer object for this resource link.
      */
     public function getConsumer()
     {
-        if (is_null($this->consumer)) {
-            if (!is_null($this->context) || !is_null($this->contextId)) {
-                $this->consumer = $this->getContext()->getConsumer();
-            } else {
-                $this->consumer = ToolConsumer::fromRecordId($this->consumerId, $this->getDataConnector());
-            }
-        }
-
-        return $this->consumer;
+        Util::logDebug('Method ceLTIc\LTI\ResourceLink::getConsumer() has been deprecated; please use ceLTIc\LTI\ResourceLink::getPlatform() instead.',
+            true);
+        return $this->getPlatform();
     }
 
     /**
      * Get tool consumer ID.
      *
+     * @deprecated Use getPlatformId() instead
+     * @see Context::getPlatformId()
+     *
      * @return int|null Tool Consumer ID for this resource link.
      */
     public function getConsumerId()
     {
-        return $this->consumerId;
+        Util::logDebug('Method ceLTIc\LTI\ResourceLink::getConsumerId() has been deprecated; please use ceLTIc\LTI\ResourceLink::getPlatformId() instead.',
+            true);
+        return $this->getPlatformId();
     }
 
     /**
      * Set tool consumer ID.
      *
+     * @deprecated Use setPlatformId() instead
+     * @see Context::setPlatformId()
+     *
      * @param int $consumerId   Tool Consumer ID for this resource link.
      */
     public function setConsumerId($consumerId)
     {
-        $this->consumer = null;
-        $this->consumerId = $consumerId;
+        Util::logDebug('Method ceLTIc\LTI\ResourceLink::setConsumerId() has been deprecated; please use ceLTIc\LTI\ResourceLink::setPlatformId() instead.',
+            true);
+        $this->setPlatformId($consumerId);
+    }
+
+    /**
+     * Get platform.
+     *
+     * @return Platform  Platform object for this resource link.
+     */
+    public function getPlatform()
+    {
+        if (is_null($this->platform)) {
+            if (!is_null($this->context) || !is_null($this->contextId)) {
+                $this->platform = $this->getContext()->getPlatform();
+            } else {
+                $this->platform = Platform::fromRecordId($this->platformId, $this->getDataConnector());
+            }
+        }
+
+        return $this->platform;
+    }
+
+    /**
+     * Get platform ID.
+     *
+     * @return int|null  Platform ID for this resource link.
+     */
+    public function getPlatformId()
+    {
+        return $this->platformId;
+    }
+
+    /**
+     * Set platform ID.
+     *
+     * @param int $platformId  Platform ID for this resource link.
+     */
+    public function setPlatformId($platformId)
+    {
+        $this->platform = null;
+        $this->platformId = $platformId;
     }
 
     /**
@@ -391,13 +436,13 @@ class ResourceLink
     }
 
     /**
-     * Get tool consumer key.
+     * Get consumer key.
      *
      * @return string Consumer key value for this resource link.
      */
     public function getKey()
     {
-        return $this->getConsumer()->getKey();
+        return $this->getPlatform()->getKey();
     }
 
     /**
@@ -437,6 +482,13 @@ class ResourceLink
      */
     public function getDataConnector()
     {
+        if (empty($this->dataConnector)) {
+            $this->getPlatform();
+            if (!empty($this->platform)) {
+                $this->dataConnector = $this->platform->getDataConnector();
+            }
+        }
+
         return $this->dataConnector;
     }
 
@@ -524,7 +576,7 @@ class ResourceLink
         $has = !empty($this->getSetting('ext_ims_lis_basic_outcome_url')) || !empty($this->getSetting('lis_outcome_service_url')) ||
             (!empty($this->getSetting('custom_lineitems_url')) && !empty($this->getSetting('custom_lineitem_url')));
         if (!$has) {
-            $has = self::hasConfiguredApiHook(self::$OUTCOMES_SERVICE_HOOK, $this->getConsumer()->getFamilyCode(), $this);
+            $has = self::hasConfiguredApiHook(self::$OUTCOMES_SERVICE_HOOK, $this->getPlatform()->getFamilyCode(), $this);
         }
         return $has;
     }
@@ -544,9 +596,8 @@ class ResourceLink
             $has = !empty($this->getSetting('ext_ims_lis_memberships_url'));
         }
         if (!$has) {
-            $has = self::hasConfiguredApiHook(self::$MEMBERSHIPS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode(), $this);
+            $has = self::hasConfiguredApiHook(self::$MEMBERSHIPS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode(), $this);
         }
-
         return $has;
     }
 
@@ -579,17 +630,17 @@ class ResourceLink
      *
      * @param int $action The action type constant
      * @param Outcome $ltiOutcome Outcome object
-     * @param UserResult $userresult UserResult object
+     * @param UserResult $userResult UserResult object
      *
      * @return string|bool    Outcome value read or true if the request was successfully processed
      */
-    public function doOutcomesService($action, $ltiOutcome, $userresult)
+    public function doOutcomesService($action, $ltiOutcome, $userResult)
     {
         $response = false;
         $this->extResponse = '';
 // Lookup service details from the source resource link appropriate to the user (in case the destination is being shared)
-        $sourceResourceLink = $userresult->getResourceLink();
-        $sourcedId = $userresult->ltiResultSourcedId;
+        $sourceResourceLink = $userResult->getResourceLink();
+        $sourcedId = $userResult->ltiResultSourcedId;
 
 // Use LTI 1.1 service in preference to extension service if it is available
         $urlAGS = $sourceResourceLink->getSetting('custom_lineitem_url');
@@ -637,7 +688,7 @@ class ResourceLink
             if ($urlAGS) {
                 switch ($action) {
                     case self::EXT_READ:
-                        $ltiOutcome = $this->doResultService($userresult, $urlAGS);
+                        $ltiOutcome = $this->doResultService($userResult, $urlAGS);
                         $response = !empty($ltiOutcome);
                         break;
                     case self::EXT_DELETE:
@@ -645,7 +696,7 @@ class ResourceLink
                         $ltiOutcome->activityProgress = 'Initialized';
                         $ltiOutcome->gradingProgress = 'NotReady';
                     case self::EXT_WRITE:
-                        $response = $this->doScoreService($ltiOutcome, $userresult, $urlAGS);
+                        $response = $this->doScoreService($ltiOutcome, $userResult, $urlAGS);
                         break;
                 }
             } elseif ($urlLTI11) {
@@ -720,10 +771,11 @@ EOF;
                 $response = '';
             }
         }
-        if (($response === false) && $this->hasConfiguredApiHook(self::$OUTCOMES_SERVICE_HOOK, $this->getConsumer()->getFamilyCode(), $this)) {
-            $className = $this->getApiHook(self::$OUTCOMES_SERVICE_HOOK, $this->getConsumer()->getFamilyCode());
+        if (($response === false) && $this->hasConfiguredApiHook(self::$OUTCOMES_SERVICE_HOOK,
+                $this->getPlatform()->getFamilyCode(), $this)) {
+            $className = $this->getApiHook(self::$OUTCOMES_SERVICE_HOOK, $this->getPlatform()->getFamilyCode());
             $hook = new $className($this);
-            $response = $hook->doOutcomesService($action, $ltiOutcome, $userresult);
+            $response = $hook->doOutcomesService($action, $ltiOutcome, $userResult);
         }
 
         return $response;
@@ -743,6 +795,8 @@ EOF;
      */
     public function doMembershipsService($withGroups = false)
     {
+        Util::logDebug('Method ceLTIc\LTI\ResourceLink::doMembershipsService() has been deprecated; please use ceLTIc\LTI\ResourceLink::getMemberships() instead.',
+            true);
         return $this->getMemberships($withGroups);
     }
 
@@ -813,7 +867,7 @@ EOF;
     {
         $has = !empty($this->getSetting('custom_link_setting_url'));
         if (!$has) {
-            $has = self::hasConfiguredApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode(), $this);
+            $has = self::hasConfiguredApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode(), $this);
         }
         return $has;
     }
@@ -837,8 +891,8 @@ EOF;
             $this->lastServiceRequest = $service->getHttpMessage();
             $ok = $settings !== false;
         }
-        if (!$ok && $this->hasConfiguredApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode(), $this)) {
-            $className = $this->getApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode());
+        if (!$ok && $this->hasConfiguredApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode(), $this)) {
+            $className = $this->getApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode());
             $hook = new $className($this);
             $settings = $hook->getToolSettings($mode, $simple);
         }
@@ -847,7 +901,7 @@ EOF;
     }
 
     /**
-     * Perform a Tool Settings service request.
+     * Set Tool Settings.
      *
      * @param array    $settings   An associative array of settings (optional, default is none)
      *
@@ -862,8 +916,8 @@ EOF;
             $ok = $service->set($settings);
             $this->lastServiceRequest = $service->getHttpMessage();
         }
-        if (!$ok && $this->hasConfiguredApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode(), $this)) {
-            $className = $this->getApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode());
+        if (!$ok && $this->hasConfiguredApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode(), $this)) {
+            $className = $this->getApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode());
             $hook = new $className($this);
             $ok = $hook->setToolSettings($settings);
         }
@@ -881,6 +935,8 @@ EOF;
      */
     public function hasMembershipService()
     {
+        Util::logDebug('Method ceLTIc\LTI\ResourceLink::hasMembershipService() has been deprecated; please use ceLTIc\LTI\ResourceLink::hasMembershipsService() instead.',
+            true);
         return $this->hasMembershipsService();
     }
 
@@ -894,6 +950,8 @@ EOF;
      */
     public function getMembership()
     {
+        Util::logDebug('Method ceLTIc\LTI\ResourceLink::getMembership() has been deprecated; please use ceLTIc\LTI\ResourceLink::getMemberships() instead.',
+            true);
         return $this->getMemberships();
     }
 
@@ -911,14 +969,14 @@ EOF;
         $hasLtiservice = !empty($this->getContextId()) &&
             (!empty($this->getContext()->getSetting('custom_context_memberships_url')) || !empty($this->getContext()->getSetting('custom_context_memberships_v2_url')));
         $hasExtService = !empty($this->getSetting('ext_ims_lis_memberships_url'));
-        $hasApiHook = $this->hasConfiguredApiHook(self::$MEMBERSHIPS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode(), $this);
+        $hasApiHook = $this->hasConfiguredApiHook(self::$MEMBERSHIPS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode(), $this);
         if ($hasLtiservice && (!$withGroups || (!$hasExtService && !$hasApiHook))) {
             if (!empty($this->getContext()->getSetting('custom_context_memberships_v2_url'))) {
                 $url = $this->getContext()->getSetting('custom_context_memberships_v2_url');
-                $format = Service\Membership::MEMBERSHIPS_MEDIA_TYPE_NRPS;
+                $format = Service\Membership::MEDIA_TYPE_MEMBERSHIPS_NRPS;
             } else {
                 $url = $this->getContext()->getSetting('custom_context_memberships_url');
-                $format = Service\Membership::MEMBERSHIPS_MEDIA_TYPE_V1;
+                $format = Service\Membership::MEDIA_TYPE_MEMBERSHIPS_V1;
             }
             $service = new Service\Membership($this, $url, $format);
             $userResults = $service->get();
@@ -965,11 +1023,11 @@ EOF;
 
 // Set the user email
                     $email = (isset($members[$i]['person_contact_email_primary'])) ? $members[$i]['person_contact_email_primary'] : '';
-                    $userresult->setEmail($email, $this->getConsumer()->defaultEmail);
+                    $userresult->setEmail($email, $this->getPlatform()->defaultEmail);
 
 // Set the user roles
                     if (isset($members[$i]['roles'])) {
-                        $userresult->roles = ToolProvider::parseRoles($members[$i]['roles']);
+                        $userresult->roles = Tool::parseRoles($members[$i]['roles']);
                     }
 
 // Set the user groups
@@ -1016,22 +1074,22 @@ EOF;
             $ok = $userResults !== false;
         }
         if (!$ok && $hasApiHook) {
-            $className = $this->getApiHook(self::$MEMBERSHIPS_SERVICE_HOOK, $this->getConsumer()->getFamilyCode());
+            $className = $this->getApiHook(self::$MEMBERSHIPS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode());
             $hook = new $className($this);
             $userResults = $hook->getMemberships($withGroups);
             $ok = $userResults !== false;
         }
         if ($ok) {
-            $oldUsers = $this->getUserResultSourcedIDs(true, ToolProvider::ID_SCOPE_RESOURCE);
+            $oldUsers = $this->getUserResultSourcedIDs(true, Tool::ID_SCOPE_RESOURCE);
             foreach ($userResults as $userresult) {
 // If a result sourcedid is provided save the user
                 if (!empty($userresult->ltiResultSourcedId)) {
                     $userresult->save();
                 }
 // Remove old user (if it exists)
-                unset($oldUsers[$userresult->getId(ToolProvider::ID_SCOPE_RESOURCE)]);
+                unset($oldUsers[$userresult->getId(Tool::ID_SCOPE_RESOURCE)]);
             }
-// Delete any old users which were not in the latest list from the tool consumer
+// Delete any old users which were not in the latest list from the platform
             foreach ($oldUsers as $id => $userresult) {
                 $userresult->delete();
             }
@@ -1047,7 +1105,7 @@ EOF;
      * It may also be optionally indexed by the user ID of a specified scope.
      *
      * @param bool    $localOnly True if only users from this resource link are to be returned, not users from shared resource links (optional, default is false)
-     * @param int     $idScope     Scope to use for ID values (optional, default is null for consumer default)
+     * @param int     $idScope     Scope to use for ID values (optional, default is null for platform default)
      *
      * @return UserResult[] Array of UserResult objects
      */
@@ -1133,7 +1191,7 @@ EOF;
         $this->lastServiceRequest = null;
         $url = $this->getSetting('custom_lineitem_url');
         if (!empty($url)) {
-            $resultService = new Service\Result($this->getConsumer(), $url);
+            $resultService = new Service\Result($this->getPlatform(), $url);
             $outcomes = $resultService->getAll($limit);
             $http = $resultService->getHttpMessage();
             $this->extResponse = $http->response;
@@ -1149,6 +1207,9 @@ EOF;
     /**
      * Class constructor from consumer.
      *
+     * @deprecated Use fromPlatform() instead
+     * @see ResourceLink::fromPlatform()
+     *
      * @param ToolConsumer $consumer            Consumer object
      * @param string $ltiResourceLinkId         Resource link ID value
      * @param string $tempId                    Temporary Resource link ID value (optional, default is null)
@@ -1157,9 +1218,25 @@ EOF;
      */
     public static function fromConsumer($consumer, $ltiResourceLinkId, $tempId = null)
     {
+        Util::logDebug('Method ceLTIc\LTI\ResourceLink::fromConsumer() has been deprecated; please use ceLTIc\LTI\ResourceLink::fromPlatform() instead.',
+            true);
+        return self::fromPlatform($consumer, $ltiResourceLinkId, $tempId);
+    }
+
+    /**
+     * Class constructor from platform.
+     *
+     * @param Platform $platform                Platform object
+     * @param string $ltiResourceLinkId         Resource link ID value
+     * @param string $tempId                    Temporary Resource link ID value (optional, default is null)
+     *
+     * @return ResourceLink
+     */
+    public static function fromPlatform($platform, $ltiResourceLinkId, $tempId = null)
+    {
         $resourceLink = new ResourceLink();
-        $resourceLink->consumer = $consumer;
-        $resourceLink->dataConnector = $consumer->getDataConnector();
+        $resourceLink->platform = $platform;
+        $resourceLink->dataConnector = $platform->getDataConnector();
         $resourceLink->ltiResourceLinkId = $ltiResourceLinkId;
         if (!empty($ltiResourceLinkId)) {
             $resourceLink->load();
@@ -1315,7 +1392,7 @@ EOF;
     }
 
     /**
-     * Send a service request to the tool consumer.
+     * Send an unofficial LTI service request to the platform.
      *
      * @param string $type   Message type value
      * @param string $url    URL to send request to
@@ -1332,9 +1409,15 @@ EOF;
         $this->extResponseHeaders = '';
         $this->lastServiceRequest = null;
         if (!empty($url)) {
-            $params = $this->getConsumer()->signParameters($url, $type, $this->getConsumer()->ltiVersion, $params);
-// Connect to tool consumer
-            $http = new HttpMessage($url, 'POST', $params);
+            $params['lti_version'] = $this->getPlatform()->ltiVersion;
+            $params['lti_message_type'] = $type;
+            $signed = $this->getPlatform()->addSignature($url, $params, 'POST', 'application/x-www-form-urlencoded');
+// Connect to platform
+            if (is_array($signed)) {
+                $http = new HttpMessage($url, 'POST', $signed);
+            } else {
+                $http = new HttpMessage($url, 'POST', $params, $signed);
+            }
 // Parse XML response
             if ($http->send()) {
                 $this->extResponse = $http->response;
@@ -1375,7 +1458,7 @@ EOF;
         $this->extResponseHeaders = '';
         $this->lastServiceRequest = null;
         if (!empty($url)) {
-            $resultService = new Service\Result($this->getConsumer(), $url);
+            $resultService = new Service\Result($this->getPlatform(), $url);
             $outcome = $resultService->get($userResult);
             $http = $resultService->getHttpMessage();
             $this->extResponse = $http->response;
@@ -1406,7 +1489,7 @@ EOF;
         $this->extResponseHeaders = '';
         $this->lastServiceRequest = null;
         if (!empty($url)) {
-            $scoreService = new Service\Score($this->getConsumer(), $url);
+            $scoreService = new Service\Score($this->getPlatform(), $url);
             $scoreService->submit($ltiOutcome, $userResult);
             $http = $scoreService->getHttpMessage();
             $this->extResponse = $http->response;
@@ -1421,7 +1504,7 @@ EOF;
     }
 
     /**
-     * Send a service request to the tool consumer.
+     * Send an LTI 1.1 service request to the platform.
      *
      * @param string $type Message type value
      * @param string $url  URL to send request to
@@ -1456,9 +1539,8 @@ EOF;
 </imsx_POXEnvelopeRequest>
 EOD;
 // Add message signature
-            $consumer = $this->getConsumer();
-            $header = $consumer->addSignature($url, $xmlRequest, 'POST', 'application/xml');
-// Connect to tool consumer
+            $header = $this->getPlatform()->addSignature($url, $xmlRequest, 'POST', 'application/xml');
+// Connect to platform
             $http = new HttpMessage($url, 'POST', $xmlRequest, $header);
 // Parse XML response
             if ($http->send()) {
@@ -1493,7 +1575,7 @@ EOD;
     {
         $url = $this->getSetting('custom_lineitems_url');
         if (!empty($url)) {
-            $lineItemService = new Service\LineItem($this->getConsumer(), $url);
+            $lineItemService = new Service\LineItem($this->getPlatform(), $url);
         } else {
             $lineItemService = false;
         }
