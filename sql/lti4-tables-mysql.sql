@@ -125,8 +125,8 @@ ALTER TABLE lti2_user
 
 CREATE TABLE lti2_user_result (
   user_result_pk int(11) AUTO_INCREMENT,
-  user_pk int(11) NOT NULL,
   resource_link_pk int(11) NOT NULL,
+  lti_user_id varchar(255) NOT NULL,
   lti_result_sourcedid varchar(1024) NOT NULL,
   created datetime NOT NULL,
   updated datetime NOT NULL,
@@ -134,15 +134,8 @@ CREATE TABLE lti2_user_result (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE lti2_user_result
-  ADD CONSTRAINT lti2_user_result_lti2_user_FK1 FOREIGN KEY (user_pk)
-  REFERENCES lti2_user (user_pk);
-
-ALTER TABLE lti2_user_result
   ADD CONSTRAINT lti2_user_result_lti2_resource_link_FK1 FOREIGN KEY (resource_link_pk)
   REFERENCES lti2_resource_link (resource_link_pk);
-
-ALTER TABLE lti2_user_result
-  ADD INDEX lti2_user_result_user_pk_IDX (user_pk ASC);
 
 ALTER TABLE lti2_user_result
   ADD INDEX lti2_user_result_resource_link_pk_IDX (resource_link_pk ASC);
