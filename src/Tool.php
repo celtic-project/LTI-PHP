@@ -1374,12 +1374,16 @@ class Tool
             } while (!$ok);
             $ok = $nonce->save();
             if ($ok) {
+                $redirectUri = $oauthRequest->get_normalized_http_url();
+                if (!empty($_SERVER['QUERY_STRING'])) {
+                    $redirectUri .= "?{$_SERVER['QUERY_STRING']}";
+                }
                 $params = array(
                     'client_id' => $this->platform->clientId,
                     'login_hint' => $_REQUEST['login_hint'],
                     'nonce' => Util::getRandomString(32),
                     'prompt' => 'none',
-                    'redirect_uri' => $oauthRequest->get_normalized_http_url(),
+                    'redirect_uri' => $redirectUri,
                     'response_mode' => 'form_post',
                     'response_type' => 'id_token',
                     'scope' => 'openid',
