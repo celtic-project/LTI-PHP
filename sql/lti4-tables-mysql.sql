@@ -107,22 +107,6 @@ ALTER TABLE lti2_resource_link
 ALTER TABLE lti2_resource_link
   ADD INDEX lti2_resource_link_context_pk_IDX (context_pk ASC);
 
-CREATE TABLE lti2_user (
-  user_pk int(11) AUTO_INCREMENT,
-  consumer_pk int(11) NOT NULL,
-  lti_user_id varchar(255) NOT NULL,
-  created datetime NOT NULL,
-  updated datetime NOT NULL,
-  PRIMARY KEY (user_pk)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-ALTER TABLE lti2_user
-  ADD CONSTRAINT lti2_user_lti2_consumer_FK1 FOREIGN KEY (consumer_pk)
-  REFERENCES lti2_consumer (consumer_pk);
-
-ALTER TABLE lti2_user
-  ADD UNIQUE INDEX lti2_user_lti_user_id_IDX (consumer_pk, lti_user_id ASC);
-
 CREATE TABLE lti2_user_result (
   user_result_pk int(11) AUTO_INCREMENT,
   resource_link_pk int(11) NOT NULL,
