@@ -109,7 +109,7 @@ class LineItem
     public function save()
     {
         $service = new Service\LineItem($this->platform, $this->endpoint);
-        $http = $this->send('PUT', null, Service\LineItem::toJson($lineItem));
+        $http = $service->send('PUT', null, Service\LineItem::toJson($lineItem));
         $ok = $http->ok;
         if ($ok && !empty($http->responseJson)) {
             $lineItem = Service\LineItem::toLineItem($this->platform, $http->responseJson);
