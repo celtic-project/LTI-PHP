@@ -114,13 +114,13 @@ class AccessToken
     }
 
     /**
-     * Check if a valid access token exists for a specific scope.
+     * Check if a valid access token exists for a specific scope (or any scope if none specified).
      *
      * @param string   $scope     Access scope
      *
      * @return bool    True if there is an unexpired access token for specified scope
      */
-    public function hasScope($scope)
+    public function hasScope($scope = '')
     {
         if (substr($scope, -9) === '.readonly') {
             $scope2 = substr($scope, 0, -9);
@@ -128,7 +128,7 @@ class AccessToken
             $scope2 = $scope;
         }
         return !empty($this->token) && (empty($this->expires) || ($this->expires > time())) &&
-            (empty($this->scopes) || (in_array($scope, $this->scopes) || in_array($scope2, $this->scopes)));
+            (empty($scope) || empty($this->scopes) || (in_array($scope, $this->scopes) || in_array($scope2, $this->scopes)));
     }
 
     /**
@@ -138,46 +138,50 @@ class AccessToken
      *
      * @return AccessToken    New access token
      */
-    public function get($scope)
+    public function get($scope = '')
     {
         $url = $this->platform->accessTokenUrl;
         if (!empty($url) && !$this->hasScope($scope) && !empty(Tool::$defaultTool) && !empty(Tool::$defaultTool->rsaKey)) {
-            if (!empty(Tool::$defaultTool)) {
-                $scopesRequested = Tool::$defaultTool->requiredScopes;
-                if (substr($scope, -9) === '.readonly') {
-                    $scope2 = substr($scope, 0, -9);
-                } else {
-                    $scope2 = $scope;
-                }
-                if (!in_array($scope, $scopesRequested) && !in_array($scope2, $scopesRequested)) {
-                    $scopesRequested[] = $scope;
-                }
+            $scopesRequested = Tool::$defaultTool->requiredScopes;
+            if (substr($scope, -9) === '.readonly') {
+                $scope2 = substr($scope, 0, -9);
             } else {
-                $scopesRequested = array($scope);
+                $scope2 = $scope;
             }
-            $method = 'POST';
-            $type = 'application/x-www-form-urlencoded';
-            $body = array(
-                'grant_type' => 'client_credentials',
-                'client_assertion_type' => 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
-                'scope' => implode(' ', $scopesRequested)
-            );
-            $body = $this->platform->signServiceRequest($url, $method, $type, $body);
-            $http = new HttpMessage($url, $method, $body);
-            if ($http->send() && !empty($http->response)) {
-                $http->responseJson = json_decode($http->response);
-                if (!is_null($http->responseJson) && !empty($http->responseJson->access_token) && !empty($http->responseJson->expires_in)) {
-                    if (isset($http->responseJson->scope)) {
-                        $scopesAccepted = explode(' ', $http->responseJson->scope);
-                    } else {
-                        $scopesAccepted = $scopesRequested;
+            if (!empty($scope) && !in_array($scope, $scopesRequested) && !in_array($scope2, $scopesRequested)) {
+                $scopesRequested[] = $scope;
+            }
+            if (!empty($scopesRequested)) {
+                $method = 'POST';
+                $type = 'application/x-www-form-urlencoded';
+                $body = array(
+                    'grant_type' => 'client_credentials',
+                    'client_assertion_type' => 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
+                    'scope' => implode(' ', $scopesRequested)
+                );
+                $body = $this->platform->signServiceRequest($url, $method, $type, $body);
+                $http = new HttpMessage($url, $method, $body);
+                if ($http->send() && !empty($http->response)) {
+                    $http->responseJson = json_decode($http->response);
+                    if (!is_null($http->responseJson) && !empty($http->responseJson->access_token) && !empty($http->responseJson->expires_in)) {
+                        if (isset($http->responseJson->scope)) {
+                            $scopesAccepted = explode(' ', $http->responseJson->scope);
+                        } else {
+                            $scopesAccepted = $scopesRequested;
+                        }
+                        $this->scopes = $scopesAccepted;
+                        $this->token = $http->responseJson->access_token;
+                        $this->expires = time() + $http->responseJson->expires_in;
+                        $this->save();
                     }
-                    $this->scopes = $scopesAccepted;
-                    $this->token = $http->responseJson->access_token;
-                    $this->expires = time() + $http->responseJson->expires_in;
-                    $this->save();
                 }
             }
+        } else {
+            $this->scopes = null;
+            $this->token = null;
+            $this->expires = null;
+            $this->created = null;
+            $this->updated = null;
         }
 
         return $this;

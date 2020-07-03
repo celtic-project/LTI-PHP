@@ -843,6 +843,7 @@ trait System
                 $ok = true;
                 if ($this instanceof Tool) {
                     $iss = $this->baseUrl;
+                    $sub = $this->platform->clientId;
                     $authorizationId = $this->platform->authorizationServerId;
                     $privateKey = $this->rsaKey;
                     $kid = $this->kid;
@@ -859,10 +860,11 @@ trait System
                         $kid = $this->kid;
                         $jku = $this->jku;
                     }
+                    $sub = $this->clientId;
                     $authorizationId = $this->authorizationServerId;
                 }
                 $payload['iss'] = $iss;
-                $payload['sub'] = $this->key;
+                $payload['sub'] = $sub;
                 if (empty($authorizationId)) {
                     $authorizationId = $endpoint;
                 }
@@ -889,11 +891,19 @@ trait System
         } else {
             $header = '';
             if ($this instanceof Tool) {
-                $accessToken = $this->platform->accessToken;
+                $platform = $this->platform;
             } else {
-                $accessToken = $this->accessToken;
+                $platform = $this;
             }
-            if (!is_null($accessToken)) {
+            $accessToken = $platform->accessToken;
+            if (empty($accessToken)) {
+                $accessToken = new AccessToken($platform);
+                $platform->setAccessToken($accessToken);
+            }
+            if (!$accessToken->hasScope()) {
+                $accessToken->get();
+            }
+            if (!empty($accessToken->token)) {
                 $header = "Authorization: Bearer {$accessToken->token}";
             }
             if (empty($data) && ($method !== 'DELETE')) {

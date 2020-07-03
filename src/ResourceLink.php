@@ -632,7 +632,7 @@ class ResourceLink
      * @param Outcome $ltiOutcome Outcome object
      * @param UserResult $userResult UserResult object
      *
-     * @return string|bool    Outcome value read or true if the request was successfully processed
+     * @return bool    True if the request was successfully processed
      */
     public function doOutcomesService($action, $ltiOutcome, $userResult)
     {
@@ -649,31 +649,37 @@ class ResourceLink
         if ($urlExt || $urlLTI11 || $urlAGS) {
             switch ($action) {
                 case self::EXT_READ:
-                    if ($urlAGS) {
+                    if ($urlAGS && ($ltiOutcome->type === self::EXT_TYPE_DECIMAL)) {
                         $do = $action;
                     } elseif ($urlLTI11 && ($ltiOutcome->type === self::EXT_TYPE_DECIMAL)) {
+                        $urlAGS = null;
                         $do = 'readResult';
                     } elseif ($urlExt) {
+                        $urlAGS = null;
                         $urlLTI11 = null;
                         $do = 'basic-lis-readresult';
                     }
                     break;
                 case self::EXT_WRITE:
-                    if ($urlAGS) {
+                    if ($urlAGS && $this->checkValueType($ltiOutcome, array(self::EXT_TYPE_DECIMAL))) {
                         $do = $action;
                     } elseif ($urlLTI11 && $this->checkValueType($ltiOutcome, array(self::EXT_TYPE_DECIMAL))) {
+                        $urlAGS = null;
                         $do = 'replaceResult';
                     } elseif ($this->checkValueType($ltiOutcome)) {
+                        $urlAGS = null;
                         $urlLTI11 = null;
                         $do = 'basic-lis-updateresult';
                     }
                     break;
                 case self::EXT_DELETE:
-                    if ($urlAGS) {
+                    if ($urlAGS && ($ltiOutcome->type === self::EXT_TYPE_DECIMAL)) {
                         $do = $action;
                     } elseif ($urlLTI11 && ($ltiOutcome->type === self::EXT_TYPE_DECIMAL)) {
+                        $urlAGS = null;
                         $do = 'deleteResult';
                     } elseif ($urlExt) {
+                        $urlAGS = null;
                         $urlLTI11 = null;
                         $do = 'basic-lis-deleteresult';
                     }
@@ -757,9 +763,8 @@ EOF;
                     switch ($action) {
                         case self::EXT_READ:
                             if (isset($this->extNodes['result']['resultscore']['textstring'])) {
-                                $response = $this->extNodes['result']['resultscore']['textstring'];
+                                $ltiOutcome->setValue($this->extNodes['result']['resultscore']['textstring']);
                             }
-                            break;
                         case self::EXT_WRITE:
                         case self::EXT_DELETE:
                             $response = true;
