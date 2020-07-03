@@ -157,10 +157,6 @@ class LineItem extends AssignmentGrade
         return $lineItem;
     }
 
-###
-###  PRIVATE METHOD
-###
-
     /**
      * Create a line item from a JSON object.
      *
@@ -169,7 +165,7 @@ class LineItem extends AssignmentGrade
      *
      * @return LTI\\LineItem|null  LineItem object, or null on error
      */
-    private static function toLineItem($platform, $json)
+    public static function toLineItem($platform, $json)
     {
         if (!empty($json->id) && !empty($json->label) && !empty($json->scoreMaximum)) {
             $lineItem = new LTI\LineItem($platform, $json->label, $json->scoreMaximum);
@@ -205,7 +201,7 @@ class LineItem extends AssignmentGrade
      *
      * @return string    JSON representation of line item
      */
-    private static function toJson($lineItem)
+    public static function toJson($lineItem)
     {
         $json = new \stdClass();
         if (!empty($lineItem->endpoint)) {
