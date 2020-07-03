@@ -623,7 +623,7 @@ class Platform
         $platform->deploymentId = $deploymentId;
         if ($dataConnector->loadPlatform($platform)) {
             if ($autoEnable) {
-                $this->enabled = true;
+                $platform->enabled = true;
             }
         }
 

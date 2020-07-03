@@ -831,8 +831,8 @@ trait System
                             $jku = $this->jku;
                         }
                         $payload['iss'] = $this->platformId;
-                        $payload['aud'] = array($this->key);
-                        $payload['azp'] = $this->key;
+                        $payload['aud'] = array($this->clientId);
+                        $payload['azp'] = $this->clientId;
                         $payload[Util::JWT_CLAIM_PREFIX . '/claim/deployment_id'] = $this->deploymentId;
                         $paramName = 'id_token';
                     }
