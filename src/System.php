@@ -763,6 +763,7 @@ trait System
             }
             return $header;
         } else {
+// Remove parameters from query string
             $params = $oauthReq->get_parameters();
             foreach ($queryParams as $key => $value) {
                 if (!is_array($value)) {
@@ -776,6 +777,16 @@ trait System
                 } else {
                     foreach ($value as $element) {
                         $params[$key] = array_diff($params[$key], array($value));
+                    }
+                }
+            }
+// Remove any parameters comprising an empty array of values
+            foreach ($params as $key => $value) {
+                if (is_array($value)) {
+                    if (count($value) <= 0) {
+                        unset($params[$key]);
+                    } elseif (count($value) === 1) {
+                        $params[$key] = reset($value);
                     }
                 }
             }
