@@ -1376,7 +1376,27 @@ class Tool
             if ($ok) {
                 $redirectUri = $oauthRequest->get_normalized_http_url();
                 if (!empty($_SERVER['QUERY_STRING'])) {
-                    $redirectUri .= "?{$_SERVER['QUERY_STRING']}";
+                    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                        $redirectUri .= "?{$_SERVER['QUERY_STRING']}";
+                    } else {  // Remove all parameters added by platform from query string
+                        $queryString = '';
+                        $params = explode('&', $_SERVER['QUERY_STRING']);
+                        foreach ($params as $param) {
+                            $parts = explode('=', $param, 2);
+                            if (!in_array($parts[0],
+                                    array('iss', 'target_link_uri', 'login_hint', 'lti_message_hint', 'client_id', 'lti_deployment_id'))) {
+                                if (count($parts) <= 1) {
+                                    $queryString .= "&{$parts[0]}";
+                                } else {
+                                    $queryString .= "&{$parts[0]}={$parts[1]}";
+                                }
+                            }
+                        }
+                        if (!empty($queryString)) {
+                            $queryString = substr($queryString, 1);
+                            $redirectUri .= "?{$queryString}";
+                        }
+                    }
                 }
                 $params = array(
                     'client_id' => $this->platform->clientId,
