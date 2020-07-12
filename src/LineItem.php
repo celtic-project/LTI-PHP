@@ -109,16 +109,7 @@ class LineItem
     public function save()
     {
         $service = new Service\LineItem($this->consumer, $this->endpoint);
-        $http = $this->send('PUT', null, Service\LineItem::toJson($lineItem));
-        $ok = $http->ok;
-        if ($ok && !empty($http->responseJson)) {
-            $lineItem = Service\LineItem::toLineItem($this->consumer, $http->responseJson);
-            foreach (get_object_vars($lineItem) as $key => $value) {
-                $this->$key = $value;
-            }
-        }
-
-        return $ok;
+        return $service->saveLineItem($this);
     }
 
     /**
@@ -129,9 +120,7 @@ class LineItem
     public function delete()
     {
         $service = new Service\LineItem($this->consumer, $this->endpoint);
-        $http = $service->send('DELETE');
-
-        return $http->ok;
+        return $service->deleteLineItem($this);
     }
 
     /**

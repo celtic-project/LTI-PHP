@@ -136,6 +136,43 @@ class LineItem extends AssignmentGrade
     }
 
     /**
+     * Save a line item.
+     *
+     * @param LTI\LineItem        $lineItem         Line item object
+     *
+     * @return bool  True if successful
+     */
+    public function saveLineItem($lineItem)
+    {
+        $this->mediaType = self::$MEDIA_TYPE_LINE_ITEM;
+        $http = $this->send('PUT', null, self::toJson($lineItem));
+        $ok = $http->ok;
+        if ($ok && !empty($http->responseJson)) {
+            $savedLineItem = self::toLineItem($this->getConsumer(), $http->responseJson);
+            foreach (get_object_vars($savedLineItem) as $key => $value) {
+                $lineitem->$key = $value;
+            }
+        }
+
+        return $ok;
+    }
+
+    /**
+     * Delete a line item.
+     *
+     * @param LTI\LineItem        $lineItem         Line item object
+     *
+     * @return bool  True if successful
+     */
+    public function deleteLineItem($lineItem)
+    {
+        $this->mediaType = self::$MEDIA_TYPE_LINE_ITEM;
+        $http = $this->send('DELETE');
+
+        return $http->ok;
+    }
+
+    /**
      * Retrieve a line item.
      *
      * @param ToolConsumer $consumer   ToolConsumer object for this service request
@@ -158,7 +195,7 @@ class LineItem extends AssignmentGrade
     }
 
 ###
-###  PRIVATE METHOD
+###  PRIVATE METHODS
 ###
 
     /**
