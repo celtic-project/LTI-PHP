@@ -136,6 +136,43 @@ class LineItem extends AssignmentGrade
     }
 
     /**
+     * Save a line item.
+     *
+     * @param LTI\LineItem        $lineItem         Line item object
+     *
+     * @return bool  True if successful
+     */
+    public function saveLineItem($lineItem)
+    {
+        $this->mediaType = self::$MEDIA_TYPE_LINE_ITEM;
+        $http = $this->send('PUT', null, self::toJson($lineItem));
+        $ok = $http->ok;
+        if ($ok && !empty($http->responseJson)) {
+            $savedLineItem = self::toLineItem($this->getPlatform(), $http->responseJson);
+            foreach (get_object_vars($savedLineItem) as $key => $value) {
+                $lineitem->$key = $value;
+            }
+        }
+
+        return $ok;
+    }
+
+    /**
+     * Delete a line item.
+     *
+     * @param LTI\LineItem        $lineItem         Line item object
+     *
+     * @return bool  True if successful
+     */
+    public function deleteLineItem($lineItem)
+    {
+        $this->mediaType = self::$MEDIA_TYPE_LINE_ITEM;
+        $http = $this->send('DELETE');
+
+        return $http->ok;
+    }
+
+    /**
      * Retrieve a line item.
      *
      * @param Platform     $platform   Platform object for this service request
@@ -157,6 +194,10 @@ class LineItem extends AssignmentGrade
         return $lineItem;
     }
 
+###
+###  PRIVATE METHODS
+###
+
     /**
      * Create a line item from a JSON object.
      *
@@ -165,7 +206,7 @@ class LineItem extends AssignmentGrade
      *
      * @return LTI\\LineItem|null  LineItem object, or null on error
      */
-    public static function toLineItem($platform, $json)
+    private static function toLineItem($platform, $json)
     {
         if (!empty($json->id) && !empty($json->label) && !empty($json->scoreMaximum)) {
             $lineItem = new LTI\LineItem($platform, $json->label, $json->scoreMaximum);
@@ -201,7 +242,7 @@ class LineItem extends AssignmentGrade
      *
      * @return string    JSON representation of line item
      */
-    public static function toJson($lineItem)
+    private static function toJson($lineItem)
     {
         $json = new \stdClass();
         if (!empty($lineItem->endpoint)) {
