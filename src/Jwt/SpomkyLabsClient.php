@@ -177,9 +177,12 @@ class SpomkyLabsClient implements ClientInterface
                 $ok = true;
             } catch (\Exception $e) {
                 Util::logError($e->getMessage());
-                if (!$retry && $hasPublicKey && !empty($jku)) {
+                if ($retry) {
+                    $retry = false;
+                } elseif ($hasPublicKey && !empty($jku)) {
                     $retry = true;
                     $publicKey = null;
+                    $hasPublicKey = false;
                 }
             }
         } while (!$ok && $retry);
