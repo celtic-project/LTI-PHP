@@ -128,15 +128,15 @@ class DataConnector_sqlsrv extends DataConnector
         $now = date("{$this->dateFormat} {$this->timeFormat}", $time);
         $from = null;
         if (!is_null($consumer->enableFrom)) {
-            $from = date_format($consumer->enableFrom, "{$this->dateFormat} {$this->timeFormat}");
+            $from = date("{$this->dateFormat} {$this->timeFormat}", $consumer->enableFrom);
         }
         $until = null;
         if (!is_null($consumer->enableUntil)) {
-            $until = date_format($consumer->enableUntil, "{$this->dateFormat} {$this->timeFormat}");
+            $until = date("{$this->dateFormat} {$this->timeFormat}", $consumer->enableUntil);
         }
         $last = null;
         if (!is_null($consumer->lastAccess)) {
-            $last = date_format($consumer->lastAccess, $this->dateFormat);
+            $last = date($this->dateFormat, $consumer->lastAccess);
         }
         if (empty($id)) {
             $sql = sprintf("INSERT INTO {$this->dbTableNamePrefix}" . static::CONSUMER_TABLE_NAME . ' (consumer_key256, consumer_key, name, ' .
