@@ -53,7 +53,7 @@ class LineItem extends AssignmentGrade
     {
         $this->limit = $limit;
         parent::__construct($platform, $endpoint);
-        $this->scope = self::$SCOPE_READONLY;
+        $this->scope = self::$SCOPE;
     }
 
     /**
@@ -89,8 +89,10 @@ class LineItem extends AssignmentGrade
         }
         $lineItems = array();
         do {
+            $this->scope = self::$SCOPE_READONLY;
             $this->mediaType = self::$MEDIA_TYPE_LINE_ITEMS;
             $http = $this->send('GET', $params);
+            $this->scope = self::$SCOPE;
             $url = '';
             if ($http->ok) {
                 if (!empty($http->responseJson)) {
@@ -120,10 +122,8 @@ class LineItem extends AssignmentGrade
     public function createLineItem($lineItem)
     {
         $lineItem->endpoint = null;
-        $this->scope = self::$SCOPE;
         $this->mediaType = self::$MEDIA_TYPE_LINE_ITEM;
         $http = $this->send('POST', null, self::toJson($lineItem));
-        $this->scope = self::$SCOPE_READONLY;
         $ok = $http->ok && !empty($http->responseJson);
         if ($ok) {
             $newLineItem = self::toLineItem($this->getPlatform(), $http->responseJson);
@@ -183,8 +183,10 @@ class LineItem extends AssignmentGrade
     public static function getLineItem($platform, $endpoint)
     {
         $service = new self($platform, $endpoint);
+        $this->scope = self::$SCOPE_READONLY;
         $service->mediaType = self::$MEDIA_TYPE_LINE_ITEM;
         $http = $service->send('GET');
+        $this->scope = self::$SCOPE;
         if ($http->ok && !empty($http->responseJson)) {
             $lineItem = self::toLineItem($platform, $http->responseJson);
         } else {
