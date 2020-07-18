@@ -1041,6 +1041,9 @@ class Tool
                         $this->context->title = $title;
                         if (isset($this->messageParameters['context_type'])) {
                             $this->context->type = trim($this->messageParameters['context_type']);
+                            if (strpos($this->context->type, 'http://purl.imsglobal.org/vocab/lis/v2/course#') === 0) {
+                                $this->context->type = substr($this->context->type, 46);
+                            }
                         }
                     }
 
@@ -1249,7 +1252,7 @@ class Tool
                                 $this->userResult->ltiResultSourcedId = $this->messageParameters['lis_result_sourcedid'];
                                 $this->userResult->save();
                             }
-                        } elseif (!empty($this->userResult->ltiResultSourcedId)) {
+                        } else {
                             $this->userResult->ltiResultSourcedId = '';
                             $this->userResult->save();
                         }

@@ -89,7 +89,7 @@ class UserResult extends User
      */
     public function save()
     {
-        if (!empty($this->ltiResultSourcedId) && !is_null($this->resourceLinkId)) {
+        if (!is_null($this->resourceLinkId)) {
             $ok = $this->getDataConnector()->saveUserResult($this);
         } else {
             $ok = true;
@@ -203,17 +203,17 @@ class UserResult extends User
         }
         switch ($idScope) {
             case Tool::ID_SCOPE_GLOBAL:
-                $id = $this->getResourceLink()->getConsumer()->getId() . Tool::ID_SCOPE_SEPARATOR . $this->ltiUserId;
+                $id = $this->getResourceLink()->getPlatform()->getId() . Tool::ID_SCOPE_SEPARATOR . $this->ltiUserId;
                 break;
             case Tool::ID_SCOPE_CONTEXT:
-                $id = $this->getResourceLink()->getConsumer()->getId();
+                $id = $this->getResourceLink()->getPlatform()->getId();
                 if ($this->resourceLink->ltiContextId) {
                     $id .= Tool::ID_SCOPE_SEPARATOR . $this->resourceLink->ltiContextId;
                 }
                 $id .= Tool::ID_SCOPE_SEPARATOR . $this->ltiUserId;
                 break;
             case Tool::ID_SCOPE_RESOURCE:
-                $id = $this->getResourceLink()->getConsumer()->getId();
+                $id = $this->getResourceLink()->getPlatform()->getId();
                 if ($this->resourceLink->ltiResourceLinkId) {
                     $id .= Tool::ID_SCOPE_SEPARATOR . $this->resourceLink->ltiResourceLinkId;
                 }
