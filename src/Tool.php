@@ -1252,7 +1252,7 @@ class Tool
                                 $this->userResult->ltiResultSourcedId = $this->messageParameters['lis_result_sourcedid'];
                                 $this->userResult->save();
                             }
-                        } else {
+                        } elseif ($this->userResult->isLearner()) {  // Ensure all learners are recorded in case Assignment and Grade services are used
                             $this->userResult->ltiResultSourcedId = '';
                             $this->userResult->save();
                         }
