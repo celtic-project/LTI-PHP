@@ -4,6 +4,7 @@ namespace ceLTIc\LTI\Jwt;
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\JWK;
+use ceLTIc\LTI;
 use ceLTIc\LTI\Http\HttpMessage;
 use ceLTIc\LTI\Util;
 
@@ -172,6 +173,7 @@ class FirebaseClient implements ClientInterface
         } elseif (!empty($jku)) {
             $publicKey = $this->fetchPublicKey($jku);
         }
+        JWT::$leeway = LTI\Jwt\Jwt::$leeway;
         $retry = false;
         do {
             try {

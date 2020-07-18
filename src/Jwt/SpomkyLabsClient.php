@@ -7,6 +7,11 @@ use Jose\Object\JWK;
 use Jose\Factory\JWKFactory;
 use Jose\KeyConverter;
 use Jose\Algorithm\Signature;
+use Jose\Checker\CheckerManager;
+use Jose\Checker\ExpirationTimeChecker;
+use Jose\Checker\IssuedAtChecker;
+use Jose\Checker\NotBeforeChecker;
+use ceLTIc\LTI;
 use ceLTIc\LTI\Util;
 
 /**
@@ -137,11 +142,19 @@ class SpomkyLabsClient implements ClientInterface
      */
     public function verify($publicKey, $jku = null)
     {
+
         $ok = false;
         $hasPublicKey = !empty($publicKey);
         $retry = false;
+        $leeway = LTI\Jwt\Jwt::$leeway;
         do {
             try {
+                $checkerManager = new CheckerManager();
+                $checkerManager->addClaimChecker(new ExpirationTimeChecker($leeway));
+                $checkerManager->addClaimChecker(new IssuedAtChecker($leeway));
+                $checkerManager->addClaimChecker(new NotBeforeChecker($leeway));
+                $checkerManager->checkJWS($this->jwt, 0);
+
                 $verifier = new Jose\Verifier(['RS256', 'RS384', 'RS512']);
                 switch ($this->getHeader('alg')) {
                     case 'RS256':
@@ -171,6 +184,7 @@ class SpomkyLabsClient implements ClientInterface
                         }
                         break;
                 }
+
                 $jwk = $jwk->toPublic();
                 $rsa = new KeyConverter\RSAKey($jwk);
                 $rsa->toPEM();

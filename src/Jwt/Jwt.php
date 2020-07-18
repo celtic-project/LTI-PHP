@@ -13,6 +13,13 @@ class Jwt
 {
 
     /**
+     * Leeway (in seconds) to allow when checking timestamps (default is 3 minutes).
+     *
+     * @var int $leeway
+     */
+    public static $leeway = 180;
+
+    /**
      * Allow use of jku header in JWT.
      *
      * @var bool $allowJkuHeader
