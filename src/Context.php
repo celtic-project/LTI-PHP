@@ -193,7 +193,7 @@ class Context
      * @deprecated Use setPlatformId() instead
      * @see Context::setPlatformId()
      *
-     * @param int $consumerId  Tool Consumer ID for this resource link.
+     * @param int $consumerId  Tool Consumer ID for this context.
      */
     public function setConsumerId($consumerId)
     {
@@ -219,7 +219,7 @@ class Context
     /**
      * Set platform ID.
      *
-     * @param int $platformId  Platform ID for this resource link.
+     * @param int $platformId  Platform ID for this context.
      */
     public function setPlatformId($platformId)
     {
@@ -424,7 +424,7 @@ class Context
      * @deprecated Use hasMembershipsService() instead
      * @see Context::hasMembershipsService()
      *
-     * @return bool    True if this resource link supports the Membership service
+     * @return bool    True if this context supports the Membership service
      */
     public function hasMembershipService()
     {
@@ -500,13 +500,55 @@ class Context
     /**
      * Check if the Line Item service is available.
      *
-     * @return bool    True if this resource link supports the Line Item service
+     * @return bool    True if this context supports the Line Item service
      */
     public function hasLineItemService()
     {
-        $url = $this->getSetting('custom_lineitems_url');
+        $has = false;
+        if (!empty($this->getSetting('custom_ags_scopes'))) {
+            $scopes = explode(',', $this->getSetting('custom_ags_scopes'));
+            if (in_array(Service\LineItem::$SCOPE, $scopes) || in_array(Service\LineItem::$SCOPE_READONLY, $scopes)) {
+                $has = !empty($this->getSetting('custom_lineitems_url'));
+            }
+        }
 
-        return !empty($url);
+        return $has;
+    }
+
+    /**
+     * Check if the Score service is available.
+     *
+     * @return bool    True if this context supports the Score service
+     */
+    public function hasScoreService()
+    {
+        $has = false;
+        if (!empty($this->getSetting('custom_ags_scopes'))) {
+            $scopes = explode(',', $this->getSetting('custom_ags_scopes'));
+            if (in_array(Service\Score::$SCOPE, $scopes)) {
+                $has = !empty($this->getSetting('custom_lineitems_url'));
+            }
+        }
+
+        return $has;
+    }
+
+    /**
+     * Check if the Result service is available.
+     *
+     * @return bool    True if this context supports the Result service
+     */
+    public function hasResultService()
+    {
+        $has = false;
+        if (!empty($this->getSetting('custom_ags_scopes'))) {
+            $scopes = explode(',', $this->getSetting('custom_ags_scopes'));
+            if (in_array(Service\Result::$SCOPE, $scopes)) {
+                $has = !empty($this->getSetting('custom_lineitems_url'));
+            }
+        }
+
+        return $has;
     }
 
     /**

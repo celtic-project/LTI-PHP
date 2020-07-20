@@ -62,7 +62,7 @@ class Tool
      * Names of LTI parameters to be retained in the context settings property.
      */
     private static $LTI_CONTEXT_SETTING_NAMES = array('custom_context_setting_url',
-        'custom_context_memberships_url', 'custom_context_memberships_v2_url', 'custom_lineitems_url'
+        'custom_context_memberships_url', 'custom_context_memberships_v2_url', 'custom_lineitems_url', 'custom_ags_scopes'
     );
 
     /**
@@ -73,7 +73,7 @@ class Tool
         'ext_ims_lis_memberships_id', 'ext_ims_lis_memberships_url',
         'ext_ims_lti_tool_setting', 'ext_ims_lti_tool_setting_id', 'ext_ims_lti_tool_setting_url',
         'custom_link_setting_url', 'custom_link_memberships_url',
-        'custom_lineitems_url', 'custom_lineitem_url'
+        'custom_lineitems_url', 'custom_lineitem_url', 'custom_ags_scopes'
     );
 
     /**

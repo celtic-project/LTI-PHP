@@ -573,8 +573,11 @@ class ResourceLink
      */
     public function hasOutcomesService()
     {
-        $has = !empty($this->getSetting('ext_ims_lis_basic_outcome_url')) || !empty($this->getSetting('lis_outcome_service_url')) ||
-            (!empty($this->getSetting('custom_lineitems_url')) && !empty($this->getSetting('custom_lineitem_url')));
+        $has = !empty($this->getSetting('ext_ims_lis_basic_outcome_url')) || !empty($this->getSetting('lis_outcome_service_url'));
+        if (!$has && !empty($this->getSetting('custom_lineitem_url')) && !empty($this->getSetting('custom_ags_scopes'))) {
+            $scopes = explode(',', $this->getSetting('custom_ags_scopes'));
+            $has = in_array(Service\Score::$SCOPE, $scopes) && in_array(Service\Result::$SCOPE, $scopes);
+        }
         if (!$has) {
             $has = self::hasConfiguredApiHook(self::$OUTCOMES_SERVICE_HOOK, $this->getPlatform()->getFamilyCode(), $this);
         }
@@ -620,9 +623,51 @@ class ResourceLink
      */
     public function hasLineItemService()
     {
-        $url = $this->getSetting('custom_lineitems_url');
+        $has = false;
+        if (!empty($this->getSetting('custom_ags_scopes'))) {
+            $scopes = explode(',', $this->getSetting('custom_ags_scopes'));
+            if (in_array(Service\LineItem::$SCOPE, $scopes) || in_array(Service\LineItem::$SCOPE_READONLY, $scopes)) {
+                $has = !empty($this->getSetting('custom_lineitems_url'));
+            }
+        }
 
-        return !empty($url);
+        return $has;
+    }
+
+    /**
+     * Check if the Score service is available.
+     *
+     * @return bool    True if this resource link supports the Score service
+     */
+    public function hasScoreService()
+    {
+        $has = false;
+        if (!empty($this->getSetting('custom_ags_scopes'))) {
+            $scopes = explode(',', $this->getSetting('custom_ags_scopes'));
+            if (in_array(Service\Score::$SCOPE, $scopes)) {
+                $has = !empty($this->getSetting('custom_lineitems_url'));
+            }
+        }
+
+        return $has;
+    }
+
+    /**
+     * Check if the Result service is available.
+     *
+     * @return bool    True if this resource link supports the Result service
+     */
+    public function hasResultService()
+    {
+        $has = false;
+        if (!empty($this->getSetting('custom_ags_scopes'))) {
+            $scopes = explode(',', $this->getSetting('custom_ags_scopes'));
+            if (in_array(Service\Result::$SCOPE, $scopes)) {
+                $has = !empty($this->getSetting('custom_lineitems_url'));
+            }
+        }
+
+        return $has;
     }
 
     /**
