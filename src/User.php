@@ -226,14 +226,44 @@ class User
      */
     private function hasRole($role)
     {
-        $role2 = null;
-        if ((substr($role, 0, 4) !== 'urn:') && (substr($role, 0, 7) !== 'http://') && (substr($role, 0, 8) !== 'https://')) {
-            $role2 = 'http://purl.imsglobal.org/vocab/lis/v2/membership#' . $role;
-            $role = 'urn:lti:role:ims/lis/' . $role;
-        }
         $ok = in_array($role, $this->roles);
-        if (!$ok && !empty($role2)) {
-            $ok = in_array($role2, $this->roles);
+        if (!$ok && (strpos($role, 'urn:') !== 0) && (strpos($role, 'http://') !== 0) && (strpos($role, 'https://') !== 0)) {
+            $role = "urn:lti:role:ims/lis/{$role}";
+            $ok = in_array($role, $this->roles);
+        }
+        if (!$ok) {
+            $role2 = null;
+            $role3 = null;
+            if (strpos($role, 'urn:') === 0) {
+                if (strpos($role, 'urn:lti:role:ims/lis/') === 0) {
+                    $role2 = 'http://purl.imsglobal.org/vocab/lis/v2/membership#' . substr($role, 21);
+                } elseif (strpos($role, 'urn:lti:instrole:ims/lis/') === 0) {
+                    $role2 = 'http://purl.imsglobal.org/vocab/lis/v2/person#' . substr($role, 25);
+                    $role3 = 'http://purl.imsglobal.org/vocab/lis/v2/institution/person#' . substr($role, 25);
+                } elseif (strpos($role, 'urn:lti:sysrole:ims/lis/') === 0) {
+                    $role2 = 'http://purl.imsglobal.org/vocab/lis/v2/person#' . substr($role, 24);
+                    $role3 = 'http://purl.imsglobal.org/vocab/lis/v2/system/person#' . substr($role, 24);
+                }
+            } elseif (strpos($role, 'http://purl.imsglobal.org/vocab/lis/v2/') === 0) {
+                if (strpos($role, 'http://purl.imsglobal.org/vocab/lis/v2/membership#') === 0) {
+                    $role2 = 'urn:lti:role:ims/lis/' . substr($role, 50);
+                } elseif (strpos($role, 'http://purl.imsglobal.org/vocab/lis/v2/person#') === 0) {
+                    $role2 = 'urn:lti:instrole:ims/lis/' . substr($role, 46);
+                    $role3 = 'urn:lti:sysrole:ims/lis/' . substr($role, 46);
+                } elseif (strpos($role, 'http://purl.imsglobal.org/vocab/lis/v2/institution/person#') === 0) {
+                    $role2 = 'urn:lti:instrole:ims/lis/' . substr($role, 58);
+                    $role3 = 'http://purl.imsglobal.org/vocab/lis/v2/person#' . substr($role, 58);
+                } elseif (strpos($role, 'http://purl.imsglobal.org/vocab/lis/v2/system/person#') === 0) {
+                    $role2 = 'urn:lti:sysrole:ims/lis/' . substr($role, 53);
+                    $role3 = 'http://purl.imsglobal.org/vocab/lis/v2/person#' . substr($role, 53);
+                }
+            }
+            if (!empty($role2)) {
+                $ok = in_array($role2, $this->roles);
+                if (!$ok && !empty($role3)) {
+                    $ok = in_array($role3, $this->roles);
+                }
+            }
         }
 
         return $ok;
