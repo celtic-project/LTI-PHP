@@ -141,7 +141,7 @@ class AccessToken
     public function get($scope = '')
     {
         $url = $this->platform->accessTokenUrl;
-        if (!empty($url) && !$this->hasScope($scope) && !empty(Tool::$defaultTool) && !empty(Tool::$defaultTool->rsaKey)) {
+        if (!empty($url) && !empty(Tool::$defaultTool) && !empty(Tool::$defaultTool->rsaKey)) {
             $scopesRequested = Tool::$defaultTool->requiredScopes;
             if (substr($scope, -9) === '.readonly') {
                 $scope2 = substr($scope, 0, -9);
@@ -152,29 +152,38 @@ class AccessToken
                 $scopesRequested[] = $scope;
             }
             if (!empty($scopesRequested)) {
-                $method = 'POST';
-                $type = 'application/x-www-form-urlencoded';
-                $body = array(
-                    'grant_type' => 'client_credentials',
-                    'client_assertion_type' => 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
-                    'scope' => implode(' ', $scopesRequested)
-                );
-                $body = $this->platform->signServiceRequest($url, $method, $type, $body);
-                $http = new HttpMessage($url, $method, $body);
-                if ($http->send() && !empty($http->response)) {
-                    $http->responseJson = json_decode($http->response);
-                    if (!is_null($http->responseJson) && !empty($http->responseJson->access_token) && !empty($http->responseJson->expires_in)) {
-                        if (isset($http->responseJson->scope)) {
-                            $scopesAccepted = explode(' ', $http->responseJson->scope);
-                        } else {
-                            $scopesAccepted = $scopesRequested;
+                $retry = false;
+                do {
+                    $method = 'POST';
+                    $type = 'application/x-www-form-urlencoded';
+                    $body = array(
+                        'grant_type' => 'client_credentials',
+                        'client_assertion_type' => 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
+                        'scope' => implode(' ', $scopesRequested)
+                    );
+                    $body = $this->platform->signServiceRequest($url, $method, $type, $body);
+                    $http = new HttpMessage($url, $method, $body);
+                    if ($http->send() && !empty($http->response)) {
+                        $http->responseJson = json_decode($http->response);
+                        if (!is_null($http->responseJson) && !empty($http->responseJson->access_token) && !empty($http->responseJson->expires_in)) {
+                            if (isset($http->responseJson->scope)) {
+                                $scopesAccepted = explode(' ', $http->responseJson->scope);
+                            } else {
+                                $scopesAccepted = $scopesRequested;
+                            }
+                            $this->scopes = $scopesAccepted;
+                            $this->token = $http->responseJson->access_token;
+                            $this->expires = time() + $http->responseJson->expires_in;
+                            $this->save();
                         }
-                        $this->scopes = $scopesAccepted;
-                        $this->token = $http->responseJson->access_token;
-                        $this->expires = time() + $http->responseJson->expires_in;
-                        $this->save();
+                        $retry = false;
+                    } elseif ($retry) {
+                        $retry = false;
+                    } elseif (!empty($scope) && (count($scopesRequested) > 1)) {  // Just ask for the single scope requested
+                        $retry = true;
+                        $scopesRequested = array($scope);
                     }
-                }
+                } while ($retry);
             }
         } else {
             $this->scopes = null;
