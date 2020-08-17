@@ -81,7 +81,7 @@ class Platform
     public $consumerName = null;
 
     /**
-     * Pplatform version (as reported by last platform connection).
+     * Platform version (as reported by last platform connection).
      *
      * @var string|null $consumerVersion
      */
