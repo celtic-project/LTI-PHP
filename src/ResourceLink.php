@@ -681,7 +681,7 @@ class ResourceLink
      */
     public function doOutcomesService($action, $ltiOutcome, $userResult)
     {
-        $response = false;
+        $ok = false;
         $this->extResponse = '';
 // Lookup service details from the source resource link appropriate to the user (in case the destination is being shared)
         $sourceResourceLink = $userResult->getResourceLink();
@@ -691,66 +691,34 @@ class ResourceLink
         $urlAGS = $sourceResourceLink->getSetting('custom_lineitem_url');
         $urlLTI11 = $sourceResourceLink->getSetting('lis_outcome_service_url');
         $urlExt = $sourceResourceLink->getSetting('ext_ims_lis_basic_outcome_url');
-        if ($urlExt || $urlLTI11 || $urlAGS) {
-            switch ($action) {
-                case self::EXT_READ:
-                    if ($urlAGS && ($ltiOutcome->type === self::EXT_TYPE_DECIMAL)) {
-                        $do = $action;
-                    } elseif ($urlLTI11 && ($ltiOutcome->type === self::EXT_TYPE_DECIMAL)) {
-                        $urlAGS = null;
-                        $do = 'readResult';
-                    } elseif ($urlExt) {
-                        $urlAGS = null;
-                        $urlLTI11 = null;
-                        $do = 'basic-lis-readresult';
-                    }
-                    break;
-                case self::EXT_WRITE:
-                    if ($urlAGS && $this->checkValueType($ltiOutcome, array(self::EXT_TYPE_DECIMAL))) {
-                        $do = $action;
-                    } elseif ($urlLTI11 && $this->checkValueType($ltiOutcome, array(self::EXT_TYPE_DECIMAL))) {
-                        $urlAGS = null;
-                        $do = 'replaceResult';
-                    } elseif ($this->checkValueType($ltiOutcome)) {
-                        $urlAGS = null;
-                        $urlLTI11 = null;
-                        $do = 'basic-lis-updateresult';
-                    }
-                    break;
-                case self::EXT_DELETE:
-                    if ($urlAGS && ($ltiOutcome->type === self::EXT_TYPE_DECIMAL)) {
-                        $do = $action;
-                    } elseif ($urlLTI11 && ($ltiOutcome->type === self::EXT_TYPE_DECIMAL)) {
-                        $urlAGS = null;
-                        $do = 'deleteResult';
-                    } elseif ($urlExt) {
-                        $urlAGS = null;
-                        $urlLTI11 = null;
-                        $do = 'basic-lis-deleteresult';
-                    }
-                    break;
+
+        if (!empty($urlAGS)) {
+            if (($action === self::EXT_READ) && ($ltiOutcome->type === self::EXT_TYPE_DECIMAL) && $sourceResourceLink->hasResultService()) {
+                $ltiOutcome = $this->doResultService($userResult, $urlAGS);
+                $ok = !empty($ltiOutcome);
+            } elseif ((($action === self::EXT_WRITE) && $this->checkValueType($ltiOutcome, array(self::EXT_TYPE_DECIMAL)) && $sourceResourceLink->hasScoreService()) ||
+                ($action === self::EXT_DELETE)) {
+                if ($action === self::EXT_DELETE) {
+                    $ltiOutcome->setValue(null);
+                    $ltiOutcome->activityProgress = 'Initialized';
+                    $ltiOutcome->gradingProgress = 'NotReady';
+                }
+                $ok = $this->doScoreService($ltiOutcome, $userResult, $urlAGS);
             }
         }
-        if (isset($do)) {
-            $value = $ltiOutcome->getValue();
-            if (is_null($value)) {
-                $value = '';
+        if (!$ok && is_null($ltiOutcome->getValue())) {
+            $ltiOutcome->setValue('');
+        }
+        if (!$ok && !empty($urlLTI11)) {
+            $do = '';
+            if (($action === self::EXT_READ) && ($ltiOutcome->type === self::EXT_TYPE_DECIMAL)) {
+                $do = 'readResult';
+            } elseif (($action === self::EXT_WRITE) && $this->checkValueType($ltiOutcome, array(self::EXT_TYPE_DECIMAL))) {
+                $do = 'replaceResult';
+            } elseif ($action === self::EXT_DELETE) {
+                $do = 'deleteResult';
             }
-            if ($urlAGS) {
-                switch ($action) {
-                    case self::EXT_READ:
-                        $ltiOutcome = $this->doResultService($userResult, $urlAGS);
-                        $response = !empty($ltiOutcome);
-                        break;
-                    case self::EXT_DELETE:
-                        $ltiOutcome->setValue(null);
-                        $ltiOutcome->activityProgress = 'Initialized';
-                        $ltiOutcome->gradingProgress = 'NotReady';
-                    case self::EXT_WRITE:
-                        $response = $this->doScoreService($ltiOutcome, $userResult, $urlAGS);
-                        break;
-                }
-            } elseif ($urlLTI11) {
+            if (!empty($do)) {
                 $xml = '';
                 if ($action === self::EXT_WRITE) {
                     $xml = <<< EOF
@@ -758,7 +726,7 @@ class ResourceLink
         <result>
           <resultScore>
             <language>{$ltiOutcome->language}</language>
-            <textString>{$value}</textString>
+            <textString>{$ltiOutcome->getValue()}</textString>
           </resultScore>
         </result>
 EOF;
@@ -781,14 +749,25 @@ EOF;
                             }
                         case self::EXT_WRITE:
                         case self::EXT_DELETE:
-                            $response = true;
+                            $ok = true;
                             break;
                     }
                 }
-            } else {
+            }
+        }
+        if (!$ok && !empty($urlExt)) {
+            $do = '';
+            if (($action === self::EXT_READ) && ($ltiOutcome->type === self::EXT_TYPE_DECIMAL)) {
+                $do = 'basic-lis-readresult';
+            } elseif (($action === self::EXT_WRITE) && $this->checkValueType($ltiOutcome, array(self::EXT_TYPE_DECIMAL))) {
+                $do = 'basic-lis-updateresult';
+            } elseif ($action === self::EXT_DELETE) {
+                $do = 'basic-lis-deleteresult';
+            }
+            if (!empty($do)) {
                 $params = array();
                 $params['sourcedid'] = $sourcedId;
-                $params['result_resultscore_textstring'] = $value;
+                $params['result_resultscore_textstring'] = $ltiOutcome->getValue();
                 if (!empty($ltiOutcome->language)) {
                     $params['result_resultscore_language'] = $ltiOutcome->language;
                 }
@@ -804,7 +783,7 @@ EOF;
                 if (!empty($ltiOutcome->data_source)) {
                     $params['result_datasource'] = $ltiOutcome->data_source;
                 }
-                if ($this->doService($do, $urlExt, $params)) {
+                if ($this->doService($do, $urlExt, $params, 'https://purl.imsglobal.org/spec/lti-ext/scope/outcomes')) {
                     switch ($action) {
                         case self::EXT_READ:
                             if (isset($this->extNodes['result']['resultscore']['textstring'])) {
@@ -812,23 +791,25 @@ EOF;
                             }
                         case self::EXT_WRITE:
                         case self::EXT_DELETE:
-                            $response = true;
+                            $ok = true;
                             break;
                     }
                 }
             }
-            if (is_array($response) && (count($response) <= 0)) {
-                $response = '';
-            }
         }
-        if (($response === false) && $this->hasConfiguredApiHook(self::$OUTCOMES_SERVICE_HOOK,
-                $this->getPlatform()->getFamilyCode(), $this)) {
+        if ((!$ok) && $this->hasConfiguredApiHook(self::$OUTCOMES_SERVICE_HOOK, $this->getPlatform()->getFamilyCode(), $this)) {
             $className = $this->getApiHook(self::$OUTCOMES_SERVICE_HOOK, $this->getPlatform()->getFamilyCode());
             $hook = new $className($this);
             $response = $hook->doOutcomesService($action, $ltiOutcome, $userResult);
+            if ($response !== false) {
+                $ok = true;
+                if ($action === self::EXT_READ) {
+                    $ltiOutcome->setValue($response);
+                }
+            }
         }
 
-        return $response;
+        return $ok;
     }
 
     /**
@@ -883,7 +864,7 @@ EOF;
             }
             $params['setting'] = $value;
 
-            if ($this->doService($do, $url, $params)) {
+            if ($this->doService($do, $url, $params, 'https://purl.imsglobal.org/spec/lti-ext/scope/setting')) {
                 switch ($action) {
                     case self::EXT_READ:
                         if (isset($this->extNodes['setting']['value'])) {
@@ -1039,10 +1020,12 @@ EOF;
             $params = array();
             $params['id'] = $this->getSetting('ext_ims_lis_memberships_id');
             if ($withGroups) {
-                $ok = $this->doService('basic-lis-readmembershipsforcontextwithgroups', $url, $params);
+                $ok = $this->doService('basic-lis-readmembershipsforcontextwithgroups', $url, $params,
+                    'https://purl.imsglobal.org/spec/lti-ext/scope/memberships');
             }
             if (!$ok) {
-                $ok = $this->doService('basic-lis-readmembershipsforcontext', $url, $params);
+                $ok = $this->doService('basic-lis-readmembershipsforcontext', $url, $params,
+                    'https://purl.imsglobal.org/spec/lti-ext/scope/memberships');
             }
             if ($ok) {
                 $this->groupSets = array();
@@ -1447,10 +1430,11 @@ EOF;
      * @param string $type   Message type value
      * @param string $url    URL to send request to
      * @param array  $params Associative array of parameter values to be passed
+     * @param string $scope  Scope for service
      *
      * @return bool    True if the request successfully obtained a response
      */
-    private function doService($type, $url, $params)
+    private function doService($type, $url, $params, $scope)
     {
         $ok = false;
         $this->extRequest = '';
@@ -1461,28 +1445,56 @@ EOF;
         if (!empty($url)) {
             $params['lti_version'] = $this->getPlatform()->ltiVersion;
             $params['lti_message_type'] = $type;
-            $signed = $this->getPlatform()->addSignature($url, $params, 'POST', 'application/x-www-form-urlencoded');
-// Connect to platform
-            if (is_array($signed)) {
-                $http = new HttpMessage($url, 'POST', $signed);
-            } else {
-                $http = new HttpMessage($url, 'POST', $params, $signed);
-            }
-// Parse XML response
-            if ($http->send()) {
-                $this->extResponse = $http->response;
-                $this->extResponseHeaders = $http->responseHeaders;
-                try {
-                    $this->extDoc = new DOMDocument();
-                    $this->extDoc->loadXML($http->response);
-                    $this->extNodes = $this->domnodeToArray($this->extDoc->documentElement);
-                    if (isset($this->extNodes['statusinfo']['codemajor']) && ($this->extNodes['statusinfo']['codemajor'] === 'Success')) {
-                        $ok = true;
-                    }
-                } catch (\Exception $e) {
-
+            $retry = false;
+            $newToken = false;
+            if (!$this->getPlatform()->useOAuth1()) {
+                $accessToken = $this->platform->getAccessToken();
+                $retry = true;
+                if (empty($accessToken)) {
+                    $accessToken = new AccessToken($this->platform);
+                    $this->platform->setAccessToken($accessToken);
+                }
+                if (!$accessToken->hasScope($scope) && (empty(Tool::$defaultTool) || !in_array($scope,
+                        Tool::$defaultTool->requiredScopes))) {
+                    $accessToken->expires = time();
+                    $accessToken->get($scope, true);
+                    $this->platform->setAccessToken($accessToken);
+                    $newToken = true;
                 }
             }
+            do {
+// Add message signature
+                $signed = $this->getPlatform()->addSignature($url, $params, 'POST', 'application/x-www-form-urlencoded');
+// Connect to platform
+                if (is_array($signed)) {
+                    $http = new HttpMessage($url, 'POST', $signed);
+                } else {
+                    $http = new HttpMessage($url, 'POST', $params, $signed);
+                }
+                if ($http->send()) {
+// Parse XML response
+                    $this->extResponse = $http->response;
+                    $this->extResponseHeaders = $http->responseHeaders;
+                    try {
+                        $this->extDoc = new DOMDocument();
+                        $this->extDoc->loadXML($http->response);
+                        $this->extNodes = $this->domnodeToArray($this->extDoc->documentElement);
+                        if (isset($this->extNodes['statusinfo']['codemajor']) && ($this->extNodes['statusinfo']['codemajor'] === 'Success')) {
+                            $ok = true;
+                        }
+                    } catch (\Exception $e) {
+
+                    }
+                }
+                $retry = $retry && !$newToken && !$ok;
+                if ($retry) {  // Obtain a new access token just for the required scope
+                    $accessToken = $this->platform->getAccessToken();
+                    $accessToken->expires = time();
+                    $accessToken->get($scope, true);
+                    $this->platform->setAccessToken($accessToken);
+                    $newToken = true;
+                }
+            } while ($retry);
             $this->extRequest = $http->request;
             $this->extRequestHeaders = $http->requestHeaders;
             $this->lastServiceRequest = $http;
@@ -1588,26 +1600,54 @@ EOF;
   </imsx_POXBody>
 </imsx_POXEnvelopeRequest>
 EOD;
-// Add message signature
-            $header = $this->getPlatform()->addSignature($url, $xmlRequest, 'POST', 'application/xml');
-// Connect to platform
-            $http = new HttpMessage($url, 'POST', $xmlRequest, $header);
-// Parse XML response
-            if ($http->send()) {
-                $this->extResponse = $http->response;
-                $this->extResponseHeaders = $http->responseHeaders;
-                try {
-                    $this->extDoc = new DOMDocument();
-                    $this->extDoc->loadXML($http->response);
-                    $this->extNodes = $this->domnodeToArray($this->extDoc->documentElement);
-                    if (isset($this->extNodes['imsx_POXHeader']['imsx_POXResponseHeaderInfo']['imsx_statusInfo']['imsx_codeMajor']) &&
-                        ($this->extNodes['imsx_POXHeader']['imsx_POXResponseHeaderInfo']['imsx_statusInfo']['imsx_codeMajor'] === 'success')) {
-                        $ok = true;
-                    }
-                } catch (\Exception $e) {
-
+            $scope = 'https://purl.imsglobal.org/spec/lti-bo/scope/basicoutcome';
+            $retry = false;
+            $newToken = false;
+            if (!$this->getPlatform()->useOAuth1()) {
+                $accessToken = $this->platform->getAccessToken();
+                $retry = true;
+                if (empty($accessToken)) {
+                    $accessToken = new AccessToken($this->platform);
+                    $this->platform->setAccessToken($accessToken);
+                }
+                if (!$accessToken->hasScope($scope) && (empty(Tool::$defaultTool) || !in_array($scope,
+                        Tool::$defaultTool->requiredScopes))) {
+                    $accessToken->expires = time();
+                    $accessToken->get($scope, true);
+                    $this->platform->setAccessToken($accessToken);
+                    $newToken = true;
                 }
             }
+            do {
+// Add message signature
+                $header = $this->getPlatform()->addSignature($url, $xmlRequest, 'POST', 'application/xml');
+// Connect to platform
+                $http = new HttpMessage($url, 'POST', $xmlRequest, $header);
+                if ($http->send()) {
+// Parse XML response
+                    $this->extResponse = $http->response;
+                    $this->extResponseHeaders = $http->responseHeaders;
+                    try {
+                        $this->extDoc = new DOMDocument();
+                        $this->extDoc->loadXML($http->response);
+                        $this->extNodes = $this->domnodeToArray($this->extDoc->documentElement);
+                        if (isset($this->extNodes['imsx_POXHeader']['imsx_POXResponseHeaderInfo']['imsx_statusInfo']['imsx_codeMajor']) &&
+                            ($this->extNodes['imsx_POXHeader']['imsx_POXResponseHeaderInfo']['imsx_statusInfo']['imsx_codeMajor'] === 'success')) {
+                            $ok = true;
+                        }
+                    } catch (\Exception $e) {
+
+                    }
+                }
+                $retry = $retry && !$newToken && !$ok;
+                if ($retry) {  // Obtain a new access token just for the required scope
+                    $accessToken = $this->platform->getAccessToken();
+                    $accessToken->expires = time();
+                    $accessToken->get($scope, true);
+                    $this->platform->setAccessToken($accessToken);
+                    $newToken = true;
+                }
+            } while ($retry);
             $this->extRequest = $http->request;
             $this->extRequestHeaders = $http->requestHeaders;
             $this->lastServiceRequest = $http;

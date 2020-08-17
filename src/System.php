@@ -911,7 +911,7 @@ trait System
                 $accessToken = new AccessToken($platform);
                 $platform->setAccessToken($accessToken);
             }
-            if (!$accessToken->hasScope()) {
+            if (!$accessToken->hasScope()) {  // Check token has not expired
                 $accessToken->get();
             }
             if (!empty($accessToken->token)) {

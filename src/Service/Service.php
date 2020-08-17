@@ -131,6 +131,8 @@ class Service
         }
         $header = null;
         $retry = !$this->platform->useOAuth1();
+        $newToken = false;
+        $retried = false;
         do {
             if (!$this->unsigned) {
                 $accessToken = $this->platform->getAccessToken();
@@ -141,7 +143,16 @@ class Service
                     }
                     if (!$accessToken->hasScope($this->scope)) {
                         $accessToken->get($this->scope);
-                        $retry = false;
+                        $newToken = true;
+                        if (!$accessToken->hasScope($this->scope)) {  // Try obtaining a token for just this scope
+                            $accessToken->expires = time();
+                            $accessToken->get($this->scope, true);
+                            $retried = true;
+                            if (!$accessToken->hasScope($this->scope)) {
+                                $this->http = new HttpMessage($url, $method, $body);
+                                break;
+                            }
+                        }
                     }
                 }
                 $header = $this->platform->signServiceRequest($url, $method, $this->mediaType, $body);
@@ -153,10 +164,18 @@ class Service
                 $this->http->responseJson = json_decode($this->http->response);
                 $this->http->ok = !is_null($this->http->responseJson);
             }
-            $retry = $retry && !$this->http->ok;
-            if ($retry) {  // Invalidate existing token to force a new one to be obtained
-                $accessToken->expires = time();
-                $this->platform->setAccessToken($accessToken);
+            $retry = $retry && !$retried && !$this->http->ok;
+            if ($retry) {
+                if (!$newToken) {  // Invalidate existing token to force a new one to be obtained
+                    $accessToken->expires = time();
+                    $newToken = true;
+                } elseif (count($accessToken->scopes) !== 1) {  // Try obtaining a token for just this scope
+                    $accessToken->expires = time();
+                    $accessToken->get($this->scope, true);
+                    $retried = true;
+                } else {
+                    $retry = false;
+                }
             }
         } while ($retry);
 

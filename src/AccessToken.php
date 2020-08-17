@@ -135,21 +135,26 @@ class AccessToken
      * Obtain a valid access token for a scope.
      *
      * @param string          $scope        Access scope
+     * @param bool            $scopeOnly    If true, a token is requested just for the specified scope
      *
      * @return AccessToken    New access token
      */
-    public function get($scope = '')
+    public function get($scope = '', $scopeOnly = false)
     {
         $url = $this->platform->accessTokenUrl;
         if (!empty($url) && !empty(Tool::$defaultTool) && !empty(Tool::$defaultTool->rsaKey)) {
-            $scopesRequested = Tool::$defaultTool->requiredScopes;
-            if (substr($scope, -9) === '.readonly') {
-                $scope2 = substr($scope, 0, -9);
+            if ($scopeOnly) {
+                $scopesRequested = array($scope);
             } else {
-                $scope2 = $scope;
-            }
-            if (!empty($scope) && !in_array($scope, $scopesRequested) && !in_array($scope2, $scopesRequested)) {
-                $scopesRequested[] = $scope;
+                $scopesRequested = Tool::$defaultTool->requiredScopes;
+                if (substr($scope, -9) === '.readonly') {
+                    $scope2 = substr($scope, 0, -9);
+                } else {
+                    $scope2 = $scope;
+                }
+                if (!empty($scope) && !in_array($scope, $scopesRequested) && !in_array($scope2, $scopesRequested)) {
+                    $scopesRequested[] = $scope;
+                }
             }
             if (!empty($scopesRequested)) {
                 $retry = false;
@@ -174,7 +179,9 @@ class AccessToken
                             $this->scopes = $scopesAccepted;
                             $this->token = $http->responseJson->access_token;
                             $this->expires = time() + $http->responseJson->expires_in;
-                            $this->save();
+                            if (!$scopeOnly) {
+                                $this->save();
+                            }
                         }
                         $retry = false;
                     } elseif ($retry) {
