@@ -175,7 +175,11 @@ class User
         } elseif (!empty($defaultEmail)) {
             $this->email = $defaultEmail;
             if (substr($this->email, 0, 1) === '@') {
-                $this->email = $this->getId() . $this->email;
+                if (!empty($this->username)) {
+                    $this->email = "{$this->username}{$this->email}";
+                } else {
+                    $this->email = "{$this->ltiUserId}{$this->email}";
+                }
             }
         } else {
             $this->email = '';
