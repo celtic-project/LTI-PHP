@@ -780,8 +780,8 @@ EOF;
                 if (!empty($ltiOutcome->type)) {
                     $params['result_resultvaluesourcedid'] = $ltiOutcome->type;
                 }
-                if (!empty($ltiOutcome->data_source)) {
-                    $params['result_datasource'] = $ltiOutcome->data_source;
+                if (!empty($ltiOutcome->dataSource)) {
+                    $params['result_datasource'] = $ltiOutcome->dataSource;
                 }
                 if ($this->doService($do, $urlExt, $params, 'https://purl.imsglobal.org/spec/lti-ext/scope/outcomes')) {
                     switch ($action) {
