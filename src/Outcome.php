@@ -91,6 +91,20 @@ class Outcome
     public $dataSource = null;
 
     /**
+     * Outcome result data type.
+     *
+     * @var string|null $resultDataType
+     */
+    public $resultDataType = null;
+
+    /**
+     * Outcome result data.
+     *
+     * @var string|null $resultData
+     */
+    public $resultData = null;
+
+    /**
      * Outcome value.
      *
      * @var string|null $value

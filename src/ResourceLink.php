@@ -721,13 +721,22 @@ class ResourceLink
             if (!empty($do)) {
                 $xml = '';
                 if ($action === self::EXT_WRITE) {
+                    $resultDataExt = $sourceResourceLink->getSetting('ext_outcome_data_values_accepted');
+                    if (!empty($resultDataExt) && in_array($ltiOutcome->resultDataType, explode(',',$resultDataExt)) && !empty($ltiOutcome->resultData)) {
+                        $xml = <<< EOF
+
+          <resultData>
+            <{$ltiOutcome->resultDataType}>{$ltiOutcome->resultData}</{$ltiOutcome->resultDataType}>
+          </resultData>
+EOF;
+                    }
                     $xml = <<< EOF
 
         <result>
           <resultScore>
             <language>{$ltiOutcome->language}</language>
             <textString>{$ltiOutcome->getValue()}</textString>
-          </resultScore>
+          </resultScore>{$xml}
         </result>
 EOF;
                 }
@@ -780,8 +789,8 @@ EOF;
                 if (!empty($ltiOutcome->type)) {
                     $params['result_resultvaluesourcedid'] = $ltiOutcome->type;
                 }
-                if (!empty($ltiOutcome->data_source)) {
-                    $params['result_datasource'] = $ltiOutcome->data_source;
+                if (!empty($ltiOutcome->dataSource)) {
+                    $params['result_datasource'] = $ltiOutcome->dataSource;
                 }
                 if ($this->doService($do, $urlExt, $params, 'https://purl.imsglobal.org/spec/lti-ext/scope/outcomes')) {
                     switch ($action) {
