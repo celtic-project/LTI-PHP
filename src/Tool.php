@@ -69,7 +69,7 @@ class Tool
      * Names of LTI parameters to be retained in the resource link settings property.
      */
     private static $LTI_RESOURCE_LINK_SETTING_NAMES = array('lis_result_sourcedid', 'lis_outcome_service_url',
-        'ext_ims_lis_basic_outcome_url', 'ext_ims_lis_resultvalue_sourcedids',
+        'ext_ims_lis_basic_outcome_url', 'ext_ims_lis_resultvalue_sourcedids', 'ext_outcome_data_values_accepted',
         'ext_ims_lis_memberships_id', 'ext_ims_lis_memberships_url',
         'ext_ims_lti_tool_setting', 'ext_ims_lti_tool_setting_id', 'ext_ims_lti_tool_setting_url',
         'custom_link_setting_url', 'custom_link_memberships_url',

@@ -721,13 +721,38 @@ class ResourceLink
             if (!empty($do)) {
                 $xml = '';
                 if ($action === self::EXT_WRITE) {
+                    $comment = (empty($ltiOutcome->comment)) ? '' : trim($ltiOutcome->comment);
+                    if (!empty($comment) && !empty($sourceResourceLink->getSetting('ext_outcome_data_values_accepted'))) {
+                        $resultDataTypes = explode(',', $sourceResourceLink->getSetting('ext_outcome_data_values_accepted'));
+                        $resultDataType = '';
+                        if (count($resultDataTypes) === 1) {
+                            $resultDataType = $resultDataTypes[0];
+                        } elseif (count($resultDataTypes) > 1) {
+                            $isUrl = (strpos($comment, 'http://') === 0) || (strpos($comment, 'https://') === 0);
+                            if ($isUrl && in_array('ltiLaunchUrl', $resultDataTypes)) {
+                                $resultDataType = 'ltiLaunchUrl';
+                            } elseif ($isUrl && in_array('url', $resultDataTypes)) {
+                                $resultDataType = 'url';
+                            } elseif (in_array('text', $resultDataTypes)) {
+                                $resultDataType = 'text';
+                            }
+                        }
+                        if (!empty($resultDataType)) {
+                            $xml = <<< EOF
+
+          <resultData>
+            <{$resultDataType}>{$comment}</{$resultDataType}>
+          </resultData>
+EOF;
+                        }
+                    }
                     $xml = <<< EOF
 
         <result>
           <resultScore>
             <language>{$ltiOutcome->language}</language>
             <textString>{$ltiOutcome->getValue()}</textString>
-          </resultScore>
+          </resultScore>{$xml}
         </result>
 EOF;
                 }
