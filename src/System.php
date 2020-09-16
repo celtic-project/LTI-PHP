@@ -483,7 +483,7 @@ trait System
                 }
             } else {
                 $ok = false;
-                $this->reason = 'Unbale to verify JWT signature as neither a public key nor a JSON Web Key URL is specified';
+                $this->reason = 'Unable to verify JWT signature as neither a public key nor a JSON Web Key URL is specified';
             }
         }
 
@@ -822,11 +822,7 @@ trait System
                         $privateKey = $this->rsaKey;
                         $kid = $this->kid;
                         $jku = $this->jku;
-                        if (!empty($this->baseUrl)) {
-                            $payload['iss'] = $this->baseUrl;
-                        } else {
-                            $payload['iss'] = $this->platform->platformId;
-                        }
+                        $payload['iss'] = $this->platform->clientId;
                         $payload['aud'] = array($this->platform->platformId);
                         $payload['azp'] = $this->platform->platformId;
                         $payload[Util::JWT_CLAIM_PREFIX . '/claim/deployment_id'] = $this->platform->deploymentId;
