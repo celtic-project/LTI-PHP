@@ -343,7 +343,9 @@ class Tool
         if ($this->debugMode) {
             Util::$logLevel = Util::LOGLEVEL_DEBUG;
         }
-        if (!empty($_REQUEST['iss'])) {  // Initiate login request
+        if ($_SERVER['REQUEST_METHOD'] === 'HEAD') {  // Ignore HEAD requests
+            Util::logRequest();
+        } elseif (!empty($_REQUEST['iss'])) {  // Initiate login request
             Util::logRequest();
             if (empty($_REQUEST['login_hint'])) {
                 $this->ok = false;
