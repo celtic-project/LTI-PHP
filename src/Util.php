@@ -209,7 +209,7 @@ final class Util
                 }
             }
             if (!$debugLevel) {
-            self::logInfo($message);
+                self::logInfo($message);
             } else {
                 self::logDebug($message);
             }

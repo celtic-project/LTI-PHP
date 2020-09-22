@@ -13,6 +13,13 @@ class Jwt
 {
 
     /**
+     * Life (in seconds) of an issued JWT (default is 1 minute).
+     *
+     * @var int $life
+     */
+    public static $life = 60;
+
+    /**
      * Leeway (in seconds) to allow when checking timestamps (default is 3 minutes).
      *
      * @var int $leeway

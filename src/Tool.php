@@ -388,7 +388,7 @@ class Tool
     public function setParameterConstraint($name, $required = true, $maxLength = null, $messageTypes = null)
     {
         $name = trim($name);
-        if (strlen($name) > 0) {
+        if (!empty($name)) {
             $this->constraints[$name] = array('required' => $required, 'max_length' => $maxLength, 'messages' => $messageTypes);
         }
     }
@@ -780,7 +780,7 @@ class Tool
                         }
                     } else {
                         $this->ok = false;
-                        $this->reason = '';
+                        $this->reason = 'No accept_presentation_document_targets parameter found.';
                     }
                 }
                 if ($this->ok) {
@@ -893,7 +893,7 @@ class Tool
         if ($this->ok && ($this->messageParameters['lti_message_type'] === 'ToolProxyRegistrationRequest')) {
             $this->ok = $this->messageParameters['lti_version'] === Util::LTI_VERSION2;
             if (!$this->ok) {
-                $this->reason = 'Invalid lti_version parameter';
+                $this->reason = 'Invalid lti_version parameter.';
             }
             if ($this->ok) {
                 $url = $this->messageParameters['tc_profile_url'];
@@ -996,7 +996,7 @@ class Tool
             if (isset($this->messageParameters['relaunch_url'])) {
                 if (empty($this->messageParameters['platform_state'])) {
                     $this->ok = false;
-                    $this->reason = 'Missing or empty platform_state parameter';
+                    $this->reason = 'Missing or empty platform_state parameter.';
                 } else {
                     $this->sendRelaunchRequest();
                 }
@@ -1379,7 +1379,7 @@ class Tool
         }
         $ok = !is_null($this->platform) && !empty($this->platform->authenticationUrl);
         if (!$ok) {
-            $this->reason = 'Platform not found or no platform authentication request URL';
+            $this->reason = 'Platform not found or no platform authentication request URL.';
         } else {
             $oauthRequest = OAuth\OAuthRequest::from_request();
             do {
@@ -1428,7 +1428,7 @@ class Tool
                 }
                 $this->output = Util::sendForm($this->platform->authenticationUrl, $params);
             } else {
-                $this->reason = 'Unable to generate a state value';
+                $this->reason = 'Unable to generate a state value.';
             }
         }
 
@@ -1453,16 +1453,16 @@ class Tool
             $params = $this->platform->addSignature($this->messageParameters['relaunch_url'], $params);
             $this->output = Util::sendForm($this->messageParameters['relaunch_url'], $params);
         } else {
-            $this->reason = 'Unable to generate a state value';
+            $this->reason = 'Unable to generate a state value.';
         }
     }
 
     /**
      * Validate a parameter value from an array of permitted values.
      *
-     * @param mixed $value      Value to be checked
-     * @param array $values     Array of permitted values
-     * @param string $reason    Reason to generate when the value is not permitted
+     * @param mixed  $value          Value to be checked
+     * @param array  $values         Array of permitted values
+     * @param string $reason         Reason to generate when the value is not permitted
      * @param bool   $strictMode     True if full compliance with the LTI specification is required
      * @param bool   $ignoreInvalid  True if invalid values are to be ignored (optional default is false)
      *

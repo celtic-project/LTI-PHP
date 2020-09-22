@@ -601,6 +601,7 @@ class ResourceLink
         if (!$has) {
             $has = self::hasConfiguredApiHook(self::$MEMBERSHIPS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode(), $this);
         }
+
         return $has;
     }
 
@@ -1389,7 +1390,7 @@ EOF;
         $type = $ltiOutcome->type;
         $value = $ltiOutcome->getValue();
 // Check whether the type is supported or there is no value
-        $ok = in_array($type, $supportedTypes) || (strlen($value) <= 0);
+        $ok = in_array($type, $supportedTypes) || empty($value);
         if (!$ok) {
 // Convert numeric values to decimal
             if ($type === self::EXT_TYPE_PERCENTAGE) {

@@ -295,7 +295,7 @@ trait System
     public static function parseRoles($roles, $ltiVersion = Util::LTI_VERSION1)
     {
         if (!is_array($roles)) {
-            $roles = explode(',', $roles);
+            $roles = array_filter(explode(',', str_replace(' ', '', $roles)), 'strlen');
         }
         $parsedRoles = array();
         foreach ($roles as $role) {
@@ -886,7 +886,7 @@ trait System
                 $timestamp = time();
             }
             $payload['iat'] = $timestamp;
-            $payload['exp'] = $timestamp + 60;
+            $payload['exp'] = $timestamp + Jwt::$life;
             try {
                 $jwt = Jwt::getJwtClient();
                 $params[$paramName] = $jwt::sign($payload, $this->signatureMethod, $privateKey, $kid, $jku);
