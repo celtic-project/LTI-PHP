@@ -337,8 +337,10 @@ class Tool
 
     /**
      * Process an incoming request
+     *
+     * @param bool    $strictMode      True if full compliance with the LTI specification is required (optional, default is false)
      */
-    public function handleRequest()
+    public function handleRequest($strictMode = false)
     {
         if ($this->debugMode) {
             Util::$logLevel = Util::LOGLEVEL_DEBUG;
@@ -363,7 +365,7 @@ class Tool
                 Util::$logLevel = Util::LOGLEVEL_DEBUG;
             }
             Util::logRequest();
-            if ($this->ok && $this->authenticate()) {
+            if ($this->ok && $this->authenticate($strictMode)) {
                 if (empty($this->output)) {
                     $this->doCallback();
                 }
@@ -654,9 +656,11 @@ class Tool
      *
      * The platform, resource link and user objects will be initialised if the request is valid.
      *
+     * @param bool    $strictMode      True if full compliance with the LTI specification is required
+     *
      * @return bool    True if the request has been successfully validated.
      */
-    private function authenticate()
+    private function authenticate($strictMode)
     {
 // Get the platform
         $doSavePlatform = false;
@@ -758,11 +762,15 @@ class Tool
                         if (!$this->ok) {
                             $this->reason = 'Missing or empty accept_presentation_document_targets parameter.';
                         } else {
+                            if (empty($this->jwt) || !$this->jwt->hasJwt()) {
+                                $permittedTargets = array('embed', 'frame', 'iframe', 'window', 'popup', 'overlay', 'none');
+                            } else {  // JWT
+                                $permittedTargets = array('embed', 'iframe', 'window');
+                            }
                             foreach ($documentTargets as $documentTarget) {
-                                $this->ok = $this->checkValue($documentTarget,
-                                    array('embed', 'frame', 'iframe', 'window', 'popup', 'overlay', 'none'),
-                                    'Invalid value in accept_presentation_document_targets parameter: %s.');
-                                if (!$this->ok) {
+                                if (!$this->checkValue($documentTarget, $permittedTargets,
+                                        'Invalid value in accept_presentation_document_targets parameter: %s.', $strictMode, true)) {
+                                    $this->ok = false;
                                     break;
                                 }
                             }
@@ -855,28 +863,29 @@ class Tool
                 if ($this->messageParameters['lti_message_type'] === 'ContentItemSelectionRequest') {
                     if (isset($this->messageParameters['accept_unsigned'])) {
                         $this->ok = $this->checkValue($this->messageParameters['accept_unsigned'], array('true', 'false'),
-                            'Invalid value for accept_unsigned parameter: %s.');
+                            'Invalid value for accept_unsigned parameter: %s.', $strictMode);
                     }
                     if ($this->ok && isset($this->messageParameters['accept_multiple'])) {
                         $this->ok = $this->checkValue($this->messageParameters['accept_multiple'], array('true', 'false'),
-                            'Invalid value for accept_multiple parameter: %s.');
+                            'Invalid value for accept_multiple parameter: %s.', $strictMode);
                     }
                     if ($this->ok && isset($this->messageParameters['accept_copy_advice'])) {
                         $this->ok = $this->checkValue($this->messageParameters['accept_copy_advice'], array('true', 'false'),
-                            'Invalid value for accept_copy_advice parameter: %s.');
+                            'Invalid value for accept_copy_advice parameter: %s.', $strictMode);
                     }
                     if ($this->ok && isset($this->messageParameters['auto_create'])) {
                         $this->ok = $this->checkValue($this->messageParameters['auto_create'], array('true', 'false'),
-                            'Invalid value for auto_create parameter: %s.');
+                            'Invalid value for auto_create parameter: %s.', $strictMode);
                     }
                     if ($this->ok && isset($this->messageParameters['can_confirm'])) {
                         $this->ok = $this->checkValue($this->messageParameters['can_confirm'], array('true', 'false'),
-                            'Invalid value for can_confirm parameter: %s.');
+                            'Invalid value for can_confirm parameter: %s.', $strictMode);
+                    }
                     }
                 } elseif (isset($this->messageParameters['launch_presentation_document_target'])) {
                     $this->ok = $this->checkValue($this->messageParameters['launch_presentation_document_target'],
                         array('embed', 'frame', 'iframe', 'window', 'popup', 'overlay'),
-                        'Invalid value for launch_presentation_document_target parameter: %s.');
+                        'Invalid value for launch_presentation_document_target parameter: %s.', $strictMode, true);
                 }
             }
         }
@@ -1454,14 +1463,26 @@ class Tool
      * @param mixed $value      Value to be checked
      * @param array $values     Array of permitted values
      * @param string $reason    Reason to generate when the value is not permitted
+     * @param bool   $strictMode     True if full compliance with the LTI specification is required
+     * @param bool   $ignoreInvalid  True if invalid values are to be ignored (optional default is false)
      *
      * @return bool    True if value is valid
      */
-    private function checkValue($value, $values, $reason)
+    private function checkValue(&$value, $values, $reason, $strictMode, $ignoreInvalid = false)
     {
-        $ok = in_array($value, $values);
-        if (!$ok && !empty($reason)) {
+        $lookupValue = $value;
+        if (!$strictMode) {
+            $lookupValue = strtolower($value);
+        }
+        $ok = in_array($lookupValue, $values);
+        if (!$ok && !$strictMode && $ignoreInvalid) {
+            Util::logInfo(sprintf($reason, $value) . " [Error ignored]");
+            $ok = true;
+        } elseif (!$ok && !empty($reason)) {
             $this->reason = sprintf($reason, $value);
+        } elseif ($lookupValue !== $value) {
+            Util::logInfo(sprintf($reason, $value) . " [Changed to '{$lookupValue}']");
+            $value = $lookupValue;
         }
 
         return $ok;
