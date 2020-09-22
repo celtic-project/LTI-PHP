@@ -190,9 +190,14 @@ final class Util
     /**
      * Log a request.
      */
-    public static function logRequest()
+    public static function logRequest($debugLevel = false)
     {
-        if (self::$logLevel >= self::LOGLEVEL_INFO) {
+        if (!$debugLevel) {
+            $logLevel = self::LOGLEVEL_INFO;
+        } else {
+            $logLevel = self::LOGLEVEL_DEBUG;
+        }
+        if (self::$logLevel >= $logLevel) {
             $message = "{$_SERVER['REQUEST_METHOD']} request received for '{$_SERVER['REQUEST_URI']}'";
             $body = file_get_contents(OAuth\OAuthRequest::$POST_INPUT);
             if (!empty($body)) {
@@ -203,7 +208,11 @@ final class Util
                     $message .= " with a body of:\n" . var_export($body, true);
                 }
             }
+            if (!$debugLevel) {
             self::logInfo($message);
+            } else {
+                self::logDebug($message);
+            }
         }
     }
 

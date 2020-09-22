@@ -344,7 +344,7 @@ class Tool
             Util::$logLevel = Util::LOGLEVEL_DEBUG;
         }
         if ($_SERVER['REQUEST_METHOD'] === 'HEAD') {  // Ignore HEAD requests
-            Util::logRequest();
+            Util::logRequest(true);
         } elseif (!empty($_REQUEST['iss'])) {  // Initiate login request
             Util::logRequest();
             if (empty($_REQUEST['login_hint'])) {
