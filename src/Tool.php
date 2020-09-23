@@ -605,22 +605,17 @@ class Tool
 // If not valid, return an error message to the platform if a return URL is provided
             if (!empty($this->returnUrl)) {
                 $errorUrl = $this->returnUrl;
-                if (strpos($errorUrl, '?') === false) {
-                    $errorUrl .= '?';
-                } else {
-                    $errorUrl .= '&';
-                }
-                if ($this->debugMode && !is_null($this->reason)) {
-                    $errorUrl .= 'lti_errormsg=' . urlencode("Debug error: $this->reason");
-                } else {
-                    $errorUrl .= 'lti_errormsg=' . urlencode($this->message);
-                    if (!is_null($this->reason)) {
-                        $errorUrl .= '&lti_errorlog=' . urlencode("Debug error: $this->reason");
-                    }
-                }
                 if (!is_null($this->platform) && isset($this->messageParameters['lti_message_type']) &&
                     ($this->messageParameters['lti_message_type'] === 'ContentItemSelectionRequest')) {
                     $formParams = array();
+                    if ($this->debugMode && !is_null($this->reason)) {
+                        $formParams['lti_errormsg'] = "Debug error: {$this->reason}";
+                    } else {
+                        $formParams['lti_errormsg'] = $this->message;
+                        if (!is_null($this->reason)) {
+                            $formParams['lti_errorlog'] = "Debug error: {$this->reason}";
+                        }
+                    }
                     if (isset($this->messageParameters['data'])) {
                         $formParams['data'] = $this->messageParameters['data'];
                     }
@@ -629,6 +624,19 @@ class Tool
                     $page = Util::sendForm($errorUrl, $formParams);
                     echo $page;
                 } else {
+                    if (strpos($errorUrl, '?') === false) {
+                        $errorUrl .= '?';
+                    } else {
+                        $errorUrl .= '&';
+                    }
+                    if ($this->debugMode && !is_null($this->reason)) {
+                        $errorUrl .= 'lti_errormsg=' . urlencode("Debug error: $this->reason");
+                    } else {
+                        $errorUrl .= 'lti_errormsg=' . urlencode($this->message);
+                        if (!is_null($this->reason)) {
+                            $errorUrl .= '&lti_errorlog=' . urlencode("Debug error: $this->reason");
+                        }
+                    }
                     header("Location: {$errorUrl}");
                 }
                 exit;
@@ -681,6 +689,13 @@ class Tool
                 $this->reason = 'Missing nonce claim';
             } else {
                 $this->ok = true;
+            }
+        }
+// Set signature method from request
+        if (isset($this->messageParameters['oauth_signature_method'])) {
+            $this->signatureMethod = $this->messageParameters['oauth_signature_method'];
+            if (!empty($this->platform)) {
+                $this->platform->signatureMethod = $this->messageParameters['oauth_signature_method'];
             }
         }
 // Check all required launch parameters
@@ -881,8 +896,8 @@ class Tool
                         $this->ok = $this->checkValue($this->messageParameters['can_confirm'], array('true', 'false'),
                             'Invalid value for can_confirm parameter: %s.', $strictMode);
                     }
-                    }
-                } elseif (isset($this->messageParameters['launch_presentation_document_target'])) {
+                }
+                if ($this->ok && isset($this->messageParameters['launch_presentation_document_target'])) {
                     $this->ok = $this->checkValue($this->messageParameters['launch_presentation_document_target'],
                         array('embed', 'frame', 'iframe', 'window', 'popup', 'overlay'),
                         'Invalid value for launch_presentation_document_target parameter: %s.', $strictMode, true);

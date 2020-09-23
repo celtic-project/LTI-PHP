@@ -134,6 +134,7 @@ class HttpMessage
     public static function setHttpClient($httpClient = null)
     {
         self::$httpClient = $httpClient;
+        Util::logDebug('HttpClient set to \'' . get_class(self::$httpClient) . '\'');
     }
 
     /**
@@ -148,6 +149,9 @@ class HttpMessage
                 self::$httpClient = new CurlClient();
             } elseif (ini_get('allow_url_fopen')) {
                 self::$httpClient = new StreamClient();
+            }
+            if (self::$httpClient) {
+                Util::logDebug('HttpClient set to \'' . get_class(self::$httpClient) . '\'');
             }
         }
 

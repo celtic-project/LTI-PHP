@@ -2,6 +2,8 @@
 
 namespace ceLTIc\LTI\Jwt;
 
+use ceLTIc\LTI\Util;
+
 /**
  * Class to represent an HTTP message request
  *
@@ -56,6 +58,7 @@ class Jwt
     public static function setJwtClient($jwtClient = null)
     {
         self::$jwtClient = $jwtClient;
+        Util::logDebug('JwtClient set to \'' . get_class(self::$jwtClient) . '\'');
     }
 
     /**
@@ -67,6 +70,7 @@ class Jwt
     {
         if (!self::$jwtClient) {
             self::$jwtClient = new FirebaseClient();
+            Util::logDebug('JwtClient set to \'' . get_class(self::$jwtClient) . '\'');
         }
 
         return self::$jwtClient;
