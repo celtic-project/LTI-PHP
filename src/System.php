@@ -204,30 +204,41 @@ trait System
                 $messageParameters['lti_message_type'] = Util::MESSAGE_TYPE_MAPPING[$messageParameters['lti_message_type']];
             }
             if (!empty($messageParameters['accept_media_types'])) {
-                $mediaTypes = explode(',', $messageParameters['accept_media_types']);
+                $mediaTypes = array_filter(explode(',', str_replace(' ', '', $messageParameters['accept_media_types'])), 'strlen');
                 $types = array();
                 if (!empty($messageParameters['accept_types'])) {
-                    $types = explode(',', $messageParameters['accept_types']);
-                }
-                foreach ($mediaTypes as $mediaType) {
-                    if ($mediaType === Item::LTI_LINK_MEDIA_TYPE) {
-                        unset($mediaTypes[array_search(Item::LTI_LINK_MEDIA_TYPE, $mediaTypes)]);
-                        $types[] = Item::TYPE_LTI_LINK;
-                    } elseif (substr($mediaType, 0, 6) === 'image/') {
-                        $types[] = 'image';
-                    } elseif (substr($mediaType, 0, 6) === 'text/html') {
-                        $types[] = 'html';
-                    } elseif (substr($mediaType, 0, 6) === '*/*') {
-                        $types[] = 'html';
-                        $types[] = 'file';
-                        $types[] = 'link';
-                    } else {
-                        $types[] = 'file';
+                    $types = array_filter(explode(',', str_replace(' ', '', $messageParameters['accept_types'])), 'strlen');
+                    foreach ($mediaTypes as $mediaType) {
+                        if (strpos($mediaType, 'application/vnd.ims.lti.') === 0) {
+                            unset($mediaTypes[array_search($mediaType, $mediaTypes)]);
+                        }
                     }
+                    $messageParameters['accept_media_types'] = implode(',', $mediaTypes);
+                } else {
+                    foreach ($mediaTypes as $mediaType) {
+                        if ($mediaType === Item::LTI_LINK_MEDIA_TYPE) {
+                            unset($mediaTypes[array_search(Item::LTI_LINK_MEDIA_TYPE, $mediaTypes)]);
+                            $types[] = Item::TYPE_LTI_LINK;
+                        } elseif (substr($mediaType, 0, 6) === 'image/') {
+                            $types[] = 'image';
+                            $types[] = 'link';
+                            $types[] = 'file';
+                        } elseif ($mediaType === 'text/html') {
+                            $types[] = 'html';
+                            $types[] = 'link';
+                            $types[] = 'file';
+                        } elseif ($mediaType === '*/*') {
+                            $types[] = 'html';
+                            $types[] = 'image';
+                            $types[] = 'file';
+                            $types[] = 'link';
+                        } else {
+                            $types[] = 'file';
+                        }
+                    }
+                    $types = array_unique($types);
+                    $messageParameters['accept_types'] = implode(',', $types);
                 }
-                $messageParameters['accept_media_types'] = implode(',', $mediaTypes);
-                $types = array_unique($types);
-                $messageParameters['accept_types'] = implode(',', $types);
             }
             $messageClaims = array();
             foreach ($messageParameters as $key => $value) {
@@ -652,10 +663,11 @@ trait System
                 Util::MESSAGE_TYPE_MAPPING);
         }
         if (!empty($this->messageParameters['accept_types'])) {
-            $types = explode(',', $this->messageParameters['accept_types']);
+            $types = array_filter(explode(',', str_replace(' ', '', $this->messageParameters['accept_types'])), 'strlen');
             $mediaTypes = array();
             if (!empty($this->messageParameters['accept_media_types'])) {
-                $mediaTypes = explode(',', $this->messageParameters['accept_media_types']);
+                $mediaTypes = array_filter(explode(',', str_replace(' ', '', $this->messageParameters['accept_media_types'])),
+                    'strlen');
             }
             if (in_array(Item::TYPE_LTI_LINK, $types)) {
                 $mediaTypes[] = Item::LTI_LINK_MEDIA_TYPE;

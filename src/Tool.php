@@ -256,6 +256,20 @@ class Tool
     protected $mediaTypes = null;
 
     /**
+     * Content item types accepted by the platform.
+     *
+     * @var array|null $contentTypes
+     */
+    protected $contentTypes = null;
+
+    /**
+     * File types accepted by the platform.
+     *
+     * @var array|null $fileTypes
+     */
+    protected $fileTypes = null;
+
+    /**
      * Document targets accepted by the platform.
      *
      * @var array|null $documentTargets
@@ -720,52 +734,35 @@ class Tool
                     $this->reason = 'Missing resource link ID.';
                 }
             } elseif ($this->messageParameters['lti_message_type'] === 'ContentItemSelectionRequest') {
+                $mediaTypes = array();
+                $contentTypes = array();
+                $fileTypes = array();
                 if (isset($this->messageParameters['accept_media_types']) && (strlen(trim($this->messageParameters['accept_media_types'])) > 0)) {
                     $mediaTypes = array_filter(explode(',', str_replace(' ', '', $this->messageParameters['accept_media_types'])),
                         'strlen');
-                    $mediaTypes = array_unique($mediaTypes);
-                    $this->ok = count($mediaTypes) > 0;
-                    if (!$this->ok) {
-                        $this->reason = 'No accept_media_types found.';
-                    } else {
-                        $this->mediaTypes = $mediaTypes;
-                    }
                 }
-                if ($this->ok && !empty($this->jwt) && $this->jwt->hasJwt()) {
-                    if (isset($this->messageParameters['accept_types']) && (strlen(trim($this->messageParameters['accept_types'])) > 0)) {
-                        $types = array_filter(explode(',', str_replace(' ', '', $this->messageParameters['accept_types'])), 'strlen');
-                        $types = array_unique($types);
-                        $this->ok = count($types) > 0;
-                        if (!$this->ok) {
-                            $this->reason = 'No accept_types found.';
-                        } else {
-                            $this->mediaTypes = $types;
-                        }
-                    }
-                } elseif ($this->ok) {
-                    $this->ok = !empty($this->messageParameters['accept_media_types']);
-                    if (!$this->ok) {
-                        $this->reason = 'No accept_media_types found.';
-                    }
-                }
+                $this->ok = count($mediaTypes) > 0;
                 if (!$this->ok) {
                     $this->reason = 'No accept_media_types found.';
-                }
-                if ($this->ok) {
-                    if (isset($this->messageParameters['accept_types']) && (strlen(trim($this->messageParameters['accept_types'])) > 0)) {
-                        $acceptTypes = array_filter(explode(',', str_replace(' ', '', $this->messageParameters['accept_types'])),
-                            'strlen');
-                        $acceptTypes = array_unique($acceptTypes);
-                        $this->ok = count($acceptTypes) > 0;
-                        if ($this->ok) {
-                            $this->acceptTypes = $acceptTypes;
+                } else {
+                    $mediaTypes = array_unique($mediaTypes);
+                    foreach ($mediaTypes as $mediaType) {
+                        if (strpos($mediaType, 'application/vnd.ims.lti.') !== 0) {
+                            $fileTypes[] = $mediaType;
                         }
-                    } else {
-                        $this->ok = empty($this->jwt) || !$this->jwt->hasJwt();
+                        if (($mediaType === 'text/html') || ($mediaType === '*/*')) {
+                            $contentTypes[] = Item::TYPE_LINK;
+                            $contentTypes[] = Item::TYPE_HTML;
+                        } elseif ((strpos($mediaType, 'image/') === 0) || ($mediaType === '*/*')) {
+                            $contentTypes[] = Item::TYPE_IMAGE;
+                        } elseif ($mediaType === Item::LTI_LINK_MEDIA_TYPE) {
+                            $contentTypes[] = Item::TYPE_LTI_LINK;
+                        }
                     }
-                    if (!$this->ok) {
-                        $this->reason = 'No accept_types found.';
+                    if (!empty($fileTypes)) {
+                        $contentTypes[] = Item::TYPE_FILE;
                     }
+                    $contentTypes = array_unique($contentTypes);
                 }
                 if ($this->ok) {
                     if (isset($this->messageParameters['accept_presentation_document_targets']) &&
@@ -802,6 +799,10 @@ class Tool
                     $this->ok = !empty($this->messageParameters['content_item_return_url']);
                     if (!$this->ok) {
                         $this->reason = 'Missing content_item_return_url parameter.';
+                    } else {
+                        $this->mediaTypes = $mediaTypes;
+                        $this->contentTypes = $contentTypes;
+                        $this->fileTypes = $fileTypes;
                     }
                 }
             } elseif ($this->messageParameters['lti_message_type'] === 'ToolProxyRegistrationRequest') {
