@@ -20,13 +20,28 @@ interface ClientInterface
     public function hasJwt();
 
     /**
+     * Check if a JWT's content is encrypted.
+     *
+     * @return bool True if a JWT is encrypted
+     */
+    public function isEncrypted();
+
+    /**
      * Load a JWT from a string.
      *
      * @param string $jwtString  JWT string
+     * @param string $privateKey Private key in PEM format for decrypting encrypted tokens (optional)
      *
      * @return bool True if the JWT was successfully loaded
      */
-    public function load($jwtString);
+    public function load($jwtString, $privateKey = null);
+
+    /**
+     * Get the value of the JWE headers.
+     *
+     * @return array The value of the JWE headers
+     */
+    public function getJweHeaders();
 
     /**
      * Check whether a JWT has a header with the specified name.
@@ -55,6 +70,13 @@ interface ClientInterface
     public function getHeaders();
 
     /**
+     * Get the value of the headers for the last signed JWT (before any encryption).
+     *
+     * @return array The value of the headers
+     */
+    public static function getLastHeaders();
+
+    /**
      * Check whether a JWT has a claim with the specified name.
      *
      * @param string $name  Claim name
@@ -81,6 +103,13 @@ interface ClientInterface
     public function getPayload();
 
     /**
+     * Get the value of the payload for the last signed JWT (before any encryption).
+     *
+     * @return array The value of the payload
+     */
+    public static function getLastPayload();
+
+    /**
      * Verify the signature of the JWT.
      *
      * @param string $publicKey  Public key of issuer
@@ -97,20 +126,41 @@ interface ClientInterface
      * @param string $signatureMethod  Signature method
      * @param string $privateKey       Private key in PEM format
      * @param string $kid              Key ID (optional)
-     * @param string $jku              JSON Web Key URL (optional)     *
+     * @param string $jku              JSON Web Key URL (optional)
+     * @param string $encryptionMethod Encryption method (optional)
+     * @param string $publicKey        Public key of recipient for content encryption (optional)
      *
      * @return string Signed JWT
      */
-    public static function sign($payload, $signatureMethod, $privateKey, $kid = null, $jku = null);
+    public static function sign($payload, $signatureMethod, $privateKey, $kid = null, $jku = null, $encryptionMethod = null,
+        $publicKey = null);
 
     /**
-     * Get the public JWKS from a private key.
+     * Generate a new private key in PEM format.
+     *
+     * @param string $signatureMethod  Signature method
+     *
+     * @return string|null  Key in PEM format
+     */
+    public static function generateKey($signatureMethod = 'RS256');
+
+    /**
+     * Get the public key for a private key.
      *
      * @param string $privateKey       Private key in PEM format
+     *
+     * @return string Public key in PEM format
+     */
+    public static function getPublicKey($privateKey);
+
+    /**
+     * Get the public JWKS from a key in PEM format.
+     *
+     * @param string $pemKey           Private or public key in PEM format
      * @param string $signatureMethod  Signature method
      * @param string $kid              Key ID (optional)
      *
      * @return array  JWKS keys
      */
-    public static function getJWKS($privateKey, $signatureMethod, $kid);
+    public static function getJWKS($pemKey, $signatureMethod, $kid);
 }

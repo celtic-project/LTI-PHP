@@ -529,9 +529,9 @@ trait System
                 try {
                     $this->jwt = Jwt::getJwtClient();
                     if (isset($this->rawParameters['id_token'])) {
-                        $this->jwt->load($this->rawParameters['id_token']);
+                        $this->jwt->load($this->rawParameters['id_token'], $this->rsaKey);
                     } else {
-                        $this->jwt->load($this->rawParameters['JWT']);
+                        $this->jwt->load($this->rawParameters['JWT'], $this->rsaKey);
                     }
                     $this->ok = $this->jwt->hasClaim('iss') && $this->jwt->hasClaim('aud') &&
                         $this->jwt->hasClaim(Util::JWT_CLAIM_PREFIX . '/claim/deployment_id');
@@ -919,7 +919,8 @@ trait System
             $payload['exp'] = $timestamp + Jwt::$life;
             try {
                 $jwt = Jwt::getJwtClient();
-                $params[$paramName] = $jwt::sign($payload, $this->signatureMethod, $privateKey, $kid, $jku);
+                $params[$paramName] = $jwt::sign($payload, $this->signatureMethod, $privateKey, $kid, $jku, $this->encryptionMethod,
+                        $publicKey);
             } catch (\Exception $e) {
                 $params = array();
             }

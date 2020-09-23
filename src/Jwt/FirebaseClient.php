@@ -4,12 +4,11 @@ namespace ceLTIc\LTI\Jwt;
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\JWK;
-use ceLTIc\LTI;
 use ceLTIc\LTI\Http\HttpMessage;
 use ceLTIc\LTI\Util;
 
 /**
- * Class to implement the JWT interface using the Spomky-Labs library.
+ * Class to implement the JWT interface using the Firebase JWT library from https://github.com/firebase/php-jwt.
  *
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
  * @copyright  SPV Software Products
@@ -21,6 +20,8 @@ class FirebaseClient implements ClientInterface
     private $jwtString = null;
     private $jwtHeaders = null;
     private $jwtPayload = null;
+    private static $lastHeaders = null;
+    private static $lastPayload = null;
 
     /**
      * Check if a JWT is defined.
@@ -33,13 +34,24 @@ class FirebaseClient implements ClientInterface
     }
 
     /**
+     * Check if a JWT's content is encrypted.
+     *
+     * @return bool True if a JWT is encrypted
+     */
+    public function isEncrypted()
+    {
+        return false;  // Not supported by this client
+    }
+
+    /**
      * Load a JWT from a string.
      *
      * @param string $jwtString  JWT string
+     * @param string $privateKey Private key in PEM format for decrypting encrypted tokens (optional)
      *
      * @return bool True if the JWT was successfully loaded
      */
-    public function load($jwtString)
+    public function load($jwtString, $privateKey = null)
     {
         $sections = explode('.', $jwtString);
         $ok = count($sections) === 3;
@@ -59,6 +71,16 @@ class FirebaseClient implements ClientInterface
         }
 
         return $ok;
+    }
+
+    /**
+     * Get the value of the JWE headers.
+     *
+     * @return array The value of the JWE headers
+     */
+    public function getJweHeaders()
+    {
+        return array();  // Encryption not supported by this client
     }
 
     /**
@@ -100,6 +122,16 @@ class FirebaseClient implements ClientInterface
     public function getHeaders()
     {
         return $this->jwtHeaders;
+    }
+
+    /**
+     * Get the value of the headers for the last signed JWT (before any encryption).
+     *
+     * @return array The value of the headers
+     */
+    public static function getLastHeaders()
+    {
+        return self::$lastHeaders;
     }
 
     /**
@@ -147,6 +179,16 @@ class FirebaseClient implements ClientInterface
     }
 
     /**
+     * Get the value of the payload for the last signed JWT (before any encryption).
+     *
+     * @return array The value of the payload
+     */
+    public static function getLastPayload()
+    {
+        return self::$lastPayload;
+    }
+
+    /**
      * Verify the signature of the JWT.
      *
      * @param string $publicKey  Public key of issuer
@@ -173,7 +215,7 @@ class FirebaseClient implements ClientInterface
         } elseif (!empty($jku)) {
             $publicKey = $this->fetchPublicKey($jku);
         }
-        JWT::$leeway = LTI\Jwt\Jwt::$leeway;
+        JWT::$leeway = Jwt::$leeway;
         $retry = false;
         do {
             try {
@@ -200,36 +242,111 @@ class FirebaseClient implements ClientInterface
      * @param string $signatureMethod  Signature method
      * @param string $privateKey       Private key in PEM format
      * @param string $kid              Key ID (optional)
-     * @param string $jku              JSON Web Key URL (optional)     *
+     * @param string $jku              JSON Web Key URL (optional)
+     * @param string $encryptionMethod Encryption method (optional)
+     * @param string $publicKey        Public key of recipient for content encryption (optional)
      *
      * @return string Signed JWT
      */
-    public static function sign($payload, $signatureMethod, $privateKey, $kid = null, $jku = null)
+    public static function sign($payload, $signatureMethod, $privateKey, $kid = null, $jku = null, $encryptionMethod = null,
+        $publicKey = null)
     {
-        return JWT::encode($payload, $privateKey, $signatureMethod, $kid);
+        if (!empty($encryptionMethod)) {
+            $errorMessage = 'Encrypted tokens not supported by the Firebase JWT client';
+            Util::logError($errorMessage);
+            throw new \Exception($errorMessage);
+        }
+        $jwtString = JWT::encode($payload, $privateKey, $signatureMethod, $kid);
+        $sections = explode('.', $jwtString);
+        self::$lastHeaders = json_decode(JWT::urlsafeB64Decode($sections[0]));
+        self::$lastPayload = json_decode(JWT::urlsafeB64Decode($sections[1]));
+
+        return $jwtString;
     }
 
     /**
-     * Get the public JWKS from a private key.
+     * Generate a new private key in PEM format.
+     *
+     * @param string $signatureMethod  Signature method
+     *
+     * @return string|null  Key in PEM format
+     */
+    public static function generateKey($signatureMethod = 'RS256')
+    {
+        $privateKey = null;
+        switch ($signatureMethod) {
+            case 'RS512':
+                $size = 4096;
+                break;
+            case 'RS384':
+                $size = 3072;
+                break;
+            default:
+                $size = 2048;
+                break;
+        }
+        $config = array(
+            "private_key_bits" => $size,
+            "private_key_type" => OPENSSL_KEYTYPE_RSA
+        );
+        $res = openssl_pkey_new($config);
+        if (openssl_pkey_export($res, $privateKey)) {
+            $privateKey = str_replace('-----BEGIN PRIVATE KEY-----', '-----BEGIN RSA PRIVATE KEY-----', $privateKey);
+            $privateKey = str_replace('-----END PRIVATE KEY-----', '-----END RSA PRIVATE KEY-----', $privateKey);
+        }
+
+        return $privateKey;
+    }
+
+    /**
+     * Get the public key for a private key.
      *
      * @param string $privateKey       Private key in PEM format
+     *
+     * @return string Public key in PEM format
+     */
+    public static function getPublicKey($privateKey)
+    {
+        $publicKey = null;
+        $res = openssl_pkey_get_private($privateKey);
+        if ($res !== false) {
+            $details = openssl_pkey_get_details($res);
+            $publicKey = $details['key'];
+        }
+
+        return $publicKey;
+    }
+
+    /**
+     * Get the public JWKS from a key in PEM format.
+     *
+     * @param string $pemKey           Private or public key in PEM format
      * @param string $signatureMethod  Signature method
      * @param string $kid              Key ID (optional)
      *
      * @return array  JWKS keys
      */
-    public static function getJWKS($privateKey, $signatureMethod, $kid)
+    public static function getJWKS($pemKey, $signatureMethod, $kid)
     {
-        $res = openssl_pkey_get_private($privateKey);
-        $details = openssl_pkey_get_details($res);
-        $keys['keys'][] = [
-            'kty' => 'RSA',
-            'n' => JWT::urlsafeB64Encode($details['rsa']['n']),
-            'e' => JWT::urlsafeB64Encode($details['rsa']['e']),
-            'kid' => $kid,
-            'alg' => $signatureMethod,
-            'use' => 'sig'
-        ];
+        $keys['keys'] = array();
+        $res = openssl_pkey_get_private($pemKey);
+        if ($res === false) {
+            $res = openssl_pkey_get_public($pemKey);
+        }
+        if ($res !== false) {
+            $details = openssl_pkey_get_details($res);
+            $key = [
+                'kty' => 'RSA',
+                'n' => JWT::urlsafeB64Encode($details['rsa']['n']),
+                'e' => JWT::urlsafeB64Encode($details['rsa']['e']),
+                'alg' => $signatureMethod,
+                'use' => 'sig'
+            ];
+            if (!empty($kid)) {
+                $key['kid'] = $kid;
+            }
+            $keys['keys'][] = $key;
+        }
 
         return $keys;
     }
