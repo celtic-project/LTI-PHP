@@ -237,7 +237,7 @@ trait System
                     if (isset($mapping['isObject']) && $mapping['isObject']) {
                         $value = json_decode($value);
                     } elseif (isset($mapping['isArray']) && $mapping['isArray']) {
-                        $value = explode(',', $value);
+                        $value = array_filter(explode(',', str_replace(' ', '', $value)), 'strlen');
                         sort($value);
                     } elseif (isset($mapping['isBoolean']) && $mapping['isBoolean']) {
                         $value = $value === 'true';
@@ -424,15 +424,28 @@ trait System
     public function verifySignature()
     {
         $ok = false;
+        $key = $this->key;
+        if (!empty($key)) {
+            $secret = $this->secret;
+        } elseif (($this instanceof Tool) && !empty($this->platform)) {
+            $key = $this->platform->getKey();
+            $secret = $this->platform->secret;
+        } elseif (($this instanceof Platform) && !empty($Tool::$defaultTool)) {
+            $key = $Tool::$defaultTool->getKey();
+            $secret = $Tool::$defaultTool->secret;
+        }
         if ($this instanceof Tool) {
             $platform = $this->platform;
+            $publicKey = $this->platform->rsaKey;
+            $jku = $this->platform->jku;
         } else {
             $platform = $this;
-        }
-        if (isset($this->messageParameters['oauth_signature_method'])) {
-            $this->signatureMethod = $this->messageParameters['oauth_signature_method'];
-            if ($this instanceof Tool) {
-                $this->platform->signatureMethod = $this->messageParameters['oauth_signature_method'];
+            if (!empty(Tool::$defaultTool)) {
+                $publicKey = Tool::$defaultTool->rsaKey;
+                $jku = Tool::$defaultTool->jku;
+            } else {
+                $publicKey = $this->rsaKey;
+                $jku = $this->jku;
             }
         }
         if (empty($this->jwt) || empty($this->jwt->hasJwt())) {  // OAuth-signed message
@@ -454,7 +467,7 @@ trait System
                 $ok = true;
             } catch (\Exception $e) {
                 if (empty($this->reason)) {
-                    $oauthConsumer = new OAuth\OAuthConsumer($platform->getKey(), $platform->secret);
+                    $oauthConsumer = new OAuth\OAuthConsumer($key, $secret);
                     $signature = $request->build_signature($method, $oauthConsumer, false);
                     if ($this->debugMode) {
                         $this->reason = $e->getMessage();
@@ -475,9 +488,9 @@ trait System
             }
             if (!$ok) {
                 $this->reason = 'Invalid nonce.';
-            } elseif (!empty($platform->rsaKey) || !empty($platform->jku) || Jwt::$allowJkuHeader) {
+            } elseif (!empty($publicKey) || !empty($jku) || Jwt::$allowJkuHeader) {
                 unset($this->messageParameters['oauth_consumer_key']);
-                $ok = $this->jwt->verify($platform->rsaKey, $platform->jku);
+                $ok = $this->jwt->verify($publicKey, $jku);
                 if (!$ok) {
                     $this->reason = 'JWT signature check failed - perhaps an invalid public key or timestamp';
                 }
@@ -748,7 +761,17 @@ trait System
                 $hmacMethod = new OAuth\OAuthSignatureMethod_HMAC_SHA1();
                 break;
         }
-        $oauthConsumer = new OAuth\OAuthConsumer($this->key, $this->secret, null);
+        $key = $this->key;
+        if (!empty($key)) {
+            $secret = $this->secret;
+        } elseif (($this instanceof Tool) && !empty($this->platform)) {
+            $key = $this->platform->getKey();
+            $secret = $this->platform->secret;
+        } elseif (($this instanceof Platform) && !empty($Tool::$defaultTool)) {
+            $key = $Tool::$defaultTool->getKey();
+            $secret = $Tool::$defaultTool->secret;
+        }
+        $oauthConsumer = new OAuth\OAuthConsumer($key, $secret, null);
         $oauthReq = OAuth\OAuthRequest::from_consumer_and_token($oauthConsumer, null, $method, $endpoint, $params);
         $oauthReq->sign_request($hmacMethod, $oauthConsumer, null);
         if (!is_array($data)) {
@@ -813,62 +836,57 @@ trait System
             if (empty($nonce)) {
                 $nonce = Util::getRandomString(32);
             }
+            $publicKey = null;
             if (!array_key_exists('grant_type', $data)) {
                 $this->messageParameters = $data;
                 $payload = $this->getMessageClaims();
                 $ok = count($payload) > 2;
                 if ($ok) {
-                    if ($this instanceof Tool) {
-                        $privateKey = $this->rsaKey;
-                        $kid = $this->kid;
-                        $jku = $this->jku;
-                        $payload['iss'] = $this->platform->clientId;
-                        $payload['aud'] = array($this->platform->platformId);
-                        $payload['azp'] = $this->platform->platformId;
-                        $payload[Util::JWT_CLAIM_PREFIX . '/claim/deployment_id'] = $this->platform->deploymentId;
-                        $paramName = 'JWT';
-                    } else {
+                    $privateKey = $this->rsaKey;
+                    $kid = $this->kid;
+                    $jku = $this->jku;
+                    if ($this instanceof Platform) {
                         if (!empty(Tool::$defaultTool)) {
-                            $privateKey = Tool::$defaultTool->rsaKey;
-                            $kid = Tool::$defaultTool->kid;
-                            $jku = Tool::$defaultTool->jku;
-                        } else {
-                            $privateKey = $this->rsaKey;
-                            $kid = $this->kid;
-                            $jku = $this->jku;
+                            $publicKey = Tool::$defaultTool->rsaKey;
                         }
                         $payload['iss'] = $this->platformId;
                         $payload['aud'] = array($this->clientId);
                         $payload['azp'] = $this->clientId;
                         $payload[Util::JWT_CLAIM_PREFIX . '/claim/deployment_id'] = $this->deploymentId;
                         $paramName = 'id_token';
+                    } else {
+                        if (!empty($this->platform)) {
+                            $publicKey = $this->platform->rsaKey;
+                            $payload['iss'] = $this->platform->clientId;
+                            $payload['aud'] = array($this->platform->platformId);
+                            $payload['azp'] = $this->platform->platformId;
+                            $payload[Util::JWT_CLAIM_PREFIX . '/claim/deployment_id'] = $this->platform->deploymentId;
+                        }
+                        $paramName = 'JWT';
                     }
                     $payload['nonce'] = $nonce;
                     $payload[Util::JWT_CLAIM_PREFIX . '/claim/target_link_uri'] = $endpoint;
                 }
             } else {
                 $ok = true;
+                $authorizationId = '';
                 if ($this instanceof Tool) {
                     $iss = $this->baseUrl;
                     $sub = $this->platform->clientId;
                     $authorizationId = $this->platform->authorizationServerId;
                     $privateKey = $this->rsaKey;
+                    $publicKey = $this->platform->rsaKey;
                     $kid = $this->kid;
                     $jku = $this->jku;
-                } else {
-                    if (!empty(Tool::$defaultTool)) {
-                        $iss = Tool::$defaultTool->baseUrl;
-                        $privateKey = Tool::$defaultTool->rsaKey;
-                        $kid = Tool::$defaultTool->kid;
-                        $jku = Tool::$defaultTool->jku;
-                    } else {
-                        $iss = $this->platformId;
-                        $privateKey = $this->rsaKey;
-                        $kid = $this->kid;
-                        $jku = $this->jku;
-                    }
+                } else {  // Tool-hosted services not yet defined in LTI
+                    $iss = $this->platformId;
                     $sub = $this->clientId;
-                    $authorizationId = $this->authorizationServerId;
+                    $kid = $this->kid;
+                    $jku = $this->jku;
+                    $privateKey = $this->rsaKey;
+                    if (!empty(Tool::$defaultTool)) {
+                        $publicKey = Tool::$defaultTool->rsaKey;
+                    }
                 }
                 $payload['iss'] = $iss;
                 $payload['sub'] = $sub;

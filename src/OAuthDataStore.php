@@ -17,24 +17,24 @@ class OAuthDataStore extends OAuth\OAuthDataStore
 {
 
     /**
-     * Tool object.
+     * System object.
      *
-     * @var Tool|null $tool
+     * @var Tool|Platform|null $system
      */
-    private $tool = null;
+    private $system = null;
 
     /**
      * Class constructor.
      *
-     * @param Tool $tool Tool object
+     * @param Tool|Platform $system System object
      */
-    public function __construct($tool)
+    public function __construct($system)
     {
-        $this->tool = $tool;
+        $this->system = $system;
     }
 
     /**
-     * Create an OAuthConsumer object for the tool consumer.
+     * Create an OAuthConsumer object for the system.
      *
      * @param string $consumerKey Consumer key value
      *
@@ -42,11 +42,26 @@ class OAuthDataStore extends OAuth\OAuthDataStore
      */
     function lookup_consumer($consumerKey)
     {
-        return new OAuthConsumer($this->tool->platform->getKey(), $this->tool->platform->secret);
+        $key = $this->system->getKey();
+        $secret = '';
+        if (!empty($key)) {
+            $secret = $this->system->secret;
+        } elseif (($this->system instanceof Tool) && !empty($this->system->platform)) {
+            $key = $this->system->platform->getKey();
+            $secret = $this->system->platform->secret;
+        } elseif (($this->system instanceof Platform) && !empty(Tool::$defaultTool)) {
+            $key = Tool::$defaultTool->getKey();
+            $secret = Tool::$defaultTool->secret;
+        }
+        if ($key !== $consumerKey) {
+            throw new OAuthException('Consumer key not found');
+        }
+
+        return new OAuthConsumer($key, $secret);
     }
 
     /**
-     * Create an OAuthToken object for the tool consumer.
+     * Create an OAuthToken object for the system.
      *
      * @param string $consumer   OAuthConsumer object
      * @param string $tokenType  Token type
@@ -60,7 +75,7 @@ class OAuthDataStore extends OAuth\OAuthDataStore
     }
 
     /**
-     * Lookup nonce value for the tool consumer.
+     * Lookup nonce value for the system.
      *
      * @param OAuthConsumer $consumer  OAuthConsumer object
      * @param string        $token     Token value
@@ -71,13 +86,13 @@ class OAuthDataStore extends OAuth\OAuthDataStore
      */
     function lookup_nonce($consumer, $token, $value, $timestamp)
     {
-        $nonce = new PlatformNonce($this->tool->platform, $value);
+        $nonce = new PlatformNonce($this->system->platform, $value);
         $ok = !$nonce->load();
         if ($ok) {
             $ok = $nonce->save();
         }
         if (!$ok) {
-            $this->tool->reason = 'Invalid nonce.';
+            $this->system->reason = 'Invalid nonce.';
         }
 
         return !$ok;

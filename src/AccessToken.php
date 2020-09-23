@@ -2,6 +2,7 @@
 
 namespace ceLTIc\LTI;
 
+use ceLTIc\LTI\Tool;
 use ceLTIc\LTI\Http\HttpMessage;
 
 /**
@@ -166,7 +167,11 @@ class AccessToken
                         'client_assertion_type' => 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
                         'scope' => implode(' ', $scopesRequested)
                     );
-                    $body = $this->platform->signServiceRequest($url, $method, $type, $body);
+                    if (!empty(Tool::$defaultTool)) {
+                        $body = Tool::$defaultTool->signServiceRequest($url, $method, $type, $body);
+                    } else {
+                        $body = $this->platform->signServiceRequest($url, $method, $type, $body);
+                    }
                     $http = new HttpMessage($url, $method, $body);
                     if ($http->send() && !empty($http->response)) {
                         $http->responseJson = json_decode($http->response);
