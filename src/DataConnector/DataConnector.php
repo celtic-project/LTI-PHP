@@ -696,6 +696,9 @@ class DataConnector
             $platform->setSetting('_encryption_method');
             $platform->debugMode = $platform->getSetting('_debug', $platform->debugMode ? 'true' : 'false') === 'true';
             $platform->setSetting('_debug');
+            if ($platform->debugMode) {
+                Util::$logLevel = Util::LOGLEVEL_DEBUG;
+            }
         } else {
             $platform->setSetting('_authorization_server_id',
                 !empty($platform->authorizationServerId) ? $platform->authorizationServerId : null);
