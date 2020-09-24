@@ -884,10 +884,13 @@ trait System
                 $authorizationId = '';
                 if ($this instanceof Tool) {
                     $iss = $this->baseUrl;
-                    $sub = $this->platform->clientId;
-                    $authorizationId = $this->platform->authorizationServerId;
+                    $sub = '';
+                    if (!empty($this->platform)) {
+                        $sub = $this->platform->clientId;
+                        $authorizationId = $this->platform->authorizationServerId;
+                        $publicKey = $this->platform->rsaKey;
+                    }
                     $privateKey = $this->rsaKey;
-                    $publicKey = $this->platform->rsaKey;
                     $kid = $this->kid;
                     $jku = $this->jku;
                 } else {  // Tool-hosted services not yet defined in LTI
