@@ -327,15 +327,11 @@ class Tool
         if (is_null($this->messageParameters)) {
             $this->parseMessage();
 // Set debug mode
-            if (!$this->debugMode) {
+            if (Util::$logLevel < Util::LOGLEVEL_DEBUG) {
                 $this->debugMode = (isset($this->messageParameters['custom_debug']) &&
                     (strtolower($this->messageParameters['custom_debug']) === 'true'));
                 if ($this->debugMode) {
-                    $currentLogLevel = Util::$logLevel;
                     Util::$logLevel = Util::LOGLEVEL_DEBUG;
-                    if ($currentLogLevel < Util::LOGLEVEL_INFO) {
-                        Util::logRequest();
-                    }
                 }
             }
 // Set return URL if available
@@ -375,9 +371,6 @@ class Tool
             }
         } else {  // LTI message
             $this->getMessageParameters();
-            if (!empty($this->platform) && $this->platform->debugMode) {
-                Util::$logLevel = Util::LOGLEVEL_DEBUG;
-            }
             Util::logRequest();
             if ($this->ok && $this->authenticate($strictMode)) {
                 if (empty($this->output)) {
@@ -1380,7 +1373,6 @@ class Tool
      */
     private function sendAuthenticationRequest($hint)
     {
-
         $clientId = null;
         if (isset($_REQUEST['client_id'])) {
             $clientId = $_REQUEST['client_id'];
@@ -1389,9 +1381,11 @@ class Tool
         if (isset($_REQUEST['lti_deployment_id'])) {
             $deploymentId = $_REQUEST['lti_deployment_id'];
         }
+        $currentLogLevel = Util::$logLevel;
         $this->platform = Platform::fromPlatformId($_REQUEST['iss'], $clientId, $deploymentId, $this->dataConnector);
-        if ($this->platform->debugMode) {
-            Util::$logLevel = Util::LOGLEVEL_DEBUG;
+        if ($this->platform->debugMode && ($currentLogLevel < Util::LOGLEVEL_INFO)) {
+            $this->debugMode = true;
+            Util::logRequest();
         }
         $ok = !is_null($this->platform) && !empty($this->platform->authenticationUrl);
         if (!$ok) {
