@@ -58,6 +58,7 @@ class WebTokenClient implements ClientInterface
      */
     public function load($jwtString, $privateKey = null)
     {
+        $ok = true;
         $this->jwe = null;
         $this->jwt = null;
         $this->claims = null;
@@ -65,12 +66,22 @@ class WebTokenClient implements ClientInterface
             $serializer = new Signature\Serializer\CompactSerializer();
             $this->jwt = $serializer->unserialize($jwtString);
         } catch (\Exception $e) {
-            $serializer = new Encryption\Serializer\CompactSerializer();
-            $this->jwt = $serializer->unserialize($jwtString);
+            $ok = false;
         }
-        if ($this->decrypt($privateKey)) {
+        if (!$ok) {
+            try {
+                $serializer = new Encryption\Serializer\CompactSerializer();
+                $this->jwt = $serializer->unserialize($jwtString);
+                $ok = $this->decrypt($privateKey);
+            } catch (\Exception $e) {
+                $ok = false;
+            }
+        }
+        if ($ok) {
             $this->claims = json_decode($this->jwt->getPayload(), true);
         }
+
+        return $ok;
     }
 
     /**
@@ -430,7 +441,7 @@ class WebTokenClient implements ClientInterface
      */
     private function decrypt($privateKey)
     {
-        $ok = true;
+        $ok = false;
         if ($this->jwt instanceof Encryption\JWE) {
             $this->jwe = clone $this->jwt;
             $keyEnc = $this->jwe->getSharedProtectedHeaderParameter('alg');
@@ -447,11 +458,14 @@ class WebTokenClient implements ClientInterface
             $jweDecrypter = new Encryption\JWEDecrypter($keyEncryptionAlgorithmManager, $contentEncryptionAlgorithmManager,
                 $compressionMethodManager);
             if ($jweDecrypter->decryptUsingKey($this->jwt, $jwk, 0)) {
-                $jwt = $this->jwt->getPayload();
-                $serializer = new Signature\Serializer\CompactSerializer();
-                $this->jwt = $serializer->unserialize($jwt);
-            } else {
-                $ok = false;
+                try {
+                    $jwt = $this->jwt->getPayload();
+                    $serializer = new Signature\Serializer\CompactSerializer();
+                    $this->jwt = $serializer->unserialize($jwt);
+                    $ok = true;
+                } catch (\Exception $e) {
+                    $ok = false;
+                }
             }
         }
 

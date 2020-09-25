@@ -529,69 +529,73 @@ trait System
                 try {
                     $this->jwt = Jwt::getJwtClient();
                     if (isset($this->rawParameters['id_token'])) {
-                        $this->jwt->load($this->rawParameters['id_token'], $this->rsaKey);
+                        $this->ok = $this->jwt->load($this->rawParameters['id_token'], $this->rsaKey);
                     } else {
-                        $this->jwt->load($this->rawParameters['JWT'], $this->rsaKey);
+                        $this->ok = $this->jwt->load($this->rawParameters['JWT'], $this->rsaKey);
                     }
-                    $this->ok = $this->jwt->hasClaim('iss') && $this->jwt->hasClaim('aud') &&
-                        $this->jwt->hasClaim(Util::JWT_CLAIM_PREFIX . '/claim/deployment_id');
-                    if ($this->ok) {
-                        $iss = $this->jwt->getClaim('iss');
-                        $aud = $this->jwt->getClaim('aud');
-                        $deploymentId = $this->jwt->getClaim(Util::JWT_CLAIM_PREFIX . '/claim/deployment_id');
-                        $this->ok = !empty($iss) && !empty($aud) && !empty($deploymentId);
-                        if (!$this->ok) {
-                            $this->reason = 'iss, aud and/or deployment_id claim is empty';
-                        } elseif (is_array($aud)) {
-                            if ($this->jwt->hasClaim('azp')) {
-                                $this->ok = !empty($this->jwt->getClaim('azp'));
-                                if (!$this->ok) {
-                                    $this->reason = 'azp claim is empty';
-                                } else {
-                                    $this->ok = in_array($this->jwt->getClaim('azp'), $aud);
-                                    if ($this->ok) {
-                                        $aud = $this->jwt->getClaim('azp');
-                                    } else {
-                                        $this->reason = 'azp claim value is not included in aud claim';
-                                    }
-                                }
-                            } else {
-                                $aud = $aud[0];
-                                $this->ok = !empty($aud);
-                                if (!$this->ok) {
-                                    $this->reason = 'First element of aud claim is empty';
-                                }
-                            }
-                        } elseif ($this->jwt->hasClaim('azp')) {
-                            $this->ok = $this->jwt->getClaim('azp') === $aud;
-                            if (!$this->ok) {
-                                $this->reason = 'aud claim does not match the azp claim';
-                            }
-                        }
+                    if (!$this->ok) {
+                        $this->reason = 'Message does not contain a valid JWT';
+                    } else {
+                        $this->ok = $this->jwt->hasClaim('iss') && $this->jwt->hasClaim('aud') &&
+                            $this->jwt->hasClaim(Util::JWT_CLAIM_PREFIX . '/claim/deployment_id');
                         if ($this->ok) {
-                            $this->platform = Platform::fromPlatformId($iss, $aud, $deploymentId, $this->dataConnector);
-                            if (isset($this->rawParameters['id_token'])) {
-                                $this->ok = !empty($this->rawParameters['state']);
-                                if ($this->ok) {
-                                    $nonce = new PlatformNonce($this->platform, $this->rawParameters['state']);
-                                    $this->ok = $nonce->load();
-                                    if ($this->ok) {
-                                        $this->ok = $nonce->delete();
+                            $iss = $this->jwt->getClaim('iss');
+                            $aud = $this->jwt->getClaim('aud');
+                            $deploymentId = $this->jwt->getClaim(Util::JWT_CLAIM_PREFIX . '/claim/deployment_id');
+                            $this->ok = !empty($iss) && !empty($aud) && !empty($deploymentId);
+                            if (!$this->ok) {
+                                $this->reason = 'iss, aud and/or deployment_id claim is empty';
+                            } elseif (is_array($aud)) {
+                                if ($this->jwt->hasClaim('azp')) {
+                                    $this->ok = !empty($this->jwt->getClaim('azp'));
+                                    if (!$this->ok) {
+                                        $this->reason = 'azp claim is empty';
+                                    } else {
+                                        $this->ok = in_array($this->jwt->getClaim('azp'), $aud);
+                                        if ($this->ok) {
+                                            $aud = $this->jwt->getClaim('azp');
+                                        } else {
+                                            $this->reason = 'azp claim value is not included in aud claim';
+                                        }
                                     }
+                                } else {
+                                    $aud = $aud[0];
+                                    $this->ok = !empty($aud);
+                                    if (!$this->ok) {
+                                        $this->reason = 'First element of aud claim is empty';
+                                    }
+                                }
+                            } elseif ($this->jwt->hasClaim('azp')) {
+                                $this->ok = $this->jwt->getClaim('azp') === $aud;
+                                if (!$this->ok) {
+                                    $this->reason = 'aud claim does not match the azp claim';
                                 }
                             }
                             if ($this->ok) {
-                                $this->platform->platformId = $this->jwt->getClaim('iss');
-                                $this->messageParameters = array();
-                                $this->messageParameters['oauth_consumer_key'] = $aud;
-                                $this->messageParameters['oauth_signature_method'] = $this->jwt->getHeader('alg');
-                                $this->parseClaims();
-                            } else {
-                                $this->reason = 'state parameter is invalid or missing';
+                                $this->platform = Platform::fromPlatformId($iss, $aud, $deploymentId, $this->dataConnector);
+                                if (isset($this->rawParameters['id_token'])) {
+                                    $this->ok = !empty($this->rawParameters['state']);
+                                    if ($this->ok) {
+                                        $nonce = new PlatformNonce($this->platform, $this->rawParameters['state']);
+                                        $this->ok = $nonce->load();
+                                        if ($this->ok) {
+                                            $this->ok = $nonce->delete();
+                                        }
+                                    }
+                                }
+                                if ($this->ok) {
+                                    $this->platform->platformId = $this->jwt->getClaim('iss');
+                                    $this->messageParameters = array();
+                                    $this->messageParameters['oauth_consumer_key'] = $aud;
+                                    $this->messageParameters['oauth_signature_method'] = $this->jwt->getHeader('alg');
+                                    $this->parseClaims();
+                                } else {
+                                    $this->reason = 'state parameter is invalid or missing';
+                                }
                             }
+                        } else {
+                            $this->reason = 'iss, aud and/or deployment_id claim not found';
                         }
-                    } else {
-                        $this->reason = 'iss, aud and/or deployment_id claim not found';
                     }
                 } catch (\Exception $e) {
                     $this->ok = false;
