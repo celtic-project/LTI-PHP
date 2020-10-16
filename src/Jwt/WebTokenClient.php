@@ -10,8 +10,6 @@ use Jose\Component\Encryption;
 use ceLTIc\LTI\Util;
 use ceLTIc\LTI\Http\HttpMessage;
 
-//use ceLTIc\LTI\Http\PSR;
-
 /**
  * Class to implement the JWT interface using the Web Token JWT Framework library from https://web-token.spomky-labs.com.
  *
@@ -475,7 +473,7 @@ class WebTokenClient implements ClientInterface
     /**
      * Get the JWK from a key in PEM or JWK format.
      *
-     * @param string   $Key               Private or public key in PEM or JWK format
+     * @param string   $key               Private or public key in PEM or JWK format
      * @param string[] $additionalValues  Additional values for key
      *
      * @return JWK  Key
