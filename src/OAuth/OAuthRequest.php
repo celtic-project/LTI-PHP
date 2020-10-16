@@ -46,15 +46,19 @@ class OAuthRequest
             } elseif (!isset($_SERVER['HTTPS'])) {
                 $_SERVER['HTTPS'] = 'off';
             }
-            if (isset($_SERVER['HTTP_X_FORWARDED_HOST'])) {
-                $host = explode(':', $_SERVER['HTTP_X_FORWARDED_HOST'], 2);
-                $_SERVER['SERVER_NAME'] = $host[0];
-                if (count($host) > 1) {
-                    $_SERVER['SERVER_PORT'] = $host[1];
-                } elseif ($_SERVER['HTTPS'] === 'on') {
-                    $_SERVER['SERVER_PORT'] = 443;
-                } else {
-                    $_SERVER['SERVER_PORT'] = 80;
+            if (!empty($_SERVER['HTTP_X_FORWARDED_HOST'])) {
+                $forwardedHosts = str_replace(' ', ',', trim($_SERVER['HTTP_X_FORWARDED_HOST']));  // Use first if multiple hosts listed
+                $hosts = explode(',', $forwardedHosts);
+                if (!empty($hosts[0])) {
+                    $host = explode(':', $hosts[0], 2);
+                    $_SERVER['SERVER_NAME'] = $host[0];
+                    if (count($host) > 1) {
+                        $_SERVER['SERVER_PORT'] = $host[1];
+                    } elseif ($_SERVER['HTTPS'] === 'on') {
+                        $_SERVER['SERVER_PORT'] = 443;
+                    } else {
+                        $_SERVER['SERVER_PORT'] = 80;
+                    }
                 }
             }
             $scheme = ($_SERVER['HTTPS'] === 'on') ? 'https' : 'http';
