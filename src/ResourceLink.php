@@ -712,10 +712,14 @@ class ResourceLink
         }
         if (!$ok && !empty($urlLTI11)) {
             $do = '';
+            $outcome = $ltiOutcome->getValue();
             if (($action === self::EXT_READ) && ($ltiOutcome->type === self::EXT_TYPE_DECIMAL)) {
                 $do = 'readResult';
             } elseif (($action === self::EXT_WRITE) && $this->checkValueType($ltiOutcome, array(self::EXT_TYPE_DECIMAL))) {
                 $do = 'replaceResult';
+                if (($ltiOutcome->getPointsPossible() <> 1) && ($ltiOutcome->getPointsPossible() > 0)) {
+                    $outcome = $outcome / $ltiOutcome->getPointsPossible();
+                }
             } elseif ($action === self::EXT_DELETE) {
                 $do = 'deleteResult';
             }
@@ -752,7 +756,7 @@ EOF;
         <result>
           <resultScore>
             <language>{$ltiOutcome->language}</language>
-            <textString>{$ltiOutcome->getValue()}</textString>
+            <textString>{$outcome}</textString>
           </resultScore>{$xml}
         </result>
 EOF;
@@ -783,17 +787,21 @@ EOF;
         }
         if (!$ok && !empty($urlExt)) {
             $do = '';
+            $outcome = $ltiOutcome->getValue();
             if (($action === self::EXT_READ) && ($ltiOutcome->type === self::EXT_TYPE_DECIMAL)) {
                 $do = 'basic-lis-readresult';
             } elseif (($action === self::EXT_WRITE) && $this->checkValueType($ltiOutcome, array(self::EXT_TYPE_DECIMAL))) {
                 $do = 'basic-lis-updateresult';
+                if (($ltiOutcome->getPointsPossible() <> 1) && ($ltiOutcome->getPointsPossible() > 0)) {
+                    $outcome = $outcome / $ltiOutcome->getPointsPossible();
+                }
             } elseif ($action === self::EXT_DELETE) {
                 $do = 'basic-lis-deleteresult';
             }
             if (!empty($do)) {
                 $params = array();
                 $params['sourcedid'] = $sourcedId;
-                $params['result_resultscore_textstring'] = $ltiOutcome->getValue();
+                $params['result_resultscore_textstring'] = $outcome;
                 if (!empty($ltiOutcome->language)) {
                     $params['result_resultscore_language'] = $ltiOutcome->language;
                 }
