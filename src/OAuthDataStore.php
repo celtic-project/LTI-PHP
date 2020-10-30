@@ -5,6 +5,7 @@ namespace ceLTIc\LTI;
 use ceLTIc\LTI\OAuth;
 use ceLTIc\LTI\OAuth\OAuthConsumer;
 use ceLTIc\LTI\OAuth\OAuthToken;
+use ceLTIc\LTI\OAuth\OAuthException;
 
 /**
  * Class to represent an OAuth datastore
