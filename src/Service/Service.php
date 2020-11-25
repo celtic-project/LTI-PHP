@@ -6,6 +6,7 @@ use ceLTIc\LTI\AccessToken;
 use ceLTIc\LTI\Platform;
 use ceLTIc\LTI\ToolConsumer;
 use ceLTIc\LTI\Http\HttpMessage;
+use ceLTIc\LTI\Util;
 
 /**
  * Class to implement a service

@@ -2,6 +2,8 @@
 
 namespace ceLTIc\LTI\ApiHook;
 
+use ceLTIc\LTI\Service;
+
 /**
  * Class to implement resource link services for a platform via its proprietary API
  *

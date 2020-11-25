@@ -183,10 +183,10 @@ class LineItem extends AssignmentGrade
     public static function getLineItem($platform, $endpoint)
     {
         $service = new self($platform, $endpoint);
-        $this->scope = self::$SCOPE_READONLY;
+        $service->scope = self::$SCOPE_READONLY;
         $service->mediaType = self::$MEDIA_TYPE_LINE_ITEM;
         $http = $service->send('GET');
-        $this->scope = self::$SCOPE;
+        $service->scope = self::$SCOPE;
         if ($http->ok && !empty($http->responseJson)) {
             $lineItem = self::toLineItem($platform, $http->responseJson);
         } else {

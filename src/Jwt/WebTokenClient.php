@@ -107,7 +107,7 @@ class WebTokenClient implements ClientInterface
      */
     public function hasHeader($name)
     {
-        if ($this->jwt instanceof JWS) {
+        if ($this->jwt instanceof Signature\JWS) {
             $ok = $this->jwt->getSignature(0)->hasProtectedHeaderParameter($name);
         } else {
             $ok = false;

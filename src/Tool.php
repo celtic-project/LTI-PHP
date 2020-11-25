@@ -510,8 +510,6 @@ class Tool
 
     /**
      * Process a valid launch request
-     *
-     * @return bool    True if no error
      */
     protected function onLaunch()
     {
@@ -520,8 +518,6 @@ class Tool
 
     /**
      * Process a valid configure request
-     *
-     * @return bool    True if no error
      */
     protected function onConfigure()
     {
@@ -530,8 +526,6 @@ class Tool
 
     /**
      * Process a valid dashboard request
-     *
-     * @return bool    True if no error
      */
     protected function onDashboard()
     {
@@ -540,8 +534,6 @@ class Tool
 
     /**
      * Process a valid content-item request
-     *
-     * @return bool    True if no error
      */
     protected function onContentItem()
     {
@@ -550,8 +542,6 @@ class Tool
 
     /**
      * Process a valid tool proxy registration request
-     *
-     * @return bool    True if no error
      */
     protected function onRegister()
     {
@@ -560,8 +550,6 @@ class Tool
 
     /**
      * Process a response to an invalid request
-     *
-     * @return bool    True if no further error processing required
      */
     protected function onError()
     {
@@ -1391,13 +1379,13 @@ class Tool
         if (!$ok) {
             $this->reason = 'Platform not found or no platform authentication request URL.';
         } else {
-            $oauthRequest = OAuth\OAuthRequest::from_request();
             do {
                 $nonce = new PlatformNonce($this->platform, Util::getRandomString());
                 $ok = !$nonce->load();
             } while (!$ok);
             $ok = $nonce->save();
             if ($ok) {
+                $oauthRequest = OAuth\OAuthRequest::from_request();
                 $redirectUri = $oauthRequest->get_normalized_http_url();
                 if (!empty($_SERVER['QUERY_STRING'])) {
                     if ($_SERVER['REQUEST_METHOD'] === 'POST') {

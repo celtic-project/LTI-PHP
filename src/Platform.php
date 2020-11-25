@@ -95,6 +95,13 @@ class Platform
     public $profile = null;
 
     /**
+     * The tool proxy.
+     *
+     * @var object|null $toolPrixy
+     */
+    public $toolProxy = null;
+
+    /**
      * Platform GUID (as reported by first platform connection).
      *
      * @var string|null $consumerGuid
@@ -360,7 +367,11 @@ class Platform
     {
         $familyCode = '';
         if (!empty($this->consumerVersion)) {
-            list($familyCode, $version) = explode('-', $this->consumerVersion, 2);
+            $familyCode = $this->consumerVersion;
+            $pos = strpos('-', $familyCode);
+            if ($pos !== false) {
+                $familyCode = substr($familyCode, 0, $pos - 1);
+            }
         }
 
         return $familyCode;

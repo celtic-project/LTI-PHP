@@ -563,19 +563,11 @@ class Context
     public function getLineItems($resourceId = null, $tag = null, $limit = null)
     {
         $lineItems = false;
-        $this->extRequest = '';
-        $this->extRequestHeaders = '';
-        $this->extResponse = '';
-        $this->extResponseHeaders = '';
         $this->lastServiceRequest = null;
         $lineItemService = $this->getLineItemService();
         if (!empty($lineItemService)) {
             $lineItems = $lineItemService->getAll(null, $resourceId, $tag);
             $http = $lineItemService->getHttpMessage();
-            $this->extResponse = $http->response;
-            $this->extResponseHeaders = $http->responseHeaders;
-            $this->extRequest = $http->request;
-            $this->extRequestHeaders = $http->requestHeaders;
             $this->lastServiceRequest = $http;
         }
 

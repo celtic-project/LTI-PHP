@@ -200,6 +200,7 @@ class DataConnector_oci extends DataConnector
             $last = date($this->dateFormat, $platform->lastAccess);
         }
         if (empty($id)) {
+            $pk = null;
             $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' (consumer_key, name, secret, ' .
                 'platform_id, client_id, deployment_id, public_key, ' .
                 'lti_version, signature_method, consumer_name, consumer_version, consumer_guid, ' .
@@ -547,6 +548,7 @@ class DataConnector_oci extends DataConnector
         $id = $context->getRecordId();
         $consumer_pk = $context->getPlatform()->getRecordId();
         if (empty($id)) {
+            $pk = null;
             $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' (consumer_pk, title, ' .
                 'lti_context_id, type, settings, created, updated) ' .
                 'VALUES (:cid, :title, :ctx, :type, :settings, :created, :updated) returning context_pk into :pk';
@@ -772,6 +774,7 @@ class DataConnector_oci extends DataConnector
         }
         $id = $resourceLink->getRecordId();
         if (empty($id)) {
+            $pk = null;
             $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' (consumer_pk, context_pk, ' .
                 'lti_resource_link_id, settings, primary_resource_link_pk, share_approved, created, updated) ' .
                 'VALUES (:cid, :ctx, :rlid, :settings, :prlid, :share_approved, :created, :updated) returning resource_link_pk into :pk';
@@ -1294,6 +1297,7 @@ class DataConnector_oci extends DataConnector
         $time = time();
         $now = date("{$this->dateFormat} {$this->timeFormat}", $time);
         if (is_null($userresult->created)) {
+            $pk = null;
             $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' (resource_link_pk, ' .
                 'lti_user_id, lti_result_sourcedid, created, updated) ' .
                 'VALUES (:rlid, :u_id, :sourcedid, :created, :updated) returning user_result_pk into :pk';

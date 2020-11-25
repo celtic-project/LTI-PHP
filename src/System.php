@@ -4,6 +4,7 @@ namespace ceLTIc\LTI;
 
 use ceLTIc\LTI\DataConnector\DataConnector;
 use ceLTIc\LTI\Content\Item;
+use ceLTIc\LTI\Http\HttpMessage;
 use ceLTIc\LTI\OAuth;
 use ceLTIc\LTI\Jwt\Jwt;
 use ceLTIc\LTI\Jwt\ClientInterface;
@@ -441,9 +442,9 @@ trait System
         } elseif (($this instanceof Tool) && !empty($this->platform)) {
             $key = $this->platform->getKey();
             $secret = $this->platform->secret;
-        } elseif (($this instanceof Platform) && !empty($Tool::$defaultTool)) {
-            $key = $Tool::$defaultTool->getKey();
-            $secret = $Tool::$defaultTool->secret;
+        } elseif (($this instanceof Platform) && !empty(Tool::$defaultTool)) {
+            $key = Tool::$defaultTool->getKey();
+            $secret = Tool::$defaultTool->secret;
         }
         if ($this instanceof Tool) {
             $platform = $this->platform;
@@ -571,7 +572,7 @@ trait System
                                     $this->reason = 'aud claim does not match the azp claim';
                                 }
                             }
-                            if ($this->ok) {
+                            if ($this->ok && ($this instanceof Tool)) {
                                 $this->platform = Platform::fromPlatformId($iss, $aud, $deploymentId, $this->dataConnector);
                                 if (isset($this->rawParameters['id_token'])) {
                                     $this->ok = !empty($this->rawParameters['state']);
@@ -605,7 +606,7 @@ trait System
                 $this->ok = false;
                 $this->reason = $this->rawParameters['error'];
             } else {  // OAuth
-                if (isset($this->rawParameters['oauth_consumer_key'])) {
+                if (isset($this->rawParameters['oauth_consumer_key']) && ($this instanceof Tool)) {
                     $this->platform = Platform::fromConsumerKey($this->rawParameters['oauth_consumer_key'], $this->dataConnector);
                 }
                 $this->messageParameters = $this->rawParameters;
@@ -783,9 +784,9 @@ trait System
         } elseif (($this instanceof Tool) && !empty($this->platform)) {
             $key = $this->platform->getKey();
             $secret = $this->platform->secret;
-        } elseif (($this instanceof Platform) && !empty($Tool::$defaultTool)) {
-            $key = $Tool::$defaultTool->getKey();
-            $secret = $Tool::$defaultTool->secret;
+        } elseif (($this instanceof Platform) && !empty(Tool::$defaultTool)) {
+            $key = Tool::$defaultTool->getKey();
+            $secret = Tool::$defaultTool->secret;
         }
         $oauthConsumer = new OAuth\OAuthConsumer($key, $secret, null);
         $oauthReq = OAuth\OAuthRequest::from_consumer_and_token($oauthConsumer, null, $method, $endpoint, $params);

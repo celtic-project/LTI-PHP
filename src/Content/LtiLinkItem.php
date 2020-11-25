@@ -34,6 +34,13 @@ class LtiLinkItem extends Item
     private $available = null;
 
     /**
+     * Time period for submission.
+     *
+     * @var string|null $submission
+     */
+    private $submission = null;
+
+    /**
      * Class constructor.
      *
      * @param Placement $placementAdvice  Placement object for item (optional)
