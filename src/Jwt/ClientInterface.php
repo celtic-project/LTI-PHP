@@ -13,6 +13,13 @@ interface ClientInterface
 {
 
     /**
+     * Return an array of supported signature algorithms.
+     *
+     * @return string[]  Array of algorithm names
+     */
+    public static function getSupportedAlgorithms();
+
+    /**
      * Check if a JWT is defined.
      *
      * @return bool True if a JWT is defined

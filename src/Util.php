@@ -142,11 +142,30 @@ final class Util
     );
 
     /**
+     * GET and POST request parameters
+     */
+    public static $requestParameters = null;
+
+    /**
      * Current logging level.
      *
      * @var int $logLevel
      */
     public static $logLevel = self::LOGLEVEL_NONE;
+
+    /**
+     * Return GET and POST request parameters (POST parameters take precedence)
+     *
+     * @return array
+     */
+    public static function getRequestParameters()
+    {
+        if (is_null(self::$requestParameters)) {
+            self::$requestParameters = array_merge($_GET, $_POST);
+        }
+
+        return self::$requestParameters;
+    }
 
     /**
      * Log an error message.
@@ -189,6 +208,8 @@ final class Util
 
     /**
      * Log a request.
+     *
+     * @param bool    $debugLevel  True if the request details should be logged at the debug level (optional, default is false for information level)
      */
     public static function logRequest($debugLevel = false)
     {

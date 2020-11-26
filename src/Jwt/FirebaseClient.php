@@ -17,11 +17,23 @@ use ceLTIc\LTI\Util;
 class FirebaseClient implements ClientInterface
 {
 
+    const SUPPORTED_ALGORITHMS = array('RS256', 'RS384', 'RS512');
+
     private $jwtString = null;
     private $jwtHeaders = null;
     private $jwtPayload = null;
     private static $lastHeaders = null;
     private static $lastPayload = null;
+
+    /**
+     * Return an array of supported signature algorithms.
+     *
+     * @return string[]  Array of algorithm names
+     */
+    public static function getSupportedAlgorithms()
+    {
+        return self::SUPPORTED_ALGORITHMS;
+    }
 
     /**
      * Check if a JWT is defined.
@@ -219,7 +231,7 @@ class FirebaseClient implements ClientInterface
         $retry = false;
         do {
             try {
-                JWT::decode($this->jwtString, $publicKey, array('RS256', 'RS384', 'RS512'));
+                JWT::decode($this->jwtString, $publicKey, self::SUPPORTED_ALGORITHMS);
                 $ok = true;
             } catch (\Exception $e) {
                 Util::logError($e->getMessage());

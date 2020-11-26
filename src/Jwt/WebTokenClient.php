@@ -20,11 +20,23 @@ use ceLTIc\LTI\Http\HttpMessage;
 class WebTokenClient implements ClientInterface
 {
 
+    const SUPPORTED_ALGORITHMS = array('RS256', 'RS384', 'RS512');
+
     private $jwe = null;
     private $jwt = null;
     private $claims = array();
     private static $lastHeaders = null;
     private static $lastPayload = null;
+
+    /**
+     * Return an array of supported signature algorithms.
+     *
+     * @return string[]  Array of algorithm names
+     */
+    public static function getSupportedAlgorithms()
+    {
+        return self::SUPPORTED_ALGORITHMS;
+    }
 
     /**
      * Check if a JWT is defined.

@@ -6,6 +6,7 @@ use ceLTIc\LTI\DataConnector\DataConnector;
 use ceLTIc\LTI\MediaType;
 use ceLTIc\LTI\Profile;
 use ceLTIc\LTI\Content\Item;
+use ceLTIc\LTI\Jwt\Jwt;
 use ceLTIc\LTI\Http\HttpMessage;
 use ceLTIc\LTI\OAuth;
 use ceLTIc\LTI\ApiHook\ApiHook;
@@ -352,23 +353,27 @@ class Tool
      */
     public function handleRequest($strictMode = false)
     {
+        $parameters = Util::getRequestParameters();
         if ($this->debugMode) {
             Util::$logLevel = Util::LOGLEVEL_DEBUG;
         }
         if ($_SERVER['REQUEST_METHOD'] === 'HEAD') {  // Ignore HEAD requests
             Util::logRequest(true);
-        } elseif (!empty($_REQUEST['iss'])) {  // Initiate login request
+        } elseif (!empty($parameters['iss'])) {  // Initiate login request
             Util::logRequest();
-            if (empty($_REQUEST['login_hint'])) {
+            if (empty($parameters['login_hint'])) {
                 $this->ok = false;
                 $this->reason = 'Missing login_hint parameter';
-            } elseif (empty($_REQUEST['target_link_uri'])) {
+            } elseif (empty($parameters['target_link_uri'])) {
                 $this->ok = false;
                 $this->reason = 'Missing target_link_uri parameter';
             } else {
-                $hint = isset($_REQUEST['lti_message_hint']) ? $_REQUEST['lti_message_hint'] : null;
+                $hint = isset($parameters['lti_message_hint']) ? $parameters['lti_message_hint'] : null;
                 $this->ok = $this->sendAuthenticationRequest($hint);
             }
+        } elseif (!empty($parameters['openid_configuration'])) {  // Dynamic registration request
+            Util::logRequest();
+            $this->onRegistration();
         } else {  // LTI message
             $this->getMessageParameters();
             Util::logRequest();
@@ -549,11 +554,359 @@ class Tool
     }
 
     /**
+     * Process a dynamic registration request
+     */
+    protected function onRegistration()
+    {
+        $platformConfig = $this->getPlatformConfiguration();
+        if ($this->ok) {
+            $toolConfig = $this->getConfiguration($platformConfig);
+            $registrationConfig = $this->sendRegistration($platformConfig, $toolConfig);
+            if ($this->ok) {
+                $platform = $this->getPlatformToRegister($platformConfig, $registrationConfig);
+            }
+        }
+        $this->getRegistrationResponsePage($toolConfig);
+        $this->ok = true;
+    }
+
+    /**
      * Process a response to an invalid request
      */
     protected function onError()
     {
         $this->ok = false;
+    }
+
+    /**
+     * Fetch a platform's configuration data
+     *
+     * @return array|null  Platform configuration data
+     */
+    protected function getPlatformConfiguration()
+    {
+        if ($this->ok) {
+            $parameters = Util::getRequestParameters();
+            $this->ok = !empty($parameters['openid_configuration']);
+            if ($this->ok) {
+                $http = new HttpMessage($parameters['openid_configuration']);
+                $this->ok = $http->send();
+                if ($this->ok) {
+                    $platformConfig = json_decode($http->response, true);
+                    $this->ok = !empty($platformConfig);
+                }
+                if (!$this->ok) {
+                    $this->reason = 'Unable to access platform configuration details.';
+                }
+            } else {
+                $this->reason = 'Invalid registration request: missing openid_configuration parameter.';
+            }
+            if ($this->ok) {
+                $this->ok = !empty($platformConfig['registration_endpoint']) && !empty($platformConfig['jwks_uri']) && !empty($platformConfig['authorization_endpoint']) &&
+                    !empty($platformConfig['token_endpoint']) && !empty($platformConfig['https://purl.imsglobal.org/spec/lti-platform-configuration']) &&
+                    !empty($platformConfig['claims_supported']) && !empty($platformConfig['scopes_supported']) &&
+                    !empty($platformConfig['id_token_signing_alg_values_supported']) &&
+                    !empty($platformConfig['https://purl.imsglobal.org/spec/lti-platform-configuration']['product_family_code']) &&
+                    !empty($platformConfig['https://purl.imsglobal.org/spec/lti-platform-configuration']['version']) &&
+                    !empty($platformConfig['https://purl.imsglobal.org/spec/lti-platform-configuration']['messages_supported']);
+                if (!$this->ok) {
+                    $this->reason = 'Invalid platform configuration details.';
+                }
+            }
+            if ($this->ok) {
+                $jwtClient = Jwt::getJwtClient();
+                $algorithms = \array_intersect($jwtClient::getSupportedAlgorithms(),
+                    $platformConfig['id_token_signing_alg_values_supported']);
+                $this->ok = !empty($algorithms);
+                if ($this->ok) {
+                    rsort($platformConfig['id_token_signing_alg_values_supported']);
+                } else {
+                    $this->reason = 'None of the signature algorithms offered by the platform is supported.';
+                }
+            }
+        }
+        if (!$this->ok) {
+            $platformConfig = null;
+        }
+
+        return $platformConfig;
+    }
+
+    /**
+     * Prepare the tool's configuration data
+     *
+     * @param array $platformConfig  Platform configuration data
+     *
+     * @return array  Tool configuration data
+     */
+    protected function getConfiguration($platformConfig)
+    {
+        $claimsMapping = array(
+            'User.id' => 'sub',
+            'Person.name.full' => 'name',
+            'Person.name.given' => 'given_name',
+            'Person.name.family' => 'family_name',
+            'Person.email.primary' => 'email'
+        );
+        $toolName = (!empty($this->product->name)) ? $this->product->name : 'Unnamed tool';
+        $toolDescription = (!empty($this->product->description)) ? $this->product->description : '';
+        $oauthRequest = OAuth\OAuthRequest::from_request();
+        $toolUrl = $oauthRequest->get_normalized_http_url();
+        $pos = strpos($toolUrl, '//');
+        $domain = substr($toolUrl, $pos + 2);
+        $domain = substr($domain, 0, strpos($domain, '/'));
+        $claimsSupported = $platformConfig['claims_supported'];
+        $messagesSupported = $platformConfig['https://purl.imsglobal.org/spec/lti-platform-configuration']['messages_supported'];
+        $scopesSupported = $platformConfig['scopes_supported'];
+        $iconUrl = null;
+        $messages = array();
+        $claims = array('iss');
+        $variables = array();
+        $constants = array();
+        $redirectUris = array();
+        foreach ($this->resourceHandlers as $resourceHandler) {
+            if (empty($iconUrl)) {
+                $iconUrl = $resourceHandler->icon;
+            }
+            foreach (array_merge($resourceHandler->optionalMessages, $resourceHandler->requiredMessages) as $message) {
+                $type = $message->type;
+                if (array_key_exists($type, Util::MESSAGE_TYPE_MAPPING)) {
+                    $type = Util::MESSAGE_TYPE_MAPPING[$type];
+                }
+                $capabilities = array();
+                if ($type === 'LtiResourceLinkRequest') {
+                    $toolUrl = "{$this->baseUrl}{$message->path}";
+                    $redirectUris[] = $toolUrl;
+                    $capabilities = $message->capabilities;
+                    $variables = array_merge($variables, $message->variables);
+                    $constants = array_merge($constants, $message->constants);
+                } else if (in_array($type, $messagesSupported)) {
+                    $redirectUris[] = "{$this->baseUrl}{$message->path}";
+                    $capabilities = $message->capabilities;
+                    $variables = array_merge($message->variables, $variables);
+                    $constants = array_merge($message->constants, $constants);
+                    $messages[] = array(
+                        'type' => $type,
+                        'target_link_uri' => "{$this->baseUrl}{$message->path}",
+                        'label' => $toolName
+                    );
+                }
+                foreach ($capabilities as $capability) {
+                    if (array_key_exists($capability, $claimsMapping) && in_array($claimsMapping[$capability], $claimsSupported)) {
+                        $claims[] = $claimsMapping[$capability];
+                    }
+                }
+            }
+        }
+        if (empty($redirectUris)) {
+            $redirectUris = array($toolUrl);
+        } else {
+            $redirectUris = array_unique($redirectUris);
+        }
+        if (!empty($claims)) {
+            $claims = array_unique($claims);
+        }
+        $custom = array();
+        foreach ($constants as $name => $value) {
+            $custom[$name] = $value;
+        }
+        foreach ($variables as $name => $value) {
+            $custom[$name] = '$' . $value;
+        }
+        $toolConfig = array();
+        $toolConfig['application_type'] = 'web';
+        $toolConfig['client_name'] = $toolName;
+        $toolConfig['response_types'] = array('id_token');
+        $toolConfig['grant_types'] = array('implicit', 'client_credentials');
+        $toolConfig['initiate_login_uri'] = $toolUrl;
+        $toolConfig['redirect_uris'] = $redirectUris;
+        $toolConfig['jwks_uri'] = $this->jku;
+        $toolConfig['token_endpoint_auth_method'] = 'private_key_jwt';
+        $toolConfig['https://purl.imsglobal.org/spec/lti-tool-configuration'] = array(
+            'domain' => $domain,
+            'target_link_uri' => $toolUrl,
+            'custom_parameters' => $custom,
+            'claims' => $claims,
+            'messages' => $messages,
+            'description' => $toolDescription
+        );
+        $toolConfig['scope'] = implode(' ', array_intersect($this->requiredScopes, $scopesSupported));
+        if (!empty($iconUrl)) {
+            $toolConfig['logo_uri'] = "{$this->baseUrl}{$iconUrl}";
+        }
+
+        return $toolConfig;
+    }
+
+    /**
+     * Send the tool registration to the platform
+     *
+     * @param array $platformConfig  Platform configuration data
+     * @param array $toolConfig      Tool configuration data
+     *
+     * @return array  Registration data
+     */
+    protected function sendRegistration($platformConfig, $toolConfig)
+    {
+        if ($this->ok) {
+            $parameters = Util::getRequestParameters();
+            $this->ok = !empty($parameters['registration_token']);
+            if ($this->ok) {
+                $body = json_encode($toolConfig);
+                $headers = "Content-type: application/json\n" .
+                    "Authorization: Bearer {$parameters['registration_token']}";
+                $http = new HttpMessage($platformConfig['registration_endpoint'], 'POST', $body, $headers);
+                $this->ok = $http->send();
+                if ($this->ok) {
+                    $registrationConfig = json_decode($http->response, true);
+                    $this->ok = !empty($registrationConfig);
+                }
+                if (!$this->ok) {
+                    $this->reason = 'Unable to register with platform.';
+                }
+            } else {
+                $this->reason = 'Invalid registration request: missing registration_token parameter.';
+            }
+        }
+        if (!$this->ok) {
+            $registrationConfig = null;
+        }
+
+        return $registrationConfig;
+    }
+
+    /**
+     * Initialise the platform to be registered
+     *
+     * @param array $platformConfig      Platform configuration data
+     * @param array $registrationConfig  Registration data
+     * @param bool  $doSave              True if the platform should be saved (optional, default is true)
+     *
+     * @return Platform  Platform object
+     */
+    protected function getPlatformToRegister($platformConfig, $registrationConfig, $doSave = true)
+    {
+        $domain = $platformConfig['issuer'];
+        $pos = strpos($domain, '//');
+        if ($pos !== false) {
+            $domain = substr($domain, $pos + 2);
+            $pos = strpos($domain, '/');
+            if ($pos !== false) {
+                $domain = substr($domain, 0, $pos);
+            }
+        }
+        $platform = new Platform($this->dataConnector);
+        $platform->name = $domain;
+        $platform->ltiVersion = Util::LTI_VERSION1P3;
+        $platform->signatureMethod = reset($platformConfig['id_token_signing_alg_values_supported']);
+        $platform->platformId = $platformConfig['issuer'];
+        $platform->clientId = $registrationConfig['client_id'];
+        $platform->deploymentId = $registrationConfig['https://purl.imsglobal.org/spec/lti-tool-configuration']['deployment_id'];
+        $platform->authenticationUrl = $platformConfig['authorization_endpoint'];
+        $platform->accessTokenUrl = $platformConfig['token_endpoint'];
+        $platform->jku = $platformConfig['jwks_uri'];
+        if ($doSave) {
+            $this->ok = $platform->save();
+            if (!$this->ok) {
+                $checkPlatform = Platform::fromPlatformId($platform->platformId, $platform->clientId, $platform->deploymentId,
+                        $this->dataConnector);
+                if (!empty($checkPlatform->created)) {
+                    $this->reason = 'The platform is already registered.';
+                } else {
+                    $this->reason = 'Sorry, an error occurred when saving the platform details.';
+                }
+            }
+        }
+
+        return $platform;
+    }
+
+    /**
+     * Prepare the page to complete a registration request
+     *
+     * @param array $toolConfig      Tool configuration data
+     */
+    protected function getRegistrationResponsePage($toolConfig)
+    {
+        $html = <<< EOD
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>LTI Tool registration</title>
+    <style>
+      h1 {
+        font-soze: 110%;
+        font-weight: bold;
+      }
+      .success {
+        color: #155724;
+        background-color: #d4edda;
+        border-color: #c3e6cb;
+        border: 1px solid;
+        padding: .75rem 1.25rem;
+        margin-bottom: 1rem;
+      }
+      .error {
+        color: #721c24;
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+        border: 1px solid;
+        padding: .75rem 1.25rem;
+        margin-bottom: 1rem;
+      }
+      .centre {
+        text-align: center;
+      }
+      button {
+        border: 1px solid transparent;
+        padding: 0.375rem 0.75rem;
+        font-size: 1rem;
+        line-height: 1.5;
+        border-radius: 0.25rem;
+        color: #fff;
+        background-color: #007bff;
+        border-color: #007bff;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        cursor: pointer;
+      }
+    </style>
+    <script language="javascript" type="text/javascript">
+      function doClose(el) {
+        (window.opener || window.parent).postMessage({subject:'org.imsglobal.lti.close'}, '*');
+        return true;
+      }
+    </script>
+  </head>
+  <body>
+    <h1>{$toolConfig['client_name']} registration</h1>
+
+EOD;
+        if ($this->ok) {
+            $html .= <<< EOD
+    <p class="success">
+      The tool registration was successful, but it will need to be enabled by the tool provider before it can be used.
+    </p>
+    <p class="centre">
+      <button type="button" onclick="return doClose();">Close</button>
+    </p>
+
+EOD;
+        } else {
+            $html .= <<< EOD
+    <p class="error">
+      Sorry, the registration was not successful: {$this->reason}
+    </p>
+
+EOD;
+        }
+        $html .= <<< EOD
+  </body>
+</html>
+EOD;
+        $this->output = $html;
     }
 
 ###
@@ -1361,16 +1714,17 @@ class Tool
      */
     private function sendAuthenticationRequest($hint)
     {
+        $parameters = Util::getRequestParameters();
         $clientId = null;
-        if (isset($_REQUEST['client_id'])) {
-            $clientId = $_REQUEST['client_id'];
+        if (isset($parameters['client_id'])) {
+            $clientId = $parameters['client_id'];
         }
         $deploymentId = null;
-        if (isset($_REQUEST['lti_deployment_id'])) {
-            $deploymentId = $_REQUEST['lti_deployment_id'];
+        if (isset($parameters['lti_deployment_id'])) {
+            $deploymentId = $parameters['lti_deployment_id'];
         }
         $currentLogLevel = Util::$logLevel;
-        $this->platform = Platform::fromPlatformId($_REQUEST['iss'], $clientId, $deploymentId, $this->dataConnector);
+        $this->platform = Platform::fromPlatformId($parameters['iss'], $clientId, $deploymentId, $this->dataConnector);
         if ($this->platform->debugMode && ($currentLogLevel < Util::LOGLEVEL_INFO)) {
             $this->debugMode = true;
             Util::logRequest();
@@ -1412,7 +1766,7 @@ class Tool
                 }
                 $params = array(
                     'client_id' => $this->platform->clientId,
-                    'login_hint' => $_REQUEST['login_hint'],
+                    'login_hint' => $parameters['login_hint'],
                     'nonce' => Util::getRandomString(32),
                     'prompt' => 'none',
                     'redirect_uri' => $redirectUri,

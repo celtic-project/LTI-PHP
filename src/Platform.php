@@ -97,7 +97,7 @@ class Platform
     /**
      * The tool proxy.
      *
-     * @var object|null $toolPrixy
+     * @var object|null $toolProxy
      */
     public $toolProxy = null;
 

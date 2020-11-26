@@ -25,10 +25,22 @@ use ceLTIc\LTI\Util;
 class SpomkyLabsClient implements ClientInterface
 {
 
+    const SUPPORTED_ALGORITHMS = array('RS256', 'RS384', 'RS512');
+
     private $jwe = null;
     private $jwt = null;
     private static $lastHeaders = null;
     private static $lastPayload = null;
+
+    /**
+     * Return an array of supported signature algorithms.
+     *
+     * @return string[]  Array of algorithm names
+     */
+    public static function getSupportedAlgorithms()
+    {
+        return self::SUPPORTED_ALGORITHMS;
+    }
 
     /**
      * Check if a JWT is defined.
@@ -377,7 +389,7 @@ class SpomkyLabsClient implements ClientInterface
     /**
      * Get the public JWKS from a key in PEM or JWK format.
      *
-     * @param string $Key              Private or public key in PEM or JWK format
+     * @param string $key              Private or public key in PEM or JWK format
      * @param string $signatureMethod  Signature method
      * @param string $kid              Key ID (optional)
      *
