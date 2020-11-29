@@ -563,7 +563,7 @@ class Tool
             $toolConfig = $this->getConfiguration($platformConfig);
             $registrationConfig = $this->sendRegistration($platformConfig, $toolConfig);
             if ($this->ok) {
-                $platform = $this->getPlatformToRegister($platformConfig, $registrationConfig);
+                $this->getPlatformToRegister($platformConfig, $registrationConfig);
             }
         }
         $this->getRegistrationResponsePage($toolConfig);
@@ -795,30 +795,24 @@ class Tool
                 $domain = substr($domain, 0, $pos);
             }
         }
-        $platform = new Platform($this->dataConnector);
-        $platform->name = $domain;
-        $platform->ltiVersion = Util::LTI_VERSION1P3;
-        $platform->signatureMethod = reset($platformConfig['id_token_signing_alg_values_supported']);
-        $platform->platformId = $platformConfig['issuer'];
-        $platform->clientId = $registrationConfig['client_id'];
-        $platform->deploymentId = $registrationConfig['https://purl.imsglobal.org/spec/lti-tool-configuration']['deployment_id'];
-        $platform->authenticationUrl = $platformConfig['authorization_endpoint'];
-        $platform->accessTokenUrl = $platformConfig['token_endpoint'];
-        $platform->jku = $platformConfig['jwks_uri'];
+        $this->platform = new Platform($this->dataConnector);
+        $this->platform->name = $domain;
+        $this->platform->ltiVersion = Util::LTI_VERSION1P3;
+        $this->platform->signatureMethod = reset($platformConfig['id_token_signing_alg_values_supported']);
+        $this->platform->platformId = $platformConfig['issuer'];
+        $this->platform->clientId = $registrationConfig['client_id'];
+        $this->platform->deploymentId = $registrationConfig['https://purl.imsglobal.org/spec/lti-tool-configuration']['deployment_id'];
+        $this->platform->authenticationUrl = $platformConfig['authorization_endpoint'];
+        $this->platform->accessTokenUrl = $platformConfig['token_endpoint'];
+        $this->platform->jku = $platformConfig['jwks_uri'];
         if ($doSave) {
-            $this->ok = $platform->save();
+            $this->ok = $this->platform->save();
             if (!$this->ok) {
-                $checkPlatform = Platform::fromPlatformId($platform->platformId, $platform->clientId, $platform->deploymentId,
-                        $this->dataConnector);
-                if (!empty($checkPlatform->created)) {
-                    $this->reason = 'The platform is already registered.';
-                } else {
-                    $this->reason = 'Sorry, an error occurred when saving the platform details.';
-                }
+                $this->reason = 'Sorry, an error occurred when saving the platform details.';
             }
         }
 
-        return $platform;
+        return $this->platform;
     }
 
     /**
@@ -828,6 +822,24 @@ class Tool
      */
     protected function getRegistrationResponsePage($toolConfig)
     {
+        $enabled = '';
+        if (!empty($this->platform)) {
+            $now = time();
+            if (!$this->platform->enabled) {
+                $enabled = ', but it will need to be enabled by the tool provider before it can be used';
+            } else if (!empty($this->platform->enableFrom) && ($this->platform->enableFrom > $now)) {
+                $enabled = ', but you will only have access from ' . date('j F Y H:i T', $this->platform->enableFrom);
+                if (!empty($this->platform->enableUntil)) {
+                    $enabled .= ' until ' . date('j F Y H:i T', $this->platform->enableUntil);
+                }
+            } else if (!empty($this->platform->enableUntil)) {
+                if ($this->platform->enableUntil > $now) {
+                    $enabled = ', but you will only have access until ' . date('j F Y H:i T', $this->platform->enableUntil);
+                } else {
+                    $enabled = ', but your access was set to end at ' . date('j F Y H:i T', $this->platform->enableUntil);
+                }
+            }
+        }
         $html = <<< EOD
 <!DOCTYPE html>
 <html lang="en">
@@ -887,7 +899,7 @@ EOD;
         if ($this->ok) {
             $html .= <<< EOD
     <p class="success">
-      The tool registration was successful, but it will need to be enabled by the tool provider before it can be used.
+      The tool registration was successful{$enabled}.
     </p>
     <p class="centre">
       <button type="button" onclick="return doClose();">Close</button>
@@ -1751,7 +1763,7 @@ EOD;
                             $parts = explode('=', $param, 2);
                             if (!in_array($parts[0],
                                     array('iss', 'target_link_uri', 'login_hint', 'lti_message_hint', 'client_id', 'lti_deployment_id'))) {
-                                if (count($parts) <= 1) {
+                                if ((count($parts) <= 1) || empty($parts[1])) {
                                     $queryString .= "&{$parts[0]}";
                                 } else {
                                     $queryString .= "&{$parts[0]}={$parts[1]}";
