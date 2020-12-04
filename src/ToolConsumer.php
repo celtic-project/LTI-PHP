@@ -318,7 +318,7 @@ class ToolConsumer
     {
         $familyCode = '';
         if (!empty($this->consumerVersion)) {
-            list($familyCode, $version) = explode('-', $this->consumerVersion, 2);
+            list($familyCode) = explode('-', $this->consumerVersion, 2);
         }
 
         return $familyCode;
