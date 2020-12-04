@@ -318,7 +318,11 @@ class ToolConsumer
     {
         $familyCode = '';
         if (!empty($this->consumerVersion)) {
-            list($familyCode, $version) = explode('-', $this->consumerVersion, 2);
+            $familyCode = $this->consumerVersion;
+            $pos = strpos('-', $familyCode);
+            if ($pos !== false) {
+                $familyCode = substr($familyCode, 0, $pos - 1);
+            }
         }
 
         return $familyCode;
