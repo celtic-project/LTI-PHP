@@ -195,7 +195,7 @@ class UserResult extends User
     public function getId($idScope = null)
     {
         if (empty($idScope)) {
-            if (!is_null($this->resourceLink)) {
+            if (!is_null($this->getResourceLink())) {
                 $idScope = $this->resourceLink->getPlatform()->idScope;
             } else {
                 $idScope = Tool::ID_SCOPE_ID_ONLY;
@@ -207,8 +207,8 @@ class UserResult extends User
                 break;
             case Tool::ID_SCOPE_CONTEXT:
                 $id = $this->getResourceLink()->getPlatform()->getId();
-                if ($this->resourceLink->ltiContextId) {
-                    $id .= Tool::ID_SCOPE_SEPARATOR . $this->resourceLink->ltiContextId;
+                if ($this->resourceLink->getContext() && $this->resourceLink->getContext()->ltiContextId) {
+                    $id .= Tool::ID_SCOPE_SEPARATOR . $this->resourceLink->getContext()->ltiContextId;
                 }
                 $id .= Tool::ID_SCOPE_SEPARATOR . $this->ltiUserId;
                 break;
