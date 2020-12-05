@@ -87,7 +87,12 @@ class OAuthDataStore extends OAuth\OAuthDataStore
      */
     function lookup_nonce($consumer, $token, $value, $timestamp)
     {
-        $nonce = new PlatformNonce($this->system->platform, $value);
+        if ($this->system instanceof Platform) {
+            $platform = $this->system;
+        } else {
+            $platform = $this->system->platform;
+        }
+        $nonce = new PlatformNonce($platform, $value);
         $ok = !$nonce->load();
         if ($ok) {
             $ok = $nonce->save();
