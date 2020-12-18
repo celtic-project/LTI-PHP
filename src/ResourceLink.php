@@ -1062,15 +1062,20 @@ EOF;
                     'https://purl.imsglobal.org/spec/lti-ext/scope/memberships');
             }
             if ($ok) {
+                // Check for Sakai's Object
+                $membership_key = 'memberships'; // Default for Others
+                if (isset($this->extNodes['members'])) {
+                    $membership_key = 'members';
+                }
                 $this->groupSets = array();
                 $this->groups = array();
-                if (!isset($this->extNodes['memberships']['member'])) {
+                if (!isset($this->extNodes[$membership_key]['member'])) {
                     $members = array();
-                } elseif (!isset($this->extNodes['memberships']['member'][0])) {
+                } elseif (!isset($this->extNodes[$membership_key]['member'][0])) {
                     $members = array();
-                    $members[0] = $this->extNodes['memberships']['member'];
+                    $members[0] = $this->extNodes[$membership_key]['member'];
                 } else {
-                    $members = $this->extNodes['memberships']['member'];
+                    $members = $this->extNodes[$membership_key ]['member'];
                 }
 
                 for ($i = 0; $i < count($members); $i++) {
