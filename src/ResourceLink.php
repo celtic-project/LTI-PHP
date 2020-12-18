@@ -1064,13 +1064,22 @@ EOF;
             if ($ok) {
                 $this->groupSets = array();
                 $this->groups = array();
-                if (!isset($this->extNodes['memberships']['member'])) {
-                    $members = array();
-                } elseif (!isset($this->extNodes['memberships']['member'][0])) {
-                    $members = array();
-                    $members[0] = $this->extNodes['memberships']['member'];
+                if (isset($this->extNodes['memberships'])) {
+                    $memberships = $this->extNodes['memberships'];
+                } elseif (isset($this->extNodes['members'])) {
+                    $memberships = $this->extNodes['members'];
                 } else {
-                    $members = $this->extNodes['memberships']['member'];
+                    $ok = false;
+                }
+            }
+            if ($ok) {
+                if (isset($memberships['member'])) {
+                    $members = array();
+                } elseif (!isset($memberships['member'][0])) {
+                    $members = array();
+                    $members[0] = $memberships['member'];
+                } else {
+                    $members = $memberships['member'];
                 }
 
                 for ($i = 0; $i < count($members); $i++) {
