@@ -1763,7 +1763,7 @@ EOD;
                             $parts = explode('=', $param, 2);
                             if (!in_array($parts[0],
                                     array('iss', 'target_link_uri', 'login_hint', 'lti_message_hint', 'client_id', 'lti_deployment_id'))) {
-                                if ((count($parts) <= 1) || empty($parts[1])) {
+                                if ((count($parts) <= 1) || empty($parts[1])) {  // Drop equals sign for empty parameters to workaround Canvas bug
                                     $queryString .= "&{$parts[0]}";
                                 } else {
                                     $queryString .= "&{$parts[0]}={$parts[1]}";
