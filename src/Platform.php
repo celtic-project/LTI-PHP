@@ -603,7 +603,7 @@ class Platform
      */
     public static function fromConsumerKey($key = null, $dataConnector = null, $autoEnable = false)
     {
-        $platform = new Platform($dataConnector);
+        $platform = new static($dataConnector);
         $platform->key = $key;
         if (!empty($dataConnector)) {
             $ok = $dataConnector->loadPlatform($platform);
@@ -628,7 +628,7 @@ class Platform
      */
     public static function fromPlatformId($platformId, $clientId, $deploymentId, $dataConnector = null, $autoEnable = false)
     {
-        $platform = new Platform($dataConnector);
+        $platform = new static($dataConnector);
         $platform->platformId = $platformId;
         $platform->clientId = $clientId;
         $platform->deploymentId = $deploymentId;
@@ -651,7 +651,7 @@ class Platform
      */
     public static function fromRecordId($id, $dataConnector)
     {
-        $platform = new Platform($dataConnector);
+        $platform = new static($dataConnector);
         $platform->setRecordId($id);
         $dataConnector->loadPlatform($platform);
 
