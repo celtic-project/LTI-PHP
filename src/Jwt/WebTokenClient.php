@@ -261,19 +261,13 @@ class WebTokenClient implements ClientInterface
                     case 'RS384':
                     case 'RS512':
                         if ((Jwt::$allowJkuHeader && $this->hasHeader('jku')) || (!empty($jku) && empty($publicKey))) {
-//                            $psrClientInterface = new PSR\ClientInterface();
-//                            $psrRequestInterface = new PSR\RequestInterface();
-//                            $jkuFactory = new KeyManagement\JKUFactory($psrClientInterface, $psrRequestInterface);
                             if (Jwt::$allowJkuHeader && $this->hasHeader('jku')) {
-//                                $jwks = $jkuFactory->loadFromUrl($this->getHeader('jku'));
                                 $jwksUrl = $this->getHeader('jku');
                             } else {
-//                                $jwks = $jkuFactory->loadFromUrl($jku);
                                 $jwksUrl = $jku;
                             }
                             $jwks = $this->fetchPublicKey($jwksUrl);
                             $jwsVerifier->verifyWithKeySet($this->jwt, $jwks, 0);
-//                            $jwk = $jwks->selectKey('sig', $this->getHeader('alg'), ['kid' => $this->getHeader('kid')]);
                         } else {
                             $json = json_decode($publicKey, true);
                             if (is_null($json)) {

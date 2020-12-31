@@ -266,8 +266,8 @@ final class Util
     /**
      * Generate a web page containing an auto-submitted form of parameters.
      *
-     * @param string $url         URL to which the form should be submitted
-     * @param array    $params    Array of form parameters
+     * @param string $url       URL to which the form should be submitted
+     * @param array  $params    Array of form parameters
      * @param string $target    Name of target (optional)
      *
      * @return string
