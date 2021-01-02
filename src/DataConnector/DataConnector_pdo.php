@@ -93,7 +93,8 @@ class DataConnector_pdo extends DataConnector
                 "FROM {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' ' .
                 'WHERE (consumer_key = :key)';
             $query = $this->db->prepare($sql);
-            $query->bindValue('key', $platform->getKey(), \PDO::PARAM_STR);
+            $consumer_key = $platform->getKey();
+            $query->bindValue('key', $consumer_key, \PDO::PARAM_STR);
         }
         $ok = $this->executeQuery($sql, $query);
         if ($ok) {

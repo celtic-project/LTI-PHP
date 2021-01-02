@@ -463,7 +463,7 @@ class DataConnector_oci extends DataConnector
                 }
                 $platform->created = strtotime($row['created']);
                 $platform->updated = strtotime($row['updated']);
-                $this->fixPlatformSettings($platform, true);
+                $this->fixPlatformSettings($platform, false);
                 $consumers[] = $platform;
             }
         }
