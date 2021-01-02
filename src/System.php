@@ -779,14 +779,15 @@ trait System
                 break;
         }
         $key = $this->key;
-        if (!empty($key)) {
-            $secret = $this->secret;
-        } elseif (($this instanceof Tool) && !empty($this->platform)) {
-            $key = $this->platform->getKey();
-            $secret = $this->platform->secret;
-        } elseif (($this instanceof Platform) && !empty(Tool::$defaultTool)) {
-            $key = Tool::$defaultTool->getKey();
-            $secret = Tool::$defaultTool->secret;
+        $secret = $this->secret;
+        if (empty($key)) {
+            if (($this instanceof Tool) && !empty($this->platform)) {
+                $key = $this->platform->getKey();
+                $secret = $this->platform->secret;
+            } elseif (($this instanceof Platform) && !empty(Tool::$defaultTool)) {
+                $key = Tool::$defaultTool->getKey();
+                $secret = Tool::$defaultTool->secret;
+            }
         }
         $oauthConsumer = new OAuth\OAuthConsumer($key, $secret, null);
         $oauthReq = OAuth\OAuthRequest::from_consumer_and_token($oauthConsumer, null, $method, $endpoint, $params);
