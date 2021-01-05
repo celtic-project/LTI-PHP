@@ -9,6 +9,7 @@ use ceLTIc\LTI\ResourceLinkShare;
 use ceLTIc\LTI\ResourceLinkShareKey;
 use ceLTIc\LTI\Platform;
 use ceLTIc\LTI\UserResult;
+use ceLTIc\LTI\Tool;
 use ceLTIc\LTI\Util;
 
 /**
@@ -65,6 +66,11 @@ class DataConnector
      * Default name for database table used to store access token values.
      */
     const ACCESS_TOKEN_TABLE_NAME = 'lti2_access_token';
+
+    /**
+     * Default name for database table used to store tools.
+     */
+    const TOOL_TABLE_NAME = 'lti2_tool';
 
     /**
      * Database connection.
@@ -565,6 +571,66 @@ class DataConnector
     }
 
 ###
+###  Tool methods
+###
+
+    /**
+     * Load tool object.
+     *
+     * @param Tool $tool  Tool object
+     *
+     * @return bool    True if the tool object was successfully loaded
+     */
+    public function loadTool($tool)
+    {
+        $tool->secret = 'secret';
+        $tool->enabled = true;
+        $now = time();
+        $tool->created = $now;
+        $tool->updated = $now;
+
+        return true;
+    }
+
+    /**
+     * Save tool object.
+     *
+     * @param Tool $tool  Tool object
+     *
+     * @return bool    True if the tool object was successfully saved
+     */
+    public function saveTool($tool)
+    {
+        $tool->updated = time();
+
+        return true;
+    }
+
+    /**
+     * Delete tool object.
+     *
+     * @param Tool $tool  Tool object
+     *
+     * @return bool    True if the tool object was successfully deleted
+     */
+    public function deleteTool($tool)
+    {
+        $tool->initialize();
+
+        return true;
+    }
+
+    /**
+     * Load platform objects.
+     *
+     * @return Tool[] Array of all defined Tool objects
+     */
+    public function getTools()
+    {
+        return array();
+    }
+
+###
 ###  Other methods
 ###
 
@@ -708,6 +774,28 @@ class DataConnector
             $platform->setSetting('_jku', !empty($platform->jku) ? $platform->jku : null);
             $platform->setSetting('_encryption_method', !empty($platform->encryptionMethod) ? $platform->encryptionMethod : null);
             $platform->setSetting('_debug', $platform->debugMode ? 'true' : null);
+        }
+    }
+
+    /**
+     * Adjust the settings for any tool properties being stored as a setting value.
+     *
+     * @param Tool      $tool       Tool object
+     * @param bool      $isSave     True if the settings are being saved
+     */
+    protected function fixToolSettings($tool, $isSave)
+    {
+        if (!$isSave) {
+            $tool->encryptionMethod = $tool->getSetting('_encryption_method', $tool->encryptionMethod);
+            $tool->setSetting('_encryption_method');
+            $tool->debugMode = $tool->getSetting('_debug', $tool->debugMode ? 'true' : 'false') === 'true';
+            $tool->setSetting('_debug');
+            if ($tool->debugMode) {
+                Util::$logLevel = Util::LOGLEVEL_DEBUG;
+            }
+        } else {
+            $tool->setSetting('_encryption_method', !empty($tool->encryptionMethod) ? $tool->encryptionMethod : null);
+            $tool->setSetting('_debug', $tool->debugMode ? 'true' : null);
         }
     }
 

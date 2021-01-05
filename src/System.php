@@ -8,6 +8,7 @@ use ceLTIc\LTI\Http\HttpMessage;
 use ceLTIc\LTI\OAuth;
 use ceLTIc\LTI\Jwt\Jwt;
 use ceLTIc\LTI\Jwt\ClientInterface;
+use ceLTIc\LTI\Tool;
 
 /**
  * Class to represent an LTI system
@@ -107,6 +108,48 @@ trait System
     public $debugMode = false;
 
     /**
+     * Whether the system instance is enabled to accept connection requests.
+     *
+     * @var bool $enabled
+     */
+    public $enabled = false;
+
+    /**
+     * Timestamp from which the the system instance is enabled to accept connection requests.
+     *
+     * @var int|null $enableFrom
+     */
+    public $enableFrom = null;
+
+    /**
+     * Timestamp until which the system instance is enabled to accept connection requests.
+     *
+     * @var int|null $enableUntil
+     */
+    public $enableUntil = null;
+
+    /**
+     * Timestamp for date of last connection to this system.
+     *
+     * @var int|null $lastAccess
+     */
+    public $lastAccess = null;
+
+    /**
+     * Timestamp for when the object was created.
+     *
+     * @var int|null $created
+     */
+    public $created = null;
+
+    /**
+     * Timestamp for when the object was last updated.
+     *
+     * @var int|null $updated
+     */
+    public $updated = null;
+
+    /**
      * JWT object, if any.
      *
      * @var JWS|null $jwt
@@ -128,11 +171,52 @@ trait System
     protected $messageParameters = null;
 
     /**
+     * System ID value.
+     *
+     * @var int|null $id
+     */
+    private $id = null;
+
+    /**
      * Consumer key/client ID value.
      *
      * @var string|null $key
      */
     private $key = null;
+
+    /**
+     * Setting values (LTI parameters, custom parameters and local parameters).
+     *
+     * @var array $settings
+     */
+    private $settings = null;
+
+    /**
+     * Whether the settings value have changed since last saved.
+     *
+     * @var bool $settingsChanged
+     */
+    private $settingsChanged = false;
+
+    /**
+     * Get the system record ID.
+     *
+     * @return int|null  System record ID value
+     */
+    public function getRecordId()
+    {
+        return $this->id;
+    }
+
+    /**
+     * Sets the system record ID.
+     *
+     * @param int $id  System record ID value
+     */
+    public function setRecordId($id)
+    {
+        $this->id = $id;
+    }
 
     /**
      * Get the consumer key.
@@ -152,6 +236,80 @@ trait System
     public function setKey($key)
     {
         $this->key = $key;
+    }
+
+    /**
+     * Get a setting value.
+     *
+     * @param string $name    Name of setting
+     * @param string $default Value to return if the setting does not exist (optional, default is an empty string)
+     *
+     * @return string Setting value
+     */
+    public function getSetting($name, $default = '')
+    {
+        if (array_key_exists($name, $this->settings)) {
+            $value = $this->settings[$name];
+        } else {
+            $value = $default;
+        }
+
+        return $value;
+    }
+
+    /**
+     * Set a setting value.
+     *
+     * @param string $name  Name of setting
+     * @param string $value Value to set, use an empty value to delete a setting (optional, default is null)
+     */
+    public function setSetting($name, $value = null)
+    {
+        $old_value = $this->getSetting($name);
+        if ($value !== $old_value) {
+            if (!empty($value)) {
+                $this->settings[$name] = $value;
+            } else {
+                unset($this->settings[$name]);
+            }
+            $this->settingsChanged = true;
+        }
+    }
+
+    /**
+     * Get an array of all setting values.
+     *
+     * @return array Associative array of setting values
+     */
+    public function getSettings()
+    {
+        return $this->settings;
+    }
+
+    /**
+     * Set an array of all setting values.
+     *
+     * @param array $settings  Associative array of setting values
+     */
+    public function setSettings($settings)
+    {
+        $this->settings = $settings;
+    }
+
+    /**
+     * Save setting values.
+     *
+     * @return bool    True if the settings were successfully saved
+     */
+    public function saveSettings()
+    {
+        if ($this->settingsChanged) {
+            $ok = $this->save();
+        } else {
+            $ok = true;
+        }
+
+        return $ok;
     }
 
     /**
@@ -349,6 +507,81 @@ trait System
         }
 
         return $params;
+    }
+
+    /**
+     * Add the signature to an LTI message.
+     *
+     * If the message is being sent from a platform using LTI 1.3, then the parameters and URL will be saved and replaced with an
+     * initiate login request.
+     *
+     * @param string  $url             URL for message request
+     * @param string  $type            LTI message type
+     * @param string  $version         LTI version
+     * @param array   $params          Message parameters
+     * @param string  $loginHint       ID of user (optional)
+     * @param string  $ltiMessageHint  LTI message hint (optional, use null for none)
+     *
+     * @return array|string  Array of signed message parameters or request headers
+     */
+    public function signMessage(&$url, $type, $version, $params, $loginHint = null, $ltiMessageHint = '')
+    {
+        if (($this instanceof Platform) && ($this->ltiVersion === Util::LTI_VERSION1P3)) {
+            if (empty($loginHint)) {
+                if (!empty($params['user_id'])) {
+                    $loginHint = $params['user_id'];
+                } else {
+                    $loginHint = 'Anonymous';
+                }
+            }
+// Add standard parameters
+            $params['lti_version'] = $version;
+            $params['lti_message_type'] = $type;
+            if ($ltiMessageHint === '') {
+                $ltiMessageHint = Util::getRandomString();
+            }
+            $this->onInitiateLogin($url, $loginHint, $ltiMessageHint, $params);
+
+            $params = array(
+                'iss' => $this->platformId,
+                'target_link_uri' => $url,
+                'login_hint' => $loginHint
+            );
+            if (!is_null($ltiMessageHint)) {
+                $params['lti_message_hint'] = $ltiMessageHint;
+            }
+            if (!empty($this->clientId)) {
+                $params['client_id'] = $this->clientId;
+            }
+            if (!empty($this->deploymentId)) {
+                $params['lti_deployment_id'] = $this->deploymentId;
+            }
+            $url = Tool::$defaultTool->initiateLoginUrl;
+        } else {
+            $params = $this->signParameters($url, $type, $version, $params);
+        }
+
+        return $params;
+    }
+
+    /**
+     * Generate a web page containing an auto-submitted form of LTI message parameters.
+     *
+     * @param string $url              URL to which the form should be submitted
+     * @param string $type             LTI message type
+     * @param array  $messageParams    Array of form parameters
+     * @param string $target           Name of target (optional)
+     * @param string $userId           ID of user (optional)
+     * @param string $hint             LTI message hint (optional, use null for none)
+     *
+     * @return string
+     */
+    public function sendMessage($url, $type, $messageParams, $target = '', $userId = null, $hint = '')
+    {
+        $sendParams = $this->signMessage($url, $type, $this->ltiVersion, $messageParams, $userId, $hint);
+        $html = Util::sendForm($url, $sendParams, $target);
+
+        return $html;
     }
 
     /**

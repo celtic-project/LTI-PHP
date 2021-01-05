@@ -10,6 +10,7 @@ use ceLTIc\LTI\ResourceLinkShare;
 use ceLTIc\LTI\ResourceLinkShareKey;
 use ceLTIc\LTI\Platform;
 use ceLTIc\LTI\UserResult;
+use ceLTIc\LTI\Tool;
 use ceLTIc\LTI\Util;
 
 /**
@@ -1356,6 +1357,309 @@ class DataConnector_oci extends DataConnector
 
         return $ok;
     }
+
+###
+###  Tool methods
+###
+
+    /**
+     * Load tool object.
+     *
+     * @param Tool $tool  Tool object
+     *
+     * @return bool    True if the tool object was successfully loaded
+     */
+    public function loadTool($tool)
+    {
+        $ok = false;
+        if (!is_null($tool->getRecordId())) {
+            $sql = 'SELECT tool_pk, name, consumer_key, secret, ' .
+                'message_url, initiate_login_url, redirection_uris, public_key, ' .
+                'lti_version, signature_method, settings, enabled, ' .
+                'enable_from, enable_until, last_access, created, updated ' .
+                "FROM {$this->dbTableNamePrefix}" . static::TOOL_TABLE_NAME . ' ' .
+                'WHERE tool_pk = :id';
+            $query = oci_parse($this->db, $sql);
+            $id = $tool->getRecordId();
+            oci_bind_by_name($query, 'id', $id);
+        } elseif (!empty($tool->initiateLoginUrl)) {
+            $sql = 'SELECT tool_pk, name, consumer_key, secret, ' .
+                'message_url, initiate_login_url, redirection_uris, public_key, ' .
+                'lti_version, signature_method, settings, enabled, ' .
+                'enable_from, enable_until, last_access, created, updated ' .
+                "FROM {$this->dbTableNamePrefix}" . static::TOOL_TABLE_NAME . ' ' .
+                'WHERE initiate_login_url = :initiate_login_url';
+            $query = oci_parse($this->db, $sql);
+            oci_bind_by_name($query, 'initiate_login_url', $tool->initiateLoginUrl);
+        } else {
+            $sql = 'SELECT tool_pk, name, consumer_key, secret, ' .
+                'message_url, initiate_login_url, redirection_uris, public_key, ' .
+                'lti_version, signature_method, settings, enabled, ' .
+                'enable_from, enable_until, last_access, created, updated ' .
+                "FROM {$this->dbTableNamePrefix}" . static::TOOL_TABLE_NAME . ' ' .
+                'WHERE consumer_key = :key';
+            $query = oci_parse($this->db, $sql);
+            $consumer_key = $tool->getKey();
+            oci_bind_by_name($query, 'key', $consumer_key);
+        }
+        $ok = $this->executeQuery($sql, $query);
+        if ($ok) {
+            $row = oci_fetch_assoc($query);
+            $ok = ($row !== false);
+        }
+        if ($ok) {
+            $row = array_change_key_case($row);
+            $tool->setRecordId(intval($row['tool_pk']));
+            $tool->name = $row['name'];
+            $tool->setkey($row['consumer_key']);
+            $tool->secret = $row['secret'];
+            $tool->messageUrl = $row['message_url'];
+            $tool->initiateLoginUrl = $row['initiate_login_url'];
+            $redirectionUrisValue = $row['redirection_uris']->load();
+            if (is_string($redirectionUrisValue)) {
+                $redirectionUris = json_decode($redirectionUrisValue, true);
+                if (!is_array($redirectionUris)) {
+                    $redirectionUris = array();
+                }
+            } else {
+                $redirectionUris = array();
+            }
+            $tool->redirectionUris = $redirectionUris;
+            $tool->rsaKey = $row['public_key'];
+            $tool->ltiVersion = $row['lti_version'];
+            $tool->signatureMethod = $row['signature_method'];
+            $settingsValue = $row['settings']->load();
+            if (is_string($settingsValue)) {
+                $settings = json_decode($settingsValue, true);
+                if (!is_array($settings)) {
+                    $settings = array();
+                }
+            } else {
+                $settings = array();
+            }
+            $tool->setSettings($settings);
+            $tool->enabled = (intval($row['enabled']) === 1);
+            $tool->enableFrom = null;
+            if (!is_null($row['enable_from'])) {
+                $tool->enableFrom = strtotime($row['enable_from']);
+            }
+            $tool->enableUntil = null;
+            if (!is_null($row['enable_until'])) {
+                $tool->enableUntil = strtotime($row['enable_until']);
+            }
+            $tool->lastAccess = null;
+            if (!is_null($row['last_access'])) {
+                $tool->lastAccess = strtotime($row['last_access']);
+            }
+            $tool->created = strtotime($row['created']);
+            $tool->updated = strtotime($row['updated']);
+            $this->fixToolSettings($tool, false);
+            $ok = true;
+        }
+
+        return $ok;
+    }
+
+    /**
+     * Save tool object.
+     *
+     * @param Tool $tool  Tool object
+     *
+     * @return bool    True if the tool object was successfully saved
+     */
+    public function saveTool($tool)
+    {
+        $id = $tool->getRecordId();
+        $consumer_key = $tool->getKey();
+        $enabled = ($tool->enabled) ? 1 : 0;
+        $redirectionUrisValue = json_encode($tool->redirectionUris);
+        $this->fixToolSettings($tool, true);
+        $settingsValue = json_encode($tool->getSettings());
+        $this->fixToolSettings($tool, false);
+        $time = time();
+        $now = date("{$this->dateFormat} {$this->timeFormat}", $time);
+        $from = null;
+        if (!is_null($tool->enableFrom)) {
+            $from = date("{$this->dateFormat} {$this->timeFormat}", $tool->enableFrom);
+        }
+        $until = null;
+        if (!is_null($tool->enableUntil)) {
+            $until = date("{$this->dateFormat} {$this->timeFormat}", $tool->enableUntil);
+        }
+        $last = null;
+        if (!is_null($tool->lastAccess)) {
+            $last = date($this->dateFormat, $tool->lastAccess);
+        }
+        if (empty($id)) {
+            $pk = null;
+            $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::TOOL_TABLE_NAME . ' (name, consumer_key, secret, ' .
+                'message_url, initiate_login_url, redirection_uris, public_key, ' .
+                'lti_version, signature_method, settings, enabled, enable_from, enable_until, ' .
+                'last_access, created, updated) ' .
+                'VALUES (:name, :key, :secret, ' .
+                ':message_url, :initiate_login_url, :redirection_uris, :public_key, ' .
+                ':lti_version, :signature_method, :settings, :enabled, :enable_from, :enable_until, ' .
+                ':last_access, :created, :updated) returning tool_pk into :pk';
+            $query = oci_parse($this->db, $sql);
+            oci_bind_by_name($query, 'name', $tool->name);
+            oci_bind_by_name($query, 'key', $consumer_key);
+            oci_bind_by_name($query, 'secret', $tool->secret);
+            oci_bind_by_name($query, 'message_url', $tool->messageUrl);
+            oci_bind_by_name($query, 'initiate_login_url', $tool->initiateLoginUrl);
+            oci_bind_by_name($query, 'redirection_uris', $redirectionUrisValue);
+            oci_bind_by_name($query, 'public_key', $tool->rsaKey);
+            oci_bind_by_name($query, 'lti_version', $tool->ltiVersion);
+            oci_bind_by_name($query, 'signature_method', $tool->signatureMethod);
+            oci_bind_by_name($query, 'settings', $settingsValue);
+            oci_bind_by_name($query, 'enabled', $enabled);
+            oci_bind_by_name($query, 'enable_from', $from);
+            oci_bind_by_name($query, 'enable_until', $until);
+            oci_bind_by_name($query, 'last_access', $last);
+            oci_bind_by_name($query, 'created', $now);
+            oci_bind_by_name($query, 'updated', $now);
+            oci_bind_by_name($query, 'pk', $pk);
+        } else {
+            $sql = "UPDATE {$this->dbTableNamePrefix}" . static::TOOL_TABLE_NAME . ' SET ' .
+                'name = :name, consumer_key = :key, secret= :secret, ' .
+                'message_url = :message_url, initiate_login_url = :initiate_login_url, redirection_uris = :redirection_uris, public_key = :public_key, ' .
+                'lti_version = :lti_version, signature_method = :signature_method, settings = :settings, enabled = :enabled, enable_from = :enable_from, enable_until = :enable_until, ' .
+                'last_access = :last_access, updated = :updated ' .
+                'WHERE tool_pk = :id';
+            $query = oci_parse($this->db, $sql);
+            oci_bind_by_name($query, 'name', $tool->name);
+            oci_bind_by_name($query, 'key', $consumer_key);
+            oci_bind_by_name($query, 'secret', $tool->secret);
+            oci_bind_by_name($query, 'message_url', $tool->messageUrl);
+            oci_bind_by_name($query, 'initiate_login_url', $tool->initiateLoginUrl);
+            oci_bind_by_name($query, 'redirection_uris', $redirectionUrisValue);
+            oci_bind_by_name($query, 'public_key', $tool->rsaKey);
+            oci_bind_by_name($query, 'lti_version', $tool->ltiVersion);
+            oci_bind_by_name($query, 'signature_method', $tool->signatureMethod);
+            oci_bind_by_name($query, 'settings', $settingsValue);
+            oci_bind_by_name($query, 'enabled', $enabled);
+            oci_bind_by_name($query, 'enable_from', $from);
+            oci_bind_by_name($query, 'enable_until', $until);
+            oci_bind_by_name($query, 'last_access', $last);
+            oci_bind_by_name($query, 'updated', $now);
+            oci_bind_by_name($query, 'id', $id);
+        }
+        $ok = $this->executeQuery($sql, $query);
+        if ($ok) {
+            if (empty($id)) {
+                $tool->setRecordId(intval($pk));
+                $tool->created = $time;
+            }
+            $tool->updated = $time;
+        }
+
+        return $ok;
+    }
+
+    /**
+     * Delete tool object.
+     *
+     * @param Tool $tool  Tool object
+     *
+     * @return bool    True if the tool object was successfully deleted
+     */
+    public function deleteTool($tool)
+    {
+        $id = $tool->getRecordId();
+
+        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::TOOL_TABLE_NAME . ' ' .
+            'WHERE tool_pk = :id';
+        $query = oci_parse($this->db, $sql);
+        oci_bind_by_name($query, 'id', $id);
+        $ok = $this->executeQuery($sql, $query);
+
+        if ($ok) {
+            $tool->initialize();
+        }
+
+        return $ok;
+    }
+
+    /**
+     * Load tool objects.
+     *
+     * @return Tool[] Array of all defined Tool objects
+     */
+    public function getTools()
+    {
+        $tools = array();
+
+        $sql = 'SELECT tool_pk, name, consumer_key, secret, ' .
+            'message_url, initiate_login_url, redirection_uris, public_key, ' .
+            'lti_version, signature_method, settings, enabled, ' .
+            'enable_from, enable_until, last_access, created, updated ' .
+            "FROM {$this->dbTableNamePrefix}" . static::TOOL_TABLE_NAME . ' ' .
+            'ORDER BY name';
+        $query = oci_parse($this->db, $sql);
+        $ok = ($query !== false);
+
+        if ($ok) {
+            $ok = $this->executeQuery($sql, $query);
+        }
+
+        if ($ok) {
+            while ($row = oci_fetch_assoc($query)) {
+                $row = array_change_key_case($row);
+                $tool = new Tool($this);
+                $tool->setRecordId(intval($row['tool_pk']));
+                $tool->name = $row['name'];
+                $tool->setkey($row['consumer_key']);
+                $tool->secret = $row['secret'];
+                $tool->messageUrl = $row['message_url'];
+                $tool->initiateLoginUrl = $row['initiate_login_url'];
+                $redirectionUrisValue = $row['redirection_uris']->load();
+                if (is_string($redirectionUrisValue)) {
+                    $redirectionUris = json_decode($redirectionUrisValue, true);
+                    if (!is_array($redirectionUris)) {
+                        $redirectionUris = array();
+                    }
+                } else {
+                    $redirectionUris = array();
+                }
+                $tool->redirectionUris = $redirectionUris;
+                $tool->rsaKey = $row['public_key'];
+                $tool->ltiVersion = $row['lti_version'];
+                $tool->signatureMethod = $row['signature_method'];
+                $settingsValue = $row['settings']->load();
+                if (is_string($settingsValue)) {
+                    $settings = json_decode($settingsValue, true);
+                    if (!is_array($settings)) {
+                        $settings = array();
+                    }
+                } else {
+                    $settings = array();
+                }
+                $tool->setSettings($settings);
+                $tool->enabled = (intval($row['enabled']) === 1);
+                $tool->enableFrom = null;
+                if (!is_null($row['enable_from'])) {
+                    $tool->enableFrom = strtotime($row['enable_from']);
+                }
+                $tool->enableUntil = null;
+                if (!is_null($row['enable_until'])) {
+                    $tool->enableUntil = strtotime($row['enable_until']);
+                }
+                $tool->lastAccess = null;
+                if (!is_null($row['last_access'])) {
+                    $platform->lastAccess = strtotime($row['last_access']);
+                }
+                $tool->created = strtotime($row['created']);
+                $tool->updated = strtotime($row['updated']);
+                $this->fixToolSettings($tool, false);
+                $tools[] = $tool;
+            }
+        }
+
+        return $tools;
+    }
+
+###
+###  Other methods
+###
 
     /**
      * Execute a database query.

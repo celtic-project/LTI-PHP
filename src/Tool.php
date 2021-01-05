@@ -236,6 +236,27 @@ class Tool
     public $resourceHandlers = null;
 
     /**
+     * Message URL for Tool
+     *
+     * @var string|null $messageUrl
+     */
+    public $messageUrl = null;
+
+    /**
+     * Initiate Login request URL for Tool
+     *
+     * @var string|null $initiateLoginUrl
+     */
+    public $initiateLoginUrl = null;
+
+    /**
+     * Redirection URIs for Tool
+     *
+     * @var array|null $redirectionUris
+     */
+    public $redirectionUris = null;
+
+    /**
      * Default tool for use with service requests
      *
      * @var Tool|null $defaultTool
@@ -303,19 +324,65 @@ class Tool
      *
      * @param DataConnector     $dataConnector    Object containing a database connection object
      */
-    function __construct($dataConnector = null)
+    public function __construct($dataConnector = null)
     {
         $this->consumer = &$this->platform;
-        $this->constraints = array();
+        $this->initialize();
         if (empty($dataConnector)) {
             $dataConnector = DataConnector::getDataConnector();
         }
         $this->dataConnector = $dataConnector;
+    }
+
+    /**
+     * Initialise the tool.
+     */
+    public function initialize()
+    {
+        $this->id = null;
+        $this->key = null;
+        $this->name = null;
+        $this->secret = null;
+        $this->messageUrl = null;
+        $this->initiateLoginUrl = null;
+        $this->redirectionUris = null;
+        $this->rsaKey = null;
+        $this->signatureMethod = 'HMAC-SHA1';
+        $this->encryptionMethod = null;
+        $this->ltiVersion = null;
+        $this->settings = array();
+        $this->enabled = false;
+        $this->enableFrom = null;
+        $this->enableUntil = null;
+        $this->lastAccess = null;
+        $this->created = null;
+        $this->updated = null;
+        $this->constraints = array();
         $this->vendor = new Profile\Item();
         $this->product = new Profile\Item();
         $this->requiredServices = array();
         $this->optionalServices = array();
         $this->resourceHandlers = array();
+    }
+
+    /**
+     * Save the tool to the database.
+     *
+     * @return bool    True if the object was successfully saved
+     */
+    public function save()
+    {
+        return $this->dataConnector->saveTool($this);
+    }
+
+    /**
+     * Delete the tool from the database.
+     *
+     * @return bool    True if the object was successfully deleted
+     */
+    public function delete()
+    {
+        return $this->dataConnector->deleteTool($this);
     }
 
     /**
@@ -368,8 +435,7 @@ class Tool
                 $this->ok = false;
                 $this->reason = 'Missing target_link_uri parameter';
             } else {
-                $hint = isset($parameters['lti_message_hint']) ? $parameters['lti_message_hint'] : null;
-                $this->ok = $this->sendAuthenticationRequest($hint);
+                $this->ok = $this->sendAuthenticationRequest($parameters);
             }
         } elseif (!empty($parameters['openid_configuration'])) {  // Dynamic registration request
             Util::logRequest();
@@ -919,6 +985,68 @@ EOD;
 </html>
 EOD;
         $this->output = $html;
+    }
+
+    /**
+     * Load the tool from the database by its consumer key.
+     *
+     * @param string          $key             Consumer key
+     * @param DataConnector   $dataConnector   A data connector object
+     * @param bool            $autoEnable      true if the tool is to be enabled automatically (optional, default is false)
+     *
+     * @return Tool           The tool object
+     */
+    public static function fromConsumerKey($key = null, $dataConnector = null, $autoEnable = false)
+    {
+        $tool = new static($dataConnector);
+        $tool->key = $key;
+        if (!empty($dataConnector)) {
+            $ok = $dataConnector->loadTool($tool);
+            if ($ok && $autoEnable) {
+                $tool->enabled = true;
+            }
+        }
+
+        return $tool;
+    }
+
+    /**
+     * Load the tool from the database by its initiate login URL.
+     *
+     * @param string          $initiateLoginUrl The initiate login URL
+     * @param DataConnector   $dataConnector    A data connector object
+     * @param bool            $autoEnable       True if the tool is to be enabled automatically (optional, default is false)
+     *
+     * @return Tool           The tool object
+     */
+    public static function fromInitiateLoginUrl($initiateLoginUrl, $dataConnector = null, $autoEnable = false)
+    {
+        $tool = new static($dataConnector);
+        $tool->initiateLoginUrl = $initiateLoginUrl;
+        if ($dataConnector->loadTool($tool)) {
+            if ($autoEnable) {
+                $tool->enabled = true;
+            }
+        }
+
+        return $tool;
+    }
+
+    /**
+     * Load the tool from the database by its record ID.
+     *
+     * @param string          $id               The tool record ID
+     * @param DataConnector   $dataConnector    A data connector object
+     *
+     * @return Tool           The tool object
+     */
+    public static function fromRecordId($id, $dataConnector)
+    {
+        $tool = new static($dataConnector);
+        $tool->setRecordId($id);
+        $dataConnector->loadTool($tool);
+
+        return $tool;
     }
 
 ###
@@ -1722,11 +1850,12 @@ EOD;
     /**
      * Generate a form to perform an authentication request.
      *
-     * @return bool    True if form was generated
+     * @param array $parameters     Request parameters
+     *
+     * @return bool True if form was generated
      */
-    private function sendAuthenticationRequest($hint)
+    private function sendAuthenticationRequest($parameters)
     {
-        $parameters = Util::getRequestParameters();
         $clientId = null;
         if (isset($parameters['client_id'])) {
             $clientId = $parameters['client_id'];
@@ -1787,8 +1916,8 @@ EOD;
                     'scope' => 'openid',
                     'state' => $nonce->getValue()
                 );
-                if (!is_null($hint)) {
-                    $params['lti_message_hint'] = $hint;
+                if (!empty($parameters['lti_message_hint'])) {
+                    $params['lti_message_hint'] = $parameters['lti_message_hint'];
                 }
                 $this->output = Util::sendForm($this->platform->authenticationUrl, $params);
             } else {

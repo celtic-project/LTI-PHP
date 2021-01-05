@@ -150,34 +150,6 @@ class Platform
     public $protected = false;
 
     /**
-     * Whether the platform instance is enabled to accept incoming connection requests.
-     *
-     * @var bool $enabled
-     */
-    public $enabled = false;
-
-    /**
-     * Timestamp from which the the platform instance is enabled to accept incoming connection requests.
-     *
-     * @var int|null $enableFrom
-     */
-    public $enableFrom = null;
-
-    /**
-     * Timestamp until which the platform instance is enabled to accept incoming connection requests.
-     *
-     * @var int|null $enableUntil
-     */
-    public $enableUntil = null;
-
-    /**
-     * Timestamp for date of last connection from this platform.
-     *
-     * @var int|null $lastAccess
-     */
-    public $lastAccess = null;
-
-    /**
      * Default scope to use when generating an Id value for a user.
      *
      * @var int $idScope
@@ -197,41 +169,6 @@ class Platform
      * @var HttpMessage|null $lastServiceRequest
      */
     public $lastServiceRequest = null;
-
-    /**
-     * Timestamp for when the object was created.
-     *
-     * @var int|null $created
-     */
-    public $created = null;
-
-    /**
-     * Timestamp for when the object was last updated.
-     *
-     * @var int|null $updated
-     */
-    public $updated = null;
-
-    /**
-     * Platform ID value.
-     *
-     * @var int|null $id
-     */
-    private $id = null;
-
-    /**
-     * Setting values (LTI parameters, custom parameters and local parameters).
-     *
-     * @var array $settings
-     */
-    private $settings = null;
-
-    /**
-     * Whether the settings value have changed since last saved.
-     *
-     * @var bool $settingsChanged
-     */
-    private $settingsChanged = false;
 
     /**
      * Class constructor.
@@ -313,26 +250,6 @@ class Platform
     }
 
     /**
-     * Get the platform record ID.
-     *
-     * @return int|null  Platform record ID value
-     */
-    public function getRecordId()
-    {
-        return $this->id;
-    }
-
-    /**
-     * Sets the platform record ID.
-     *
-     * @param int $id  Platform record ID value
-     */
-    public function setRecordId($id)
-    {
-        $this->id = $id;
-    }
-
-    /**
      * Get the platform ID.
      *
      * The ID will be the consumer key if one exists, otherwise a concatenation of the platform/client/deployment IDs
@@ -408,80 +325,6 @@ class Platform
     }
 
     /**
-     * Get a setting value.
-     *
-     * @param string $name    Name of setting
-     * @param string $default Value to return if the setting does not exist (optional, default is an empty string)
-     *
-     * @return string Setting value
-     */
-    public function getSetting($name, $default = '')
-    {
-        if (array_key_exists($name, $this->settings)) {
-            $value = $this->settings[$name];
-        } else {
-            $value = $default;
-        }
-
-        return $value;
-    }
-
-    /**
-     * Set a setting value.
-     *
-     * @param string $name  Name of setting
-     * @param string $value Value to set, use an empty value to delete a setting (optional, default is null)
-     */
-    public function setSetting($name, $value = null)
-    {
-        $old_value = $this->getSetting($name);
-        if ($value !== $old_value) {
-            if (!empty($value)) {
-                $this->settings[$name] = $value;
-            } else {
-                unset($this->settings[$name]);
-            }
-            $this->settingsChanged = true;
-        }
-    }
-
-    /**
-     * Get an array of all setting values.
-     *
-     * @return array Associative array of setting values
-     */
-    public function getSettings()
-    {
-        return $this->settings;
-    }
-
-    /**
-     * Set an array of all setting values.
-     *
-     * @param array $settings  Associative array of setting values
-     */
-    public function setSettings($settings)
-    {
-        $this->settings = $settings;
-    }
-
-    /**
-     * Save setting values.
-     *
-     * @return bool    True if the settings were successfully saved
-     */
-    public function saveSettings()
-    {
-        if ($this->settingsChanged) {
-            $ok = $this->save();
-        } else {
-            $ok = true;
-        }
-
-        return $ok;
-    }
-
-    /**
      * Check if the Tool Settings service is supported.
      *
      * @return bool    True if this platform supports the Tool Settings service
@@ -548,6 +391,16 @@ class Platform
     }
 
     /**
+     * Get an array of defined tools
+     *
+     * @return array Array of Tool objects
+     */
+    public function getTools()
+    {
+        return $this->dataConnector->getTools();
+    }
+
+    /**
      * Check if the Access Token service is supported.
      *
      * @return bool    True if this platform supports the Access Token service
@@ -580,15 +433,80 @@ class Platform
      */
     public function handleRequest()
     {
-        Util::logRequest();
+        $parameters = Util::getRequestParameters();
+        if ($this->debugMode) {
+            Util::$logLevel = Util::LOGLEVEL_DEBUG;
+        }
         if ($this->ok) {
-            $this->getMessageParameters();
-            if ($this->ok) {
-                $this->ok = $this->authenticate();
+            if (!empty($parameters['client_id'])) {  // Authentication request
+                Util::logRequest();
+                $this->handleAuthenticationRequest();
+            } else {  // LTI message
+                $this->getMessageParameters();
+                Util::logRequest();
+                if ($this->ok) {
+                    $this->ok = $this->authenticate();
+                }
             }
-            if (!$this->ok) {
-                Util::logError("Request failed with reason: '{$this->reason}'");
+        }
+        if (!$this->ok) {
+            Util::logError("Request failed with reason: '{$this->reason}'");
+        }
+    }
+
+    /**
+     * Save the hint and message parameters when sending an initiate login request.
+     *
+     * Override this method to save the data elsewhere.
+     *
+     * @param string   $url               The message URL
+     * @param string   $loginHint         The ID of the user
+     * @param string   $ltiMessageHint    The message hint being sent to the tool
+     * @param array    $params            An associative array of message parameters
+     */
+    protected function onInitiateLogin(&$url, &$loginHint, &$ltiMessageHint, $params)
+    {
+        $hasSession = !empty(session_id());
+        if (!$hasSession) {
+            session_start();
+        }
+        $_SESSION['ceLTIc_lti_initiated_login'] = array(
+            'messageUrl' => $url,
+            'login_hint' => $loginHint,
+            'lti_message_hint' => $ltiMessageHint,
+            'params' => $params
+        );
+        if (!$hasSession) {
+            session_write_close();
+        }
+    }
+
+    /**
+     * Check the hint and recover the message parameters.
+     *
+     * Override this method if the data has been saved elsewhere.
+     */
+    protected function onAuthenticate()
+    {
+        $hasSession = !empty(session_id());
+        if (!$hasSession) {
+            session_start();
+        }
+        if (isset($_SESSION['ceLTIc_lti_initiated_login'])) {
+            $login = $_SESSION['ceLTIc_lti_initiated_login'];
+            $parameters = Util::getRequestParameters();
+            if ($parameters['login_hint'] !== $login['login_hint'] ||
+                (isset($login['lti_message_hint']) && (!isset($parameters['lti_message_hint']) || ($parameters['lti_message_hint'] !== $login['lti_message_hint'])))) {
+                $this->ok = false;
+                $this->messageParameters['error'] = 'access_denied';
+            } else {
+                Tool::$defaultTool->messageUrl = $login['messageUrl'];
+                $this->messageParameters = $login['params'];
             }
+            unset($_SESSION['ceLTIc_lti_initiated_login']);
+        }
+        if (!$hasSession) {
+            session_write_close();
         }
     }
 
@@ -672,6 +590,75 @@ class Platform
     private function authenticate()
     {
         return $this->verifySignature();
+    }
+
+    /**
+     * Process an authentication request.
+     *
+     * Generates an auto-submit form to respond to the request.
+     */
+    private function handleAuthenticationRequest()
+    {
+        $this->messageParameters = array();
+        $parameters = Util::getRequestParameters();
+        $this->ok = isset($parameters['scope']) && isset($parameters['response_type']) &&
+            isset($parameters['client_id']) && isset($parameters['redirect_uri']) &&
+            isset($parameters['login_hint']) && isset($parameters['nonce']);
+        if (!$this->ok) {
+            $this->messageParameters['error'] = 'invalid_request';
+        }
+        if ($this->ok) {
+            $scopes = explode(' ', $parameters['scope']);
+            $this->ok = in_array('openid', $scopes);
+            if (!$this->ok) {
+                $this->messageParameters['error'] = 'invalid_scope';
+            }
+        }
+        if ($this->ok && ($parameters['response_type'] !== 'id_token')) {
+            $this->ok = false;
+            $this->messageParameters['error'] = 'unsupported_response_type';
+        }
+        if ($this->ok && ($parameters['client_id'] !== $this->clientId)) {
+            $this->ok = false;
+            $this->messageParameters['error'] = 'unauthorized_client';
+        }
+        if ($this->ok) {
+            $this->ok = in_array($parameters['redirect_uri'], Tool::$defaultTool->redirectionUris);
+            if (!$this->ok) {
+                $this->messageParameters['error'] = 'invalid_request';
+                $this->messageParameters['error_description'] = 'Unregistered redirect_uri';
+            }
+        }
+        if ($this->ok) {
+            if (isset($parameters['response_mode'])) {
+                $this->ok = ($parameters['response_mode'] === 'form_post');
+            } else {
+                $this->ok = false;
+            }
+            if (!$this->ok) {
+                $this->messageParameters['error'] = 'invalid_request';
+                $this->messageParameters['error_description'] = 'Invalid response_mode';
+            }
+        }
+        if ($this->ok && (!isset($parameters['prompt']) || ($parameters['prompt'] !== 'none'))) {
+            $this->ok = false;
+            $this->messageParameters['error'] = 'invalid_request';
+            $this->messageParameters['error_description'] = 'Invalid prompt';
+        }
+
+        if ($this->ok) {
+            $this->onAuthenticate();
+        }
+        if ($this->ok) {
+            $this->messageParameters = $this->addSignature(Tool::$defaultTool->messageUrl, $this->messageParameters, 'POST', null,
+                $parameters['nonce']);
+        }
+        if (isset($parameters['state'])) {
+            $this->messageParameters['state'] = $parameters['state'];
+        }
+        $html = Util::sendForm($parameters['redirect_uri'], $this->messageParameters);
+        echo $html;
+        exit;
     }
 
 }

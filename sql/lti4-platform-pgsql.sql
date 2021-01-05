@@ -1,0 +1,21 @@
+CREATE TABLE lti2_tool (
+  tool_pk SERIAL,
+  name varchar(50) NOT NULL,
+  consumer_key varchar(255) DEFAULT NULL,
+  secret varchar(1024) DEFAULT NULL,
+  message_url varchar(255) DEFAULT NULL,
+  initiate_login_url varchar(255) DEFAULT NULL,
+  redirection_uris text DEFAULT NULL,
+  public_key text DEFAULT NULL,
+  lti_version varchar(10) DEFAULT NULL,
+  signature_method varchar(15) NOT NULL DEFAULT 'HMAC-SHA1',
+  settings text DEFAULT NULL,
+  enabled boolean NOT NULL,
+  enable_from timestamp DEFAULT NULL,
+  enable_until timestamp DEFAULT NULL,
+  last_access date DEFAULT NULL,
+  created timestamp NOT NULL,
+  updated timestamp NOT NULL,
+  PRIMARY KEY (tool_pk),
+  UNIQUE (initiate_login_url)
+);

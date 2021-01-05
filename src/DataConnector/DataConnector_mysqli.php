@@ -10,6 +10,7 @@ use ceLTIc\LTI\ResourceLinkShare;
 use ceLTIc\LTI\ResourceLinkShareKey;
 use ceLTIc\LTI\Platform;
 use ceLTIc\LTI\UserResult;
+use ceLTIc\LTI\Tool;
 use ceLTIc\LTI\Util;
 
 /**
@@ -1091,6 +1092,236 @@ class DataConnector_mysqli extends DataConnector
 
         return $ok;
     }
+
+###
+###  Tool methods
+###
+
+    /**
+     * Load tool object.
+     *
+     * @param Tool $tool  Tool object
+     *
+     * @return bool    True if the tool object was successfully loaded
+     */
+    public function loadTool($tool)
+    {
+        $ok = false;
+        if (!is_null($tool->getRecordId())) {
+            $sql = sprintf('SELECT tool_pk, name, consumer_key, secret, ' .
+                'message_url, initiate_login_url, redirection_uris, public_key, ' .
+                'lti_version, signature_method, settings, enabled, ' .
+                'enable_from, enable_until, last_access, created, updated ' .
+                "FROM {$this->dbTableNamePrefix}" . static::TOOL_TABLE_NAME . ' ' .
+                'WHERE tool_pk = %d', $tool->getRecordId());
+        } elseif (!empty($tool->initiateLoginUrl)) {
+            $sql = sprintf('SELECT tool_pk, name, consumer_key, secret, ' .
+                'message_url, initiate_login_url, redirection_uris, public_key, ' .
+                'lti_version, signature_method, settings, enabled, ' .
+                'enable_from, enable_until, last_access, created, updated ' .
+                "FROM {$this->dbTableNamePrefix}" . static::TOOL_TABLE_NAME . ' ' .
+                'WHERE initiate_login_url = %s', $this->escape($tool->initiateLoginUrl));
+        } else {
+            $sql = sprintf('SELECT tool_pk, name, consumer_key, secret, ' .
+                'message_url, initiate_login_url, redirection_uris, public_key, ' .
+                'lti_version, signature_method, settings, enabled, ' .
+                'enable_from, enable_until, last_access, created, updated ' .
+                "FROM {$this->dbTableNamePrefix}" . static::TOOL_TABLE_NAME . ' ' .
+                'WHERE consumer_key = %s', $this->escape($tool->getKey()));
+        }
+        $rsTool = $this->executeQuery($sql);
+        if ($rsTool) {
+            $row = mysqli_fetch_object($rsTool);
+            if ($row) {
+                $tool->setRecordId(intval($row->tool_pk));
+                $tool->name = $row->name;
+                $tool->setkey($row->consumer_key);
+                $tool->secret = $row->secret;
+                $tool->messageUrl = $row->message_url;
+                $tool->initiateLoginUrl = $row->initiate_login_url;
+                $tool->redirectionUris = json_decode($row->redirection_uris, true);
+                if (!is_array($tool->redirectionUris)) {
+                    $tool->redirectionUris = array();
+                }
+                $tool->rsaKey = $row->public_key;
+                $tool->ltiVersion = $row->lti_version;
+                $tool->signatureMethod = $row->signature_method;
+                $settings = json_decode($row->settings, true);
+                if (!is_array($settings)) {
+                    $settings = array();
+                }
+                $tool->setSettings($settings);
+                $tool->enabled = (intval($row->enabled) === 1);
+                $tool->enableFrom = null;
+                if (!is_null($row->enable_from)) {
+                    $tool->enableFrom = strtotime($row->enable_from);
+                }
+                $tool->enableUntil = null;
+                if (!is_null($row->enable_until)) {
+                    $tool->enableUntil = strtotime($row->enable_until);
+                }
+                $tool->lastAccess = null;
+                if (!is_null($row->last_access)) {
+                    $tool->lastAccess = strtotime($row->last_access);
+                }
+                $tool->created = strtotime($row->created);
+                $tool->updated = strtotime($row->updated);
+                $this->fixToolSettings($tool, false);
+                $ok = true;
+            }
+        }
+
+        return $ok;
+    }
+
+    /**
+     * Save tool object.
+     *
+     * @param Tool $tool  Tool object
+     *
+     * @return bool    True if the tool object was successfully saved
+     */
+    public function saveTool($tool)
+    {
+        $id = $tool->getRecordId();
+        $enabled = ($tool->enabled) ? 1 : 0;
+        $redirectionUrisValue = json_encode($tool->redirectionUris);
+        $this->fixToolSettings($tool, true);
+        $settingsValue = json_encode($tool->getSettings());
+        $this->fixToolSettings($tool, false);
+        $time = time();
+        $now = date("{$this->dateFormat} {$this->timeFormat}", $time);
+        $from = null;
+        if (!is_null($tool->enableFrom)) {
+            $from = date("{$this->dateFormat} {$this->timeFormat}", $tool->enableFrom);
+        }
+        $until = null;
+        if (!is_null($tool->enableUntil)) {
+            $until = date("{$this->dateFormat} {$this->timeFormat}", $tool->enableUntil);
+        }
+        $last = null;
+        if (!is_null($tool->lastAccess)) {
+            $last = date($this->dateFormat, $tool->lastAccess);
+        }
+        if (empty($id)) {
+            $sql = sprintf("INSERT INTO {$this->dbTableNamePrefix}" . static::TOOL_TABLE_NAME . ' (name, consumer_key, secret, ' .
+                'message_url, initiate_login_url, redirection_uris, public_key, ' .
+                'lti_version, signature_method, settings, enabled, enable_from, enable_until, ' .
+                'last_access, created, updated) ' .
+                'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %d, %s, %s, %s, %s, %s)', $this->escape($tool->name),
+                $this->escape($tool->getKey()), $this->escape($tool->secret), $this->escape($tool->messageUrl),
+                $this->escape($tool->initiateLoginUrl), $this->escape($redirectionUrisValue), $this->escape($tool->rsaKey),
+                $this->escape($tool->ltiVersion), $this->escape($tool->signatureMethod), $this->escape($settingsValue), $enabled,
+                $this->escape($from), $this->escape($until), $this->escape($last), $this->escape($now), $this->escape($now));
+        } else {
+            $sql = sprintf("UPDATE {$this->dbTableNamePrefix}" . static::TOOL_TABLE_NAME . ' SET ' .
+                'name = %s, consumer_key = %s, secret= %s, ' .
+                'message_url = %s, initiate_login_url = %s, redirection_uris = %s, public_key = %s, ' .
+                'lti_version = %s, signature_method = %s, settings = %s, enabled = %d, enable_from = %s, enable_until = %s, ' .
+                'last_access = %s, updated = %s ' .
+                'WHERE tool_pk = %d', $this->escape($tool->name), $this->escape($tool->getKey()), $this->escape($tool->secret),
+                $this->escape($tool->messageUrl), $this->escape($tool->initiateLoginUrl), $this->escape($redirectionUrisValue),
+                $this->escape($tool->rsaKey), $this->escape($tool->ltiVersion), $this->escape($tool->signatureMethod),
+                $this->escape($settingsValue), $enabled, $this->escape($from), $this->escape($until), $this->escape($last),
+                $this->escape($now), $tool->getRecordId());
+        }
+        $ok = $this->executeQuery($sql);
+        if ($ok) {
+            if (empty($id)) {
+                $tool->setRecordId(mysqli_insert_id($this->db));
+                $tool->created = $time;
+            }
+            $tool->updated = $time;
+        }
+
+        return $ok;
+    }
+
+    /**
+     * Delete tool object.
+     *
+     * @param Tool $tool  Tool object
+     *
+     * @return bool    True if the tool object was successfully deleted
+     */
+    public function deleteTool($tool)
+    {
+        $sql = sprintf('DELETE t ' .
+            "FROM {$this->dbTableNamePrefix}" . static::TOOL_TABLE_NAME . ' t ' .
+            'WHERE t.tool_pk = %d', $tool->getRecordId());
+        $ok = $this->executeQuery($sql);
+
+        if ($ok) {
+            $tool->initialize();
+        }
+
+        return $ok;
+    }
+
+    /**
+     * Load tool objects.
+     *
+     * @return Tool[] Array of all defined Tool objects
+     */
+    public function getTools()
+    {
+        $tools = array();
+
+        $sql = 'SELECT tool_pk, name, consumer_key, secret, ' .
+            'message_url, initiate_login_url, redirection_uris, public_key, ' .
+            'lti_version, signature_method, settings, enabled, ' .
+            'enable_from, enable_until, last_access, created, updated ' .
+            "FROM {$this->dbTableNamePrefix}" . static::TOOL_TABLE_NAME . ' ' .
+            'ORDER BY name';
+        $rsTools = $this->executeQuery($sql);
+        if ($rsTools) {
+            while ($row = mysqli_fetch_object($rsTools)) {
+                $tool = new Tool($this);
+                $tool->setRecordId(intval($row->tool_pk));
+                $tool->name = $row->name;
+                $tool->setkey($row->consumer_key);
+                $tool->secret = $row->secret;
+                $tool->messageUrl = $row->message_url;
+                $tool->initiateLoginUrl = $row->initiate_login_url;
+                $tool->redirectionUris = json_decode($row->redirection_uris, true);
+                if (!is_array($tool->redirectionUris)) {
+                    $tool->redirectionUris = array();
+                }
+                $tool->rsaKey = $row->public_key;
+                $tool->ltiVersion = $row->lti_version;
+                $tool->signatureMethod = $row->signature_method;
+                $settings = json_decode($row->settings, true);
+                if (!is_array($settings)) {
+                    $settings = array();
+                }
+                $tool->setSettings($settings);
+                $tool->enabled = (intval($row->enabled) === 1);
+                $tool->enableFrom = null;
+                if (!is_null($row->enable_from)) {
+                    $tool->enableFrom = strtotime($row->enable_from);
+                }
+                $tool->enableUntil = null;
+                if (!is_null($row->enable_until)) {
+                    $tool->enableUntil = strtotime($row->enable_until);
+                }
+                $tool->lastAccess = null;
+                if (!is_null($row->last_access)) {
+                    $platform->lastAccess = strtotime($row->last_access);
+                }
+                $tool->created = strtotime($row->created);
+                $tool->updated = strtotime($row->updated);
+                $this->fixToolSettings($tool, false);
+                $tools[] = $tool;
+            }
+            mysqli_free_result($rsTools);
+        }
+
+        return $tools;
+    }
+
+###
+###  Other methods
+###
 
     /**
      * Escape a string for use in a database query.

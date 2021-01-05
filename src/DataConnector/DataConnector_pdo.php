@@ -10,6 +10,7 @@ use ceLTIc\LTI\ResourceLinkShare;
 use ceLTIc\LTI\ResourceLinkShareKey;
 use ceLTIc\LTI\Platform;
 use ceLTIc\LTI\UserResult;
+use ceLTIc\LTI\Tool;
 use ceLTIc\LTI\Util;
 
 /**
@@ -1288,6 +1289,290 @@ class DataConnector_pdo extends DataConnector
         return $ok;
     }
 
+###
+###  Tool methods
+###
+
+    /**
+     * Load tool object.
+     *
+     * @param Tool $tool  Tool object
+     *
+     * @return bool    True if the tool object was successfully loaded
+     */
+    public function loadTool($tool)
+    {
+        $ok = false;
+        if (!is_null($tool->getRecordId())) {
+            $sql = 'SELECT tool_pk, name, consumer_key, secret, ' .
+                'message_url, initiate_login_url, redirection_uris, public_key, ' .
+                'lti_version, signature_method, settings, enabled, ' .
+                'enable_from, enable_until, last_access, created, updated ' .
+                "FROM {$this->dbTableNamePrefix}" . static::TOOL_TABLE_NAME . ' ' .
+                'WHERE tool_pk = :id';
+            $query = $this->db->prepare($sql);
+            $id = $tool->getRecordId();
+            $query->bindValue('id', $id, \PDO::PARAM_INT);
+        } elseif (!empty($tool->initiateLoginUrl)) {
+            $sql = 'SELECT tool_pk, name, consumer_key, secret, ' .
+                'message_url, initiate_login_url, redirection_uris, public_key, ' .
+                'lti_version, signature_method, settings, enabled, ' .
+                'enable_from, enable_until, last_access, created, updated ' .
+                "FROM {$this->dbTableNamePrefix}" . static::TOOL_TABLE_NAME . ' ' .
+                'WHERE initiate_login_url = :initiate_login_url';
+            $query = $this->db->prepare($sql);
+            $query->bindValue('initiate_login_url', $tool->initiateLoginUrl, \PDO::PARAM_STR);
+        } else {
+            $sql = 'SELECT tool_pk, name, consumer_key, secret, ' .
+                'message_url, initiate_login_url, redirection_uris, public_key, ' .
+                'lti_version, signature_method, settings, enabled, ' .
+                'enable_from, enable_until, last_access, created, updated ' .
+                "FROM {$this->dbTableNamePrefix}" . static::TOOL_TABLE_NAME . ' ' .
+                'WHERE consumer_key = :key';
+            $query = $this->db->prepare($sql);
+            $consumer_key = $tool->getKey();
+            $query->bindValue('key', $consumer_key, \PDO::PARAM_STR);
+        }
+        $ok = $this->executeQuery($sql, $query);
+        if ($ok) {
+            $row = $query->fetch(\PDO::FETCH_ASSOC);
+            $ok = ($row !== false);
+        }
+        if ($ok) {
+            $row = array_change_key_case($row);
+            $tool->setRecordId(intval($row['tool_pk']));
+            $tool->name = $row['name'];
+            $tool->setkey($row['consumer_key']);
+            $tool->secret = $row['secret'];
+            $tool->messageUrl = $row['message_url'];
+            $tool->initiateLoginUrl = $row['initiate_login_url'];
+            $tool->redirectionUris = json_decode($row['redirection_uris'], true);
+            if (!is_array($tool->redirectionUris)) {
+                $tool->redirectionUris = array();
+            }
+            $tool->rsaKey = $row['public_key'];
+            $tool->ltiVersion = $row['lti_version'];
+            $tool->signatureMethod = $row['signature_method'];
+            $settings = json_decode($row['settings'], true);
+            if (!is_array($settings)) {
+                $settings = array();
+            }
+            $tool->setSettings($settings);
+            $tool->enabled = (intval($row['enabled']) === 1);
+            $tool->enableFrom = null;
+            if (!is_null($row['enable_from'])) {
+                $tool->enableFrom = strtotime($row['enable_from']);
+            }
+            $tool->enableUntil = null;
+            if (!is_null($row['enable_until'])) {
+                $tool->enableUntil = strtotime($row['enable_until']);
+            }
+            $tool->lastAccess = null;
+            if (!is_null($row['last_access'])) {
+                $tool->lastAccess = strtotime($row['last_access']);
+            }
+            $tool->created = strtotime($row['created']);
+            $tool->updated = strtotime($row['updated']);
+            $this->fixToolSettings($tool, false);
+            $ok = true;
+        }
+
+        return $ok;
+    }
+
+    /**
+     * Save tool object.
+     *
+     * @param Tool $tool  Tool object
+     *
+     * @return bool    True if the tool object was successfully saved
+     */
+    public function saveTool($tool)
+    {
+        $id = $tool->getRecordId();
+        $consumer_key = $tool->getKey();
+        $enabled = ($tool->enabled) ? 1 : 0;
+        $redirectionUrisValue = json_encode($tool->redirectionUris);
+        $this->fixToolSettings($tool, true);
+        $settingsValue = json_encode($tool->getSettings());
+        $this->fixToolSettings($tool, false);
+        $time = time();
+        $now = date("{$this->dateFormat} {$this->timeFormat}", $time);
+        $from = null;
+        if (!is_null($tool->enableFrom)) {
+            $from = date("{$this->dateFormat} {$this->timeFormat}", $tool->enableFrom);
+        }
+        $until = null;
+        if (!is_null($tool->enableUntil)) {
+            $until = date("{$this->dateFormat} {$this->timeFormat}", $tool->enableUntil);
+        }
+        $last = null;
+        if (!is_null($tool->lastAccess)) {
+            $last = date($this->dateFormat, $tool->lastAccess);
+        }
+        if (empty($id)) {
+            $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::TOOL_TABLE_NAME . ' (name, consumer_key, secret, ' .
+                'message_url, initiate_login_url, redirection_uris, public_key, ' .
+                'lti_version, signature_method, settings, enabled, enable_from, enable_until, ' .
+                'last_access, created, updated) ' .
+                'VALUES (:name, :key, :secret, ' .
+                ':message_url, :initiate_login_url, :redirection_uris, :public_key, ' .
+                ':lti_version, :signature_method, :settings, :enabled, :enable_from, :enable_until, ' .
+                ':last_access, :created, :updated)';
+            $query = $this->db->prepare($sql);
+            $query->bindValue('name', $tool->name, \PDO::PARAM_STR);
+            $query->bindValue('key', $consumer_key, \PDO::PARAM_STR);
+            $query->bindValue('secret', $tool->secret, \PDO::PARAM_STR);
+            $query->bindValue('message_url', $tool->messageUrl, \PDO::PARAM_STR);
+            $query->bindValue('initiate_login_url', $tool->initiateLoginUrl, \PDO::PARAM_STR);
+            $query->bindValue('redirection_uris', $redirectionUrisValue, \PDO::PARAM_STR);
+            $query->bindValue('public_key', $tool->rsaKey, \PDO::PARAM_STR);
+            $query->bindValue('lti_version', $tool->ltiVersion, \PDO::PARAM_STR);
+            $query->bindValue('signature_method', $tool->signatureMethod, \PDO::PARAM_STR);
+            $query->bindValue('settings', $settingsValue, \PDO::PARAM_STR);
+            $query->bindValue('enabled', $enabled, \PDO::PARAM_INT);
+            $query->bindValue('enable_from', $from, \PDO::PARAM_STR);
+            $query->bindValue('enable_until', $until, \PDO::PARAM_STR);
+            $query->bindValue('last_access', $last, \PDO::PARAM_STR);
+            $query->bindValue('created', $now, \PDO::PARAM_STR);
+            $query->bindValue('updated', $now, \PDO::PARAM_STR);
+        } else {
+            $sql = "UPDATE {$this->dbTableNamePrefix}" . static::TOOL_TABLE_NAME . ' SET ' .
+                'name = :name, consumer_key = :key, secret= :secret, ' .
+                'message_url = :message_url, initiate_login_url = :initiate_login_url, redirection_uris = :redirection_uris, public_key = :public_key, ' .
+                'lti_version = :lti_version, signature_method = :signature_method, settings = :settings, enabled = :enabled, enable_from = :enable_from, enable_until = :enable_until, ' .
+                'last_access = :last_access, updated = :updated ' .
+                'WHERE tool_pk = :id';
+            $query = $this->db->prepare($sql);
+            $query->bindValue('name', $tool->name, \PDO::PARAM_STR);
+            $query->bindValue('key', $consumer_key, \PDO::PARAM_STR);
+            $query->bindValue('secret', $tool->secret, \PDO::PARAM_STR);
+            $query->bindValue('message_url', $tool->messageUrl, \PDO::PARAM_STR);
+            $query->bindValue('initiate_login_url', $tool->initiateLoginUrl, \PDO::PARAM_STR);
+            $query->bindValue('redirection_uris', $redirectionUrisValue, \PDO::PARAM_STR);
+            $query->bindValue('public_key', $tool->rsaKey, \PDO::PARAM_STR);
+            $query->bindValue('lti_version', $tool->ltiVersion, \PDO::PARAM_STR);
+            $query->bindValue('signature_method', $tool->signatureMethod, \PDO::PARAM_STR);
+            $query->bindValue('settings', $settingsValue, \PDO::PARAM_STR);
+            $query->bindValue('enabled', $enabled, \PDO::PARAM_INT);
+            $query->bindValue('enable_from', $from, \PDO::PARAM_STR);
+            $query->bindValue('enable_until', $until, \PDO::PARAM_STR);
+            $query->bindValue('last_access', $last, \PDO::PARAM_STR);
+            $query->bindValue('updated', $now, \PDO::PARAM_STR);
+            $query->bindValue('id', $id, \PDO::PARAM_INT);
+        }
+        $ok = $this->executeQuery($sql, $query);
+        if ($ok) {
+            if (empty($id)) {
+                $tool->setRecordId($this->getLastInsertId(static::TOOL_TABLE_NAME));
+                $tool->created = $time;
+            }
+            $tool->updated = $time;
+        }
+
+        return $ok;
+    }
+
+    /**
+     * Delete tool object.
+     *
+     * @param Tool $tool  Tool object
+     *
+     * @return bool    True if the tool object was successfully deleted
+     */
+    public function deleteTool($tool)
+    {
+        $id = $tool->getRecordId();
+
+        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::TOOL_TABLE_NAME . ' ' .
+            'WHERE tool_pk = :id';
+        $query = $this->db->prepare($sql);
+        $query->bindValue('id', $id, \PDO::PARAM_INT);
+        $ok = $this->executeQuery($sql, $query);
+
+        if ($ok) {
+            $tool->initialize();
+        }
+
+        return $ok;
+    }
+
+    /**
+     * Load tool objects.
+     *
+     * @return Tool[] Array of all defined Tool objects
+     */
+    public function getTools()
+    {
+        $tools = array();
+
+        $sql = 'SELECT tool_pk, name, consumer_key, secret, ' .
+            'message_url, initiate_login_url, redirection_uris, public_key, ' .
+            'lti_version, signature_method, settings, enabled, ' .
+            'enable_from, enable_until, last_access, created, updated ' .
+            "FROM {$this->dbTableNamePrefix}" . static::TOOL_TABLE_NAME . ' ' .
+            'ORDER BY name';
+        $query = $this->db->prepare($sql);
+        $ok = ($query !== false);
+
+        if ($ok) {
+            $ok = $this->executeQuery($sql, $query);
+        }
+
+        if ($ok) {
+            while ($row = $query->fetch(\PDO::FETCH_ASSOC)) {
+                $row = array_change_key_case($row);
+                $tool = new Tool($this);
+                $tool->setRecordId(intval($row['tool_pk']));
+                $tool->name = $row['name'];
+                $tool->setkey($row['consumer_key']);
+                $tool->secret = $row['secret'];
+                $tool->messageUrl = $row['message_url'];
+                $tool->initiateLoginUrl = $row['initiate_login_url'];
+                $tool->redirectionUris = json_decode($row['redirection_uris'], true);
+                if (!is_array($tool->redirectionUris)) {
+                    $tool->redirectionUris = array();
+                }
+                $tool->rsaKey = $row['public_key'];
+                $tool->ltiVersion = $row['lti_version'];
+                $tool->signatureMethod = $row['signature_method'];
+                $settings = json_decode($row['settings'], true);
+                if (!is_array($settings)) {
+                    $settings = array();
+                }
+                $tool->setSettings($settings);
+                $tool->enabled = (intval($row['enabled']) === 1);
+                $tool->enableFrom = null;
+                if (!is_null($row['enable_from'])) {
+                    $tool->enableFrom = strtotime($row['enable_from']);
+                }
+                $tool->enableUntil = null;
+                if (!is_null($row['enable_until'])) {
+                    $tool->enableUntil = strtotime($row['enable_until']);
+                }
+                $tool->lastAccess = null;
+                if (!is_null($row['last_access'])) {
+                    $platform->lastAccess = strtotime($row['last_access']);
+                }
+                $tool->created = strtotime($row['created']);
+                $tool->updated = strtotime($row['updated']);
+                $this->fixToolSettings($tool, false);
+                $tools[] = $tool;
+            }
+        }
+
+        return $tools;
+    }
+
+###
+###  Other methods
+###
+
+    /**
+     * Get the ID for the last record inserted into a table.
+     *
+     * @return int  Id of last inserted record
+     */
     protected function getLastInsertId($tableName)
     {
         return intval($this->db->lastInsertId());
