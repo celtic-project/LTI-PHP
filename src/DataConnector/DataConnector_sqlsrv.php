@@ -1132,7 +1132,6 @@ class DataConnector_sqlsrv extends DataConnector
                 "FROM {$this->dbTableNamePrefix}" . static::TOOL_TABLE_NAME . ' ' .
                 'WHERE consumer_key = %s', $this->escape($tool->getKey()));
         }
-        error_log(var_export($sql, true));
         $rsTool = $this->executeQuery($sql);
         if ($rsTool) {
             $row = sqlsrv_fetch_object($rsTool);
