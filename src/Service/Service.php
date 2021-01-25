@@ -150,7 +150,6 @@ class Service
                             $accessToken->get($this->scope, true);
                             $retried = true;
                             if (!$accessToken->hasScope($this->scope)) {
-                                $this->http = new HttpMessage($url, $method, $body);
                                 break;
                             }
                         }

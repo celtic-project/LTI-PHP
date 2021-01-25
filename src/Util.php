@@ -99,6 +99,7 @@ final class Util
         'tool_consumer_instance_url' => array('suffix' => '', 'group' => 'tool_platform', 'claim' => 'url'),
         'tool_state' => array('suffix' => '', 'group' => 'tool', 'claim' => 'state'),
         'custom_context_memberships_v2_url' => array('suffix' => 'nrps', 'group' => 'namesroleservice', 'claim' => 'context_memberships_url'),
+        'custom_nrps_versions' => array('suffix' => 'nrps', 'group' => 'namesroleservice', 'claim' => 'service_versions', 'isArray' => true),
         'custom_lineitems_url' => array('suffix' => 'ags', 'group' => 'endpoint', 'claim' => 'lineitems'),
         'custom_lineitem_url' => array('suffix' => 'ags', 'group' => 'endpoint', 'claim' => 'lineitem'),
         'custom_ags_scopes' => array('suffix' => 'ags', 'group' => 'endpoint', 'claim' => 'scope', 'isArray' => true),
