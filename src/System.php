@@ -852,6 +852,7 @@ trait System
      */
     private function parseClaims()
     {
+        $errors = array();
         foreach (Util::JWT_CLAIM_MAPPING as $key => $mapping) {
             $claim = Util::JWT_CLAIM_PREFIX;
             if (!empty($mapping['suffix'])) {
@@ -880,7 +881,7 @@ trait System
                 if (!is_null($value)) {
                     if (isset($mapping['isArray']) && $mapping['isArray']) {
                         if (!is_array($value)) {
-                            $this->ok = false;
+                            $errors[] = "'{$claim}' claim must be an array";
                         } else {
                             $value = implode(',', $value);
                         }
@@ -923,7 +924,7 @@ trait System
         if ($this->jwt->hasClaim($claim)) {
             $custom = $this->jwt->getClaim($claim);
             if (!is_array($custom) && !is_object($custom)) {
-                $this->ok = false;
+                $errors[] = "'{$claim}' claim must be an object";
             } else {
                 foreach ($custom as $key => $value) {
                     $this->messageParameters["custom_{$key}"] = $value;
@@ -934,12 +935,16 @@ trait System
         if ($this->jwt->hasClaim($claim)) {
             $ext = $this->jwt->getClaim($claim);
             if (!is_array($ext) && !is_object($ext)) {
-                $this->ok = false;
+                $errors[] = "'{$claim}' claim must be an object";
             } else {
                 foreach ($ext as $key => $value) {
                     $this->messageParameters["ext_{$key}"] = $value;
                 }
             }
+        }
+        if (!empty($errors)) {
+            $this->ok = false;
+            $this->reason = 'Invalid JWT: ' . implode(', ', $errors);
         }
     }
 
