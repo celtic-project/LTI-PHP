@@ -63,6 +63,7 @@ class Tool
      * Names of LTI parameters to be retained in the context settings property.
      */
     private static $LTI_CONTEXT_SETTING_NAMES = array('custom_context_setting_url',
+        'ext_ims_lis_memberships_id', 'ext_ims_lis_memberships_url',
         'custom_context_memberships_url', 'custom_context_memberships_v2_url', 'custom_lineitems_url', 'custom_ags_scopes'
     );
 
@@ -191,7 +192,7 @@ class Tool
      *
      * @var string $message
      */
-    public $message = self::CONNECTION_ERROR_MESSAGE;
+    public $message = null;
 
     /**
      * Base URL for tool service
@@ -634,6 +635,17 @@ class Tool
         }
         $this->getRegistrationResponsePage($toolConfig);
         $this->ok = true;
+    }
+
+    /**
+     * Process a login initiation request
+     *
+     * @param array $requestParameters  Request parameters
+     * @param array $authParameters     Authentication request parameters
+     */
+    protected function onInitiateLogin($requestParameters, &$authParameters)
+    {
+
     }
 
     /**
@@ -1087,6 +1099,7 @@ EOD;
     private function result()
     {
         if (!$this->ok) {
+            $this->message = self::CONNECTION_ERROR_MESSAGE;
             $this->onError();
         }
         if (!$this->ok) {
@@ -1298,7 +1311,11 @@ EOD;
             if ($this->ok) {
                 $this->ok = !is_null($this->platform->created);
                 if (!$this->ok) {
-                    $this->reason = 'Invalid consumer key: ' . $this->messageParameters['oauth_consumer_key'];
+                    if (empty($this->jwt) || !$this->jwt->hasJwt()) {
+                        $this->reason = "Consumer key not recognised: {$this->messageParameters['oauth_consumer_key']}";
+                    } else {
+                        $this->reason = "Platform not recognised (Platform ID | Client ID | Deployment ID): {$this->messageParameters['platform_id']} | {$this->messageParameters['oauth_consumer_key']} | {$this->messageParameters['deployment_id']}";
+                    }
                 }
             }
             if ($this->ok) {
@@ -1919,6 +1936,7 @@ EOD;
                 if (!empty($parameters['lti_message_hint'])) {
                     $params['lti_message_hint'] = $parameters['lti_message_hint'];
                 }
+                $this->onInitiateLogin($parameters, $params);
                 $this->output = Util::sendForm($this->platform->authenticationUrl, $params);
             } else {
                 $this->reason = 'Unable to generate a state value.';

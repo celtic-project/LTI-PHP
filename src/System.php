@@ -400,6 +400,9 @@ trait System
                 }
             }
             $messageClaims = array();
+            if (!empty($messageParameters['oauth_consumer_key'])) {
+                $messageClaims['aud'] = array($messageParameters['oauth_consumer_key']);
+            }
             foreach ($messageParameters as $key => $value) {
                 $ok = true;
                 if (array_key_exists($key, Util::JWT_CLAIM_MAPPING)) {
@@ -734,7 +737,6 @@ trait System
             if (!$ok) {
                 $this->reason = 'Invalid nonce.';
             } elseif (!empty($publicKey) || !empty($jku) || Jwt::$allowJkuHeader) {
-                unset($this->messageParameters['oauth_consumer_key']);
                 $ok = $this->jwt->verify($publicKey, $jku);
                 if (!$ok) {
                     $this->reason = 'JWT signature check failed - perhaps an invalid public key or timestamp';
@@ -838,6 +840,9 @@ trait System
             } elseif (isset($this->rawParameters['error'])) {  // Error with JWT-signed message
                 $this->ok = false;
                 $this->reason = $this->rawParameters['error'];
+                if (!empty($this->rawParameters['error_description'])) {
+                    $this->reason .= ": {$this->rawParameters['error_description']}";
+                }
             } else {  // OAuth
                 if (isset($this->rawParameters['oauth_consumer_key']) && ($this instanceof Tool)) {
                     $this->platform = Platform::fromConsumerKey($this->rawParameters['oauth_consumer_key'], $this->dataConnector);
