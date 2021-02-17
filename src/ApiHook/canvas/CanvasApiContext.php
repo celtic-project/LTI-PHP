@@ -28,6 +28,32 @@ class CanvasApiContext extends ApiContext
     }
 
     /**
+     * Get course group sets and groups.
+     *
+     * @return bool  True if the request was successful
+     */
+    public function getGroups()
+    {
+        $ok = false;
+        $platform = $this->sourceObject->getPlatform();
+        $this->domain = $platform->getSetting('canvas.domain');
+        $this->token = $platform->getSetting('canvas.token');
+        $this->courseId = $this->sourceObject->getSetting('custom_canvas_course_id');
+        $perPage = $platform->getSetting('canvas.per_page', strval(self::$DEFAULT_PER_PAGE));
+        if (!is_numeric($perPage)) {
+            $perPage = self::$DEFAULT_PER_PAGE;
+        }
+        $prefix = $platform->getSetting('canvas.group_set_prefix');
+        if ($this->domain && $this->token && $this->courseId) {
+            if ($this->setGroupSets($perPage, $prefix)) {
+                $ok = $this->setGroups($perPage, array());
+            }
+        }
+
+        return $ok;
+    }
+
+    /**
      * Get memberships.
      *
      * @param bool    $withGroups True is group information is to be requested as well

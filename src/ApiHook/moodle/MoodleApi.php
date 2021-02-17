@@ -43,6 +43,8 @@ trait MoodleApi
 
     /**
      * Check if the API hook has been configured.
+     *
+     * @return bool  True if the API hook has been configured
      */
     public function isConfigured()
     {
@@ -93,6 +95,7 @@ trait MoodleApi
      */
     private function setGroupings($prefix)
     {
+        $ok = false;
         $this->sourceObject->groupSets = array();
         $this->sourceObject->groups = array();
         $params = array(
@@ -109,6 +112,7 @@ trait MoodleApi
             );
             $groupings = $this->callMoodleApi('core_group_get_groupings', $params);
             if (is_array($groupings)) {
+                $ok = true;
                 foreach ($groupings as $grouping) {
                     if (!empty($grouping->groups) && (empty($prefix) || (strpos($grouping->name, $prefix) === 0))) {
                         $groupingId = strval($grouping->id);
@@ -123,6 +127,8 @@ trait MoodleApi
                 }
             }
         }
+
+        return $ok;
     }
 
     /**

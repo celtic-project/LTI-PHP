@@ -43,6 +43,8 @@ trait CanvasApi
 
     /**
      * Check if the API hook has been configured.
+     *
+     * @return bool  True if the API hook has been configured
      */
     public function isConfigured()
     {
@@ -117,6 +119,8 @@ trait CanvasApi
                 }
             }
         } while ($url);
+
+        return $http->ok;
     }
 
     /**
@@ -288,6 +292,8 @@ trait CanvasApi
                 }
             }
         } while ($url);
+
+        return $http->ok;
     }
 
 }

@@ -28,6 +28,33 @@ class MoodleApiContext extends ApiContext
     }
 
     /**
+     * Get course group sets and groups.
+     *
+     * @return bool  True if the request was successful
+     */
+    public function getGroups()
+    {
+        $this->courseId = $this->context->ltiContextId;
+        $platform = $this->sourceObject->getPlatform();
+        $this->url = $platform->getSetting('moodle.url');
+        $this->token = $platform->getSetting('moodle.token');
+        $perPage = $platform->getSetting('moodle.per_page', '');
+        if (!is_numeric($perPage)) {
+            $perPage = self::$DEFAULT_PER_PAGE;
+        } else {
+            $perPage = intval($perPage);
+        }
+        $prefix = $platform->getSetting('moodle.grouping_prefix');
+        if ($this->url && $this->token && $this->courseId) {
+            $ok = $this->setGroupings($prefix);
+        } else {
+            $ok = false;
+        }
+
+        return $ok;
+    }
+
+    /**
      * Get Memberships.
      *
      * @param bool    $withGroups True is group information is to be requested as well

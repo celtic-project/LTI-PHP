@@ -95,14 +95,27 @@ class ResourceLink
     public $ltiResourceLinkId = null;
 
     /**
-     * UserResult group sets (null if the platform does not support the groups enhancement)
+     * User group sets (null if the platform does not support the groups enhancement)
+     *
+     * A group set is represented by an associative array with the following elements:
+     *   - title
+     *   - groups (array of group IDs)
+     *   - num_members
+     *   - num_staff
+     *   - num_learners
+     * The array key value is the group set ID.
      *
      * @var array|null $groupSets
      */
     public $groupSets = null;
 
     /**
-     * UserResult groups (null if the platform does not support the groups enhancement)
+     * User groups (null if the platform does not support the groups enhancement)
+     *
+     * A group is represented by an associative array with the following elements:
+     *   - title
+     *   - set (ID of group set, omitted if the group is not part of a set)
+     * The array key value is the group ID.
      *
      * @var array|null $groups
      */

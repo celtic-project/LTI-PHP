@@ -23,6 +23,11 @@ trait ApiHook
     public static $CONTEXT_ID_HOOK = "ContextId";
 
     /**
+     * Course Groups service hook name.
+     */
+    public static $GROUPS_SERVICE_HOOK = "Groups";
+
+    /**
      * Memberships service hook name.
      */
     public static $MEMBERSHIPS_SERVICE_HOOK = "Memberships";

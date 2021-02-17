@@ -33,10 +33,22 @@ class ApiContext
 
     /**
      * Check if the API hook has been configured.
+     *
+     * @return bool  True if the API hook has been configured
      */
     public function isConfigured()
     {
         return true;
+    }
+
+    /**
+     * Get course group sets and groups.
+     *
+     * @return bool  True if the request was successful
+     */
+    public function getGroups()
+    {
+        return false;
     }
 
     /**

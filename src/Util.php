@@ -84,6 +84,7 @@ final class Util
         'user_id' => array('suffix' => '', 'group' => null, 'claim' => 'sub'),
         'user_image' => array('suffix' => '', 'group' => null, 'claim' => 'picture'),
         'roles' => array('suffix' => '', 'group' => '', 'claim' => 'roles', 'isArray' => true),
+        'platform_id' => array('suffix' => '', 'group' => null, 'claim' => 'iss'),
         'deployment_id' => array('suffix' => '', 'group' => '', 'claim' => 'deployment_id'),
         'lti_message_type' => array('suffix' => '', 'group' => '', 'claim' => 'message_type'),
         'lti_version' => array('suffix' => '', 'group' => '', 'claim' => 'version'),
@@ -103,6 +104,10 @@ final class Util
         'custom_lineitems_url' => array('suffix' => 'ags', 'group' => 'endpoint', 'claim' => 'lineitems'),
         'custom_lineitem_url' => array('suffix' => 'ags', 'group' => 'endpoint', 'claim' => 'lineitem'),
         'custom_ags_scopes' => array('suffix' => 'ags', 'group' => 'endpoint', 'claim' => 'scope', 'isArray' => true),
+        'custom_context_groups_url' => array('suffix' => 'gs', 'group' => 'groupsservice', 'claim' => 'context_groups_url'),
+        'custom_context_group_sets_url' => array('suffix' => 'gs', 'group' => 'groupsservice', 'claim' => 'context_group_sets_url'),
+        'custom_gs_scopes' => array('suffix' => 'gs', 'group' => 'groupsservice', 'claim' => 'scope', 'isArray' => true),
+        'custom_gs_versions' => array('suffix' => 'gs', 'group' => 'groupsservice', 'claim' => 'service_versions', 'isArray' => true),
         'lis_outcome_service_url' => array('suffix' => 'bos', 'group' => 'basicoutcomesservice', 'claim' => 'lis_outcome_service_url'),
         'lis_result_sourcedid' => array('suffix' => 'bos', 'group' => 'basicoutcomesservice', 'claim' => 'lis_result_sourcedid')
     );

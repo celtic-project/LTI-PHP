@@ -40,14 +40,27 @@ class Context
     public $type = null;
 
     /**
-     * UserResult group sets (null if the platform does not support the groups enhancement)
+     * User group sets (null if the platform does not support the groups enhancement)
+     *
+     * A group set is represented by an associative array with the following elements:
+     *   - title
+     *   - groups (array of group IDs)
+     *   - num_members
+     *   - num_staff
+     *   - num_learners
+     * The array key value is the group set ID.
      *
      * @var array|null $groupSets
      */
     public $groupSets = null;
 
     /**
-     * UserResult groups (null if the platform does not support the groups enhancement)
+     * User groups (null if the platform does not support the groups enhancement)
+     *
+     * A group is represented by an associative array with the following elements:
+     *   - title
+     *   - set (ID of group set, omitted if the group is not part of a set)
+     * The array key value is the group ID.
      *
      * @var array|null $groups
      */
@@ -419,6 +432,43 @@ class Context
     }
 
     /**
+     * Check if a Course Group service is available.
+     *
+     * @return bool    True if this context supports a Course Group service
+     */
+    public function hasGroupService()
+    {
+        $has = !empty($this->getSetting('custom_context_groups_url'));
+        if (!$has) {
+            $has = self::hasConfiguredApiHook(self::$MEMBERSHIPS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode(), $this);
+        }
+        return $has;
+    }
+
+    /**
+     * Get course group sets and groups.
+     *
+     * @return bool  True if the request was successful
+     */
+    public function getGroups()
+    {
+        $groupsUrl = $this->getSetting('custom_context_groups_url');
+        $groupsetsUrl = $this->getSetting('custom_context_group_sets_url');
+        $service = new Service\Groups($this, $groupsUrl, $groupsetsUrl);
+        $ok = $service->get();
+        if (!empty($service->getHttpMessage())) {
+            $this->lastServiceRequest = $service->getHttpMessage();
+        }
+        if (!$ok && $this->hasConfiguredApiHook(self::$GROUPS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode(), $this)) {
+            $className = $this->getApiHook(self::$GROUPS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode());
+            $hook = new $className($this);
+            $ok = $hook->getGroups();
+        }
+
+        return $ok;
+    }
+
+    /**
      * Check if the Membership service is supported.
      *
      * @deprecated Use hasMembershipsService() instead
@@ -473,10 +523,13 @@ class Context
     {
         $ok = false;
         $userResults = array();
-        $hasLtiService = !empty($this->getSetting('custom_context_memberships_url')) || !empty($this->getSetting('custom_context_memberships_v2_url'));
+        $hasMembershipsService = !empty($this->getSetting('custom_context_memberships_url'));
+        $hasNRPService = !empty($this->getSetting('custom_context_memberships_v2_url'));
+        $hasGroupsService = !empty($this->getSetting('custom_context_groups_url')) ||
+            $this->hasConfiguredApiHook(self::$GROUPS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode(), $this);
         $hasApiHook = $this->hasConfiguredApiHook(self::$MEMBERSHIPS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode(), $this);
-        if ($hasLtiService && (!$withGroups || !$hasApiHook)) {
-            if (!empty($this->getSetting('custom_context_memberships_v2_url'))) {
+        if (($hasMembershipsService || $hasNRPService) && (!$withGroups || ($hasNRPService && $hasGroupsService) || !$hasApiHook)) {
+            if ($hasNRPService) {
                 $url = $this->getSetting('custom_context_memberships_v2_url');
                 $format = Service\Membership::MEDIA_TYPE_MEMBERSHIPS_NRPS;
             } else {
@@ -484,8 +537,14 @@ class Context
                 $format = Service\Membership::MEDIA_TYPE_MEMBERSHIPS_V1;
             }
             $service = new Service\Membership($this, $url, $format);
-            $userResults = $service->get();
-            $this->lastServiceRequest = $service->getHttpMessage();
+            if (!$withGroups || !$hasNRPService) {
+                $userResults = $service->get();
+            } else {
+                $userResults = $service->getWithGroups();
+            }
+            if (!empty($service->getHttpMessage())) {
+                $this->lastServiceRequest = $service->getHttpMessage();
+            }
             $ok = $userResults !== false;
         }
         if (!$ok && $hasApiHook) {

@@ -64,6 +64,33 @@ class Membership extends Service
      */
     public function get($role = null, $limit = 0)
     {
+        return $this->getMembers(false, $role, $limit);
+    }
+
+    /**
+     * Get the memberships.
+     *
+     * @param string    $role   Role for which memberships are to be requested (optional, default is all roles)
+     * @param int       $limit  Limit on the number of memberships to be returned (optional, default is all)
+     *
+     * @return mixed The array of UserResult objects if successful, otherwise false
+     */
+    public function getWithGroups($role = null, $limit = 0)
+    {
+        return $this->getMembers(true, $role, $limit);
+    }
+
+    /**
+     * Get the memberships.
+     *
+     * @param bool      $withGroups True is group information is to be requested as well
+     * @param string    $role   Role for which memberships are to be requested (optional, default is all roles)
+     * @param int       $limit  Limit on the number of memberships to be returned (optional, default is all)
+     *
+     * @return mixed The array of UserResult objects if successful, otherwise false
+     */
+    private function getMembers($withGroups, $role = null, $limit = 0)
+    {
         $isLink = is_a($this->source, 'ceLTIc\LTI\ResourceLink');
         $parameters = array();
         if (!empty($role)) {
@@ -74,9 +101,12 @@ class Membership extends Service
         }
         if ($isLink) {
             $parameters['rlid'] = $this->source->getId();
+        } elseif ($withGroups && ($this->mediaType === self::MEDIA_TYPE_MEMBERSHIPS_NRPS)) {
+            $this->source->getGroups();
+            $parameters['groups'] = 'true';
         }
         $http = $this->send('GET', $parameters);
-        if (!$http->ok) {
+        if (empty($http) || !$http->ok) {
             $userResults = false;
         } else {
             $userResults = array();
@@ -241,6 +271,25 @@ class Membership extends Service
                         }
                     }
                     $userResults[] = $userresult;
+                    if (isset($member->group_enrollments)) {
+                        $userresult->groups = array();
+                        foreach ($member->group_enrollments as $group) {
+                            $groupId = $group->group_id;
+                            if (!array_key_exists($groupId, $this->source->groups)) {
+                                $this->source->groups[$groupId] = array('title' => "Group {$groupId}");
+                            }
+                            if (!empty($this->source->groups[$groupId]['set'])) {
+                                $this->source->groupSets[$this->source->groups[$groupId]['set']]['num_members']++;
+                                if ($userresult->isStaff()) {
+                                    $this->source->groupSets[$this->source->groups[$groupId]['set']]['num_staff']++;
+                                }
+                                if ($userresult->isLearner()) {
+                                    $this->source->groupSets[$this->source->groups[$groupId]['set']]['num_learners']++;
+                                }
+                            }
+                            $userresult->groups[] = $groupId;
+                        }
+                    }
 
 // Remove old user (if it exists)
                     if ($isLink) {
