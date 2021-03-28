@@ -15,14 +15,14 @@ class ApiTool
     /**
      * Tool object.
      *
-     * @var \ceLtic\LTI\Tool|null $tool
+     * @var \ceLTIc\LTI\Tool|null $tool
      */
     protected $tool = null;
 
     /**
      * Class constructor.
      *
-     * @param \ceLtic\LTI\Tool|null $tool
+     * @param \ceLTIc\LTI\Tool|null $tool
      */
     public function __construct($tool)
     {

@@ -1120,9 +1120,8 @@ EOD;
                     if (isset($this->messageParameters['data'])) {
                         $formParams['data'] = $this->messageParameters['data'];
                     }
-                    $version = (isset($this->messageParameters['lti_version'])) ? $this->messageParameters['lti_version'] : Util::LTI_VERSION1;
-                    $formParams = $this->signParameters($errorUrl, 'ContentItemSelection', $version, $formParams);
-                    $page = Util::sendForm($errorUrl, $formParams);
+                    $this->version = (isset($this->messageParameters['lti_version'])) ? $this->messageParameters['lti_version'] : Util::LTI_VERSION1;
+                    $page = $this->sendMessage($errorUrl, 'ContentItemSelection', $formParams);
                     echo $page;
                 } else {
                     if (strpos($errorUrl, '?') === false) {
@@ -1219,6 +1218,12 @@ EOD;
                 $this->ok = isset($this->messageParameters['resource_link_id']) && (strlen(trim($this->messageParameters['resource_link_id'])) > 0);
                 if (!$this->ok) {
                     $this->reason = 'Missing resource link ID.';
+                }
+                if ($this->ok && ($this->messageParameters['lti_version'] === Util::LTI_VERSION1P3)) {
+                    $this->ok = isset($this->messageParameters['roles']);
+                    if (!$this->ok) {
+                        $this->reason = 'Missing roles parameter.';
+                    }
                 }
             } elseif ($this->messageParameters['lti_message_type'] === 'ContentItemSelectionRequest') {
                 $mediaTypes = array();

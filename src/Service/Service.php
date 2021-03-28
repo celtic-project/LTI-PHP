@@ -150,6 +150,9 @@ class Service
                             $accessToken->get($this->scope, true);
                             $retried = true;
                             if (!$accessToken->hasScope($this->scope)) {
+                                if (empty($this->http)) {
+                                    $this->http = new HttpMessage($url);
+                                }
                                 break;
                             }
                         }
@@ -157,9 +160,8 @@ class Service
                 }
                 $header = $this->platform->signServiceRequest($url, $method, $this->mediaType, $body);
             }
-// Connect to platform
+// Connect to platform and parse JSON response
             $this->http = new HttpMessage($url, $method, $body, $header);
-// Parse JSON response
             if ($this->http->send() && !empty($this->http->response)) {
                 $this->http->responseJson = json_decode($this->http->response);
                 $this->http->ok = !is_null($this->http->responseJson);

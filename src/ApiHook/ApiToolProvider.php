@@ -20,7 +20,7 @@ class ApiToolProvider extends ApiTool
     /**
      * Class constructor.
      *
-     * @param \ceLtic\LTI\ToolProvider|null $toolProvider
+     * @param \ceLTIc\LTI\ToolProvider|null $toolProvider
      */
     public function __construct($toolProvider)
     {

@@ -22,12 +22,12 @@ class Score extends AssignmentGrade
     /**
      * Class constructor.
      *
-     * @param Tool         $tool       Tool object for this service request
+     * @param Platform     $platform   Platform object for this service request
      * @param string       $endpoint   Service endpoint
      */
-    public function __construct($tool, $endpoint)
+    public function __construct($platform, $endpoint)
     {
-        parent::__construct($tool, $endpoint, '/scores');
+        parent::__construct($platform, $endpoint, '/scores');
         $this->scope = self::$SCOPE;
         $this->mediaType = 'application/vnd.ims.lis.v1.score+json';
     }
@@ -49,12 +49,12 @@ class Score extends AssignmentGrade
                 'scoreMaximum' => $ltiOutcome->getPointsPossible(),
                 'comment' => $ltiOutcome->comment,
                 'activityProgress' => $ltiOutcome->activityProgress,
-                'gradingProgress' => $ltiOutcome->gradingProgress,
+                'gradingProgress' => $ltiOutcome->gradingProgress
             );
         } else {
             $json = array(
                 'activityProgress' => 'Initialized',
-                'gradingProgress' => 'NotReady',
+                'gradingProgress' => 'NotReady'
             );
         }
         $json['userId'] = $user->ltiUserId;

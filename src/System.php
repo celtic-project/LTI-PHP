@@ -559,7 +559,9 @@ trait System
             if (!empty($this->deploymentId)) {
                 $params['lti_deployment_id'] = $this->deploymentId;
             }
-            $url = Tool::$defaultTool->initiateLoginUrl;
+            if (!empty(Tool::$defaultTool)) {
+                $url = Tool::$defaultTool->initiateLoginUrl;
+            }
         } else {
             $params = $this->signParameters($url, $type, $version, $params);
         }
