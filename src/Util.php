@@ -162,6 +162,23 @@ final class Util
     public static $logLevel = self::LOGLEVEL_NONE;
 
     /**
+     * Check whether the request received could be an LTI message.
+     *
+     * @return bool
+     */
+    public static function isLtiMessage()
+    {
+        $isLti = ($_SERVER['REQUEST_METHOD'] === 'POST') &&
+            (!empty($_POST['lti_message_type']) || !empty($_POST['id_token']) || !empty($_POST['JWT']) ||
+            !empty($_POST['iss']));
+        if (!$isLti) {
+            $isLti = ($_SERVER['REQUEST_METHOD'] === 'GET') && (!empty($_GET['iss']) || !empty($_GET['openid_configuration']));
+        }
+
+        return $isLti;
+    }
+
+    /**
      * Return GET and POST request parameters (POST parameters take precedence)
      *
      * @return array
