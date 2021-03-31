@@ -667,6 +667,57 @@ trait System
     }
 
     /**
+     * Verify the required properties of an LTI message.
+     *
+     * @return bool  True if it is a valid LTI message
+     */
+    public function checkMessage()
+    {
+        $this->ok = $_SERVER['REQUEST_METHOD'] === 'POST';
+        if (!$this->ok) {
+            $this->reason = 'LTI messages must use HTTP POST';
+        } elseif (!empty($this->jwt) && !empty($this->jwt->hasJwt())) {
+            $this->ok = false;
+            if (is_null($this->messageParameters['oauth_consumer_key']) || (strlen($this->messageParameters['oauth_consumer_key']) <= 0)) {
+                $this->reason = 'Missing iss claim';
+            } elseif (empty($this->jwt->getClaim('iat', ''))) {
+                $this->reason = 'Missing iat claim';
+            } elseif (empty($this->jwt->getClaim('exp', ''))) {
+                $this->reason = 'Missing exp claim';
+            } elseif (intval($this->jwt->getClaim('iat')) > intval($this->jwt->getClaim('exp'))) {
+                $this->reason = 'iat claim must not have a value greater than exp claim';
+            } elseif (empty($this->jwt->getClaim('nonce', ''))) {
+                $this->reason = 'Missing nonce claim';
+            } else {
+                $this->ok = true;
+            }
+        }
+// Set signature method from request
+        if (isset($this->messageParameters['oauth_signature_method'])) {
+            $this->signatureMethod = $this->messageParameters['oauth_signature_method'];
+            if (($this instanceof Tool) && !empty($this->platform)) {
+                $this->platform->signatureMethod = $this->signatureMethod;
+            }
+        }
+// Check all required launch parameters
+        if ($this->ok) {
+            $this->ok = isset($this->messageParameters['lti_message_type']);
+            if (!$this->ok) {
+                $this->reason = 'Missing lti_message_type parameter.';
+            }
+        }
+        if ($this->ok) {
+            $this->ok = isset($this->messageParameters['lti_version']) && in_array($this->messageParameters['lti_version'],
+                    Util::$LTI_VERSIONS);
+            if (!$this->ok) {
+                $this->reason = 'Invalid or missing lti_version parameter.';
+            }
+        }
+
+        return $this->ok;
+    }
+
+    /**
      * Verify the signature of a message.
      *
      * @return bool  True if the signature is valid
@@ -809,20 +860,22 @@ trait System
                                     $this->reason = 'aud claim does not match the azp claim';
                                 }
                             }
-                            if ($this->ok && ($this instanceof Tool)) {
-                                $this->platform = Platform::fromPlatformId($iss, $aud, $deploymentId, $this->dataConnector);
-                                if (isset($this->rawParameters['id_token'])) {
-                                    $this->ok = !empty($this->rawParameters['state']);
-                                    if ($this->ok) {
-                                        $nonce = new PlatformNonce($this->platform, $this->rawParameters['state']);
-                                        $this->ok = $nonce->load();
+                            if ($this->ok) {
+                                if ($this instanceof Tool) {
+                                    $this->platform = Platform::fromPlatformId($iss, $aud, $deploymentId, $this->dataConnector);
+                                    $this->platform->platformId = $iss;
+                                    if (isset($this->rawParameters['id_token'])) {
+                                        $this->ok = !empty($this->rawParameters['state']);
                                         if ($this->ok) {
-                                            $this->ok = $nonce->delete();
+                                            $nonce = new PlatformNonce($this->platform, $this->rawParameters['state']);
+                                            $this->ok = $nonce->load();
+                                            if ($this->ok) {
+                                                $this->ok = $nonce->delete();
+                                            }
                                         }
                                     }
                                 }
                                 if ($this->ok) {
-                                    $this->platform->platformId = $this->jwt->getClaim('iss');
                                     $this->messageParameters = array();
                                     $this->messageParameters['oauth_consumer_key'] = $aud;
                                     $this->messageParameters['oauth_signature_method'] = $this->jwt->getHeader('alg');
@@ -952,6 +1005,26 @@ trait System
         if (!empty($errors)) {
             $this->ok = false;
             $this->reason = 'Invalid JWT: ' . implode(', ', $errors);
+        }
+    }
+
+    /**
+     * Call any callback function for the requested action.
+     *
+     * This function may set the redirect_url and output properties.
+     */
+    private function doCallback()
+    {
+        if (array_key_exists($this->messageParameters['lti_message_type'], Util::$METHOD_NAMES)) {
+            $callback = Util::$METHOD_NAMES[$this->messageParameters['lti_message_type']];
+        } else {
+            $callback = "on{$this->messageParameters['lti_message_type']}";
+        }
+        if (method_exists($this, $callback)) {
+            $this->$callback();
+        } elseif ($this->ok) {
+            $this->ok = false;
+            $this->reason = "Message type not supported: {$this->messageParameters['lti_message_type']}";
         }
     }
 

@@ -140,10 +140,12 @@ final class Util
     /**
      * List of supported message types and associated class methods.
      */
-    public static $METHOD_NAMES = array('basic-lti-launch-request' => 'onLaunch',
+    public static $METHOD_NAMES = array(
+        'basic-lti-launch-request' => 'onLaunch',
         'ConfigureLaunchRequest' => 'onConfigure',
         'DashboardRequest' => 'onDashboard',
         'ContentItemSelectionRequest' => 'onContentItem',
+        'ContentItemSelection' => 'onContentItem',
         'ToolProxyRegistrationRequest' => 'onRegister'
     );
 

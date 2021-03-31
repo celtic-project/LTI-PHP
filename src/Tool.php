@@ -55,6 +55,17 @@ class Tool
     const ID_SCOPE_SEPARATOR = ':';
 
     /**
+     * List of supported incoming message types.
+     */
+    public static $MESSAGE_TYPES = array(
+        'basic-lti-launch-request',
+        'ConfigureLaunchRequest',
+        'DashboardRequest',
+        'ContentItemSelectionRequest',
+        'ToolProxyRegistrationRequest'
+    );
+
+    /**
      * Names of LTI parameters to be retained in the consumer settings property.
      */
     private static $LTI_CONSUMER_SETTING_NAMES = array('custom_tc_profile_url', 'custom_system_setting_url', 'custom_oauth2_access_token_url');
@@ -447,6 +458,9 @@ class Tool
             if ($this->ok && $this->authenticate($strictMode)) {
                 if (empty($this->output)) {
                     $this->doCallback();
+                    if ($this->ok && ($this->messageParameters['lti_message_type'] === 'ToolProxyRegistrationRequest')) {
+                        $this->platform->save();
+                    }
                 }
             }
         }
@@ -1066,30 +1080,6 @@ EOD;
 ###
 
     /**
-     * Call any callback function for the requested action.
-     *
-     * This function may set the redirect_url and output properties.
-     *
-     * @param string|null $method  Name of method to be called (optional)
-     */
-    private function doCallback($method = null)
-    {
-        $callback = $method;
-        if (is_null($callback)) {
-            $callback = Util::$METHOD_NAMES[$this->messageParameters['lti_message_type']];
-        }
-        if (method_exists($this, $callback)) {
-            $this->$callback();
-        } elseif (is_null($method) && $this->ok) {
-            $this->ok = false;
-            $this->reason = "Message type not supported: {$this->messageParameters['lti_message_type']}";
-        }
-        if ($this->ok && ($this->messageParameters['lti_message_type'] === 'ToolProxyRegistrationRequest')) {
-            $this->platform->save();
-        }
-    }
-
-    /**
      * Perform the result of an action.
      *
      * This function may redirect the user to another URL rather than returning a value.
@@ -1160,7 +1150,7 @@ EOD;
     }
 
     /**
-     * Check the authenticity of the LTI launch request.
+     * Check the authenticity of the LTI message.
      *
      * The platform, resource link and user objects will be initialised if the request is valid.
      *
@@ -1170,49 +1160,8 @@ EOD;
      */
     private function authenticate($strictMode)
     {
-// Get the platform
         $doSavePlatform = false;
-        $this->ok = $_SERVER['REQUEST_METHOD'] === 'POST';
-        if (!$this->ok) {
-            $this->reason = 'LTI messages must use HTTP POST';
-        } elseif (!empty($this->jwt) && !empty($this->jwt->hasJwt())) {
-            $this->ok = false;
-            if (is_null($this->messageParameters['oauth_consumer_key']) || (strlen($this->messageParameters['oauth_consumer_key']) <= 0)) {
-                $this->reason = 'Missing iss claim';
-            } elseif (empty($this->jwt->getClaim('iat', ''))) {
-                $this->reason = 'Missing iat claim';
-            } elseif (empty($this->jwt->getClaim('exp', ''))) {
-                $this->reason = 'Missing exp claim';
-            } elseif (intval($this->jwt->getClaim('iat')) > intval($this->jwt->getClaim('exp'))) {
-                $this->reason = 'iat claim must not have a value greater than exp claim';
-            } elseif (empty($this->jwt->getClaim('nonce', ''))) {
-                $this->reason = 'Missing nonce claim';
-            } else {
-                $this->ok = true;
-            }
-        }
-// Set signature method from request
-        if (isset($this->messageParameters['oauth_signature_method'])) {
-            $this->signatureMethod = $this->messageParameters['oauth_signature_method'];
-            if (!empty($this->platform)) {
-                $this->platform->signatureMethod = $this->messageParameters['oauth_signature_method'];
-            }
-        }
-// Check all required launch parameters
-        if ($this->ok) {
-            $this->ok = isset($this->messageParameters['lti_message_type']) && array_key_exists($this->messageParameters['lti_message_type'],
-                    Util::$METHOD_NAMES);
-            if (!$this->ok) {
-                $this->reason = 'Invalid or missing lti_message_type parameter.';
-            }
-        }
-        if ($this->ok) {
-            $this->ok = isset($this->messageParameters['lti_version']) && in_array($this->messageParameters['lti_version'],
-                    Util::$LTI_VERSIONS);
-            if (!$this->ok) {
-                $this->reason = 'Invalid or missing lti_version parameter.';
-            }
-        }
+        $this->ok = $this->checkMessage();
         if ($this->ok) {
             if ($this->messageParameters['lti_message_type'] === 'basic-lti-launch-request') {
                 $this->ok = isset($this->messageParameters['resource_link_id']) && (strlen(trim($this->messageParameters['resource_link_id'])) > 0);

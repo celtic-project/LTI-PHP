@@ -18,6 +18,13 @@ class Platform
     use System;
 
     /**
+     * List of supported incoming message types.
+     */
+    public static $MESSAGE_TYPES = array(
+        'ContentItemSelection'
+    );
+
+    /**
      * Local name of platform.
      *
      * @var string|null $name
@@ -444,69 +451,16 @@ class Platform
             } else {  // LTI message
                 $this->getMessageParameters();
                 Util::logRequest();
-                if ($this->ok) {
-                    $this->ok = $this->authenticate();
+                if ($this->ok && $this->authenticate()) {
+                    $this->doCallback();
                 }
             }
         }
         if (!$this->ok) {
+            $this->onError();
+        }
+        if (!$this->ok) {
             Util::logError("Request failed with reason: '{$this->reason}'");
-        }
-    }
-
-    /**
-     * Save the hint and message parameters when sending an initiate login request.
-     *
-     * Override this method to save the data elsewhere.
-     *
-     * @param string   $url               The message URL
-     * @param string   $loginHint         The ID of the user
-     * @param string   $ltiMessageHint    The message hint being sent to the tool
-     * @param array    $params            An associative array of message parameters
-     */
-    protected function onInitiateLogin(&$url, &$loginHint, &$ltiMessageHint, $params)
-    {
-        $hasSession = !empty(session_id());
-        if (!$hasSession) {
-            session_start();
-        }
-        $_SESSION['ceLTIc_lti_initiated_login'] = array(
-            'messageUrl' => $url,
-            'login_hint' => $loginHint,
-            'lti_message_hint' => $ltiMessageHint,
-            'params' => $params
-        );
-        if (!$hasSession) {
-            session_write_close();
-        }
-    }
-
-    /**
-     * Check the hint and recover the message parameters.
-     *
-     * Override this method if the data has been saved elsewhere.
-     */
-    protected function onAuthenticate()
-    {
-        $hasSession = !empty(session_id());
-        if (!$hasSession) {
-            session_start();
-        }
-        if (isset($_SESSION['ceLTIc_lti_initiated_login'])) {
-            $login = $_SESSION['ceLTIc_lti_initiated_login'];
-            $parameters = Util::getRequestParameters();
-            if ($parameters['login_hint'] !== $login['login_hint'] ||
-                (isset($login['lti_message_hint']) && (!isset($parameters['lti_message_hint']) || ($parameters['lti_message_hint'] !== $login['lti_message_hint'])))) {
-                $this->ok = false;
-                $this->messageParameters['error'] = 'access_denied';
-            } else {
-                Tool::$defaultTool->messageUrl = $login['messageUrl'];
-                $this->messageParameters = $login['params'];
-            }
-            unset($_SESSION['ceLTIc_lti_initiated_login']);
-        }
-        if (!$hasSession) {
-            session_write_close();
         }
     }
 
@@ -577,11 +531,87 @@ class Platform
     }
 
 ###
+###    PROTECTED METHODS
+###
+
+    /**
+     * Save the hint and message parameters when sending an initiate login request.
+     *
+     * Override this method to save the data elsewhere.
+     *
+     * @param string   $url               The message URL
+     * @param string   $loginHint         The ID of the user
+     * @param string   $ltiMessageHint    The message hint being sent to the tool
+     * @param array    $params            An associative array of message parameters
+     */
+    protected function onInitiateLogin(&$url, &$loginHint, &$ltiMessageHint, $params)
+    {
+        $hasSession = !empty(session_id());
+        if (!$hasSession) {
+            session_start();
+        }
+        $_SESSION['ceLTIc_lti_initiated_login'] = array(
+            'messageUrl' => $url,
+            'login_hint' => $loginHint,
+            'lti_message_hint' => $ltiMessageHint,
+            'params' => $params
+        );
+        if (!$hasSession) {
+            session_write_close();
+        }
+    }
+
+    /**
+     * Check the hint and recover the message parameters for an authentication request.
+     *
+     * Override this method if the data has been saved elsewhere.
+     */
+    protected function onAuthenticate()
+    {
+        $hasSession = !empty(session_id());
+        if (!$hasSession) {
+            session_start();
+        }
+        if (isset($_SESSION['ceLTIc_lti_initiated_login'])) {
+            $login = $_SESSION['ceLTIc_lti_initiated_login'];
+            $parameters = Util::getRequestParameters();
+            if ($parameters['login_hint'] !== $login['login_hint'] ||
+                (isset($login['lti_message_hint']) && (!isset($parameters['lti_message_hint']) || ($parameters['lti_message_hint'] !== $login['lti_message_hint'])))) {
+                $this->ok = false;
+                $this->messageParameters['error'] = 'access_denied';
+            } else {
+                Tool::$defaultTool->messageUrl = $login['messageUrl'];
+                $this->messageParameters = $login['params'];
+            }
+            unset($_SESSION['ceLTIc_lti_initiated_login']);
+        }
+        if (!$hasSession) {
+            session_write_close();
+        }
+    }
+
+    /**
+     * Process a valid content-item message
+     */
+    protected function onContentItem()
+    {
+
+    }
+
+    /**
+     * Process a response to an invalid message
+     */
+    protected function onError()
+    {
+        $this->ok = false;
+    }
+
+###
 ###  PRIVATE METHODS
 ###
 
     /**
-     * Check the authenticity of the LTI launch request.
+     * Check the authenticity of the LTI message.
      *
      * The platform, resource link and user objects will be initialised if the request is valid.
      *
@@ -589,7 +619,12 @@ class Platform
      */
     private function authenticate()
     {
-        return $this->verifySignature();
+        $this->checkMessage();
+        if ($this->ok) {
+            $this->ok = $this->verifySignature();
+        }
+
+        return $this->ok;
     }
 
     /**
