@@ -40,56 +40,66 @@ class DataConnector_mysqli extends DataConnector
      */
     public function loadPlatform($platform)
     {
-        $ok = false;
-        if (!is_null($platform->getRecordId())) {
-            $sql = sprintf('SELECT consumer_pk, name, consumer_key, secret, ' .
+        $id = $platform->getRecordId();
+        if (!is_null($id)) {
+            $sql = 'SELECT consumer_pk, name, consumer_key, secret, ' .
                 'platform_id, client_id, deployment_id, public_key, ' .
                 'lti_version, signature_method, consumer_name, consumer_version, consumer_guid, ' .
                 'profile, tool_proxy, settings, protected, enabled, ' .
                 'enable_from, enable_until, last_access, created, updated ' .
                 "FROM {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' ' .
-                'WHERE consumer_pk = %d', $platform->getRecordId());
+                'WHERE consumer_pk = ?';
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param('i', $id);
         } elseif (!empty($platform->platformId)) {
             if (empty($platform->clientId)) {
-                $sql = sprintf('SELECT consumer_pk, name, consumer_key, secret, ' .
+                $sql = 'SELECT consumer_pk, name, consumer_key, secret, ' .
                     'platform_id, client_id, deployment_id, public_key, ' .
                     'lti_version, signature_method, consumer_name, consumer_version, consumer_guid, ' .
                     'profile, tool_proxy, settings, protected, enabled, ' .
                     'enable_from, enable_until, last_access, created, updated ' .
                     "FROM {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' ' .
-                    'WHERE (platform_id = %s) ' .
-                    'GROUP BY platform_id, client_id', $this->escape($platform->platformId));
+                    'WHERE (platform_id = ?) ' .
+                    'GROUP BY platform_id, client_id';
+                $stmt = $this->db->prepare($sql);
+                $stmt->bind_param('s', $platform->platformId);
             } elseif (empty($platform->deploymentId)) {
-                $sql = sprintf('SELECT consumer_pk, name, consumer_key, secret, ' .
+                $sql = 'SELECT consumer_pk, name, consumer_key, secret, ' .
                     'platform_id, client_id, deployment_id, public_key, ' .
                     'lti_version, signature_method, consumer_name, consumer_version, consumer_guid, ' .
                     'profile, tool_proxy, settings, protected, enabled, ' .
                     'enable_from, enable_until, last_access, created, updated ' .
                     "FROM {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' ' .
-                    'WHERE (platform_id = %s) AND (client_id = %s)', $this->escape($platform->platformId),
-                    $this->escape($platform->clientId));
+                    'WHERE (platform_id = ?) AND (client_id = ?)';
+                $stmt = $this->db->prepare($sql);
+                $stmt->bind_param('ss', $platform->platformId, $platform->clientId);
             } else {
-                $sql = sprintf('SELECT consumer_pk, name, consumer_key, secret, ' .
+                $sql = 'SELECT consumer_pk, name, consumer_key, secret, ' .
                     'platform_id,client_id,  deployment_id, public_key, ' .
                     'lti_version, signature_method, consumer_name, consumer_version, consumer_guid, ' .
                     'profile, tool_proxy, settings, protected, enabled, ' .
                     'enable_from, enable_until, last_access, created, updated ' .
                     "FROM {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' ' .
-                    'WHERE (platform_id = %s) AND (client_id = %s) AND (deployment_id = %s)', $this->escape($platform->platformId),
-                    $this->escape($platform->clientId), $this->escape($platform->deploymentId));
+                    'WHERE (platform_id = ?) AND (client_id = ?) AND (deployment_id = ?)';
+                $stmt = $this->db->prepare($sql);
+                $stmt->bind_param('sss', $platform->platformId, $platform->clientId, $platform->deploymentId);
             }
         } else {
-            $sql = sprintf('SELECT consumer_pk, name, consumer_key, secret, ' .
+            $key = $platform->getKey();
+            $sql = 'SELECT consumer_pk, name, consumer_key, secret, ' .
                 'platform_id, client_id, deployment_id, public_key, ' .
                 'lti_version, signature_method, consumer_name, consumer_version, consumer_guid, ' .
                 'profile, tool_proxy, settings, protected, enabled, ' .
                 'enable_from, enable_until, last_access, created, updated ' .
                 "FROM {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' ' .
-                'WHERE consumer_key = %s', $this->escape($platform->getKey()));
+                'WHERE consumer_key = ?';
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param('s', $key);
         }
-        $rsConsumer = $this->executeQuery($sql);
-        if ($rsConsumer) {
-            $row = mysqli_fetch_object($rsConsumer);
+        $ok = $this->executeQuery($sql, $stmt);
+        if ($ok) {
+            $rsConsumer = $stmt->get_result();
+            $row = $rsConsumer->fetch_object();
             if ($row) {
                 $platform->setRecordId(intval($row->consumer_pk));
                 $platform->name = $row->name;
@@ -131,7 +141,8 @@ class DataConnector_mysqli extends DataConnector
                 $platform->created = strtotime($row->created);
                 $platform->updated = strtotime($row->updated);
                 $this->fixPlatformSettings($platform, false);
-                $ok = true;
+            } else {
+                $ok = false;
             }
         }
 
@@ -148,6 +159,7 @@ class DataConnector_mysqli extends DataConnector
     public function savePlatform($platform)
     {
         $id = $platform->getRecordId();
+        $key = $platform->getKey();
         $protected = ($platform->protected) ? 1 : 0;
         $enabled = ($platform->enabled) ? 1 : 0;
         $profile = (!empty($platform->profile)) ? json_encode($platform->profile) : null;
@@ -169,39 +181,36 @@ class DataConnector_mysqli extends DataConnector
             $last = date($this->dateFormat, $platform->lastAccess);
         }
         if (empty($id)) {
-            $sql = sprintf("INSERT INTO {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' (consumer_key, name, secret, ' .
+            $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' (consumer_key, name, secret, ' .
                 'platform_id, client_id, deployment_id, public_key, ' .
                 'lti_version, signature_method, consumer_name, consumer_version, consumer_guid, ' .
                 'profile, tool_proxy, settings, protected, enabled, ' .
                 'enable_from, enable_until, last_access, created, updated) ' .
-                'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %d, %d, %s, %s, %s, %s, %s)',
-                $this->escape($platform->getKey()), $this->escape($platform->name), $this->escape($platform->secret),
-                $this->escape($platform->platformId), $this->escape($platform->clientId), $this->escape($platform->deploymentId),
-                $this->escape($platform->rsaKey), $this->escape($platform->ltiVersion), $this->escape($platform->signatureMethod),
-                $this->escape($platform->consumerName), $this->escape($platform->consumerVersion),
-                $this->escape($platform->consumerGuid), $this->escape($profile), $this->escape($platform->toolProxy),
-                $this->escape($settingsValue), $protected, $enabled, $this->escape($from), $this->escape($until),
-                $this->escape($last), $this->escape($now), $this->escape($now));
+                'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param('sssssssssssssssiisssss', $key, $platform->name, $platform->secret, $platform->platformId,
+                $platform->clientId, $platform->deploymentId, $platform->rsaKey, $platform->ltiVersion, $platform->signatureMethod,
+                $platform->consumerName, $platform->consumerVersion, $platform->consumerGuid, $profile, $platform->toolProxy,
+                $settingsValue, $protected, $enabled, $from, $until, $last, $now, $now);
         } else {
-            $sql = sprintf("UPDATE {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' SET ' .
-                'consumer_key = %s, name = %s, secret= %s, ' .
-                'platform_id = %s, client_id = %s, deployment_id = %s, public_key = %s, ' .
-                'lti_version = %s, signature_method = %s, ' .
-                'consumer_name = %s, consumer_version = %s, consumer_guid = %s, ' .
-                'profile = %s, tool_proxy = %s, settings = %s, ' .
-                'protected = %d, enabled = %d, enable_from = %s, enable_until = %s, last_access = %s, updated = %s ' .
-                'WHERE consumer_pk = %d', $this->escape($platform->getKey()), $this->escape($platform->name),
-                $this->escape($platform->secret), $this->escape($platform->platformId), $this->escape($platform->clientId),
-                $this->escape($platform->deploymentId), $this->escape($platform->rsaKey), $this->escape($platform->ltiVersion),
-                $this->escape($platform->signatureMethod), $this->escape($platform->consumerName),
-                $this->escape($platform->consumerVersion), $this->escape($platform->consumerGuid), $this->escape($profile),
-                $this->escape($platform->toolProxy), $this->escape($settingsValue), $protected, $enabled, $this->escape($from),
-                $this->escape($until), $this->escape($last), $this->escape($now), $platform->getRecordId());
+            $sql = "UPDATE {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' SET ' .
+                'consumer_key = ?, name = ?, secret= ?, ' .
+                'platform_id = ?, client_id = ?, deployment_id = ?, public_key = ?, ' .
+                'lti_version = ?, signature_method = ?, ' .
+                'consumer_name = ?, consumer_version = ?, consumer_guid = ?, ' .
+                'profile = ?, tool_proxy = ?, settings = ?, ' .
+                'protected = ?, enabled = ?, enable_from = ?, enable_until = ?, last_access = ?, updated = ? ' .
+                'WHERE consumer_pk = ?';
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param('sssssssssssssssiissssi', $key, $platform->name, $platform->secret, $platform->platformId,
+                $platform->clientId, $platform->deploymentId, $platform->rsaKey, $platform->ltiVersion, $platform->signatureMethod,
+                $platform->consumerName, $platform->consumerVersion, $platform->consumerGuid, $profile, $platform->toolProxy,
+                $settingsValue, $protected, $enabled, $from, $until, $last, $now, $id);
         }
-        $ok = $this->executeQuery($sql);
+        $ok = $this->executeQuery($sql, $stmt);
         if ($ok) {
             if (empty($id)) {
-                $platform->setRecordId(mysqli_insert_id($this->db));
+                $platform->setRecordId($this->db->insert_id);
                 $platform->created = $time;
             }
             $platform->updated = $time;
@@ -219,85 +228,109 @@ class DataConnector_mysqli extends DataConnector
      */
     public function deletePlatform($platform)
     {
+        $id = $platform->getRecordId();
+
 // Delete any access token value for this consumer
-        $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . static::ACCESS_TOKEN_TABLE_NAME . ' WHERE consumer_pk = %d',
-            $platform->getRecordId());
-        $this->executeQuery($sql);
+        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::ACCESS_TOKEN_TABLE_NAME . ' WHERE consumer_pk = ?';
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $id);
+        $this->executeQuery($sql, $stmt);
 
 // Delete any nonce values for this consumer
-        $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' WHERE consumer_pk = %d',
-            $platform->getRecordId());
-        $this->executeQuery($sql);
+        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' WHERE consumer_pk = ?';
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $id);
+        $this->executeQuery($sql, $stmt);
 
 // Delete any outstanding share keys for resource links for this consumer
-        $sql = sprintf('DELETE sk ' .
+        $sql = 'DELETE sk ' .
             "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME . ' sk ' .
             "INNER JOIN {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' rl ON sk.resource_link_pk = rl.resource_link_pk ' .
-            'WHERE rl.consumer_pk = %d', $platform->getRecordId());
-        $this->executeQuery($sql);
+            'WHERE rl.consumer_pk = ?';
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $id);
+        $this->executeQuery($sql, $stmt);
 
 // Delete any outstanding share keys for resource links for contexts in this consumer
-        $sql = sprintf('DELETE sk ' .
+        $sql = 'DELETE sk ' .
             "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME . ' sk ' .
             "INNER JOIN {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' rl ON sk.resource_link_pk = rl.resource_link_pk ' .
             "INNER JOIN {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' c ON rl.context_pk = c.context_pk ' .
-            'WHERE c.consumer_pk = %d', $platform->getRecordId());
-        $this->executeQuery($sql);
+            'WHERE c.consumer_pk = ?';
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $id);
+        $this->executeQuery($sql, $stmt);
 
 // Delete any users in resource links for this consumer
-        $sql = sprintf('DELETE u ' .
+        $sql = 'DELETE u ' .
             "FROM {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' u ' .
             "INNER JOIN {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' rl ON u.resource_link_pk = rl.resource_link_pk ' .
-            'WHERE rl.consumer_pk = %d', $platform->getRecordId());
-        $this->executeQuery($sql);
+            'WHERE rl.consumer_pk = ?';
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $id);
+        $this->executeQuery($sql, $stmt);
 
 // Delete any users in resource links for contexts in this consumer
-        $sql = sprintf('DELETE u ' .
+        $sql = 'DELETE u ' .
             "FROM {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' u ' .
             "INNER JOIN {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' rl ON u.resource_link_pk = rl.resource_link_pk ' .
             "INNER JOIN {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' c ON rl.context_pk = c.context_pk ' .
-            'WHERE c.consumer_pk = %d', $platform->getRecordId());
-        $this->executeQuery($sql);
+            'WHERE c.consumer_pk = ?';
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $id);
+        $this->executeQuery($sql, $stmt);
 
 // Update any resource links for which this consumer is acting as a primary resource link
-        $sql = sprintf("UPDATE {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' prl ' .
+        $sql = "UPDATE {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' prl ' .
             "INNER JOIN {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' rl ON prl.primary_resource_link_pk = rl.resource_link_pk ' .
             'SET prl.primary_resource_link_pk = NULL, prl.share_approved = NULL ' .
-            'WHERE rl.consumer_pk = %d', $platform->getRecordId());
-        $ok = $this->executeQuery($sql);
+            'WHERE rl.consumer_pk = ?';
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $id);
+        $this->executeQuery($sql, $stmt);
 
 // Update any resource links for contexts in which this consumer is acting as a primary resource link
-        $sql = sprintf("UPDATE {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' prl ' .
+        $sql = "UPDATE {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' prl ' .
             "INNER JOIN {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' rl ON prl.primary_resource_link_pk = rl.resource_link_pk ' .
             "INNER JOIN {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' c ON rl.context_pk = c.context_pk ' .
             'SET prl.primary_resource_link_pk = NULL, prl.share_approved = NULL ' .
-            'WHERE c.consumer_pk = %d', $platform->getRecordId());
-        $ok = $this->executeQuery($sql);
+            'WHERE c.consumer_pk = ?';
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $id);
+        $this->executeQuery($sql, $stmt);
 
 // Delete any resource links for this consumer
-        $sql = sprintf('DELETE rl ' .
+        $sql = 'DELETE rl ' .
             "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' rl ' .
-            'WHERE rl.consumer_pk = %d', $platform->getRecordId());
-        $this->executeQuery($sql);
+            'WHERE rl.consumer_pk = ?';
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $id);
+        $this->executeQuery($sql, $stmt);
 
 // Delete any resource links for contexts in this consumer
-        $sql = sprintf('DELETE rl ' .
+        $sql = 'DELETE rl ' .
             "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' rl ' .
             "INNER JOIN {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' c ON rl.context_pk = c.context_pk ' .
-            'WHERE c.consumer_pk = %d', $platform->getRecordId());
-        $this->executeQuery($sql);
+            'WHERE c.consumer_pk = ?';
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $id);
+        $this->executeQuery($sql, $stmt);
 
 // Delete any contexts for this consumer
-        $sql = sprintf('DELETE c ' .
+        $sql = 'DELETE c ' .
             "FROM {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' c ' .
-            'WHERE c.consumer_pk = %d', $platform->getRecordId());
-        $this->executeQuery($sql);
+            'WHERE c.consumer_pk = ?';
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $id);
+        $this->executeQuery($sql, $stmt);
 
 // Delete consumer
-        $sql = sprintf('DELETE c ' .
+        $sql = 'DELETE c ' .
             "FROM {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' c ' .
-            'WHERE c.consumer_pk = %d', $platform->getRecordId());
-        $ok = $this->executeQuery($sql);
+            'WHERE c.consumer_pk = ?';
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $id);
+        $ok = $this->executeQuery($sql, $stmt);
 
         if ($ok) {
             $platform->initialize();
@@ -322,9 +355,10 @@ class DataConnector_mysqli extends DataConnector
             'protected, enabled, enable_from, enable_until, last_access, created, updated ' .
             "FROM {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' ' .
             'ORDER BY name';
-        $rsConsumers = $this->executeQuery($sql);
-        if ($rsConsumers) {
-            while ($row = mysqli_fetch_object($rsConsumers)) {
+        $stmt = $this->db->prepare($sql);
+        if ($this->executeQuery($sql, $stmt)) {
+            $rsConsumers = $stmt->get_result();
+            while ($row = $rsConsumers->fetch_object()) {
                 $platform = new Platform($this);
                 $platform->setRecordId(intval($row->consumer_pk));
                 $platform->name = $row->name;
@@ -368,7 +402,7 @@ class DataConnector_mysqli extends DataConnector
                 $this->fixPlatformSettings($platform, false);
                 $consumers[] = $platform;
             }
-            mysqli_free_result($rsConsumers);
+            $rsConsumers->free_result();
         }
 
         return $consumers;
@@ -387,20 +421,25 @@ class DataConnector_mysqli extends DataConnector
      */
     public function loadContext($context)
     {
-        $ok = false;
-        if (!is_null($context->getRecordId())) {
-            $sql = sprintf('SELECT context_pk, consumer_pk, title, lti_context_id, type, settings, created, updated ' .
+        $id = $context->getRecordId();
+        if (!is_null($id)) {
+            $sql = 'SELECT context_pk, consumer_pk, title, lti_context_id, type, settings, created, updated ' .
                 "FROM {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' ' .
-                'WHERE (context_pk = %d)', $context->getRecordId());
+                'WHERE (context_pk = ?)';
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param('i', $id);
         } else {
-            $sql = sprintf('SELECT context_pk, consumer_pk, title, lti_context_id, type, settings, created, updated ' .
+            $id = $context->getPlatform()->getRecordId();
+            $sql = 'SELECT context_pk, consumer_pk, title, lti_context_id, type, settings, created, updated ' .
                 "FROM {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' ' .
-                'WHERE (consumer_pk = %d) AND (lti_context_id = %s)', $context->getPlatform()->getRecordId(),
-                $this->escape($context->ltiContextId));
+                'WHERE (consumer_pk = ?) AND (lti_context_id = ?)';
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param('is', $id, $context->ltiContextId);
         }
-        $rsContext = $this->executeQuery($sql);
-        if ($rsContext) {
-            $row = mysqli_fetch_object($rsContext);
+        $ok = $this->executeQuery($sql, $stmt);
+        if ($ok) {
+            $rsContext = $stmt->get_result();
+            $row = $rsContext->fetch_object();
             if ($row) {
                 $context->setRecordId(intval($row->context_pk));
                 $context->setPlatformId(intval($row->consumer_pk));
@@ -417,7 +456,8 @@ class DataConnector_mysqli extends DataConnector
                 $context->setSettings($settings);
                 $context->created = strtotime($row->created);
                 $context->updated = strtotime($row->updated);
-                $ok = true;
+            } else {
+                $ok = false;
             }
         }
 
@@ -439,23 +479,25 @@ class DataConnector_mysqli extends DataConnector
         $id = $context->getRecordId();
         $consumer_pk = $context->getPlatform()->getRecordId();
         if (empty($id)) {
-            $sql = sprintf("INSERT INTO {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' (consumer_pk, title, ' .
+            $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' (consumer_pk, title, ' .
                 'lti_context_id, type, settings, created, updated) ' .
-                'VALUES (%d, %s, %s, %s, %s, %s, %s)', $consumer_pk, $this->escape($context->title),
-                $this->escape($context->ltiContextId), $this->escape($context->type), $this->escape($settingsValue),
-                $this->escape($now), $this->escape($now));
+                'VALUES (?, ?, ?, ?, ?, ?, ?)';
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param('issssss', $consumer_pk, $context->title, $context->ltiContextId, $context->type, $settingsValue,
+                $now, $now);
         } else {
-            $sql = sprintf("UPDATE {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' SET ' .
-                'title = %s, lti_context_id = %s, type = %s, settings = %s, ' .
-                'updated = %s' .
-                'WHERE (consumer_pk = %d) AND (context_pk = %d)', $this->escape($context->title),
-                $this->escape($context->ltiContextId), $this->escape($context->type), $this->escape($settingsValue),
-                $this->escape($now), $consumer_pk, $id);
+            $sql = "UPDATE {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' SET ' .
+                'title = ?, lti_context_id = ?, type = ?, settings = ?, ' .
+                'updated = ? ' .
+                'WHERE (consumer_pk = ?) AND (context_pk = ?)';
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param('sssssii', $context->title, $context->ltiContextId, $context->type, $settingsValue, $now,
+                $consumer_pk, $id);
         }
-        $ok = $this->executeQuery($sql);
+        $ok = $this->executeQuery($sql, $stmt);
         if ($ok) {
             if (empty($id)) {
-                $context->setRecordId(mysqli_insert_id($this->db));
+                $context->setRecordId($this->db->insert_id);
                 $context->created = $time;
             }
             $context->updated = $time;
@@ -473,38 +515,50 @@ class DataConnector_mysqli extends DataConnector
      */
     public function deleteContext($context)
     {
+        $id = $context->getRecordId();
+
 // Delete any outstanding share keys for resource links for this context
-        $sql = sprintf('DELETE sk ' .
+        $sql = 'DELETE sk ' .
             "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME . ' sk ' .
             "INNER JOIN {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' rl ON sk.resource_link_pk = rl.resource_link_pk ' .
-            'WHERE rl.context_pk = %d', $context->getRecordId());
-        $this->executeQuery($sql);
+            'WHERE rl.context_pk = ?';
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $id);
+        $this->executeQuery($sql, $stmt);
 
 // Delete any users in resource links for this context
-        $sql = sprintf('DELETE u ' .
+        $sql = 'DELETE u ' .
             "FROM {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' u ' .
             "INNER JOIN {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' rl ON u.resource_link_pk = rl.resource_link_pk ' .
-            'WHERE rl.context_pk = %d', $context->getRecordId());
-        $this->executeQuery($sql);
+            'WHERE rl.context_pk = ?';
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $id);
+        $this->executeQuery($sql, $stmt);
 
 // Update any resource links for which this consumer is acting as a primary resource link
-        $sql = sprintf("UPDATE {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' prl ' .
+        $sql = "UPDATE {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' prl ' .
             "INNER JOIN {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' rl ON prl.primary_resource_link_pk = rl.resource_link_pk ' .
             'SET prl.primary_resource_link_pk = null, prl.share_approved = null ' .
-            'WHERE rl.context_pk = %d', $context->getRecordId());
-        $ok = $this->executeQuery($sql);
+            'WHERE rl.context_pk = ?';
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $id);
+        $this->executeQuery($sql, $stmt);
 
 // Delete any resource links for this consumer
-        $sql = sprintf('DELETE rl ' .
+        $sql = 'DELETE rl ' .
             "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' rl ' .
-            'WHERE rl.context_pk = %d', $context->getRecordId());
-        $this->executeQuery($sql);
+            'WHERE rl.context_pk = ?';
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $id);
+        $this->executeQuery($sql, $stmt);
 
 // Delete context
-        $sql = sprintf('DELETE c ' .
-            "FROM {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' c ', 'WHERE c.context_pk = %d',
-            $context->getRecordId());
-        $ok = $this->executeQuery($sql);
+        $sql = 'DELETE c ' .
+            "FROM {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' c ' .
+            'WHERE c.context_pk = ?';
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $id);
+        $ok = $this->executeQuery($sql, $stmt);
         if ($ok) {
             $context->initialize();
         }
@@ -525,30 +579,38 @@ class DataConnector_mysqli extends DataConnector
      */
     public function loadResourceLink($resourceLink)
     {
-        $ok = false;
-        if (!is_null($resourceLink->getRecordId())) {
-            $sql = sprintf('SELECT resource_link_pk, context_pk, consumer_pk, title, lti_resource_link_id, settings, primary_resource_link_pk, share_approved, created, updated ' .
+        $id = $resourceLink->getRecordId();
+        if (!is_null($id)) {
+            $sql = 'SELECT resource_link_pk, context_pk, consumer_pk, title, lti_resource_link_id, settings, primary_resource_link_pk, share_approved, created, updated ' .
                 "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
-                'WHERE (resource_link_pk = %d)', $resourceLink->getRecordId());
+                'WHERE (resource_link_pk = ?)';
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param('i', $id);
         } elseif (!is_null($resourceLink->getContext())) {
-            $sql = sprintf('SELECT r.resource_link_pk, r.context_pk, r.consumer_pk, r.title, r.lti_resource_link_id, r.settings, r.primary_resource_link_pk, r.share_approved, r.created, r.updated ' .
+            $rid = $resourceLink->getId();
+            $cid = $resourceLink->getContext()->getRecordId();
+            $sql = 'SELECT r.resource_link_pk, r.context_pk, r.consumer_pk, r.title, r.lti_resource_link_id, r.settings, r.primary_resource_link_pk, r.share_approved, r.created, r.updated ' .
                 "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' r ' .
-                'WHERE (r.lti_resource_link_id = %s) AND ((r.context_pk = %d) OR (r.consumer_pk IN (' .
+                'WHERE (r.lti_resource_link_id = ?) AND ((r.context_pk = ?) OR (r.consumer_pk IN (' .
                 'SELECT c.consumer_pk ' .
                 "FROM {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' c ' .
-                'WHERE (c.context_pk = %d))))', $this->escape($resourceLink->getId()), $resourceLink->getContext()->getRecordId(),
-                $resourceLink->getContext()->getRecordId());
+                'WHERE (c.context_pk = ?))))';
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param('sii', $rid, $cid, $cid);
         } else {
-            $sql = sprintf('SELECT r.resource_link_pk, r.context_pk, r.consumer_pk, r.title, r.lti_resource_link_id, r.settings, r.primary_resource_link_pk, r.share_approved, r.created, r.updated ' .
+            $id = $resourceLink->getPlatform()->getRecordId();
+            $rid = $resourceLink->getId();
+            $sql = 'SELECT r.resource_link_pk, r.context_pk, r.consumer_pk, r.title, r.lti_resource_link_id, r.settings, r.primary_resource_link_pk, r.share_approved, r.created, r.updated ' .
                 "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' r LEFT OUTER JOIN ' .
                 $this->dbTableNamePrefix . static::CONTEXT_TABLE_NAME . ' c ON r.context_pk = c.context_pk ' .
-                ' WHERE ((r.consumer_pk = %d) OR (c.consumer_pk = %d)) AND (lti_resource_link_id = %s)',
-                $resourceLink->getPlatform()->getRecordId(), $resourceLink->getPlatform()->getRecordId(),
-                $this->escape($resourceLink->getId()));
+                ' WHERE ((r.consumer_pk = ?) OR (c.consumer_pk = ?)) AND (lti_resource_link_id = ?)';
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param('iis', $id, $id, $rid);
         }
-        $rsResourceLink = $this->executeQuery($sql);
-        if ($rsResourceLink) {
-            $row = mysqli_fetch_object($rsResourceLink);
+        $ok = $this->executeQuery($sql, $stmt);
+        if ($ok) {
+            $rsResourceLink = $stmt->get_result();
+            $row = $rsResourceLink->fetch_object();
             if ($row) {
                 $resourceLink->setRecordId(intval($row->resource_link_pk));
                 if (!is_null($row->context_pk)) {
@@ -579,7 +641,8 @@ class DataConnector_mysqli extends DataConnector
                 $resourceLink->shareApproved = (is_null($row->share_approved)) ? null : (intval($row->share_approved) === 1);
                 $resourceLink->created = strtotime($row->created);
                 $resourceLink->updated = strtotime($row->updated);
-                $ok = true;
+            } else {
+                $ok = false;
             }
         }
 
@@ -596,14 +659,14 @@ class DataConnector_mysqli extends DataConnector
     public function saveResourceLink($resourceLink)
     {
         if (is_null($resourceLink->shareApproved)) {
-            $approved = 'NULL';
+            $approved = null;
         } elseif ($resourceLink->shareApproved) {
-            $approved = '1';
+            $approved = 1;
         } else {
-            $approved = '0';
+            $approved = 0;
         }
         if (empty($resourceLink->primaryResourceLinkId)) {
-            $primaryResourceLinkId = 'NULL';
+            $primaryResourceLinkId = null;
         } else {
             $primaryResourceLinkId = strval($resourceLink->primaryResourceLinkId);
         }
@@ -611,41 +674,45 @@ class DataConnector_mysqli extends DataConnector
         $now = date("{$this->dateFormat} {$this->timeFormat}", $time);
         $settingsValue = json_encode($resourceLink->getSettings());
         if (!is_null($resourceLink->getContext())) {
-            $consumerId = 'NULL';
-            $contextId = strval($resourceLink->getContext()->getRecordId());
+            $consumerId = null;
+            $contextId = $resourceLink->getContext()->getRecordId();
         } elseif (!is_null($resourceLink->getContextId())) {
-            $consumerId = 'NULL';
-            $contextId = strval($resourceLink->getContextId());
+            $consumerId = null;
+            $contextId = $resourceLink->getContextId();
         } else {
-            $consumerId = strval($resourceLink->getPlatform()->getRecordId());
-            $contextId = 'NULL';
+            $consumerId = $resourceLink->getPlatform()->getRecordId();
+            $contextId = null;
         }
         $id = $resourceLink->getRecordId();
+        $rid = $resourceLink->getId();
         if (empty($id)) {
-            $sql = sprintf("INSERT INTO {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' (consumer_pk, context_pk, ' .
+            $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' (consumer_pk, context_pk, ' .
                 'title, lti_resource_link_id, settings, primary_resource_link_pk, share_approved, created, updated) ' .
-                'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)', $consumerId, $contextId, $this->escape($resourceLink->title),
-                $this->escape($resourceLink->getId()), $this->escape($settingsValue), $primaryResourceLinkId, $approved,
-                $this->escape($now), $this->escape($now));
-        } elseif ($contextId !== 'NULL') {
-            $sql = sprintf("UPDATE {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' SET ' .
-                'consumer_pk = %s, title = %s, lti_resource_link_id = %s, settings = %s, ' .
-                'primary_resource_link_pk = %s, share_approved = %s, updated = %s ' .
-                'WHERE (context_pk = %s) AND (resource_link_pk = %d)', $consumerId, $this->escape($resourceLink->title),
-                $this->escape($resourceLink->getId()), $this->escape($settingsValue), $primaryResourceLinkId, $approved,
-                $this->escape($now), $contextId, $id);
+                'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param('ssssssiss', $consumerId, $contextId, $resourceLink->title, $rid, $settingsValue,
+                $primaryResourceLinkId, $approved, $now, $now);
+        } elseif (!is_null($contextId)) {
+            $sql = "UPDATE {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' SET ' .
+                'consumer_pk = ?, title = ?, lti_resource_link_id = ?, settings = ?, ' .
+                'primary_resource_link_pk = ?, share_approved = ?, updated = ? ' .
+                'WHERE (context_pk = ?) AND (resource_link_pk = ?)';
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param('sssssisii', $consumerId, $resourceLink->title, $rid, $settingsValue, $primaryResourceLinkId,
+                $approved, $now, $contextId, $id);
         } else {
-            $sql = sprintf("UPDATE {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' SET ' .
-                'context_pk = NULL, title = %s, lti_resource_link_id = %s, settings = %s, ' .
-                'primary_resource_link_pk = %s, share_approved = %s, updated = %s ' .
-                'WHERE (consumer_pk = %s) AND (resource_link_pk = %d)', $this->escape($resourceLink->title),
-                $this->escape($resourceLink->getId()), $this->escape($settingsValue), $primaryResourceLinkId, $approved,
-                $this->escape($now), $consumerId, $id);
+            $sql = "UPDATE {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' SET ' .
+                'context_pk = NULL, title = ?, lti_resource_link_id = ?, settings = ?, ' .
+                'primary_resource_link_pk = ?, share_approved = ?, updated = ? ' .
+                'WHERE (consumer_pk = ?) AND (resource_link_pk = ?)';
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param('sssiisii', $resourceLink->title, $rid, $settingsValue, $primaryResourceLinkId, $approved, $now,
+                $consumerId, $id);
         }
-        $ok = $this->executeQuery($sql);
+        $ok = $this->executeQuery($sql, $stmt);
         if ($ok) {
             if (empty($id)) {
-                $resourceLink->setRecordId(mysqli_insert_id($this->db));
+                $resourceLink->setRecordId($this->db->insert_id);
                 $resourceLink->created = $time;
             }
             $resourceLink->updated = $time;
@@ -663,31 +730,41 @@ class DataConnector_mysqli extends DataConnector
      */
     public function deleteResourceLink($resourceLink)
     {
+        $id = $resourceLink->getRecordId();
+
 // Delete any outstanding share keys for resource links for this consumer
-        $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME . ' ' .
-            'WHERE (resource_link_pk = %d)', $resourceLink->getRecordId());
-        $ok = $this->executeQuery($sql);
+        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME . ' ' .
+            'WHERE (resource_link_pk = ?)';
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $id);
+        $ok = $this->executeQuery($sql, $stmt);
 
 // Delete users
         if ($ok) {
-            $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' ' .
-                'WHERE (resource_link_pk = %d)', $resourceLink->getRecordId());
-            $ok = $this->executeQuery($sql);
+            $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' ' .
+                'WHERE (resource_link_pk = ?)';
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param('i', $id);
+            $ok = $this->executeQuery($sql, $stmt);
         }
 
 // Update any resource links for which this is the primary resource link
         if ($ok) {
-            $sql = sprintf("UPDATE {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
+            $sql = "UPDATE {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
                 'SET primary_resource_link_pk = NULL ' .
-                'WHERE (primary_resource_link_pk = %d)', $resourceLink->getRecordId());
-            $ok = $this->executeQuery($sql);
+                'WHERE (primary_resource_link_pk = ?)';
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param('i', $id);
+            $ok = $this->executeQuery($sql, $stmt);
         }
 
 // Delete resource link
         if ($ok) {
-            $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
-                'WHERE (resource_link_pk = %s)', $resourceLink->getRecordId());
-            $ok = $this->executeQuery($sql);
+            $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
+                'WHERE (resource_link_pk = ?)';
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param('i', $id);
+            $ok = $this->executeQuery($sql, $stmt);
         }
 
         if ($ok) {
@@ -713,24 +790,28 @@ class DataConnector_mysqli extends DataConnector
     {
         $userResults = array();
 
+        $id = $resourceLink->getRecordId();
         if ($localOnly) {
-            $sql = sprintf('SELECT u.user_result_pk, u.lti_result_sourcedid, u.lti_user_id, u.created, u.updated ' .
+            $sql = 'SELECT u.user_result_pk, u.lti_result_sourcedid, u.lti_user_id, u.created, u.updated ' .
                 "FROM {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' AS u ' .
                 "INNER JOIN {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' AS rl ' .
                 'ON u.resource_link_pk = rl.resource_link_pk ' .
-                "WHERE (rl.resource_link_pk = %d) AND (rl.primary_resource_link_pk IS NULL)", $resourceLink->getRecordId());
+                "WHERE (rl.resource_link_pk = ?) AND (rl.primary_resource_link_pk IS NULL)";
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param('i', $id);
         } else {
-            $sql = sprintf('SELECT u.user_result_pk, u.lti_result_sourcedid, u.lti_user_id, u.created, u.updated ' .
+            $sql = 'SELECT u.user_result_pk, u.lti_result_sourcedid, u.lti_user_id, u.created, u.updated ' .
                 "FROM {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' AS u ' .
                 "INNER JOIN {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' AS rl ' .
                 'ON u.resource_link_pk = rl.resource_link_pk ' .
-                'WHERE ((rl.resource_link_pk = %d) AND (rl.primary_resource_link_pk IS NULL)) OR ' .
-                '((rl.primary_resource_link_pk = %d) AND (share_approved = 1))', $resourceLink->getRecordId(),
-                $resourceLink->getRecordId());
+                'WHERE ((rl.resource_link_pk = ?) AND (rl.primary_resource_link_pk IS NULL)) OR ' .
+                '((rl.primary_resource_link_pk = ?) AND (share_approved = 1))';
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param('ii', $id, $id);
         }
-        $rsUser = $this->executeQuery($sql);
-        if ($rsUser) {
-            while ($row = mysqli_fetch_object($rsUser)) {
+        if ($this->executeQuery($sql, $stmt)) {
+            $rsUser = $stmt->get_result();
+            while ($row = $rsUser->fetch_object()) {
                 $userresult = LTI\UserResult::fromResourceLink($resourceLink, $row->lti_user_id);
                 if (is_null($idScope)) {
                     $userResults[] = $userresult;
@@ -738,6 +819,7 @@ class DataConnector_mysqli extends DataConnector
                     $userResults[$userresult->getId($idScope)] = $userresult;
                 }
             }
+            $rsUser->free_result();
         }
 
         return $userResults;
@@ -754,20 +836,23 @@ class DataConnector_mysqli extends DataConnector
     {
         $shares = array();
 
-        $sql = sprintf('SELECT c.consumer_name, r.resource_link_pk, r.title, r.share_approved ' .
+        $id = $resourceLink->getRecordId();
+        $sql = 'SELECT c.consumer_name, r.resource_link_pk, r.title, r.share_approved ' .
             "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' AS r ' .
             "INNER JOIN {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' AS c ON r.consumer_pk = c.consumer_pk ' .
-            'WHERE (r.primary_resource_link_pk = %d) ' .
+            'WHERE (r.primary_resource_link_pk = ?) ' .
             'UNION ' .
             'SELECT c2.consumer_name, r2.resource_link_pk, r2.title, r2.share_approved ' .
             "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' AS r2 ' .
             "INNER JOIN {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' AS x ON r2.context_pk = x.context_pk ' .
             "INNER JOIN {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' AS c2 ON x.consumer_pk = c2.consumer_pk ' .
-            'WHERE (r2.primary_resource_link_pk = %d) ' .
-            'ORDER BY consumer_name, title', $resourceLink->getRecordId(), $resourceLink->getRecordId());
-        $rsShare = $this->executeQuery($sql);
-        if ($rsShare) {
-            while ($row = mysqli_fetch_object($rsShare)) {
+            'WHERE (r2.primary_resource_link_pk = ?) ' .
+            'ORDER BY consumer_name, title';
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('ii', $id, $id);
+        if ($this->executeQuery($sql, $stmt)) {
+            $rsShare = $stmt->get_result();
+            while ($row = $rsShare->fetch_object()) {
                 $share = new LTI\ResourceLinkShare();
                 $share->consumerName = $row->consumer_name;
                 $share->resourceLinkId = intval($row->resource_link_pk);
@@ -775,6 +860,7 @@ class DataConnector_mysqli extends DataConnector
                 $share->approved = (intval($row->share_approved) === 1);
                 $shares[] = $share;
             }
+            $rsShare->free_result();
         }
 
         return $shares;
@@ -793,20 +879,24 @@ class DataConnector_mysqli extends DataConnector
      */
     public function loadPlatformNonce($nonce)
     {
-        $ok = false;
-
 // Delete any expired nonce values
         $now = date("{$this->dateFormat} {$this->timeFormat}", time());
-        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . " WHERE expires <= '{$now}'";
-        $this->executeQuery($sql);
+        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . " WHERE expires <= ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('s', $now);
+        $this->executeQuery($sql, $stmt);
 
 // Load the nonce
-        $sql = sprintf("SELECT value AS T FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' WHERE (consumer_pk = %d) AND (value = %s)',
-            $nonce->getPlatform()->getRecordId(), $this->escape($nonce->getValue()));
-        $rsNonce = $this->executeQuery($sql, false);
-        if ($rsNonce) {
-            if (mysqli_fetch_object($rsNonce)) {
-                $ok = true;
+        $id = $nonce->getPlatform()->getRecordId();
+        $value = $nonce->getValue();
+        $sql = "SELECT value AS T FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' WHERE (consumer_pk = ?) AND (value = ?)';
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('is', $id, $value);
+        $ok = $this->executeQuery($sql, $stmt);
+        if ($ok) {
+            $rsNonce = $stmt->get_result();
+            if (!$rsNonce->fetch_object()) {
+                $ok = false;
             }
         }
 
@@ -822,10 +912,13 @@ class DataConnector_mysqli extends DataConnector
      */
     public function savePlatformNonce($nonce)
     {
+        $id = $nonce->getPlatform()->getRecordId();
+        $value = $nonce->getValue();
         $expires = date("{$this->dateFormat} {$this->timeFormat}", $nonce->expires);
-        $sql = sprintf("INSERT INTO {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . " (consumer_pk, value, expires) VALUES (%d, %s, %s)",
-            $nonce->getPlatform()->getRecordId(), $this->escape($nonce->getValue()), $this->escape($expires));
-        $ok = $this->executeQuery($sql);
+        $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . " (consumer_pk, value, expires) VALUES (?, ?, ?)";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('iss', $id, $value, $expires);
+        $ok = $this->executeQuery($sql, $stmt);
 
         return $ok;
     }
@@ -839,9 +932,10 @@ class DataConnector_mysqli extends DataConnector
      */
     public function deletePlatformNonce($nonce)
     {
-        $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' WHERE (consumer_pk = %d) AND (value = %s)',
-            $nonce->getPlatform()->getRecordId(), $this->escape($nonce->getValue()));
-        $ok = $this->executeQuery($sql);
+        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' WHERE (consumer_pk = ?) AND (value = ?)';
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('is', $nonce->getPlatform()->getRecordId(), $nonce->getValue());
+        $ok = $this->executeQuery($sql, $stmt);
 
         return $ok;
     }
@@ -859,15 +953,16 @@ class DataConnector_mysqli extends DataConnector
      */
     public function loadAccessToken($accessToken)
     {
-        $ok = false;
-
         $consumer_pk = $accessToken->getPlatform()->getRecordId();
-        $sql = sprintf('SELECT scopes, token, expires, created, updated ' .
+        $sql = 'SELECT scopes, token, expires, created, updated ' .
             "FROM {$this->dbTableNamePrefix}" . static::ACCESS_TOKEN_TABLE_NAME . ' ' .
-            'WHERE (consumer_pk = %d)', $consumer_pk);
-        $rsAccessToken = $this->executeQuery($sql, false);
-        if ($rsAccessToken) {
-            $row = mysqli_fetch_object($rsAccessToken);
+            'WHERE (consumer_pk = ?)';
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $consumer_pk);
+        $ok = $this->executeQuery($sql, $stmt);
+        if ($ok) {
+            $rsAccessToken = $stmt->get_result();
+            $row = $rsAccessToken->fetch_object();
             if ($row) {
                 $scopes = json_decode($row->scopes, true);
                 if (!is_array($scopes)) {
@@ -878,7 +973,8 @@ class DataConnector_mysqli extends DataConnector
                 $accessToken->expires = strtotime($row->expires);
                 $accessToken->created = strtotime($row->created);
                 $accessToken->updated = strtotime($row->updated);
-                $ok = true;
+            } else {
+                $ok = false;
             }
         }
 
@@ -901,16 +997,18 @@ class DataConnector_mysqli extends DataConnector
         $time = time();
         $now = date("{$this->dateFormat} {$this->timeFormat}", $time);
         if (empty($accessToken->created)) {
-            $sql = sprintf("INSERT INTO {$this->dbTableNamePrefix}" . static::ACCESS_TOKEN_TABLE_NAME . ' ' .
+            $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::ACCESS_TOKEN_TABLE_NAME . ' ' .
                 '(consumer_pk, scopes, token, expires, created, updated) ' .
-                'VALUES (%d, %s, %s, %s, %s, %s)', $consumer_pk, $this->escape($scopes), $this->escape($token),
-                $this->escape($expires), $this->escape($now), $this->escape($now));
+                'VALUES (?, ?, ?, ?, ?, ?)';
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param('isssss', $consumer_pk, $scopes, $token, $expires, $now, $now);
         } else {
-            $sql = sprintf('UPDATE ' . $this->dbTableNamePrefix . static::ACCESS_TOKEN_TABLE_NAME . ' ' .
-                'SET scopes = %s, token = %s, expires = %s, updated = %s WHERE consumer_pk = %d', $this->escape($scopes),
-                $this->escape($token), $this->escape($expires), $this->escape($now), $consumer_pk);
+            $sql = 'UPDATE ' . $this->dbTableNamePrefix . static::ACCESS_TOKEN_TABLE_NAME . ' ' .
+                'SET scopes = ?, token = ?, expires = ?, updated = ? WHERE consumer_pk = ?';
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param('ssssi', $scopes, $token, $expires, $now, $consumer_pk);
         }
-        $ok = $this->executeQuery($sql);
+        $ok = $this->executeQuery($sql, $stmt);
 
         return $ok;
     }
@@ -928,26 +1026,29 @@ class DataConnector_mysqli extends DataConnector
      */
     public function loadResourceLinkShareKey($shareKey)
     {
-        $ok = false;
-
 // Clear expired share keys
         $now = date("{$this->dateFormat} {$this->timeFormat}", time());
-        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME . " WHERE expires <= '{$now}'";
-        $this->executeQuery($sql);
-
+        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME . " WHERE expires <= ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('s', $now);
+        $this->executeQuery($sql, $stmt);
 // Load share key
-        $id = mysqli_real_escape_string($this->db, $shareKey->getId());
+        $id = $shareKey->getId();
         $sql = 'SELECT resource_link_pk, auto_approve, expires ' .
             "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME . ' ' .
-            "WHERE share_key_id = '{$id}'";
-        $rsShareKey = $this->executeQuery($sql);
-        if ($rsShareKey) {
-            $row = mysqli_fetch_object($rsShareKey);
+            "WHERE share_key_id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('s', $id);
+        $ok = $this->executeQuery($sql, $stmt);
+        if ($ok) {
+            $rsShareKey = $stmt->get_result();
+            $row = $rsShareKey->fetch_object();
             if ($row) {
                 $shareKey->resourceLinkId = intval($row->resource_link_pk);
                 $shareKey->autoApprove = (intval($row->auto_approve) === 1);
                 $shareKey->expires = strtotime($row->expires);
-                $ok = true;
+            } else {
+                $ok = false;
             }
         }
 
@@ -963,16 +1064,19 @@ class DataConnector_mysqli extends DataConnector
      */
     public function saveResourceLinkShareKey($shareKey)
     {
+        $id = $shareKey->getId();
         if ($shareKey->autoApprove) {
             $approve = 1;
         } else {
             $approve = 0;
         }
         $expires = date("{$this->dateFormat} {$this->timeFormat}", $shareKey->expires);
-        $sql = sprintf("INSERT INTO {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME . ' ' .
+        $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME . ' ' .
             '(share_key_id, resource_link_pk, auto_approve, expires) ' .
-            "VALUES (%s, %d, {$approve}, '{$expires}')", $this->escape($shareKey->getId()), $shareKey->resourceLinkId);
-        $ok = $this->executeQuery($sql);
+            "VALUES (?, ?, ?, ?)";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('ssis', $id, $shareKey->resourceLinkId, $approve, $expires);
+        $ok = $this->executeQuery($sql, $stmt);
 
         return $ok;
     }
@@ -986,9 +1090,11 @@ class DataConnector_mysqli extends DataConnector
      */
     public function deleteResourceLinkShareKey($shareKey)
     {
-        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME . " WHERE share_key_id = '{$shareKey->getId()}'";
-
-        $ok = $this->executeQuery($sql);
+        $id = $shareKey->getId();
+        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME . " WHERE share_key_id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('s', $id);
+        $ok = $this->executeQuery($sql, $stmt);
 
         if ($ok) {
             $shareKey->initialize();
@@ -1010,20 +1116,26 @@ class DataConnector_mysqli extends DataConnector
      */
     public function loadUserResult($userresult)
     {
-        $ok = false;
-        if (!is_null($userresult->getRecordId())) {
-            $sql = sprintf('SELECT user_result_pk, resource_link_pk, lti_user_id, lti_result_sourcedid, created, updated ' .
+        $id = $userresult->getRecordId();
+        if (!is_null($id)) {
+            $sql = 'SELECT user_result_pk, resource_link_pk, lti_user_id, lti_result_sourcedid, created, updated ' .
                 "FROM {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' ' .
-                'WHERE (user_result_pk = %d)', $userresult->getRecordId());
+                'WHERE (user_result_pk = ?)';
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param('i', $id);
         } else {
-            $sql = sprintf('SELECT user_result_pk, resource_link_pk, lti_user_id, lti_result_sourcedid, created, updated ' .
+            $rid = $userresult->getResourceLink()->getRecordId();
+            $uid = $userresult->getId(LTI\Tool::ID_SCOPE_ID_ONLY);
+            $sql = 'SELECT user_result_pk, resource_link_pk, lti_user_id, lti_result_sourcedid, created, updated ' .
                 "FROM {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' ' .
-                'WHERE (resource_link_pk = %d) AND (lti_user_id = %s)', $userresult->getResourceLink()->getRecordId(),
-                $this->escape($userresult->getId(LTI\Tool::ID_SCOPE_ID_ONLY)));
+                'WHERE (resource_link_pk = ?) AND (lti_user_id = ?)';
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param('is', $rid, $uid);
         }
-        $rsUserResult = $this->executeQuery($sql);
-        if ($rsUserResult) {
-            $row = mysqli_fetch_object($rsUserResult);
+        $ok = $this->executeQuery($sql, $stmt);
+        if ($ok) {
+            $rsUserResult = $stmt->get_result();
+            $row = $rsUserResult->fetch_object();
             if ($row) {
                 $userresult->setRecordId(intval($row->user_result_pk));
                 $userresult->setResourceLinkId(intval($row->resource_link_pk));
@@ -1031,7 +1143,8 @@ class DataConnector_mysqli extends DataConnector
                 $userresult->ltiResultSourcedId = $row->lti_result_sourcedid;
                 $userresult->created = strtotime($row->created);
                 $userresult->updated = strtotime($row->updated);
-                $ok = true;
+            } else {
+                $ok = false;
             }
         }
 
@@ -1050,18 +1163,22 @@ class DataConnector_mysqli extends DataConnector
         $time = time();
         $now = date("{$this->dateFormat} {$this->timeFormat}", $time);
         if (is_null($userresult->created)) {
-            $sql = sprintf("INSERT INTO {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' (resource_link_pk, ' .
+            $rid = $userresult->getResourceLink()->getRecordId();
+            $uid = $userresult->getId(LTI\Tool::ID_SCOPE_ID_ONLY);
+            $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' (resource_link_pk, ' .
                 'lti_user_id, lti_result_sourcedid, created, updated) ' .
-                'VALUES (%d, %s, %s, %s, %s)', $userresult->getResourceLink()->getRecordId(),
-                $this->escape($userresult->getId(LTI\Tool::ID_SCOPE_ID_ONLY)), $this->escape($userresult->ltiResultSourcedId),
-                $this->escape($now), $this->escape($now));
+                'VALUES (?, ?, ?, ?, ?)';
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param('issss', $rid, $uid, $userresult->ltiResultSourcedId, $now, $now);
         } else {
-            $sql = sprintf("UPDATE {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' ' .
-                'SET lti_result_sourcedid = %s, updated = %s ' .
-                'WHERE (user_result_pk = %d)', $this->escape($userresult->ltiResultSourcedId), $this->escape($now),
-                $userresult->getRecordId());
+            $id = $userresult->getRecordId();
+            $sql = "UPDATE {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' ' .
+                'SET lti_result_sourcedid = ?, updated = ? ' .
+                'WHERE (user_result_pk = ?)';
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param('ssi', $userresult->ltiResultSourcedId, $now, $id);
         }
-        $ok = $this->executeQuery($sql);
+        $ok = $this->executeQuery($sql, $stmt);
         if ($ok) {
             if (is_null($userresult->created)) {
                 $userresult->setRecordId(mysqli_insert_id($this->db));
@@ -1082,9 +1199,12 @@ class DataConnector_mysqli extends DataConnector
      */
     public function deleteUserResult($userresult)
     {
-        $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' ' .
-            'WHERE (user_result_pk = %d)', $userresult->getRecordId());
-        $ok = $this->executeQuery($sql);
+        $id = $userresult->getRecordId();
+        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' ' .
+            'WHERE (user_result_pk = ?)';
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $id);
+        $ok = $this->executeQuery($sql, $stmt);
 
         if ($ok) {
             $userresult->initialize();
@@ -1106,32 +1226,40 @@ class DataConnector_mysqli extends DataConnector
      */
     public function loadTool($tool)
     {
-        $ok = false;
-        if (!is_null($tool->getRecordId())) {
-            $sql = sprintf('SELECT tool_pk, name, consumer_key, secret, ' .
+        $id = $tool->getRecordId();
+        if (!is_null($id)) {
+            $sql = 'SELECT tool_pk, name, consumer_key, secret, ' .
                 'message_url, initiate_login_url, redirection_uris, public_key, ' .
                 'lti_version, signature_method, settings, enabled, ' .
                 'enable_from, enable_until, last_access, created, updated ' .
                 "FROM {$this->dbTableNamePrefix}" . static::TOOL_TABLE_NAME . ' ' .
-                'WHERE tool_pk = %d', $tool->getRecordId());
+                'WHERE tool_pk = ?';
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param('i', $id);
         } elseif (!empty($tool->initiateLoginUrl)) {
-            $sql = sprintf('SELECT tool_pk, name, consumer_key, secret, ' .
+            $sql = 'SELECT tool_pk, name, consumer_key, secret, ' .
                 'message_url, initiate_login_url, redirection_uris, public_key, ' .
                 'lti_version, signature_method, settings, enabled, ' .
                 'enable_from, enable_until, last_access, created, updated ' .
                 "FROM {$this->dbTableNamePrefix}" . static::TOOL_TABLE_NAME . ' ' .
-                'WHERE initiate_login_url = %s', $this->escape($tool->initiateLoginUrl));
+                'WHERE initiate_login_url = ?';
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param('s', $tool->initiateLoginUrl);
         } else {
-            $sql = sprintf('SELECT tool_pk, name, consumer_key, secret, ' .
+            $key = $tool->getKey();
+            $sql = 'SELECT tool_pk, name, consumer_key, secret, ' .
                 'message_url, initiate_login_url, redirection_uris, public_key, ' .
                 'lti_version, signature_method, settings, enabled, ' .
                 'enable_from, enable_until, last_access, created, updated ' .
                 "FROM {$this->dbTableNamePrefix}" . static::TOOL_TABLE_NAME . ' ' .
-                'WHERE consumer_key = %s', $this->escape($tool->getKey()));
+                'WHERE consumer_key = ?';
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param('s', $key);
         }
-        $rsTool = $this->executeQuery($sql);
-        if ($rsTool) {
-            $row = mysqli_fetch_object($rsTool);
+        $ok = $this->executeQuery($sql, $stmt);
+        if ($ok) {
+            $rsTool = $stmt->get_result();
+            $row = $rsTool->fetch_object();
             if ($row) {
                 $tool->setRecordId(intval($row->tool_pk));
                 $tool->name = $row->name;
@@ -1167,7 +1295,8 @@ class DataConnector_mysqli extends DataConnector
                 $tool->created = strtotime($row->created);
                 $tool->updated = strtotime($row->updated);
                 $this->fixToolSettings($tool, false);
-                $ok = true;
+            } else {
+                $ok = false;
             }
         }
 
@@ -1203,32 +1332,33 @@ class DataConnector_mysqli extends DataConnector
         if (!is_null($tool->lastAccess)) {
             $last = date($this->dateFormat, $tool->lastAccess);
         }
+        $key = $tool->getKey();
         if (empty($id)) {
-            $sql = sprintf("INSERT INTO {$this->dbTableNamePrefix}" . static::TOOL_TABLE_NAME . ' (name, consumer_key, secret, ' .
+            $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::TOOL_TABLE_NAME . ' (name, consumer_key, secret, ' .
                 'message_url, initiate_login_url, redirection_uris, public_key, ' .
                 'lti_version, signature_method, settings, enabled, enable_from, enable_until, ' .
                 'last_access, created, updated) ' .
-                'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %d, %s, %s, %s, %s, %s)', $this->escape($tool->name),
-                $this->escape($tool->getKey()), $this->escape($tool->secret), $this->escape($tool->messageUrl),
-                $this->escape($tool->initiateLoginUrl), $this->escape($redirectionUrisValue), $this->escape($tool->rsaKey),
-                $this->escape($tool->ltiVersion), $this->escape($tool->signatureMethod), $this->escape($settingsValue), $enabled,
-                $this->escape($from), $this->escape($until), $this->escape($last), $this->escape($now), $this->escape($now));
+                'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param('ssssssssssisssss', $tool->name, $key, $tool->secret, $tool->messageUrl, $tool->initiateLoginUrl,
+                $redirectionUrisValue, $tool->rsaKey, $tool->ltiVersion, $tool->signatureMethod, $settingsValue, $enabled, $from,
+                $until, $last, $now, $now);
         } else {
-            $sql = sprintf("UPDATE {$this->dbTableNamePrefix}" . static::TOOL_TABLE_NAME . ' SET ' .
-                'name = %s, consumer_key = %s, secret= %s, ' .
-                'message_url = %s, initiate_login_url = %s, redirection_uris = %s, public_key = %s, ' .
-                'lti_version = %s, signature_method = %s, settings = %s, enabled = %d, enable_from = %s, enable_until = %s, ' .
-                'last_access = %s, updated = %s ' .
-                'WHERE tool_pk = %d', $this->escape($tool->name), $this->escape($tool->getKey()), $this->escape($tool->secret),
-                $this->escape($tool->messageUrl), $this->escape($tool->initiateLoginUrl), $this->escape($redirectionUrisValue),
-                $this->escape($tool->rsaKey), $this->escape($tool->ltiVersion), $this->escape($tool->signatureMethod),
-                $this->escape($settingsValue), $enabled, $this->escape($from), $this->escape($until), $this->escape($last),
-                $this->escape($now), $tool->getRecordId());
+            $sql = "UPDATE {$this->dbTableNamePrefix}" . static::TOOL_TABLE_NAME . ' SET ' .
+                'name = ?, consumer_key = ?, secret= ?, ' .
+                'message_url = ?, initiate_login_url = ?, redirection_uris = ?, public_key = ?, ' .
+                'lti_version = ?, signature_method = ?, settings = ?, enabled = ?, enable_from = ?, enable_until = ?, ' .
+                'last_access = ?, updated = ? ' .
+                'WHERE tool_pk = ?';
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param('ssssssssssissssi', $tool->name, $key, $tool->secret, $tool->messageUrl, $tool->initiateLoginUrl,
+                $redirectionUrisValue, $tool->rsaKey, $tool->ltiVersion, $tool->signatureMethod, $settingsValue, $enabled, $from,
+                $until, $last, $now, $id);
         }
-        $ok = $this->executeQuery($sql);
+        $ok = $this->executeQuery($sql, $stmt);
         if ($ok) {
             if (empty($id)) {
-                $tool->setRecordId(mysqli_insert_id($this->db));
+                $tool->setRecordId($this->db->insert_id);
                 $tool->created = $time;
             }
             $tool->updated = $time;
@@ -1246,10 +1376,13 @@ class DataConnector_mysqli extends DataConnector
      */
     public function deleteTool($tool)
     {
-        $sql = sprintf('DELETE t ' .
+        $id = $tool->getRecordId();
+        $sql = 'DELETE t ' .
             "FROM {$this->dbTableNamePrefix}" . static::TOOL_TABLE_NAME . ' t ' .
-            'WHERE t.tool_pk = %d', $tool->getRecordId());
-        $ok = $this->executeQuery($sql);
+            'WHERE t.tool_pk = ?';
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $id);
+        $ok = $this->executeQuery($sql, $stmt);
 
         if ($ok) {
             $tool->initialize();
@@ -1273,9 +1406,10 @@ class DataConnector_mysqli extends DataConnector
             'enable_from, enable_until, last_access, created, updated ' .
             "FROM {$this->dbTableNamePrefix}" . static::TOOL_TABLE_NAME . ' ' .
             'ORDER BY name';
-        $rsTools = $this->executeQuery($sql);
-        if ($rsTools) {
-            while ($row = mysqli_fetch_object($rsTools)) {
+        $stmt = $this->db->prepare($sql);
+        if ($this->executeQuery($sql, $stmt)) {
+            $rsTools = $stmt->get_result();
+            while ($row = $rsTools->fetch_object()) {
                 $tool = new Tool($this);
                 $tool->setRecordId(intval($row->tool_pk));
                 $tool->name = $row->name;
@@ -1313,7 +1447,7 @@ class DataConnector_mysqli extends DataConnector
                 $this->fixToolSettings($tool, false);
                 $tools[] = $tool;
             }
-            mysqli_free_result($rsTools);
+            $rsTools->free_result();
         }
 
         return $tools;
@@ -1324,50 +1458,26 @@ class DataConnector_mysqli extends DataConnector
 ###
 
     /**
-     * Escape a string for use in a database query.
-     *
-     * Any single quotes in the value passed will be replaced with two single quotes.  If a null value is passed, a string
-     * of 'null' is returned (which will never be enclosed in quotes irrespective of the value of the $addQuotes parameter.
-     *
-     * @param string $value     Value to be escaped
-     * @param bool $addQuotes If true the returned string will be enclosed in single quotes (optional, default is true)
-     *
-     * @return string The escaped string.
-     */
-    public function escape($value, $addQuotes = true)
-    {
-        if (is_null($value)) {
-            $value = 'null';
-        } else {
-            $value = mysqli_real_escape_string($this->db, $value);
-            if ($addQuotes) {
-                $value = "'{$value}'";
-            }
-        }
-
-        return $value;
-    }
-
-    /**
      * Execute a database query.
      *
      * Info and debug messages are generated.
      *
-     * @param string $sql     SQL query
-     * @param bool   $reportError  True if errors are to be reported
+     * @param string   $sql          SQL statement
+     * @param object   $stmt         MySQLi statement
+     * @param bool     $reportError  True if errors are to be reported
      *
-     * @return object|bool  The result object or true, or false on error.
+     * @return bool  True if the query was successful.
      */
-    private function executeQuery($sql, $reportError = true)
+    private function executeQuery($sql, $stmt, $reportError = true)
     {
-        $res = mysqli_query($this->db, $sql);
-        if (($res === false) && $reportError) {
-            Util::logError($sql . PHP_EOL . mysqli_info($this->db) . PHP_EOL . var_export(mysqli_error_list($this->db), true));
+        $ok = $stmt->execute();
+        if (!$ok && $reportError) {
+            Util::logError($sql . PHP_EOL . $this->db->info . PHP_EOL . var_export($this->db->error_list, true));
         } else {
-            Util::logDebug($sql . PHP_EOL . mysqli_info($this->db));
+            Util::logDebug($sql . PHP_EOL . $this->db->info);
         }
 
-        return $res;
+        return $ok;
     }
 
 }
