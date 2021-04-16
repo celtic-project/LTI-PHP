@@ -1086,7 +1086,7 @@ EOF;
                 }
             }
             if ($ok) {
-                if (isset($memberships['member'])) {
+                if (!isset($memberships['member'])) {
                     $members = array();
                 } elseif (!isset($memberships['member'][0])) {
                     $members = array();
