@@ -24,7 +24,8 @@ class WebTokenClient implements ClientInterface
 
     private $jwe = null;
     private $jwt = null;
-    private $claims = array();
+    private $claimsArray = null;
+    private $claims = null;
     private static $lastHeaders = null;
     private static $lastPayload = null;
 
@@ -71,6 +72,7 @@ class WebTokenClient implements ClientInterface
         $ok = true;
         $this->jwe = null;
         $this->jwt = null;
+        $this->claimsArray = null;
         $this->claims = null;
         try {
             $serializer = new Signature\Serializer\CompactSerializer();
@@ -88,7 +90,8 @@ class WebTokenClient implements ClientInterface
             }
         }
         if ($ok) {
-            $this->claims = json_decode($this->jwt->getPayload(), true);
+            $this->claimsArray = json_decode($this->jwt->getPayload(), true);
+            $this->claims = json_decode($this->jwt->getPayload());
         }
 
         return $ok;
@@ -181,7 +184,7 @@ class WebTokenClient implements ClientInterface
      */
     public function hasClaim($name)
     {
-        return array_key_exists($name, $this->claims);
+        return array_key_exists($name, $this->claimsArray);
     }
 
     /**
@@ -195,7 +198,7 @@ class WebTokenClient implements ClientInterface
     public function getClaim($name, $defaultValue = null)
     {
         if ($this->hasClaim($name)) {
-            $value = $this->claims[$name];
+            $value = $this->claimsArray[$name];
             $value = json_decode(json_encode($value));
         } else {
             $value = $defaultValue;
@@ -247,7 +250,7 @@ class WebTokenClient implements ClientInterface
                     new Checker\ExpirationTimeChecker($leeway)
                     ]
                 );
-                $claimCheckerManager->check($this->claims);
+                $claimCheckerManager->check($this->claimsArray);
                 $algorithmManager = new Core\AlgorithmManager([
                     new Signature\Algorithm\RS256(),
                     new Signature\Algorithm\RS384(),

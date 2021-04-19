@@ -13,6 +13,7 @@ use Jose\Checker\CheckerManager;
 use Jose\Checker\ExpirationTimeChecker;
 use Jose\Checker\IssuedAtChecker;
 use Jose\Checker\NotBeforeChecker;
+use Base64Url\Base64Url;
 use ceLTIc\LTI\Util;
 
 /**
@@ -29,6 +30,7 @@ class SpomkyLabsClient implements ClientInterface
 
     private $jwe = null;
     private $jwt = null;
+    private $payload = null;
     private static $lastHeaders = null;
     private static $lastPayload = null;
 
@@ -78,6 +80,10 @@ class SpomkyLabsClient implements ClientInterface
         try {
             $loader = new Jose\Loader();
             $this->jwt = $loader->load($jwtString);
+            $parts = explode('.', $jwtString);
+            if (count($parts) >= 2) {
+                $this->payload = json_decode(Base64Url::decode($parts[1]));
+            }
             $this->decrypt($privateKey);
         } catch (\Exception $e) {
             $ok = false;
@@ -203,7 +209,7 @@ class SpomkyLabsClient implements ClientInterface
      */
     public function getPayload()
     {
-        return $this->jwt->getPayload();
+        return $this->payload;
     }
 
     /**
@@ -436,6 +442,10 @@ class SpomkyLabsClient implements ClientInterface
             $jwtString = $this->jwt->getPayload();
             $loader = new Jose\Loader();
             $this->jwt = $loader->load($jwtString);
+            $parts = explode('.', $jwtString);
+            if (count($parts) >= 2) {
+                $this->payload = json_decode(Base64Url::decode($parts[1]));
+            }
             $ok = $this->jwt instanceof JWS;
         }
     }
