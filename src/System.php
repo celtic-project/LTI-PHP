@@ -1189,6 +1189,7 @@ trait System
                         $payload['aud'] = array($this->clientId);
                         $payload['azp'] = $this->clientId;
                         $payload[Util::JWT_CLAIM_PREFIX . '/claim/deployment_id'] = $this->deploymentId;
+                        $payload[Util::JWT_CLAIM_PREFIX . '/claim/target_link_uri'] = $endpoint;
                         $paramName = 'id_token';
                     } else {
                         if (!empty($this->platform)) {
@@ -1201,7 +1202,6 @@ trait System
                         $paramName = 'JWT';
                     }
                     $payload['nonce'] = $nonce;
-                    $payload[Util::JWT_CLAIM_PREFIX . '/claim/target_link_uri'] = $endpoint;
                 }
             } else {
                 $ok = true;
