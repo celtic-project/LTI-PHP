@@ -94,6 +94,13 @@ class Item
     private $text = null;
 
     /**
+     * HTML to be embedded.
+     *
+     * @var string|null $html
+     */
+    private $html = null;
+
+    /**
      * Icon image object for content-item.
      *
      * @var Image|null $icon
@@ -111,14 +118,19 @@ class Item
      * Class constructor.
      *
      * @param string $type Class type of content-item
-     * @param Placement $placementAdvice  Placement object for item (optional)
+     * @param Placement[]|Placement $placementAdvices  Array of Placement objects (or single placement object) for item (optional)
      * @param string $id   URL of content-item (optional)
      */
-    function __construct($type, $placementAdvice = null, $id = null)
+    function __construct($type, $placementAdvices = null, $id = null)
     {
         $this->type = $type;
-        if (!empty($placementAdvice)) {
-            $this->placements[$placementAdvice->documentTarget] = $placementAdvice;
+        if (!empty($placementAdvices)) {
+            if (!is_array($placementAdvices)) {
+                $placementAdvices = array($placementAdvices);
+            }
+            foreach ($placementAdvices as $placementAdvice) {
+                $this->placements[$placementAdvice->documentTarget] = $placementAdvice;
+            }
         }
         $this->id = $id;
     }
@@ -161,6 +173,16 @@ class Item
     public function setText($text)
     {
         $this->text = $text;
+    }
+
+    /**
+     * Set an HTML embed value for the content-item.
+     *
+     * @param string $html  HTML text value
+     */
+    public function setHtml($html)
+    {
+        $this->html = $html;
     }
 
     /**
@@ -226,7 +248,7 @@ class Item
     }
 
     /**
-     * Wrap the content items to form a complete application/vnd.ims.lti.v1.contentitems+json media type instance.
+     * Generate an array of Item objects from their JSON representation.
      *
      * @param object $items  A JSON object representing Content-Items
      *
@@ -243,36 +265,8 @@ class Item
         }
         $objs = array();
         foreach ($items as $item) {
-            $obj = null;
-            if (isset($item->{'@type'})) {
-                switch ($item->{'@type'}) {
-                    case 'ContentItem':
-                        $obj = new Item('ContentItem');
-                        break;
-                    case 'LtiLinkItem':
-                        $obj = new LtiLinkItem();
-                        break;
-                    case 'FileItem':
-                        $obj = new FileItem();
-                        break;
-                }
-            } elseif (isset($item->type)) {
-                switch ($item->type) {
-                    case self::TYPE_LINK:
-                    case self::TYPE_HTML:
-                    case self::TYPE_IMAGE:
-                        $obj = new Item($item->type);
-                        break;
-                    case self::TYPE_LTI_LINK:
-                        $obj = new LtiLinkItem();
-                        break;
-                    case self::TYPE_FILE:
-                        $obj = new FileItem();
-                        break;
-                }
-            }
-            if ($obj) {
-                $obj->fromJsonObject($item);
+            $obj = self::fromJsonItem($item);
+            if (!empty($obj)) {
                 $objs[] = $obj;
             }
         }
@@ -302,6 +296,8 @@ class Item
         }
         if (!empty($this->text)) {
             $item->text = $this->text;
+        } elseif (!empty($this->html)) {
+            $item->text = $this->html;
         }
         if (!empty($this->url)) {
             $item->url = $this->url;
@@ -310,10 +306,22 @@ class Item
             $item->mediaType = $this->mediaType;
         }
         if (!empty($this->placements)) {
-            $placement = reset($this->placements);
-            $obj = $placement->toJsonldObject();
-            if (!empty($obj)) {
-                $item->placementAdvice = $obj;
+            $placementAdvice = new \stdClass();
+            $placementAdvices = array();
+            foreach ($this->placements as $placement) {
+                $obj = $placement->toJsonldObject();
+                if (!empty($obj)) {
+                    if (!empty($placement->documentTarget)) {
+                        $placementAdvices[] = $placement->documentTarget;
+                    }
+                    $placementAdvice = (object) array_merge((array) $placementAdvice, (array) $obj);
+                }
+            }
+            if (!empty($placementAdvice)) {
+                $item->placementAdvice = $placementAdvice;
+                if (!empty($placementAdvices)) {
+                    $item->placementAdvice->presentationDocumentTarget = implode(',', $placementAdvices);
+                }
             }
         }
         if (!empty($this->icon)) {
@@ -353,7 +361,10 @@ class Item
             $item->title = $this->title;
         }
         if (!empty($this->text)) {
-            $item->text = $this->text;
+            $item->text = Util::stripHtml($this->text);
+        }
+        if (!empty($this->html)) {
+            $item->html = $this->html;
         }
         if (!empty($this->url)) {
             $item->url = $this->url;
@@ -363,8 +374,6 @@ class Item
                 case Placement::TYPE_EMBED:
                 case Placement::TYPE_IFRAME:
                 case Placement::TYPE_WINDOW:
-                    $obj = $placement->toJsonObject();
-                    break;
                 case Placement::TYPE_FRAME:
                     $obj = $placement->toJsonObject();
                     break;
@@ -386,28 +395,81 @@ class Item
         return $item;
     }
 
+    public static function fromJsonItem($item)
+    {
+        $obj = null;
+        $placement = null;
+        if (isset($item->{'@type'})) {
+            if (isset($item->presentationDocumentTarget)) {
+                $placement = Placement::fromJsonObject($item, $item->presentationDocumentTarget);
+            }
+            switch ($item->{'@type'}) {
+                case 'ContentItem':
+                    $obj = new Item('ContentItem', $placement);
+                    break;
+                case 'LtiLinkItem':
+                    $obj = new LtiLinkItem($placement);
+                    break;
+                case 'FileItem':
+                    $obj = new FileItem($placement);
+                    break;
+            }
+        } elseif (isset($item->type)) {
+            $placements = array();
+            $placement = Placement::fromJsonObject($item, 'embed');
+            if (!empty($placement)) {
+                $placements[] = $placement;
+            }
+            $placement = Placement::fromJsonObject($item, 'iframe');
+            if (!empty($placement)) {
+                $placements[] = $placement;
+            }
+            $placement = Placement::fromJsonObject($item, 'window');
+            if (!empty($placement)) {
+                $placements[] = $placement;
+            }
+            switch ($item->type) {
+                case self::TYPE_LINK:
+                case self::TYPE_HTML:
+                case self::TYPE_IMAGE:
+                    $obj = new Item($item->type, $placements);
+                    break;
+                case self::TYPE_LTI_LINK:
+                    $obj = new LtiLinkItem($placements);
+                    break;
+                case self::TYPE_FILE:
+                    $obj = new FileItem($placements);
+                    break;
+            }
+        }
+        if (!empty($obj)) {
+            $obj->fromJsonObject($item);
+        }
+
+        return $obj;
+    }
+
     protected function fromJsonObject($item)
     {
         if (isset($item->{'@id'})) {
             $this->id = $item->{'@id'};
         }
-        $placements = array();
         foreach (get_object_vars($item) as $name => $value) {
             switch ($name) {
                 case 'title':
                 case 'text':
+                case 'html':
                 case 'url':
                 case 'mediaType':
                     $this->{$name} = $item->{$name};
                     break;
                 case 'placementAdvice':
-                    $this->addPlacementAdvice(Placement::fromJsonObject($item->{$name}));
+                    $this->addPlacementAdvice(Placement::fromJsonObject($item));
                     break;
                 case 'embed':
                 case 'window':
                 case 'iframe':
-                    $item->{$name}->documentTarget = $name;
-                    $this->addPlacementAdvice(Placement::fromJsonObject($item->{$name}));
+                    $this->addPlacementAdvice(Placement::fromJsonObject($item, $name));
                     break;
                 case 'icon':
                 case 'thumbnail':

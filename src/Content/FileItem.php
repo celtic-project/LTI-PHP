@@ -29,12 +29,12 @@ class FileItem extends Item
     /**
      * Class constructor.
      *
-     * @param Placement $placementAdvice  Placement object for item (optional)
+     * @param Placement[]|Placement $placementAdvices  Array of Placement objects (or single placement object) for item (optional)
      * @param string $id   URL of content-item (optional)
      */
-    function __construct($placementAdvice = null, $id = null)
+    function __construct($placementAdvices = null, $id = null)
     {
-        parent::__construct(Item::TYPE_FILE, $placementAdvice, $id);
+        parent::__construct(Item::TYPE_FILE, $placementAdvices, $id);
     }
 
     /**

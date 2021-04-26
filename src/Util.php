@@ -58,6 +58,7 @@ final class Util
         'content_item_return_url' => array('suffix' => 'dl', 'group' => 'deep_linking_settings', 'claim' => 'deep_link_return_url'),
         'content_items' => array('suffix' => 'dl', 'group' => '', 'claim' => 'content_items', 'isObject' => true),
         'data' => array('suffix' => 'dl', 'group' => 'deep_linking_settings', 'claim' => 'data'),
+        'data.LtiDeepLinkingResponse' => array('suffix' => 'dl', 'group' => '', 'claim' => 'data'),
         'text' => array('suffix' => 'dl', 'group' => 'deep_linking_settings', 'claim' => 'text'),
         'title' => array('suffix' => 'dl', 'group' => 'deep_linking_settings', 'claim' => 'title'),
         'lti_msg' => array('suffix' => 'dl', 'group' => '', 'claim' => 'msg'),
@@ -403,6 +404,21 @@ EOD;
         }
 
         return $value;
+    }
+
+    /**
+     * Strip HTML tags from a string.
+     *
+     * @param string $html   HTML string to be stripped
+     *
+     * @return string
+     */
+    public static function stripHtml($html)
+    {
+        $html = strip_tags($html);
+        $html = html_entity_decode($html, ENT_QUOTES | ENT_HTML401);
+
+        return $html;
     }
 
 }

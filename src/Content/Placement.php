@@ -85,6 +85,13 @@ class Placement
     private $displayHeight = null;
 
     /**
+     * HTML to be embedded.
+     *
+     * @var string|null $html
+     */
+    private $html = null;
+
+    /**
      * Class constructor.
      *
      * @param string $documentTarget  Location to open content in
@@ -93,9 +100,10 @@ class Placement
      * @param string $windowTarget    Name of window target (optional)
      * @param string $windowFeatures  List of window features (optional)
      * @param string $url             URL for iframe src (optional)
+     * @param string $html            HTML to be embedded (optional)
      */
     function __construct($documentTarget, $displayWidth = null, $displayHeight = null, $windowTarget = null, $windowFeatures = null,
-        $url = null)
+        $url = null, $html = null)
     {
         $this->documentTarget = $documentTarget;
         $this->displayWidth = $displayWidth;
@@ -103,6 +111,7 @@ class Placement
         $this->windowTarget = $windowTarget;
         $this->windowFeatures = $windowFeatures;
         $this->url = $url;
+        $this->html = $html;
     }
 
     /**
@@ -142,7 +151,9 @@ class Placement
             $placement = new \stdClass();
             switch ($this->documentTarget) {
                 case self::TYPE_IFRAME:
-                    $placement->src = $this->url;
+                    if (!empty($this->url)) {
+                        $placement->src = $this->url;
+                    }
                     if (!is_null($this->displayWidth)) {
                         $placement->width = $this->displayWidth;
                     }
@@ -164,6 +175,11 @@ class Placement
                         $placement->windowFeatures = $this->windowFeatures;
                     }
                     break;
+                case self::TYPE_EMBED:
+                    if (!empty($this->html)) {
+                        $placement->html = $this->html;
+                    }
+                    break;
             }
         } else {
             $placement = null;
@@ -172,44 +188,78 @@ class Placement
         return $placement;
     }
 
-    public static function fromJsonObject($item)
+    /**
+     * Generate the Placement object from an item.
+     *
+     * @param object $item  JSON object of item
+     * @param string $documentTarget  Destination of placement to be generated (optional)
+     *
+     * @return Placement
+     */
+    public static function fromJsonObject($item, $documentTarget = null)
     {
         $obj = null;
-        $documentTarget = null;
         $displayWidth = null;
         $displayHeight = null;
         $windowTarget = null;
         $windowFeatures = null;
         $url = null;
-        foreach (get_object_vars($item) as $name => $value) {
-            switch ($name) {
-                case 'presentationDocumentTarget':
-                case 'documentTarget':
-                    $documentTarget = $value;
-                    break;
-                case 'displayWidth':
-                case 'width':
-                    $displayWidth = $value;
-                    break;
-                case 'displayHeight':
-                case 'height':
-                    $displayHeight = $value;
-                    break;
-                case 'windowTarget':
-                case 'targetName':
-                    $windowTarget = $value;
-                    break;
-                case 'windowFeatures':
-                    $windowFeatures = $value;
-                    break;
-                case 'url':
-                case 'src':
-                    $url = $value;
-                    break;
+        $html = null;
+        if (isset($item->{'@type'})) {  // Version 1
+            if (empty($documentTarget) && isset($item->placementAdvice)) {
+                if (isset($item->placementAdvice->presentationDocumentTarget)) {
+                    $documentTarget = $item->placementAdvice->presentationDocumentTarget;
+                }
+            }
+            if (!empty($documentTarget) && isset($item->placementAdvice)) {
+                if (isset($item->placementAdvice->displayWidth)) {
+                    $displayWidth = $item->placementAdvice->displayWidth;
+                }
+                if (isset($item->placementAdvice->displayHeight)) {
+                    $displayHeight = $item->placementAdvice->displayHeight;
+                }
+                if (isset($item->placementAdvice->windowTarget)) {
+                    $windowTarget = $item->placementAdvice->windowTarget;
+                }
+            }
+            if (isset($item->url)) {
+                $url = $item->url;
+            }
+        } else {  // Version 2
+            if (empty($documentTarget)) {
+                if (isset($item->embed)) {
+                    $documentTarget = 'embed';
+                } elseif (isset($item->iframe)) {
+                    $documentTarget = 'iframe';
+                } elseif (isset($item->window)) {
+                    $documentTarget = 'window';
+                }
+            } elseif (!isset($item->{$documentTarget})) {
+                $documentTarget = null;
+            }
+            if (!empty($documentTarget)) {
+                if (isset($item->{$documentTarget}->width)) {
+                    $displayWidth = $item->{$documentTarget}->width;
+                }
+                if (isset($item->{$documentTarget}->height)) {
+                    $displayHeight = $item->{$documentTarget}->height;
+                }
+                if (isset($item->{$documentTarget}->targetName)) {
+                    $windowTarget = $item->{$documentTarget}->targetName;
+                }
+                if (isset($item->{$documentTarget}->windowFeatures)) {
+                    $windowFeatures = $item->{$documentTarget}->windowFeatures;
+                }
+                if (isset($item->{$documentTarget}->src)) {
+                    $url = $item->{$documentTarget}->src;
+                }
+                if (isset($item->{$documentTarget}->html)) {
+                    $html = $item->{$documentTarget}->html;
+                }
             }
         }
-        if ($documentTarget) {
-            $obj = new Placement($documentTarget, $displayWidth, $displayHeight, $windowTarget, $windowFeatures, $url);
+        if (!empty($documentTarget)) {
+            $obj = new Placement($documentTarget, $displayWidth, $displayHeight, $windowTarget, $windowFeatures, $url, $html);
         }
 
         return $obj;

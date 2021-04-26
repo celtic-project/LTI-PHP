@@ -358,9 +358,12 @@ trait System
         $messageClaims = null;
         if (!is_null($this->messageParameters)) {
             $messageParameters = $this->messageParameters;
-            if (!empty($messageParameters['lti_message_type']) && array_key_exists($messageParameters['lti_message_type'],
-                    Util::MESSAGE_TYPE_MAPPING)) {
-                $messageParameters['lti_message_type'] = Util::MESSAGE_TYPE_MAPPING[$messageParameters['lti_message_type']];
+            $messageType = '';
+            if (!empty($messageParameters['lti_message_type'])) {
+                if (array_key_exists($messageType, Util::MESSAGE_TYPE_MAPPING)) {
+                    $messageParameters['lti_message_type'] = Util::MESSAGE_TYPE_MAPPING[$messageParameters['lti_message_type']];
+                }
+                $messageType = $messageParameters['lti_message_type'];
             }
             if (!empty($messageParameters['accept_media_types'])) {
                 $mediaTypes = array_filter(explode(',', str_replace(' ', '', $messageParameters['accept_media_types'])), 'strlen');
@@ -406,7 +409,11 @@ trait System
             foreach ($messageParameters as $key => $value) {
                 $ok = true;
                 if (array_key_exists($key, Util::JWT_CLAIM_MAPPING)) {
-                    $mapping = Util::JWT_CLAIM_MAPPING[$key];
+                    if (array_key_exists("{$key}.{$messageType}", Util::JWT_CLAIM_MAPPING)) {
+                        $mapping = Util::JWT_CLAIM_MAPPING["{$key}.{$messageType}"];
+                    } else {
+                        $mapping = Util::JWT_CLAIM_MAPPING[$key];
+                    }
                     if (isset($mapping['isObject']) && $mapping['isObject']) {
                         $value = json_decode($value);
                     } elseif (isset($mapping['isArray']) && $mapping['isArray']) {

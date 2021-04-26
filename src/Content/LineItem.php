@@ -145,9 +145,9 @@ class LineItem
                     break;
                 }
             }
-            if (!is_null($scoreMaximum)) {
-                $obj = new LineItem($label, $scoreMaximum, $activityId, $tag);
-            }
+        }
+        if (!is_null($scoreMaximum)) {
+            $obj = new LineItem($label, $scoreMaximum, $activityId, $tag);
         }
 
         return $obj;
