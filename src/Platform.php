@@ -21,7 +21,8 @@ class Platform
      * List of supported incoming message types.
      */
     public static $MESSAGE_TYPES = array(
-        'ContentItemSelection'
+        'ContentItemSelection',
+        'LtiStartAssessment'
     );
 
     /**

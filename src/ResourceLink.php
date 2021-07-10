@@ -1294,6 +1294,39 @@ EOF;
     }
 
     /**
+     * Perform an Assessment Control action.
+     *
+     * @param AssessmentControl  $assessmentControl   Assessment control object
+     * @param User               $user                User object
+     * @param int                $attemptNumber       Number of attempt
+     *
+     * @return bool    True if the request was successfully processed
+     */
+    public function doAssessmentControl($asessmentControl, $user, $attemptNumber)
+    {
+        $ok = false;
+        $this->extRequest = '';
+        $this->extRequestHeaders = '';
+        $this->extResponse = '';
+        $this->extResponseHeaders = '';
+        $this->lastServiceRequest = null;
+        $url = $this->getSetting('custom_ap_acs_url');
+        if (!empty($url)) {
+            $assessmentControlService = new Service\AssessmentControl($this, $url);
+            $assessmentControlService->submit($asessmentControl, $user, $attemptNumber);
+            $http = $assessmentControlService->getHttpMessage();
+            $this->extResponse = $http->response;
+            $this->extResponseHeaders = $http->responseHeaders;
+            $ok = $http->ok;
+            $this->extRequest = $http->request;
+            $this->extRequestHeaders = $http->requestHeaders;
+            $this->lastServiceRequest = $http;
+        }
+
+        return $ok;
+    }
+
+    /**
      * Class constructor from consumer.
      *
      * @deprecated Use fromPlatform() instead

@@ -445,6 +445,8 @@ trait System
                         sort($value);
                     } elseif (isset($mapping['isBoolean']) && $mapping['isBoolean']) {
                         $value = $value === 'true';
+                    } elseif (isset($mapping['isInteger']) && $mapping['isInteger']) {
+                        $value = intval($value);
                     }
                     $group = '';
                     $claim = Util::JWT_CLAIM_PREFIX;
@@ -980,6 +982,8 @@ trait System
                         $value = json_encode($value);
                     } elseif (isset($mapping['isBoolean']) && $mapping['isBoolean']) {
                         $value = $value ? 'true' : 'false';
+                    } elseif (isset($mapping['isInteger']) && $mapping['isInteger']) {
+                        $value = strval($value);
                     }
                 }
                 if (!is_null($value) && is_string($value)) {

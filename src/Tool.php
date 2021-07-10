@@ -63,7 +63,9 @@ class Tool
         'DashboardRequest',
         'ContentItemSelectionRequest',
         'ContentItemUpdateRequest',
-        'ToolProxyRegistrationRequest'
+        'ToolProxyRegistrationRequest',
+        'LtiStartProctoring',
+        'LtiEndAssessment'
     );
 
     /**
@@ -87,7 +89,8 @@ class Tool
         'ext_ims_lis_memberships_id', 'ext_ims_lis_memberships_url',
         'ext_ims_lti_tool_setting', 'ext_ims_lti_tool_setting_id', 'ext_ims_lti_tool_setting_url',
         'custom_link_setting_url', 'custom_link_memberships_url',
-        'custom_lineitems_url', 'custom_lineitem_url', 'custom_ags_scopes'
+        'custom_lineitems_url', 'custom_lineitem_url', 'custom_ags_scopes',
+        'custom_ap_acs_url'
     );
 
     /**
@@ -130,7 +133,8 @@ class Tool
         'LineItem.url' => 'custom_lineitem_url',
         'ToolProxyBinding.memberships.url' => 'custom_context_memberships_url',
         'ToolProxyBinding.nrps.url' => 'custom_context_memberships_v2_url',
-        'LtiLink.memberships.url' => 'custom_link_memberships_url'
+        'LtiLink.memberships.url' => 'custom_link_memberships_url',
+        'LtiLink.acs.url' => 'custom_ap_acs_url'
     );
 
     /**
@@ -658,6 +662,22 @@ class Tool
         }
         $this->getRegistrationResponsePage($toolConfig);
         $this->ok = true;
+    }
+
+    /**
+     * Process a valid start proctoring request
+     */
+    protected function onLtiStartProctoring()
+    {
+        $this->onError();
+    }
+
+    /**
+     * Process a valid end assessment request
+     */
+    protected function onLtiEndAssessment()
+    {
+        $this->onError();
     }
 
     /**
@@ -1281,6 +1301,23 @@ EOD;
                 if ($this->debugMode && !$this->ok) {
                     $this->reason = 'Missing message parameters.';
                 }
+            } elseif ($this->messageParameters['lti_message_type'] === 'LtiStartProctoring') {
+                $this->ok = isset($this->messageParameters['resource_link_id']) && (strlen(trim($this->messageParameters['resource_link_id'])) > 0);
+                if (!$this->ok) {
+                    $this->reason = 'Missing resource link ID.';
+                } else {
+                    $this->ok = isset($this->messageParameters['custom_ap_attempt_number']) && (strlen(trim($this->messageParameters['custom_ap_attempt_number'])) > 0) &&
+                        is_numeric($this->messageParameters['custom_ap_attempt_number']);
+                    if (!$this->ok) {
+                        $this->reason = 'Missing or invalid value for attempt number.';
+                    }
+                }
+                if ($this->ok) {
+                    $this->ok = isset($this->messageParameters['user_id']) && (strlen(trim($this->messageParameters['user_id'])) > 0);
+                    if (!$this->ok) {
+                        $this->reason = 'Missing user ID.';
+                    }
+                }
             }
         }
         $now = time();
@@ -1387,6 +1424,14 @@ EOD;
                     $this->ok = $this->checkValue($this->messageParameters['launch_presentation_document_target'],
                         array('embed', 'frame', 'iframe', 'window', 'popup', 'overlay'),
                         'Invalid value for launch_presentation_document_target parameter: \'%s\'.', $strictMode, true);
+                    if ($this->ok && ($this->messageParameters['lti_message_type'] === 'LtiStartProctoring') &&
+                        ($this->messageParameters['launch_presentation_document_target'] !== 'window')) {
+                        $this->ok = !isset($this->messageParameters['launch_presentation_height']) &&
+                            !isset($this->messageParameters['launch_presentation_width']);
+                        if (!$this->ok) {
+                            $this->reason = 'Height and width parameters must only be included for the window document target.';
+                        }
+                    }
                 }
             }
         }

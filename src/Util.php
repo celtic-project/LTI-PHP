@@ -111,7 +111,19 @@ final class Util
         'custom_gs_scopes' => array('suffix' => 'gs', 'group' => 'groupsservice', 'claim' => 'scope', 'isArray' => true),
         'custom_gs_versions' => array('suffix' => 'gs', 'group' => 'groupsservice', 'claim' => 'service_versions', 'isArray' => true),
         'lis_outcome_service_url' => array('suffix' => 'bos', 'group' => 'basicoutcomesservice', 'claim' => 'lis_outcome_service_url'),
-        'lis_result_sourcedid' => array('suffix' => 'bos', 'group' => 'basicoutcomesservice', 'claim' => 'lis_result_sourcedid')
+        'lis_result_sourcedid' => array('suffix' => 'bos', 'group' => 'basicoutcomesservice', 'claim' => 'lis_result_sourcedid'),
+        'custom_ap_attempt_number' => array('suffix' => 'ap', 'group' => '', 'claim' => 'attempt_number', 'isInteger' => true),
+        'custom_ap_start_assessment_url' => array('suffix' => 'ap', 'group' => '', 'claim' => 'start_assessment_url'),
+        'custom_ap_session_data' => array('suffix' => 'ap', 'group' => '', 'claim' => 'session_data'),
+        'custom_ap_acs_actions' => array('suffix' => 'ap', 'group' => 'acs', 'claim' => 'actions', 'isArray' => true),
+        'custom_ap_acs_url' => array('suffix' => 'ap', 'group' => 'acs', 'claim' => 'assessment_control_url'),
+        'custom_ap_proctoring_settings_data' => array('suffix' => 'ap', 'group' => 'proctoring_settings', 'claim' => 'data'),
+        'custom_ap_email_verified' => array('suffix' => '', 'group' => null, 'claim' => 'email_verified', 'isBoolean' => true),
+        'custom_ap_verified_user_given_name' => array('suffix' => 'ap', 'group' => 'verified_user', 'claim' => 'given_name'),
+        'custom_ap_verified_user_family_name' => array('suffix' => 'ap', 'group' => 'verified_user', 'claim' => 'family_name'),
+        'custom_ap_verified_user_full_name' => array('suffix' => 'ap', 'group' => 'verified_user', 'claim' => 'full_name'),
+        'custom_ap_verified_user_image' => array('suffix' => 'ap', 'group' => 'verified_user', 'claim' => 'picture'),
+        'custom_ap_end_assessment_return' => array('suffix' => 'ap', 'group' => '', 'claim' => 'end_assessment_return', 'isBoolean' => true)
     );
 
     /**
@@ -149,7 +161,10 @@ final class Util
         'ContentItemSelectionRequest' => 'onContentItem',
         'ContentItemSelection' => 'onContentItem',
         'ContentItemUpdateRequest' => 'onContentItemUpdate',
-        'ToolProxyRegistrationRequest' => 'onRegister'
+        'ToolProxyRegistrationRequest' => 'onRegister',
+        'LtiStartProctoring' => 'onLtiStartProctoring',
+        'LtiStartAssessment' => 'onLtiStartAssessment',
+        'LtiEndAssessment' => 'onLtiEndAssessment'
     );
 
     /**
