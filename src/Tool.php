@@ -1222,7 +1222,8 @@ EOD;
                             }
                             foreach ($documentTargets as $documentTarget) {
                                 if (!$this->checkValue($documentTarget, $permittedTargets,
-                                        'Invalid value in accept_presentation_document_targets parameter: %s.', $strictMode, true)) {
+                                        'Invalid value in accept_presentation_document_targets parameter: \'%s\'.', $strictMode,
+                                        true)) {
                                     $this->ok = false;
                                     break;
                                 }
@@ -1324,29 +1325,29 @@ EOD;
                 if ($this->messageParameters['lti_message_type'] === 'ContentItemSelectionRequest') {
                     if (isset($this->messageParameters['accept_unsigned'])) {
                         $this->ok = $this->checkValue($this->messageParameters['accept_unsigned'], array('true', 'false'),
-                            'Invalid value for accept_unsigned parameter: %s.', $strictMode);
+                            'Invalid value for accept_unsigned parameter: \'%s\'.', $strictMode);
                     }
                     if ($this->ok && isset($this->messageParameters['accept_multiple'])) {
                         $this->ok = $this->checkValue($this->messageParameters['accept_multiple'], array('true', 'false'),
-                            'Invalid value for accept_multiple parameter: %s.', $strictMode);
+                            'Invalid value for accept_multiple parameter: \'%s\'.', $strictMode);
                     }
                     if ($this->ok && isset($this->messageParameters['accept_copy_advice'])) {
                         $this->ok = $this->checkValue($this->messageParameters['accept_copy_advice'], array('true', 'false'),
-                            'Invalid value for accept_copy_advice parameter: %s.', $strictMode);
+                            'Invalid value for accept_copy_advice parameter: \'%s\'.', $strictMode);
                     }
                     if ($this->ok && isset($this->messageParameters['auto_create'])) {
                         $this->ok = $this->checkValue($this->messageParameters['auto_create'], array('true', 'false'),
-                            'Invalid value for auto_create parameter: %s.', $strictMode);
+                            'Invalid value for auto_create parameter: \'%s\'.', $strictMode);
                     }
                     if ($this->ok && isset($this->messageParameters['can_confirm'])) {
                         $this->ok = $this->checkValue($this->messageParameters['can_confirm'], array('true', 'false'),
-                            'Invalid value for can_confirm parameter: %s.', $strictMode);
+                            'Invalid value for can_confirm parameter: \'%s\'.', $strictMode);
                     }
                 }
                 if ($this->ok && isset($this->messageParameters['launch_presentation_document_target'])) {
                     $this->ok = $this->checkValue($this->messageParameters['launch_presentation_document_target'],
                         array('embed', 'frame', 'iframe', 'window', 'popup', 'overlay'),
-                        'Invalid value for launch_presentation_document_target parameter: %s.', $strictMode, true);
+                        'Invalid value for launch_presentation_document_target parameter: \'%s\'.', $strictMode, true);
                 }
             }
         }
