@@ -41,6 +41,13 @@ class LtiLinkItem extends Item
     private $submission = null;
 
     /**
+     * Do not allow the item to be updated?
+     *
+     * @var bool $noUpdate
+     */
+    private $noUpdate = null;
+
+    /**
      * Class constructor.
      *
      * @param Placement[]|Placement $placementAdvices  Array of Placement objects (or single placement object) for item (optional)
@@ -98,11 +105,24 @@ class LtiLinkItem extends Item
         $this->submission = $submission;
     }
 
+    /**
+     * Set whether the content-item should not be allowed to be updated.
+     *
+     * @param bool|null $noUpdate  True if the item should not be updatable
+     */
+    public function setNoUpdate($noUpdate)
+    {
+        $this->noUpdate = $noUpdate;
+    }
+
     public function toJsonldObject()
     {
         $item = parent::toJsonldObject();
         if (!empty($this->lineItem)) {
             $item->lineItem = $this->lineItem->toJsonldObject();
+        }
+        if (!is_null($this->noUpdate)) {
+            $item->noUpdate = $this->noUpdate;
         }
         if (!empty($this->custom)) {
             $item->custom = $this->custom;
@@ -117,6 +137,9 @@ class LtiLinkItem extends Item
         if (!empty($this->lineItem)) {
             $item->lineItem = $this->lineItem->toJsonObject();
         }
+        if (!is_null($this->noUpdate)) {
+            $item->noUpdate = $this->noUpdate;
+        }
         if (!empty($this->custom)) {
             $item->custom = $this->custom;
         }
@@ -127,9 +150,6 @@ class LtiLinkItem extends Item
     protected function fromJsonObject($item)
     {
         parent::fromJsonObject($item);
-        $url = null;
-        $width = null;
-        $height = null;
         foreach (get_object_vars($item) as $name => $value) {
             switch ($name) {
                 case 'custom':
@@ -145,6 +165,9 @@ class LtiLinkItem extends Item
                     break;
                 case 'submission':
                     $this->setSubmission(TimePeriod::fromJsonObject($item->submission));
+                    break;
+                case 'noUpdate':
+                    $this->noUpdate = $item->noUpdate;
                     break;
             }
         }

@@ -62,6 +62,7 @@ class Tool
         'ConfigureLaunchRequest',
         'DashboardRequest',
         'ContentItemSelectionRequest',
+        'ContentItemUpdateRequest',
         'ToolProxyRegistrationRequest'
     );
 
@@ -627,6 +628,14 @@ class Tool
     }
 
     /**
+     * Process a valid content-item update request
+     */
+    protected function onContentItemUpdate()
+    {
+        $this->onError();
+    }
+
+    /**
      * Process a valid tool proxy registration request
      */
     protected function onRegister()
@@ -1097,7 +1106,8 @@ EOD;
             if (!empty($this->returnUrl)) {
                 $errorUrl = $this->returnUrl;
                 if (!is_null($this->platform) && isset($this->messageParameters['lti_message_type']) &&
-                    ($this->messageParameters['lti_message_type'] === 'ContentItemSelectionRequest')) {
+                    (($this->messageParameters['lti_message_type'] === 'ContentItemSelectionRequest') ||
+                    ($this->messageParameters['lti_message_type'] === 'ContentItemUpdateRequest'))) {
                     $formParams = array();
                     if ($this->debugMode && !is_null($this->reason)) {
                         $formParams['lti_errormsg'] = "Debug error: {$this->reason}";
@@ -1174,7 +1184,9 @@ EOD;
                         $this->reason = 'Missing roles parameter.';
                     }
                 }
-            } elseif ($this->messageParameters['lti_message_type'] === 'ContentItemSelectionRequest') {
+            } elseif (($this->messageParameters['lti_message_type'] === 'ContentItemSelectionRequest') ||
+                ($this->messageParameters['lti_message_type'] === 'ContentItemUpdateRequest')) {
+                $isUpdate = ($this->messageParameters['lti_message_type'] === 'ContentItemUpdateRequest');
                 $mediaTypes = array();
                 $contentTypes = array();
                 $fileTypes = array();
@@ -1184,8 +1196,21 @@ EOD;
                 }
                 $this->ok = count($mediaTypes) > 0;
                 if (!$this->ok) {
-                    $this->reason = 'No accept_media_types found.';
-                } else {
+                    $this->reason = 'No content types specified.';
+                } elseif ($isUpdate) {
+                    if ($this->messageParameters['lti_version'] !== Util::LTI_VERSION1P3) {
+                        if (!$this->checkValue($this->messageParameters['accept_media_types'],
+                                array(Item::LTI_LINK_MEDIA_TYPE, Item::LTI_ASSIGNMENT_MEDIA_TYPE),
+                                'Invalid value in accept_media_types parameter: \'%s\'.', $strictMode, true)) {
+                            $this->ok = false;
+                        }
+                    } elseif (!$this->checkValue($this->messageParameters['accept_types'],
+                            array(Item::TYPE_LTI_LINK, Item::TYPE_LTI_ASSIGNMENT),
+                            'Invalid value in accept_types parameter: \'%s\'.', $strictMode, true)) {
+                        $this->ok = false;
+                    }
+                }
+                if ($this->ok) {
                     $mediaTypes = array_unique($mediaTypes);
                     foreach ($mediaTypes as $mediaType) {
                         if (strpos($mediaType, 'application/vnd.ims.lti.') !== 0) {
@@ -1198,6 +1223,8 @@ EOD;
                             $contentTypes[] = Item::TYPE_IMAGE;
                         } elseif ($mediaType === Item::LTI_LINK_MEDIA_TYPE) {
                             $contentTypes[] = Item::TYPE_LTI_LINK;
+                        } elseif ($mediaType === Item::LTI_ASSIGNMENT_MEDIA_TYPE) {
+                            $contentTypes[] = Item::TYPE_LTI_ASSIGNMENT;
                         }
                     }
                     if (!empty($fileTypes)) {
@@ -1322,18 +1349,30 @@ EOD;
             }
 // Validate other message parameter values
             if ($this->ok) {
-                if ($this->messageParameters['lti_message_type'] === 'ContentItemSelectionRequest') {
+                if (($this->messageParameters['lti_message_type'] === 'ContentItemSelectionRequest') ||
+                    ($this->messageParameters['lti_message_type'] === 'ContentItemUpdateRequest')) {
+                    $isUpdate = ($this->messageParameters['lti_message_type'] === 'ContentItemUpdateRequest');
                     if (isset($this->messageParameters['accept_unsigned'])) {
                         $this->ok = $this->checkValue($this->messageParameters['accept_unsigned'], array('true', 'false'),
                             'Invalid value for accept_unsigned parameter: \'%s\'.', $strictMode);
                     }
                     if ($this->ok && isset($this->messageParameters['accept_multiple'])) {
-                        $this->ok = $this->checkValue($this->messageParameters['accept_multiple'], array('true', 'false'),
-                            'Invalid value for accept_multiple parameter: \'%s\'.', $strictMode);
+                        if (!$isUpdate) {
+                            $this->ok = $this->checkValue($this->messageParameters['accept_multiple'], array('true', 'false'),
+                                'Invalid value for accept_multiple parameter: \'%s\'.', $strictMode);
+                        } else {
+                            $this->ok = $this->checkValue($this->messageParameters['accept_multiple'], array('false'),
+                                'Invalid value for accept_multiple parameter: \'%s\'.', $strictMode);
+                        }
                     }
                     if ($this->ok && isset($this->messageParameters['accept_copy_advice'])) {
-                        $this->ok = $this->checkValue($this->messageParameters['accept_copy_advice'], array('true', 'false'),
-                            'Invalid value for accept_copy_advice parameter: \'%s\'.', $strictMode);
+                        if (!$isUpdate) {
+                            $this->ok = $this->checkValue($this->messageParameters['accept_copy_advice'], array('true', 'false'),
+                                'Invalid value for accept_copy_advice parameter: \'%s\'.', $strictMode);
+                        } else {
+                            $this->ok = $this->checkValue($this->messageParameters['accept_copy_advice'], array('false'),
+                                'Invalid value for accept_copy_advice parameter: \'%s\'.', $strictMode);
+                        }
                     }
                     if ($this->ok && isset($this->messageParameters['auto_create'])) {
                         $this->ok = $this->checkValue($this->messageParameters['auto_create'], array('true', 'false'),

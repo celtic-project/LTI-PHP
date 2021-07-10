@@ -25,6 +25,11 @@ class Item
     const TYPE_LTI_LINK = 'ltiResourceLink';
 
     /**
+     * Type for LTI assignment content-item.
+     */
+    const TYPE_LTI_ASSIGNMENT = 'ltiAssignment';
+
+    /**
      * Type for file content-item.
      */
     const TYPE_FILE = 'file';
@@ -43,6 +48,11 @@ class Item
      * Media type for LTI launch links.
      */
     const LTI_LINK_MEDIA_TYPE = 'application/vnd.ims.lti.v1.ltilink';
+
+    /**
+     * Media type for LTI assignment links.
+     */
+    const LTI_ASSIGNMENT_MEDIA_TYPE = 'application/vnd.ims.lti.v1.ltiassignment';
 
     /**
      * Type of content-item.
@@ -113,6 +123,13 @@ class Item
      * @var Image|null $thumbnail
      */
     private $thumbnail = null;
+
+    /**
+     * Hide the item from learners by default?
+     *
+     * @var bool $hideOnCreate
+     */
+    private $hideOnCreate = null;
 
     /**
      * Class constructor.
@@ -218,6 +235,16 @@ class Item
     }
 
     /**
+     * Set whether the content-item should be hidden from learners by default.
+     *
+     * @param bool|null $hideOnCreate  True if the item should be hidden from learners
+     */
+    public function setHideOnCreate($hideOnCreate)
+    {
+        $this->hideOnCreate = $hideOnCreate;
+    }
+
+    /**
      * Wrap the content items to form a complete application/vnd.ims.lti.v1.contentitems+json media type instance.
      *
      * @param mixed $items  An array of content items or a single item
@@ -281,7 +308,7 @@ class Item
             $item->{'@id'} = $this->id;
         }
         if (!empty($this->type)) {
-            if ($this->type === self::TYPE_LTI_LINK) {
+            if (($this->type === self::TYPE_LTI_LINK) || ($this->type === self::TYPE_LTI_ASSIGNMENT)) {
                 $item->{'@type'} = 'LtiLinkItem';
             } elseif ($this->type === self::TYPE_FILE) {
                 $item->{'@type'} = 'FileItem';
@@ -329,6 +356,9 @@ class Item
         }
         if (!empty($this->thumbnail)) {
             $item->thumbnail = $this->thumbnail->toJsonldObject();
+        }
+        if (!is_null($this->hideOnCreate)) {
+            $item->hideOnCreate = $this->hideOnCreate;
         }
 
         return $item;
@@ -391,6 +421,9 @@ class Item
         if (!empty($this->thumbnail)) {
             $item->thumbnail = $this->thumbnail->toJsonObject();
         }
+        if (!is_null($this->hideOnCreate)) {
+            $item->hideOnCreate = $this->hideOnCreate;
+        }
 
         return $item;
     }
@@ -437,6 +470,9 @@ class Item
                 case self::TYPE_LTI_LINK:
                     $obj = new LtiLinkItem($placements);
                     break;
+                case self::TYPE_LTI_ASSIGNMENT:
+                    $obj = new LtiAssignment($placements);
+                    break;
                 case self::TYPE_FILE:
                     $obj = new FileItem($placements);
                     break;
@@ -461,6 +497,7 @@ class Item
                 case 'html':
                 case 'url':
                 case 'mediaType':
+                case 'hideOnCreate':
                     $this->{$name} = $item->{$name};
                     break;
                 case 'placementAdvice':

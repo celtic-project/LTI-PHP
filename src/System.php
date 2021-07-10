@@ -380,7 +380,12 @@ trait System
                     foreach ($mediaTypes as $mediaType) {
                         if ($mediaType === Item::LTI_LINK_MEDIA_TYPE) {
                             unset($mediaTypes[array_search(Item::LTI_LINK_MEDIA_TYPE, $mediaTypes)]);
+                            $messageParameters['accept_media_types'] = implode(',', $mediaTypes);
                             $types[] = Item::TYPE_LTI_LINK;
+                        } elseif ($mediaType === Item::LTI_ASSIGNMENT_MEDIA_TYPE) {
+                            unset($mediaTypes[array_search(Item::LTI_ASSIGNMENT_MEDIA_TYPE, $mediaTypes)]);
+                            $messageParameters['accept_media_types'] = implode(',', $mediaTypes);
+                            $types[] = Item::TYPE_LTI_ASSIGNMENT;
                         } elseif (substr($mediaType, 0, 6) === 'image/') {
                             $types[] = 'image';
                             $types[] = 'link';
@@ -401,6 +406,25 @@ trait System
                     $types = array_unique($types);
                     $messageParameters['accept_types'] = implode(',', $types);
                 }
+            }
+            if (!empty($messageParameters['accept_presentation_document_targets'])) {
+                $documentTargets = array_filter(explode(',',
+                        str_replace(' ', '', $messageParameters['accept_presentation_document_targets'])), 'strlen');
+                $targets = array();
+                foreach ($documentTargets as $documentTarget) {
+                    switch ($documentTarget) {
+                        case 'frame':
+                        case 'popup':
+                        case 'overlay':
+                        case 'none':
+                            break;
+                        default:
+                            $targets[] = $documentTarget;
+                            break;
+                    }
+                }
+                $targets = array_unique($targets);
+                $messageParameters['accept_presentation_document_targets'] = implode(',', $targets);
             }
             $messageClaims = array();
             if (!empty($messageParameters['oauth_consumer_key'])) {
@@ -977,6 +1001,9 @@ trait System
             }
             if (in_array(Item::TYPE_LTI_LINK, $types)) {
                 $mediaTypes[] = Item::LTI_LINK_MEDIA_TYPE;
+            }
+            if (in_array(Item::TYPE_LTI_ASSIGNMENT, $types)) {
+                $mediaTypes[] = Item::LTI_ASSIGNMENT_MEDIA_TYPE;
             }
             if (in_array('html', $types) && !in_array('*/*', $mediaTypes)) {
                 $mediaTypes[] = 'text/html';

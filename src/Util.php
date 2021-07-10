@@ -40,7 +40,8 @@ final class Util
     const MESSAGE_TYPE_MAPPING = array(
         'basic-lti-launch-request' => 'LtiResourceLinkRequest',
         'ContentItemSelectionRequest' => 'LtiDeepLinkingRequest',
-        'ContentItemSelection' => 'LtiDeepLinkingResponse'
+        'ContentItemSelection' => 'LtiDeepLinkingResponse',
+        'ContentItemUpdateRequest' => 'LtiDeepLinkingUpdateRequest'
     );
 
     /**
@@ -54,7 +55,7 @@ final class Util
         'accept_presentation_document_targets' => array('suffix' => 'dl', 'group' => 'deep_linking_settings', 'claim' => 'accept_presentation_document_targets', 'isArray' => true),
         'accept_unsigned' => array('suffix' => 'dl', 'group' => 'deep_linking_settings', 'claim' => 'accept_unsigned', 'isBoolean' => true),
         'auto_create' => array('suffix' => 'dl', 'group' => 'deep_linking_settings', 'claim' => 'auto_create', 'isBoolean' => true),
-        'can_confirm' => array('suffix' => 'dl', 'group' => 'deep_linking_settings', 'claim' => 'can_confirm'), // Not included in Deep Linking v2 spec
+        'can_confirm' => array('suffix' => 'dl', 'group' => 'deep_linking_settings', 'claim' => 'can_confirm'),
         'content_item_return_url' => array('suffix' => 'dl', 'group' => 'deep_linking_settings', 'claim' => 'deep_link_return_url'),
         'content_items' => array('suffix' => 'dl', 'group' => '', 'claim' => 'content_items', 'isObject' => true),
         'data' => array('suffix' => 'dl', 'group' => 'deep_linking_settings', 'claim' => 'data'),
@@ -147,6 +148,7 @@ final class Util
         'DashboardRequest' => 'onDashboard',
         'ContentItemSelectionRequest' => 'onContentItem',
         'ContentItemSelection' => 'onContentItem',
+        'ContentItemUpdateRequest' => 'onContentItemUpdate',
         'ToolProxyRegistrationRequest' => 'onRegister'
     );
 
