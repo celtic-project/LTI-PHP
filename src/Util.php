@@ -250,7 +250,7 @@ final class Util
     }
 
     /**
-     * Log a request.
+     * Log a request received.
      *
      * @param bool    $debugLevel  True if the request details should be logged at the debug level (optional, default is false for information level)
      */
@@ -273,6 +273,36 @@ final class Util
                 }
             }
             if (!$debugLevel) {
+                self::logInfo($message);
+            } else {
+                self::logDebug($message);
+            }
+        }
+    }
+
+    /**
+     * Log a form submission.
+     *
+     * @param string $url         URL to which the form should be submitted
+     * @param array  $params      Array of form parameters
+     * @param string $method      HTTP Method used to submit form (optional, default is POST)
+     * @param bool   $debugLevel  True if the form details should always be logged (optional, default is false to use current log level)
+     */
+    public static function logForm($url, $params, $method = 'POST', $debugLevel = false)
+    {
+        if (!$debugLevel) {
+            $logLevel = self::$logLevel;
+        } else {
+            $logLevel = self::LOGLEVEL_DEBUG;
+        }
+        if (self::$logLevel >= self::LOGLEVEL_INFO) {
+            $message = "Form submitted using {$method} to '{$url}'";
+            if (!empty($params)) {
+                $message .= " with parameters of:\n" . var_export($params, true);
+            } else {
+                $message .= " with no parameters";
+            }
+            if ($logLevel < self::LOGLEVEL_DEBUG) {
                 self::logInfo($message);
             } else {
                 self::logDebug($message);
@@ -317,6 +347,7 @@ final class Util
      */
     public static function sendForm($url, $params, $target = '')
     {
+        self::logForm($url, $params, 'POST');
         $page = <<< EOD
 <html>
 <head>
