@@ -596,7 +596,15 @@ class Platform
      */
     protected function onContentItem()
     {
+        $this->onError();
+    }
 
+    /**
+     * Process a valid start assessment message
+     */
+    protected function onLtiStartAssessment()
+    {
+        $this->onError();
     }
 
     /**

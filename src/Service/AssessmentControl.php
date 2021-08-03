@@ -43,35 +43,42 @@ class AssessmentControl extends Service
     /**
      * Submit an assessment control action.
      *
-     * @param LTI\AssessmentControl     $assessmentControl   AssessmentControl object
-     * @param LTI\User                  $user                User object
-     * @param int                       $attemptNumber       Attempt number
+     * @param LTI\AssessmentControlAction     $assessmentControlAction   AssessmentControlAction object
+     * @param LTI\User                        $user                      User object
+     * @param int                             $attemptNumber             Attempt number
      *
-     * @return bool  True if successful, otherwise false
+     * @return string|bool  Value of the status response, or false if not successful
      */
-    public function submit($assessmentControl, $user, $attemptNumber)
+    public function submitAction($assessmentControlAction, $user, $attemptNumber)
     {
+        $status = false;
         $json = array(
             'user' => array('iss' => $this->resourceLink->getPlatform()->platformId, 'sub' => $user->ltiUserId),
             'resource_link' => array('id' => $this->resourceLink->ltiResourceLinkId),
             'attempt_number' => $attemptNumber,
-            'action' => $assessmentControl->getAction(),
-            'incident_time' => $assessmentControl->getDate()->format('Y-m-d\TH:i:s\Z'),
-            'incident_severity' => $assessmentControl->getSeverity()
+            'action' => $assessmentControlAction->getAction(),
+            'incident_time' => $assessmentControlAction->getDate()->format('Y-m-d\TH:i:s\Z'),
+            'incident_severity' => $assessmentControlAction->getSeverity()
         );
-        if (!empty($assessmentControl->extraTime)) {
-            $json['extra_time'] = $assessmentControl->extraTime;
+        if (!empty($assessmentControlAction->extraTime)) {
+            $json['extra_time'] = $assessmentControlAction->extraTime;
         }
-        if (!empty($assessmentControl->code)) {
-            $json['reason_code'] = $assessmentControl->code;
+        if (!empty($assessmentControlAction->code)) {
+            $json['reason_code'] = $assessmentControlAction->code;
         }
-        if (!empty($assessmentControl->message)) {
-            $json['reason_msg'] = $assessmentControl->message;
+        if (!empty($assessmentControlAction->message)) {
+            $json['reason_msg'] = $assessmentControlAction->message;
         }
         $data = json_encode($json);
         $http = $this->send('POST', null, $data);
+        if ($http->ok) {
+            $http->ok = !empty($http->responseJson->status);
+            if ($http->ok) {
+                $status = $http->responseJson->status;
+            }
+        }
 
-        return $http->ok;
+        return $status;
     }
 
 }

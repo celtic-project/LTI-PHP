@@ -685,6 +685,18 @@ class ResourceLink
     }
 
     /**
+     * Check if the Assessment Control service is available.
+     *
+     * @return bool    True if this resource link supports the Assessment Control service
+     */
+    public function hasAssessmentControlService()
+    {
+        $url = $this->getSetting('custom_ap_acs_url');
+
+        return !empty($url);
+    }
+
+    /**
      * Perform an Outcomes service request.
      *
      * @param int $action The action type constant
@@ -1296,15 +1308,15 @@ EOF;
     /**
      * Perform an Assessment Control action.
      *
-     * @param AssessmentControl  $assessmentControl   Assessment control object
-     * @param User               $user                User object
-     * @param int                $attemptNumber       Number of attempt
+     * @param AssessmentControlAction  $assessmentControlAction   Assessment control object
+     * @param User                     $user                      User object
+     * @param int                      $attemptNumber             Number of attempt
      *
-     * @return bool    True if the request was successfully processed
+     * @return string|bool    The response status or false if the request was not successfully processed
      */
-    public function doAssessmentControl($asessmentControl, $user, $attemptNumber)
+    public function doAssessmentControlAction($assessmentControlAction, $user, $attemptNumber)
     {
-        $ok = false;
+        $status = false;
         $this->extRequest = '';
         $this->extRequestHeaders = '';
         $this->extResponse = '';
@@ -1313,17 +1325,16 @@ EOF;
         $url = $this->getSetting('custom_ap_acs_url');
         if (!empty($url)) {
             $assessmentControlService = new Service\AssessmentControl($this, $url);
-            $assessmentControlService->submit($asessmentControl, $user, $attemptNumber);
+            $status = $assessmentControlService->submitAction($assessmentControlAction, $user, $attemptNumber);
             $http = $assessmentControlService->getHttpMessage();
             $this->extResponse = $http->response;
             $this->extResponseHeaders = $http->responseHeaders;
-            $ok = $http->ok;
             $this->extRequest = $http->request;
             $this->extRequestHeaders = $http->requestHeaders;
             $this->lastServiceRequest = $http;
         }
 
-        return $ok;
+        return $status;
     }
 
     /**
