@@ -1972,7 +1972,7 @@ EOD;
                     'scope' => 'openid',
                     'state' => $nonce->getValue()
                 );
-                if (!empty($parameters['lti_message_hint'])) {
+                if (isset($parameters['lti_message_hint'])) {
                     $params['lti_message_hint'] = $parameters['lti_message_hint'];
                 }
                 $this->onInitiateLogin($parameters, $params);

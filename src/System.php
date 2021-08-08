@@ -560,7 +560,7 @@ trait System
      *
      * @return array|string  Array of signed message parameters or request headers
      */
-    public function signMessage(&$url, $type, $version, $params, $loginHint = null, $ltiMessageHint = '')
+    public function signMessage(&$url, $type, $version, $params, $loginHint = null, $ltiMessageHint = null)
     {
         if (($this instanceof Platform) && ($this->ltiVersion === Util::LTI_VERSION1P3)) {
             if (empty($loginHint)) {
@@ -573,9 +573,6 @@ trait System
 // Add standard parameters
             $params['lti_version'] = $version;
             $params['lti_message_type'] = $type;
-            if ($ltiMessageHint === '') {
-                $ltiMessageHint = Util::getRandomString();
-            }
             $this->onInitiateLogin($url, $loginHint, $ltiMessageHint, $params);
 
             $params = array(
