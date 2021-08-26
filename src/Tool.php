@@ -1214,7 +1214,7 @@ EOD;
                     $mediaTypes = array_filter(explode(',', str_replace(' ', '', $this->messageParameters['accept_media_types'])),
                         'strlen');
                 }
-                $this->ok = count($mediaTypes) > 0;
+                $this->ok = (count($mediaTypes) > 0) || ($this->messageParameters['lti_version'] === Util::LTI_VERSION1P3);
                 if (!$this->ok) {
                     $this->reason = 'No content types specified.';
                 } elseif ($isUpdate) {
