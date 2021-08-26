@@ -100,7 +100,14 @@ class Membership extends Service
             $parameters['limit'] = strval($limit);
         }
         if ($isLink) {
+            $context = $this->source->getContext();
             $parameters['rlid'] = $this->source->getId();
+            if ($withGroups && ($this->mediaType === self::MEDIA_TYPE_MEMBERSHIPS_NRPS) && !empty($context)) {
+                $context->getGroups();
+                $this->source->groupSets = $context->groupSets;
+                $this->source->groups = $context->groups;
+                $parameters['groups'] = 'true';
+            }
         } elseif ($withGroups && ($this->mediaType === self::MEDIA_TYPE_MEMBERSHIPS_NRPS)) {
             $this->source->getGroups();
             $parameters['groups'] = 'true';

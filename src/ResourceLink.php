@@ -1069,7 +1069,11 @@ EOF;
                 $format = Service\Membership::MEDIA_TYPE_MEMBERSHIPS_V1;
             }
             $service = new Service\Membership($this, $url, $format);
-            $userResults = $service->get();
+            if (!$withGroups) {
+                $userResults = $service->get();
+            } else {
+                $userResults = $service->getWithGroups();
+            }
             $this->lastServiceRequest = $service->getHttpMessage();
             $ok = $userResults !== false;
         }
