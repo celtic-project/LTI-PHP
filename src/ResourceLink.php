@@ -659,7 +659,7 @@ class ResourceLink
         if (!empty($this->getSetting('custom_ags_scopes'))) {
             $scopes = explode(',', $this->getSetting('custom_ags_scopes'));
             if (in_array(Service\Score::$SCOPE, $scopes)) {
-                $has = !empty($this->getSetting('custom_lineitems_url'));
+                $has = !empty($this->getSetting('custom_lineitem_url'));
             }
         }
 
@@ -677,7 +677,7 @@ class ResourceLink
         if (!empty($this->getSetting('custom_ags_scopes'))) {
             $scopes = explode(',', $this->getSetting('custom_ags_scopes'));
             if (in_array(Service\Result::$SCOPE, $scopes)) {
-                $has = !empty($this->getSetting('custom_lineitems_url'));
+                $has = !empty($this->getSetting('custom_lineitem_url'));
             }
         }
 
