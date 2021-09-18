@@ -55,7 +55,7 @@ class CurlClient implements ClientInterface
             $message->response = '';
         }
         $message->status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $message->ok = $message->status < 400;
+        $message->ok = ($message->status >= 100) && ($message->status < 400);
         if (!$message->ok) {
             $message->error = curl_error($ch);
         }

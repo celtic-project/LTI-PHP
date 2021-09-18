@@ -196,6 +196,9 @@ class HttpMessage
                 if ($this->ok) {
                     Util::logInfo($message);
                 } else {
+                    if (!empty($this->error)) {
+                        $message .= "\nError: {$this->error}";
+                    }
                     Util::logError($message);
                 }
             }
