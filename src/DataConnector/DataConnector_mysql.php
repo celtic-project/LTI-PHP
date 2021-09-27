@@ -1379,10 +1379,16 @@ class DataConnector_mysql extends DataConnector
     private function executeQuery($sql, $reportError = true)
     {
         $res = mysql_query($sql);
-        if (($res === false) && $reportError) {
-            Util::logError($sql . PHP_EOL . mysql_info() . PHP_EOL . mysql_errno() . ': ' . mysql_error());
+        $info = mysql_info();
+        if ($info) {
+            $info = PHP_EOL . $info;
         } else {
-            Util::logDebug($sql . PHP_EOL . mysql_info());
+            $info = '';
+        }
+        if (($res === false) && $reportError) {
+            Util::logError($sql . $info . PHP_EOL . 'Error ' . mysql_errno() . ': ' . mysql_error());
+        } else {
+            Util::logDebug($sql . $info);
         }
 
         return $res;

@@ -1676,12 +1676,30 @@ class DataConnector_oci extends DataConnector
     {
         $ok = oci_execute($query);
         if (!$ok && $reportError) {
-            Util::logError($sql . PHP_EOL . var_export(oci_error($query), true));
+            Util::logError($sql . $this->errorInfoToString(oci_error($query)));
         } else {
             Util::logDebug($sql);
         }
 
         return $ok;
+    }
+
+    /**
+     * Extract error information into a string.
+     *
+     * @param array    $errorInfo  Array of error information
+     *
+     * @return string  Error message.
+     */
+    private function errorInfoToString($errorInfo)
+    {
+        if (is_array($errorInfo) && !empty($errorInfo)) {
+            $errors = PHP_EOL . "Error {$errorInfo['code']}: {$errorInfo['message']} (offset {$errorInfo['offset']})";
+        } else {
+            $errors = '';
+        }
+
+        return $errors;
     }
 
 }

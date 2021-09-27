@@ -1378,12 +1378,37 @@ class DataConnector_sqlsrv extends DataConnector
     {
         $res = sqlsrv_query($this->db, $sql);
         if (($res === false) && $reportError) {
-            Util::logError($sql . PHP_EOL . var_export(sqlsrv_errors(), true));
+            Util::logError($sql . $this->errorListToString(sqlsrv_errors()));
         } else {
             Util::logDebug($sql);
         }
 
         return $res;
+    }
+
+    /**
+     * Extract error information into a string.
+     *
+     * @param array    $errorList  Array of error information
+     *
+     * @return string  Error message.
+     */
+    private function errorListToString($errorList)
+    {
+        $errors = '';
+        if (is_array($errorList) && !empty($errorList)) {
+            if (count($errorList) <= 1) {
+                $sep = 'Error ';
+            } else {
+                $sep = 'Errors:' . PHP_EOL . '  ';
+            }
+            foreach ($errorList as $error) {
+                $errors .= PHP_EOL . "{$sep}{$error['code']}/{$error['SQLSTATE']}: {$error['message']}";
+                $sep = '  ';
+            }
+        }
+
+        return $errors;
     }
 
 }

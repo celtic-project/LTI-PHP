@@ -21,7 +21,7 @@ use ceLTIc\LTI\Util;
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3
  */
 ###
-#    NB This class assumes that a MySQLi connection has already been opened to the appropriate schema
+#    NB This class assumes that a PostgreSQL connection has already been opened to the appropriate schema
 ###
 
 
@@ -184,7 +184,7 @@ class DataConnector_pg extends DataConnector
                 $this->escape($last), $this->escape($now), $this->escape($now));
         } else {
             $sql = sprintf("UPDATE {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' SET ' .
-                'consumer_key = %s, name = %s, secret= %s, ' .
+                'consumer_key = %s, name = %s, secret = %s, ' .
                 'platform_id = %s, client_id = %s, deployment_id = %s, public_key = %s, ' .
                 'lti_version = %s, signature_method = %s, ' .
                 'consumer_name = %s, consumer_version = %s, consumer_guid = %s, ' .
@@ -1207,7 +1207,7 @@ class DataConnector_pg extends DataConnector
                 $this->escape($from), $this->escape($until), $this->escape($last), $this->escape($now), $this->escape($now));
         } else {
             $sql = sprintf("UPDATE {$this->dbTableNamePrefix}" . static::TOOL_TABLE_NAME . ' SET ' .
-                'name = %s, consumer_key = %s, secret= %s, ' .
+                'name = %s, consumer_key = %s, secret = %s, ' .
                 'message_url = %s, initiate_login_url = %s, redirection_uris = %s, public_key = %s, ' .
                 'lti_version = %s, signature_method = %s, settings = %s, enabled = %s, enable_from = %s, enable_until = %s, ' .
                 'last_access = %s, updated = %s ' .
@@ -1365,7 +1365,7 @@ class DataConnector_pg extends DataConnector
     {
         $res = pg_query($this->db, $sql);
         if (($res === false) && $reportError) {
-            Util::logError($sql . PHP_EOL . pg_last_error($this->db));
+            Util::logError($sql . PHP_EOL . 'Error: ' . pg_last_error($this->db));
         } else {
             Util::logDebug($sql);
         }

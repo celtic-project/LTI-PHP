@@ -1597,12 +1597,30 @@ class DataConnector_pdo extends DataConnector
             $ok = false;
         }
         if (!$ok && $reportError) {
-            Util::logError($sql . PHP_EOL . var_export($this->db->errorInfo(), true));
+            Util::logError($sql . $this->errorInfoToString($query->errorInfo()));
         } else {
             Util::logDebug($sql);
         }
 
         return $ok;
+    }
+
+    /**
+     * Extract error information into a string.
+     *
+     * @param array    $errorInfo  Array of error information
+     *
+     * @return string  Error message.
+     */
+    private function errorInfoToString($errorInfo)
+    {
+        if (is_array($errorInfo) && (count($errorInfo) === 3)) {
+            $errors = PHP_EOL . "Error {$errorInfo[0]}/{$errorInfo[1]}: {$errorInfo[2]}";
+        } else {
+            $errors = '';
+        }
+
+        return $errors;
     }
 
 }

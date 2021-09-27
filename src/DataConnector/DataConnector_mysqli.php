@@ -1471,13 +1471,42 @@ class DataConnector_mysqli extends DataConnector
     private function executeQuery($sql, $stmt, $reportError = true)
     {
         $ok = $stmt->execute();
+        $info = $this->db->info;
+        if (!empty($info)) {
+            $info = PHP_EOL . $info;
+        }
         if (!$ok && $reportError) {
-            Util::logError($sql . PHP_EOL . $this->db->info . PHP_EOL . var_export($this->db->error_list, true));
+            Util::logError($sql . $info . $this->errorListToString($stmt->error_list));
         } else {
-            Util::logDebug($sql . PHP_EOL . $this->db->info);
+            Util::logDebug($sql . $info);
         }
 
         return $ok;
+    }
+
+    /**
+     * Extract error information into a string.
+     *
+     * @param array    $errorList  Array of error information
+     *
+     * @return string  Error message.
+     */
+    private function errorListToString($errorList)
+    {
+        $errors = '';
+        if (is_array($errorList) && !empty($errorList)) {
+            if (count($errorList) <= 1) {
+                $sep = 'Error ';
+            } else {
+                $sep = 'Errors:' . PHP_EOL . '  ';
+            }
+            foreach ($errorList as $error) {
+                $errors .= PHP_EOL . "{$sep}{$error['errno']}/{$error['sqlstate']}: {$error['error']}";
+                $sep = '  ';
+            }
+        }
+
+        return $errors;
     }
 
 }
