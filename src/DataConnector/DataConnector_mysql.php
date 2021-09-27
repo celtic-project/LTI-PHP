@@ -191,7 +191,7 @@ class DataConnector_mysql extends DataConnector
                 'lti_version, signature_method, consumer_name, consumer_version, consumer_guid, ' .
                 'profile, tool_proxy, settings, protected, enabled, ' .
                 'enable_from, enable_until, last_access, created, updated) ' .
-                'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %d, %d, %s, %s, %s, %s, %s)',
+                'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %d, %d, %s, %s, %s, %s, %s)',
                 $this->escape($platform->getKey()), $this->escape($platform->name), $this->escape($platform->secret),
                 $this->escape($platform->platformId), $this->escape($platform->clientId), $this->escape($platform->deploymentId),
                 $this->escape($platform->rsaKey), $this->escape($platform->ltiVersion), $this->escape($platform->signatureMethod),
@@ -1149,7 +1149,7 @@ class DataConnector_mysql extends DataConnector
         }
         $rsTool = $this->executeQuery($sql);
         if ($rsTool) {
-            $row = mysqli_fetch_object($rsTool);
+            $row = mysql_fetch_object($rsTool);
             if ($row) {
                 $tool->setRecordId(intval($row->tool_pk));
                 $tool->name = $row->name;
@@ -1246,7 +1246,7 @@ class DataConnector_mysql extends DataConnector
         $ok = $this->executeQuery($sql);
         if ($ok) {
             if (empty($id)) {
-                $tool->setRecordId(mysqli_insert_id($this->db));
+                $tool->setRecordId(mysql_insert_id($this->db));
                 $tool->created = $time;
             }
             $tool->updated = $time;
@@ -1293,7 +1293,7 @@ class DataConnector_mysql extends DataConnector
             'ORDER BY name';
         $rsTools = $this->executeQuery($sql);
         if ($rsTools) {
-            while ($row = mysqli_fetch_object($rsTools)) {
+            while ($row = mysql_fetch_object($rsTools)) {
                 $tool = new Tool($this);
                 $tool->setRecordId(intval($row->tool_pk));
                 $tool->name = $row->name;
@@ -1331,7 +1331,7 @@ class DataConnector_mysql extends DataConnector
                 $this->fixToolSettings($tool, false);
                 $tools[] = $tool;
             }
-            mysqli_free_result($rsTools);
+            mysql_free_result($rsTools);
         }
 
         return $tools;
