@@ -4,6 +4,7 @@ namespace ceLTIc\LTI\ApiHook\moodle;
 
 use ceLTIc\LTI\UserResult;
 use ceLTIc\LTI\Http\HttpMessage;
+use ceLTIc\LTI\Util;
 
 /**
  * Class to handle Moodle web service requests.
@@ -106,22 +107,26 @@ trait MoodleApi
             $groupingIds = array_map(function($grouping) {
                 return $grouping->id;
             }, $courseGroupings);
-            $params = array(
-                'groupingids' => $groupingIds,
-                'returngroups' => 1
-            );
-            $groupings = $this->callMoodleApi('core_group_get_groupings', $params);
-            if (is_array($groupings)) {
+            if (empty($groupingIds)) {
                 $ok = true;
-                foreach ($groupings as $grouping) {
-                    if (!empty($grouping->groups) && (empty($prefix) || (strpos($grouping->name, $prefix) === 0))) {
-                        $groupingId = strval($grouping->id);
-                        $this->sourceObject->groupSets[$groupingId] = array('title' => $grouping->name, 'groups' => array(),
-                            'num_members' => 0, 'num_staff' => 0, 'num_learners' => 0);
-                        foreach ($grouping->groups as $group) {
-                            $groupId = strval($group->id);
-                            $this->sourceObject->groupSets[$groupingId]['groups'][] = $groupId;
-                            $this->sourceObject->groups[$groupId] = array('title' => $group->name, 'set' => $groupingId);
+            } else {
+                $params = array(
+                    'groupingids' => $groupingIds,
+                    'returngroups' => 1
+                );
+                $groupings = $this->callMoodleApi('core_group_get_groupings', $params);
+                if (is_array($groupings)) {
+                    $ok = true;
+                    foreach ($groupings as $grouping) {
+                        if (!empty($grouping->groups) && (empty($prefix) || (strpos($grouping->name, $prefix) === 0))) {
+                            $groupingId = strval($grouping->id);
+                            $this->sourceObject->groupSets[$groupingId] = array('title' => $grouping->name, 'groups' => array(),
+                                'num_members' => 0, 'num_staff' => 0, 'num_learners' => 0);
+                            foreach ($grouping->groups as $group) {
+                                $groupId = strval($group->id);
+                                $this->sourceObject->groupSets[$groupingId]['groups'][] = $groupId;
+                                $this->sourceObject->groups[$groupId] = array('title' => $group->name, 'set' => $groupingId);
+                            }
                         }
                     }
                 }
@@ -215,7 +220,11 @@ trait MoodleApi
                     $user->setEmail($enrolment->email, $this->sourceObject->getPlatform()->defaultEmail);
                     $user->setNames($enrolment->firstname, $enrolment->lastname, $enrolment->fullname);
                     $user->username = $enrolment->username;
-                    $user->sourcedId = $enrolment->idnumber;
+                    if (!empty($enrolment->idnumber)) {
+                        $user->sourcedId = $enrolment->idnumber;
+                    } else {
+                        $user->sourcedId = null;
+                    }
                     if (!empty($enrolment->groups)) {
                         foreach ($enrolment->groups as $group) {
                             $groupId = strval($group->id);
@@ -308,6 +317,9 @@ trait MoodleApi
         if ($http->ok) {
             $json = json_decode($http->response);
             $http->ok = !is_null($json) && is_array($json);
+            if (!$http->ok) {
+                Util::logError("Moodle web service returned an error: {$http->response}");
+            }
         }
 
         return $json;
