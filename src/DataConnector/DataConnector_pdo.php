@@ -895,12 +895,12 @@ class DataConnector_pdo extends DataConnector
 
         $shares = array();
 
-        $sql = 'SELECT c.consumer_name, r.resource_link_pk, r.title, r.share_approved ' .
+        $sql = 'SELECT c.consumer_name consumer_name, r.resource_link_pk resource_link_pk, r.title title, r.share_approved share_approved ' .
             "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' r ' .
             "INNER JOIN {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' c ON r.consumer_pk = c.consumer_pk ' .
             'WHERE (r.primary_resource_link_pk = :id1) ' .
             'UNION ' .
-            'SELECT c2.consumer_name, r2.resource_link_pk, r2.title, r2.share_approved ' .
+            'SELECT c2.consumer_name consumer_name, r2.resource_link_pk resource_link_pk, r2.title title, r2.share_approved share_approved ' .
             "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' r2 ' .
             "INNER JOIN {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' x ON r2.context_pk = x.context_pk ' .
             "INNER JOIN {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' c2 ON x.consumer_pk = c2.consumer_pk ' .
