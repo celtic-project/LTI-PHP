@@ -293,9 +293,9 @@ class Platform
         $familyCode = '';
         if (!empty($this->consumerVersion)) {
             $familyCode = $this->consumerVersion;
-            $pos = strpos('-', $familyCode);
+            $pos = strpos($familyCode, '-');
             if ($pos !== false) {
-                $familyCode = substr($familyCode, 0, $pos - 1);
+                $familyCode = substr($familyCode, 0, $pos);
             }
         }
 
