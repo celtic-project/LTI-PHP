@@ -1944,10 +1944,13 @@ EOD;
                     } else {  // Remove all parameters added by platform from query string
                         $queryString = '';
                         $params = explode('&', $_SERVER['QUERY_STRING']);
+                        $ignore = false;  // Only include those query parameters which come before any of the standard OpenID Connect ones
                         foreach ($params as $param) {
                             $parts = explode('=', $param, 2);
-                            if (!in_array($parts[0],
+                            if (in_array($parts[0],
                                     array('iss', 'target_link_uri', 'login_hint', 'lti_message_hint', 'client_id', 'lti_deployment_id'))) {
+                                $ignore = true;
+                            } elseif (!$ignore) {
                                 if ((count($parts) <= 1) || empty($parts[1])) {  // Drop equals sign for empty parameters to workaround Canvas bug
                                     $queryString .= "&{$parts[0]}";
                                 } else {
