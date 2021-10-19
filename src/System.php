@@ -1295,7 +1295,7 @@ trait System
             } else {
                 $platform = $this;
             }
-            $accessToken = $platform->accessToken;
+            $accessToken = $platform->getAccessToken();
             if (empty($accessToken)) {
                 $accessToken = new AccessToken($platform);
                 $platform->setAccessToken($accessToken);
