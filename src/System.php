@@ -1204,6 +1204,7 @@ trait System
     {
         $ok = false;
         if (is_array($data)) {
+            $ok = true;
             if (empty($nonce)) {
                 $nonce = Util::getRandomString(32);
             }
@@ -1211,35 +1212,31 @@ trait System
             if (!array_key_exists('grant_type', $data)) {
                 $this->messageParameters = $data;
                 $payload = $this->getMessageClaims();
-                $ok = count($payload) > 2;
-                if ($ok) {
-                    $privateKey = $this->rsaKey;
-                    $kid = $this->kid;
-                    $jku = $this->jku;
-                    if ($this instanceof Platform) {
-                        if (!empty(Tool::$defaultTool)) {
-                            $publicKey = Tool::$defaultTool->rsaKey;
-                        }
-                        $payload['iss'] = $this->platformId;
-                        $payload['aud'] = array($this->clientId);
-                        $payload['azp'] = $this->clientId;
-                        $payload[Util::JWT_CLAIM_PREFIX . '/claim/deployment_id'] = $this->deploymentId;
-                        $payload[Util::JWT_CLAIM_PREFIX . '/claim/target_link_uri'] = $endpoint;
-                        $paramName = 'id_token';
-                    } else {
-                        if (!empty($this->platform)) {
-                            $publicKey = $this->platform->rsaKey;
-                            $payload['iss'] = $this->platform->clientId;
-                            $payload['aud'] = array($this->platform->platformId);
-                            $payload['azp'] = $this->platform->platformId;
-                            $payload[Util::JWT_CLAIM_PREFIX . '/claim/deployment_id'] = $this->platform->deploymentId;
-                        }
-                        $paramName = 'JWT';
+                $privateKey = $this->rsaKey;
+                $kid = $this->kid;
+                $jku = $this->jku;
+                if ($this instanceof Platform) {
+                    if (!empty(Tool::$defaultTool)) {
+                        $publicKey = Tool::$defaultTool->rsaKey;
                     }
-                    $payload['nonce'] = $nonce;
+                    $payload['iss'] = $this->platformId;
+                    $payload['aud'] = array($this->clientId);
+                    $payload['azp'] = $this->clientId;
+                    $payload[Util::JWT_CLAIM_PREFIX . '/claim/deployment_id'] = $this->deploymentId;
+                    $payload[Util::JWT_CLAIM_PREFIX . '/claim/target_link_uri'] = $endpoint;
+                    $paramName = 'id_token';
+                } else {
+                    if (!empty($this->platform)) {
+                        $publicKey = $this->platform->rsaKey;
+                        $payload['iss'] = $this->platform->clientId;
+                        $payload['aud'] = array($this->platform->platformId);
+                        $payload['azp'] = $this->platform->platformId;
+                        $payload[Util::JWT_CLAIM_PREFIX . '/claim/deployment_id'] = $this->platform->deploymentId;
+                    }
+                    $paramName = 'JWT';
                 }
+                $payload['nonce'] = $nonce;
             } else {
-                $ok = true;
                 $authorizationId = '';
                 if ($this instanceof Tool) {
                     $iss = $this->baseUrl;
