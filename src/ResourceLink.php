@@ -609,6 +609,9 @@ class ResourceLink
             $has = !empty($this->getContext()->getSetting('custom_context_memberships_url')) || !empty($this->getContext()->getSetting('custom_context_memberships_v2_url'));
         }
         if (!$has) {
+            $has = !empty($this->getSetting('custom_link_memberships_url'));
+        }
+        if (!$has) {
             $has = !empty($this->getSetting('ext_ims_lis_memberships_url'));
         }
         if (!$has) {
@@ -1056,12 +1059,13 @@ EOF;
     {
         $ok = false;
         $userResults = array();
-        $hasLtiservice = !empty($this->getContextId()) &&
+        $hasLtiLinkService = !empty($this->getSetting('custom_link_memberships_url'));
+        $hasLtiContextService = !empty($this->getContextId()) &&
             (!empty($this->getContext()->getSetting('custom_context_memberships_url')) || !empty($this->getContext()->getSetting('custom_context_memberships_v2_url')));
         $hasExtService = !empty($this->getSetting('ext_ims_lis_memberships_url'));
         $hasApiHook = $this->hasConfiguredApiHook(self::$MEMBERSHIPS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode(), $this);
-        if ($hasLtiservice && (!$withGroups || (!$hasExtService && !$hasApiHook))) {
-            if (!empty($this->getContext()->getSetting('custom_context_memberships_v2_url'))) {
+        if ($hasLtiContextService && (!$withGroups || (!$hasExtService && !$hasApiHook))) {
+            if (!empty($this->getContextId()) && !empty($this->getContext()->getSetting('custom_context_memberships_v2_url'))) {
                 $url = $this->getContext()->getSetting('custom_context_memberships_v2_url');
                 $format = Service\Membership::MEDIA_TYPE_MEMBERSHIPS_NRPS;
             } else {
@@ -1075,6 +1079,20 @@ EOF;
                 $userResults = $service->getWithGroups();
             }
             $this->lastServiceRequest = $service->getHttpMessage();
+            $ok = $userResults !== false;
+        } elseif ($hasLtiLinkService) {
+            $id = $this->id;
+            $this->id = null;
+            $url = $this->getSetting('custom_link_memberships_url');
+            $format = Service\Membership::MEDIA_TYPE_MEMBERSHIPS_V1;
+            $service = new Service\Membership($this, $url, $format);
+            if (!$withGroups) {
+                $userResults = $service->get();
+            } else {
+                $userResults = $service->getWithGroups();
+            }
+            $this->lastServiceRequest = $service->getHttpMessage();
+            $this->id = $id;
             $ok = $userResults !== false;
         }
         if (!$ok && $hasExtService) {
@@ -1234,7 +1252,7 @@ EOF;
      *
      * @param string|null  $resourceId         Tool resource ID
      * @param string|null  $tag                Tag
-     * @param int|null     $limit              Limit of line items to be returned, null for service default
+     * @param int|null     $limit              Limit of line items to be returned in each request, null for service default
      *
      * @return LineItem[]|bool  Array of LineItem objects or false on error
      */
@@ -1282,7 +1300,7 @@ EOF;
     /**
      * Get all outcomes.
      *
-     * @param int|null     $limit              Limit of outcomes to be returned, null for service default
+     * @param int|null     $limit              Limit of outcomes to be returned in each request, null for service default
      *
      * @return Outcome[]|bool  Array of Outcome objects or false on error
      */
