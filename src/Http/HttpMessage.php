@@ -50,6 +50,13 @@ class HttpMessage
     public $responseHeaders = '';
 
     /**
+     * Relative links in response headers.
+     *
+     * @var array $relativeLinks
+     */
+    public $relativeLinks = array();
+
+    /**
      * Status of response (0 if undetermined).
      *
      * @var int $status
@@ -166,6 +173,7 @@ class HttpMessage
     public function send()
     {
         $client = self::getHttpClient();
+        $this->relativeLinks = array();
         if (empty($client)) {
             $this->ok = false;
             $message = 'No HTTP client interface is available';
@@ -178,6 +186,7 @@ class HttpMessage
             Util::logError($message, true);
         } else {
             $this->ok = $client->send($this);
+            $this->parseRelativeLinks();
             if (Util::$logLevel > Util::LOGLEVEL_NONE) {
                 $message = "Http\\HttpMessage->send {$this->method} request to '{$this->url}'";
                 if (!empty($this->requestHeaders)) {
@@ -205,6 +214,69 @@ class HttpMessage
         }
 
         return $this->ok;
+    }
+
+    /**
+     * Check whether a relative link of the specified type exists.
+     *
+     * @param string $rel
+     *
+     * @return bool  True if it exists
+     */
+    public function hasRelativeLink($rel)
+    {
+        return array_key_exists($rel, $this->relativeLinks);
+    }
+
+    /**
+     * Get the URL from the relative link with the specified type.
+     *
+     * @param string $rel
+     *
+     * @return string|null  The URL associated with the relative link, null if it is not defined
+     */
+    public function getRelativeLink($rel)
+    {
+        $url = null;
+        if (hasRelativeLink($rel)) {
+            $url = $this->relativeLinks[$rel];
+        }
+
+        return $url;
+    }
+
+    /**
+     * Get the relative links.
+     *
+     * @return array  Associative array of relative links
+     */
+    public function getRelativeLinks()
+    {
+        return $this->relativeLinks;
+    }
+
+###
+###  PRIVATE METHOD
+###
+
+    /**
+     * Parse the response headers for relative links.
+     */
+    private function parseRelativeLinks()
+    {
+        $matched = preg_match_all('/Link: *\<([^\>]+)\>; *rel=(\"[a-z]+\"|[a-z]+)/', $this->responseHeaders, $matches);
+        if ($matched) {
+            for ($i = 0; $i < $matched; $i++) {
+                $rel = strtolower($matches[2][$i]);
+                if (strpos($rel, '"') === 0) {
+                    $rel = substr($rel, 1, strlen($rel) - 2);
+                }
+                if ($rel === 'previous') {
+                    $rel = 'prev';
+                }
+                $this->relativeLinks[$rel] = $matches[1][$i];
+            }
+        }
     }
 
 }

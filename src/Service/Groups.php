@@ -54,9 +54,20 @@ class Groups extends Service
     /**
      * Limit on size of container to be returned from requests.
      *
+     * A limit of null (or zero) will disable paging of requests
+     *
      * @var int|null  $limit
      */
     private $limit;
+
+    /**
+     * Whether requests should be made one page at a time when a limit is set.
+     *
+     * When false, all objects will be requested, even if this requires several requests based on the limit set.
+     *
+     * @var boolean  $pagingMode
+     */
+    private $pagingMode;
 
     /**
      * Class constructor.
@@ -65,8 +76,9 @@ class Groups extends Service
      * @param string       $groupsEndpoint      Service endpoint for course groups
      * @param string       $groupSetsEndpoint   Service endpoint for course group sets (optional)
      * @param int|null     $limit               Limit of objects to be returned in each request, null for all
+     * @param boolean      $pagingMode        True if only a single page should be requested when a limit is set
      */
-    public function __construct($context, $groupsEndpoint, $groupSetsEndpoint = null, $limit = null)
+    public function __construct($context, $groupsEndpoint, $groupSetsEndpoint = null, $limit = null, $pagingMode = false)
     {
         $platform = $context->getPlatform();
         parent::__construct($platform, $groupsEndpoint);
@@ -76,6 +88,7 @@ class Groups extends Service
         $this->groupsEndpoint = $groupsEndpoint;
         $this->groupSetsEndpoint = $groupSetsEndpoint;
         $this->limit = $limit;
+        $this->pagingMode = $pagingMode;
     }
 
     /**
@@ -143,7 +156,8 @@ class Groups extends Service
                                 'num_members' => 0, 'num_staff' => 0, 'num_learners' => 0);
                         }
                     }
-                    if (preg_match('/\<([^\>]+)\>; *rel=(\"next\"|next)/', $http->responseHeaders, $matches)) {
+                    if (!$this->pagingMode && preg_match('/Link: *\<([^\>]+)\>; *rel=(\"next\"|next)/', $http->responseHeaders,
+                            $matches)) {
                         $url = $matches[1];
                         $this->endpoint = $url;
                         $parameters = array();
@@ -216,7 +230,7 @@ class Groups extends Service
                             $groups[$agroup->id] = $group;
                         }
                     }
-                    if (preg_match('/\<([^\>]+)\>; *rel=(\"next\"|next)/', $http->responseHeaders, $matches)) {
+                    if (!$this->pagingMode && preg_match('/\<([^\>]+)\>; *rel=(\"next\"|next)/', $http->responseHeaders, $matches)) {
                         $url = $matches[1];
                         $this->endpoint = $url;
                         $parameters = array();

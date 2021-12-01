@@ -23,9 +23,20 @@ class Result extends AssignmentGrade
     /**
      * Limit on size of container to be returned from requests.
      *
+     * A limit of null (or zero) will disable paging of requests
+     *
      * @var int|null  $limit
      */
     private $limit;
+
+    /**
+     * Whether requests should be made one page at a time when a limit is set.
+     *
+     * When false, all objects will be requested, even if this requires several requests based on the limit set.
+     *
+     * @var boolean  $pagingMode
+     */
+    private $pagingMode;
 
     /**
      * Class constructor.
@@ -33,11 +44,13 @@ class Result extends AssignmentGrade
      * @param Platform     $platform   Platform object for this service request
      * @param string       $endpoint   Service endpoint
      * @param int|null     $limit      Limit of results to be returned in each request, null for all
+     * @param boolean      $pagingMode        True if only a single page should be requested when a limit is set
      */
-    public function __construct($platform, $endpoint, $limit = null)
+    public function __construct($platform, $endpoint, $limit = null, $pagingMode = false)
     {
-        $this->limit = $limit;
         parent::__construct($platform, $endpoint, '/results');
+        $this->limit = $limit;
+        $this->pagingMode = $pagingMode;
         $this->scope = self::$SCOPE;
         $this->mediaType = 'application/vnd.ims.lis.v2.resultcontainer+json';
     }
@@ -68,7 +81,7 @@ class Result extends AssignmentGrade
                         $outcomes[] = self::getOutcome($outcome);
                     }
                 }
-                if (preg_match('/\<([^\>]+)\>; *rel=(\"next\"|next)/', $http->responseHeaders, $matches)) {
+                if (!$this->pagingMode && preg_match('/\<([^\>]+)\>; *rel=(\"next\"|next)/', $http->responseHeaders, $matches)) {
                     $url = $matches[1];
                     $this->endpoint = $url;
                     $params = array();

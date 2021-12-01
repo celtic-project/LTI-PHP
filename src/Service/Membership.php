@@ -41,9 +41,20 @@ class Membership extends Service
     /**
      * Limit on size of container to be returned from requests.
      *
+     * A limit of null (or zero) will disable paging of requests
+     *
      * @var int|null  $limit
      */
     private $limit;
+
+    /**
+     * Whether requests should be made one page at a time when a limit is set.
+     *
+     * When false, all objects will be requested, even if this requires several requests based on the limit set.
+     *
+     * @var boolean  $pagingMode
+     */
+    private $pagingMode;
 
     /**
      * Class constructor.
@@ -52,8 +63,9 @@ class Membership extends Service
      * @param string       $endpoint   Service endpoint
      * @param string       $format     Format to request
      * @param int|null     $limit      Limit of line items to be returned in each request, null for all
+     * @param boolean      $pagingMode        True if only a single page should be requested when a limit is set
      */
-    public function __construct($source, $endpoint, $format = self::MEDIA_TYPE_MEMBERSHIPS_V1, $limit = null)
+    public function __construct($source, $endpoint, $format = self::MEDIA_TYPE_MEMBERSHIPS_V1, $limit = null, $pagingMode = false)
     {
         $platform = $source->getPlatform();
         parent::__construct($platform, $endpoint);
@@ -61,6 +73,7 @@ class Membership extends Service
         $this->mediaType = $format;
         $this->source = $source;
         $this->limit = $limit;
+        $this->pagingMode = $pagingMode;
     }
 
     /**
@@ -113,7 +126,9 @@ class Membership extends Service
         }
         if ($isLink) {
             $context = $this->source->getContext();
-            $parameters['rlid'] = $this->source->getId();
+            if (!empty($this->source->getId())) {
+                $parameters['rlid'] = $this->source->getId();
+            }
             if ($withGroups && ($this->mediaType === self::MEDIA_TYPE_MEMBERSHIPS_NRPS) && !empty($context)) {
                 $context->getGroups();
                 $this->source->groupSets = $context->groupSets;
@@ -139,7 +154,7 @@ class Membership extends Service
                 } elseif (isset($http->responseJson->members)) {
                     $memberships = array_merge($memberships, $http->responseJson->members);
                 }
-                if (preg_match('/\<([^\>]+)\>; *rel=(\"next\"|next)/', $http->responseHeaders, $matches)) {
+                if (!$this->pagingMode && preg_match('/\<([^\>]+)\>; *rel=(\"next\"|next)/', $http->responseHeaders, $matches)) {
                     $url = $matches[1];
                     $this->endpoint = $url;
                     $parameters = array();
@@ -336,8 +351,8 @@ class Membership extends Service
                 }
             }
 
-/// Delete any old users which were not in the latest list from the platform
-            if ($isLink) {
+/// Delete any old users which were not in the latest list from the platform if request is not paged
+            if ($isLink && !$this->pagingMode) {
                 foreach ($oldUsers as $id => $userresult) {
                     $userresult->delete();
                 }

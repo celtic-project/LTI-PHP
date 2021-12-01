@@ -26,13 +26,6 @@ class LineItem extends AssignmentGrade
     public static $SCOPE_READONLY = 'https://purl.imsglobal.org/spec/lti-ags/scope/lineitem.readonly';
 
     /**
-     * Limit on size of container to be returned from requests.
-     *
-     * @var int|null  $limit
-     */
-    private $limit;
-
-    /**
      * Line item media type.
      */
     private static $MEDIA_TYPE_LINE_ITEM = 'application/vnd.ims.lis.v2.lineitem+json';
@@ -43,16 +36,36 @@ class LineItem extends AssignmentGrade
     private static $MEDIA_TYPE_LINE_ITEMS = 'application/vnd.ims.lis.v2.lineitemcontainer+json';
 
     /**
+     * Limit on size of container to be returned from requests.
+     *
+     * A limit of null (or zero) will disable paging of requests
+     *
+     * @var int|null  $limit
+     */
+    private $limit;
+
+    /**
+     * Whether requests should be made one page at a time when a limit is set.
+     *
+     * When false, all objects will be requested, even if this requires several requests based on the limit set.
+     *
+     * @var boolean  $pagingMode
+     */
+    private $pagingMode;
+
+    /**
      * Class constructor.
      *
      * @param Platform     $platform   Platform object for this service request
      * @param string       $endpoint   Service endpoint
      * @param int|null     $limit      Limit of line items to be returned in each request, null for all
+     * @param boolean      $pagingMode        True if only a single page should be requested when a limit is set
      */
-    public function __construct($platform, $endpoint, $limit = null)
+    public function __construct($platform, $endpoint, $limit = null, $pagingMode = false)
     {
-        $this->limit = $limit;
         parent::__construct($platform, $endpoint);
+        $this->limit = $limit;
+        $this->pagingMode = $pagingMode;
         $this->scope = self::$SCOPE;
     }
 
@@ -101,7 +114,7 @@ class LineItem extends AssignmentGrade
                         $lineItems[] = self::toLineItem($this->getPlatform(), $lineItem);
                     }
                 }
-                if (preg_match('/\<([^\>]+)\>; *rel=(\"next\"|next)/', $http->responseHeaders, $matches)) {
+                if (!$this->pagingMode && preg_match('/\<([^\>]+)\>; *rel=(\"next\"|next)/', $http->responseHeaders, $matches)) {
                     $url = $matches[1];
                     $this->endpoint = $url;
                     $params = array();
