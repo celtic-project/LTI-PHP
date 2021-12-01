@@ -152,6 +152,7 @@ class Service
                             if (!$accessToken->hasScope($this->scope)) {
                                 if (empty($this->http)) {
                                     $this->http = new HttpMessage($url);
+                                    $this->http->error = "Unable to obtain an access token for scope: {$this->scope}";
                                 }
                                 break;
                             }

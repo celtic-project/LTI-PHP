@@ -461,7 +461,14 @@ class Platform
             $this->onError();
         }
         if (!$this->ok) {
-            Util::logError("Request failed with reason: '{$this->reason}'");
+            $errorMessage = "Request failed with reason: '{$this->reason}'";
+            if (!empty($this->details)) {
+                $errorMessage .= PHP_EOL . 'Debug information:';
+                foreach ($this->details as $detail) {
+                    $errorMessage .= PHP_EOL . "  {$detail}";
+                }
+            }
+            Util::logError($errorMessage);
         }
     }
 

@@ -806,6 +806,7 @@ trait System
                     if (empty($this->reason)) {
                         $this->reason = 'OAuth signature check failed - perhaps an incorrect secret or timestamp.';
                     }
+                    $this->details[] = "Shared secret: '{$secret}'";
                     $this->details[] = 'Current timestamp: ' . time();
                     $this->details[] = "Expected signature: {$signature}";
                     $this->details[] = "Base string: {$request->base_string}";
