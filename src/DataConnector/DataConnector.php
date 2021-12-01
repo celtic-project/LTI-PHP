@@ -106,7 +106,7 @@ class DataConnector
      * @param object|resource $db                 Database connection object
      * @param string $dbTableNamePrefix  Prefix for database table names (optional, default is none)
      */
-    public function __construct($db, $dbTableNamePrefix = '')
+    protected function __construct($db, $dbTableNamePrefix = '')
     {
         $this->db = $db;
         $this->dbTableNamePrefix = $dbTableNamePrefix;
