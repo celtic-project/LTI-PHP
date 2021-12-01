@@ -47,7 +47,7 @@ class LineItem extends AssignmentGrade
      *
      * @param Platform     $platform   Platform object for this service request
      * @param string       $endpoint   Service endpoint
-     * @param int|null     $limit      Limit of lineitems to be returned per request, null for all
+     * @param int|null     $limit      Limit of line items to be returned in each request, null for all
      */
     public function __construct($platform, $endpoint, $limit = null)
     {
@@ -63,10 +63,10 @@ class LineItem extends AssignmentGrade
      * also be limited to a number of items which may mean that multiple requests will be made to retrieve the
      * full list.
      *
-     * @param string|null  $ltiResourceLinkId  LTI resource link ID
-     * @param string|null  $resourceId         Tool resource ID
-     * @param string|null  $tag                Tag
-     * @param int|null     $limit              Limit of line items to be returned, null for service default
+     * @param string|null  $ltiResourceLinkId  LTI resource link ID (optional)
+     * @param string|null  $resourceId         Tool resource ID (optional)
+     * @param string|null  $tag                Tag (optional)
+     * @param int|null     $limit              Limit of line items to be returned in each request, null for service default (optional)
      *
      * @return LineItem[]|bool  Array of LineItem objects or false on error
      */
@@ -88,6 +88,7 @@ class LineItem extends AssignmentGrade
             $params['limit'] = $this->limit;
         }
         $lineItems = array();
+        $endpoint = $this->endpoint;
         do {
             $this->scope = self::$SCOPE_READONLY;
             $this->mediaType = self::$MEDIA_TYPE_LINE_ITEMS;
@@ -100,14 +101,16 @@ class LineItem extends AssignmentGrade
                         $lineItems[] = self::toLineItem($this->getPlatform(), $lineItem);
                     }
                 }
-                if (!empty($limit) && preg_match('/\<([^\>]+)\>; *rel=[\"next\"|next]/', $http->responseHeaders, $matches)) {
+                if (preg_match('/\<([^\>]+)\>; *rel=(\"next\"|next)/', $http->responseHeaders, $matches)) {
                     $url = $matches[1];
                     $this->endpoint = $url;
+                    $params = array();
                 }
             } else {
                 $lineItems = false;
             }
         } while ($url);
+        $this->endpoint = $endpoint;
 
         return $lineItems;
     }

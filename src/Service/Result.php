@@ -32,7 +32,7 @@ class Result extends AssignmentGrade
      *
      * @param Platform     $platform   Platform object for this service request
      * @param string       $endpoint   Service endpoint
-     * @param int|null     $limit      Limit of results to be returned per request, null for all
+     * @param int|null     $limit      Limit of results to be returned in each request, null for all
      */
     public function __construct($platform, $endpoint, $limit = null)
     {
@@ -45,7 +45,7 @@ class Result extends AssignmentGrade
     /**
      * Retrieve all outcomes for a line item.
      *
-     * @param int|null     $limit      Limit of results to be returned, null for service default
+     * @param int|null     $limit      Limit of results to be returned in each request, null for service default
      *
      * @return Outcome[]|bool  Array of Outcome objects or false on error
      */
@@ -58,6 +58,7 @@ class Result extends AssignmentGrade
             $params['limit'] = $this->limit;
         }
         $outcomes = array();
+        $endpoint = $this->endpoint;
         do {
             $http = $this->send('GET', $params);
             $url = '';
@@ -67,14 +68,16 @@ class Result extends AssignmentGrade
                         $outcomes[] = self::getOutcome($outcome);
                     }
                 }
-                if (!empty($limit) && preg_match('/\<([^\>]+)\>; *rel=[\"next\"|next]/', $http->responseHeaders, $matches)) {
+                if (preg_match('/\<([^\>]+)\>; *rel=(\"next\"|next)/', $http->responseHeaders, $matches)) {
                     $url = $matches[1];
                     $this->endpoint = $url;
+                    $params = array();
                 }
             } else {
                 $outcomes = false;
             }
         } while ($url);
+        $this->endpoint = $endpoint;
 
         return $outcomes;
     }

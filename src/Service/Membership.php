@@ -39,30 +39,39 @@ class Membership extends Service
     private $source = null;
 
     /**
+     * Limit on size of container to be returned from requests.
+     *
+     * @var int|null  $limit
+     */
+    private $limit;
+
+    /**
      * Class constructor.
      *
      * @param object       $source     The object to which the memberships apply (ResourceLink or Context)
      * @param string       $endpoint   Service endpoint
      * @param string       $format     Format to request
+     * @param int|null     $limit      Limit of line items to be returned in each request, null for all
      */
-    public function __construct($source, $endpoint, $format = self::MEDIA_TYPE_MEMBERSHIPS_V1)
+    public function __construct($source, $endpoint, $format = self::MEDIA_TYPE_MEMBERSHIPS_V1, $limit = null)
     {
         $platform = $source->getPlatform();
         parent::__construct($platform, $endpoint);
         $this->scope = self::$SCOPE;
         $this->mediaType = $format;
         $this->source = $source;
+        $this->limit = $limit;
     }
 
     /**
      * Get the memberships.
      *
      * @param string    $role   Role for which memberships are to be requested (optional, default is all roles)
-     * @param int       $limit  Limit on the number of memberships to be returned (optional, default is all)
+     * @param int|null  $limit  Limit on the number of memberships to be returned in each request, null for service default (optional)
      *
      * @return mixed The array of UserResult objects if successful, otherwise false
      */
-    public function get($role = null, $limit = 0)
+    public function get($role = null, $limit = null)
     {
         return $this->getMembers(false, $role, $limit);
     }
@@ -71,11 +80,11 @@ class Membership extends Service
      * Get the memberships.
      *
      * @param string    $role   Role for which memberships are to be requested (optional, default is all roles)
-     * @param int       $limit  Limit on the number of memberships to be returned (optional, default is all)
+     * @param int|null  $limit  Limit on the number of memberships to be returned in each request, null for service default (optional)
      *
      * @return mixed The array of UserResult objects if successful, otherwise false
      */
-    public function getWithGroups($role = null, $limit = 0)
+    public function getWithGroups($role = null, $limit = null)
     {
         return $this->getMembers(true, $role, $limit);
     }
@@ -85,18 +94,21 @@ class Membership extends Service
      *
      * @param bool      $withGroups True is group information is to be requested as well
      * @param string    $role   Role for which memberships are to be requested (optional, default is all roles)
-     * @param int       $limit  Limit on the number of memberships to be returned (optional, default is all)
+     * @param int|null  $limit  Limit on the number of memberships to be returned in each request, null for service default (optional)
      *
      * @return mixed The array of UserResult objects if successful, otherwise false
      */
-    private function getMembers($withGroups, $role = null, $limit = 0)
+    private function getMembers($withGroups, $role = null, $limit = null)
     {
         $isLink = is_a($this->source, 'ceLTIc\LTI\ResourceLink');
         $parameters = array();
         if (!empty($role)) {
             $parameters['role'] = $role;
         }
-        if ($limit > 0) {
+        if (is_null($limit)) {
+            $limit = $this->limit;
+        }
+        if (!empty($limit)) {
             $parameters['limit'] = strval($limit);
         }
         if ($isLink) {
@@ -112,17 +124,37 @@ class Membership extends Service
             $this->source->getGroups();
             $parameters['groups'] = 'true';
         }
-        $http = $this->send('GET', $parameters);
-        if (empty($http) || !$http->ok) {
-            $userResults = false;
-        } else {
-            $userResults = array();
+        $userResults = array();
+        $memberships = array();
+        $endpoint = $this->endpoint;
+        do {
+            $http = $this->send('GET', $parameters);
+            $url = '';
+            if (!empty($http) && $http->ok) {
+                $isjsonld = false;
+                if (isset($http->responseJson->pageOf) && isset($http->responseJson->pageOf->membershipSubject) &&
+                    isset($http->responseJson->pageOf->membershipSubject->membership)) {
+                    $isjsonld = true;
+                    $memberships = array_merge($memberships, $http->responseJson->pageOf->membershipSubject->membership);
+                } elseif (isset($http->responseJson->members)) {
+                    $memberships = array_merge($memberships, $http->responseJson->members);
+                }
+                if (preg_match('/\<([^\>]+)\>; *rel=(\"next\"|next)/', $http->responseHeaders, $matches)) {
+                    $url = $matches[1];
+                    $this->endpoint = $url;
+                    $parameters = array();
+                }
+            } else {
+                $userResults = false;
+            }
+        } while ($url);
+        $this->endpoint = $endpoint;
+        if ($userResults !== false) {
             if ($isLink) {
                 $oldUsers = $this->source->getUserResultSourcedIDs(true, LTI\Tool::ID_SCOPE_RESOURCE);
             }
-            if (isset($http->responseJson->pageOf) && isset($http->responseJson->pageOf->membershipSubject) &&
-                isset($http->responseJson->pageOf->membershipSubject->membership)) {
-                foreach ($http->responseJson->pageOf->membershipSubject->membership as $membership) {
+            foreach ($memberships as $membership) {
+                if ($isjsonld) {
                     $member = $membership->member;
                     if ($isLink) {
                         $userresult = LTI\UserResult::fromResourceLink($this->source, $member->userId);
@@ -210,9 +242,8 @@ class Membership extends Service
                     if ($isLink) {
                         unset($oldUsers[$userresult->getId(LTI\Tool::ID_SCOPE_RESOURCE)]);
                     }
-                }
-            } elseif (isset($http->responseJson->members)) {
-                foreach ($http->responseJson->members as $member) {
+                } else {  // Version 2
+                    $member = $membership;
                     if ($isLink) {
                         $userresult = LTI\UserResult::fromResourceLink($this->source, $member->user_id);
                     } else {

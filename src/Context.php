@@ -615,7 +615,7 @@ class Context
      *
      * @param string|null  $resourceId         Tool resource ID
      * @param string|null  $tag                Tag
-     * @param int|null     $limit              Limit of line items to be returned, null for service default
+     * @param int|null     $limit              Limit of line items to be returned in each request, null for service default
      *
      * @return LineItem[]|bool  Array of LineItem objects or false on error
      */
