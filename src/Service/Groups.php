@@ -95,28 +95,20 @@ class Groups extends Service
      * Get the course group sets and groups.
      *
      * @param bool      $allowNonSets  Include groups which are not part of a set (optional)
+     * @param User|nul  $user          Limit response to groups for specified user (optional)
      * @param int|null  $limit         Limit on the number of objects to be returned in each request, null for service default (optional)
-     * @param string    $userId        Limit response to groups for specified user (optional)
      *
      * @return bool     True if the operation was successful
      */
-    public function get($allowNonSets = false, $limit = null, $userId = null)
+    public function get($allowNonSets = false, $user = null, $limit = null)
     {
         $ok = $this->getGroupSets($limit);
         if ($ok) {
-            $ok = $this->getGroups($allowNonSets, $limit, $userId);
+            $ok = $this->getGroups($allowNonSets, $user, $limit);
         }
         if (!$ok) {
             $this->context->groupSets = null;
             $this->context->groups = null;
-        } elseif (!empty($userId)) {  // Remove any group sets which do not apply to the specified user
-            $groupSets = array();
-            foreach ($this->context->groups as $group) {
-                if (!empty($group['set'])) {
-                    $groupSets[$group['set']] = $this->context->groupSets[$group['set']];
-                }
-            }
-            $this->context->groupSets = $groupSets;
         }
 
         return $ok;
@@ -177,26 +169,30 @@ class Groups extends Service
      * Get the course groups.
      *
      * @param bool      $allowNonSets  Include groups which are not part of a set (optional)
+     * @param User|null $user          Limit response to groups for specified user (optional)
      * @param int|null  $limit         Limit on the number of course groups to be returned in each request, null for service default (optional)
-     * @param string    $userId        Limit response to groups for specified user (optional)
      *
      * @return bool     True if the operation was successful
      */
-    public function getGroups($allowNonSets = false, $limit = null, $userId = null)
+    public function getGroups($allowNonSets = false, $user = null, $limit = null)
     {
         $this->endpoint = $this->groupsEndpoint;
         $ok = !empty($this->endpoint);
         if ($ok) {
             $this->mediaType = self::MEDIA_TYPE_COURSE_GROUPS;
             $parameters = array();
+            $ltiUserId = null;
+            if (!empty($user) && !empty($user->ltiUserId)) {
+                $ltiUserId = $user->ltiUserId;
+            }
+            if (!empty($ltiUserId)) {
+                $parameters['user_id'] = $ltiUserId;
+            }
             if (is_null($limit)) {
                 $limit = $this->limit;
             }
             if (!empty($limit)) {
                 $parameters['limit'] = strval($limit);
-            }
-            if (!empty($userId)) {
-                $parameters['user_id'] = $userId;
             }
             if (is_null($this->context->groupSets)) {
                 $groupSets = array();
@@ -240,7 +236,11 @@ class Groups extends Service
             $this->endpoint = $endpoint;
             if ($ok) {
                 $this->context->groupSets = $groupSets;
-                $this->context->groups = $groups;
+                if (empty($ltiUserId)) {
+                    $this->context->groups = $groups;
+                } else {
+                    $user->groups = $groups;
+                }
             }
         }
 

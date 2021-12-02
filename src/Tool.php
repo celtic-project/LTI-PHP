@@ -78,7 +78,9 @@ class Tool
      */
     private static $LTI_CONTEXT_SETTING_NAMES = array('custom_context_setting_url',
         'ext_ims_lis_memberships_id', 'ext_ims_lis_memberships_url',
-        'custom_context_memberships_url', 'custom_context_memberships_v2_url', 'custom_lineitems_url', 'custom_ags_scopes'
+        'custom_context_memberships_url', 'custom_context_memberships_v2_url',
+        'custom_context_group_sets_url', 'custom_context_groups_url',
+        'custom_lineitems_url', 'custom_ags_scopes'
     );
 
     /**
