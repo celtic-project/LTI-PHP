@@ -95,7 +95,7 @@ class Groups extends Service
      * Get the course group sets and groups.
      *
      * @param bool      $allowNonSets  Include groups which are not part of a set (optional)
-     * @param User|nul  $user          Limit response to groups for specified user (optional)
+     * @param User|null $user          Limit response to groups for specified user (optional)
      * @param int|null  $limit         Limit on the number of objects to be returned in each request, null for service default (optional)
      *
      * @return bool     True if the operation was successful
@@ -148,9 +148,8 @@ class Groups extends Service
                                 'num_members' => 0, 'num_staff' => 0, 'num_learners' => 0);
                         }
                     }
-                    if (!$this->pagingMode && preg_match('/Link: *\<([^\>]+)\>; *rel=(\"next\"|next)/', $http->responseHeaders,
-                            $matches)) {
-                        $url = $matches[1];
+                    if (!$this->pagingMode && $http->hasRelativeLink('next')) {
+                        $url = $http->getRelativeLink('next');
                         $this->endpoint = $url;
                         $parameters = array();
                     }
@@ -226,8 +225,8 @@ class Groups extends Service
                             $groups[$agroup->id] = $group;
                         }
                     }
-                    if (!$this->pagingMode && preg_match('/\<([^\>]+)\>; *rel=(\"next\"|next)/', $http->responseHeaders, $matches)) {
-                        $url = $matches[1];
+                    if (!$this->pagingMode && $http->hasRelativeLink('next')) {
+                        $url = $http->getRelativeLink('next');
                         $this->endpoint = $url;
                         $parameters = array();
                     }

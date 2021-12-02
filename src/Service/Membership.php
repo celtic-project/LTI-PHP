@@ -154,8 +154,8 @@ class Membership extends Service
                 } elseif (isset($http->responseJson->members)) {
                     $memberships = array_merge($memberships, $http->responseJson->members);
                 }
-                if (!$this->pagingMode && preg_match('/\<([^\>]+)\>; *rel=(\"next\"|next)/', $http->responseHeaders, $matches)) {
-                    $url = $matches[1];
+                if (!$this->pagingMode && $http->hasRelativeLink('next')) {
+                    $url = $http->getRelativeLink('next');
                     $this->endpoint = $url;
                     $parameters = array();
                 }

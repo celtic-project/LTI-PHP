@@ -114,8 +114,8 @@ class LineItem extends AssignmentGrade
                         $lineItems[] = self::toLineItem($this->getPlatform(), $lineItem);
                     }
                 }
-                if (!$this->pagingMode && preg_match('/\<([^\>]+)\>; *rel=(\"next\"|next)/', $http->responseHeaders, $matches)) {
-                    $url = $matches[1];
+                if (!$this->pagingMode && $http->hasRelativeLink('next')) {
+                    $url = $http->getRelativeLink('next');
                     $this->endpoint = $url;
                     $params = array();
                 }

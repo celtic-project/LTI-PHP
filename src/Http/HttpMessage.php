@@ -264,7 +264,7 @@ class HttpMessage
      */
     private function parseRelativeLinks()
     {
-        $matched = preg_match_all('/Link: *\<([^\>]+)\>; *rel=(\"[a-z]+\"|[a-z]+)/', $this->responseHeaders, $matches);
+        $matched = preg_match_all('/[Link|link]: *\<([^\>]+)\>; *rel=(\"[a-z]+\"|[a-z]+)/', $this->responseHeaders, $matches);
         if ($matched) {
             for ($i = 0; $i < $matched; $i++) {
                 $rel = strtolower($matches[2][$i]);
