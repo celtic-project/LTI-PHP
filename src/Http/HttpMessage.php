@@ -264,17 +264,22 @@ class HttpMessage
      */
     private function parseRelativeLinks()
     {
-        $matched = preg_match_all('/[Link|link]: *\<([^\>]+)\>; *rel=(\"[a-z]+\"|[a-z]+)/', $this->responseHeaders, $matches);
+        $matched = preg_match_all('/^(Link|link): *(.*)$/m', $this->responseHeaders, $matches);
         if ($matched) {
             for ($i = 0; $i < $matched; $i++) {
-                $rel = strtolower($matches[2][$i]);
-                if (strpos($rel, '"') === 0) {
-                    $rel = substr($rel, 1, strlen($rel) - 2);
+                $links = explode(',', $matches[2][$i]);
+                foreach ($links as $link) {
+                    if (preg_match('/^\<([^\>]+)\>; *rel=([^ ]+)$/', trim($link), $match)) {
+                        $rel = strtolower(utf8_decode($match[2]));
+                        if ((strpos($rel, '"') === 0) || (strpos($rel, '?') === 0)) {
+                            $rel = substr($rel, 1, strlen($rel) - 2);
+                        }
+                        if ($rel === 'previous') {
+                            $rel = 'prev';
+                        }
+                        $this->relativeLinks[$rel] = $match[1];
+                    }
                 }
-                if ($rel === 'previous') {
-                    $rel = 'prev';
-                }
-                $this->relativeLinks[$rel] = $matches[1][$i];
             }
         }
     }
