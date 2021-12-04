@@ -21,6 +21,11 @@ class Result extends AssignmentGrade
     public static $SCOPE = 'https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly';
 
     /**
+     * Default limit on size of container to be returned from requests.
+     */
+    public static $defaultLimit = null;
+
+    /**
      * Limit on size of container to be returned from requests.
      *
      * A limit of null (or zero) will disable paging of requests
@@ -65,10 +70,14 @@ class Result extends AssignmentGrade
     public function getAll($limit = null)
     {
         $params = array();
+        if (is_null($limit)) {
+            $limit = $this->limit;
+        }
+        if (is_null($limit)) {
+            $limit = self::$defaultLimit;
+        }
         if (!empty($limit)) {
             $params['limit'] = $limit;
-        } elseif (!empty($this->limit)) {
-            $params['limit'] = $this->limit;
         }
         $outcomes = array();
         $endpoint = $this->endpoint;

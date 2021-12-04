@@ -2,7 +2,6 @@
 
 namespace ceLTIc\LTI\Service;
 
-use ceLTIc\LTI;
 use ceLTIc\LTI\Context;
 
 /**
@@ -29,6 +28,11 @@ class Groups extends Service
      * Access scope.
      */
     public static $SCOPE = 'https://purl.imsglobal.org/spec/lti-gs/scope/contextgroup.readonly';
+
+    /**
+     * Default limit on size of container to be returned from requests.
+     */
+    public static $defaultLimit = null;
 
     /**
      * The context to which the course groups apply.
@@ -131,6 +135,9 @@ class Groups extends Service
             if (is_null($limit)) {
                 $limit = $this->limit;
             }
+            if (is_null($limit)) {
+                $limit = self::$defaultLimit;
+            }
             if (!empty($limit)) {
                 $parameters['limit'] = strval($limit);
             }
@@ -189,6 +196,9 @@ class Groups extends Service
             }
             if (is_null($limit)) {
                 $limit = $this->limit;
+            }
+            if (is_null($limit)) {
+                $limit = self::$defaultLimit;
             }
             if (!empty($limit)) {
                 $parameters['limit'] = strval($limit);

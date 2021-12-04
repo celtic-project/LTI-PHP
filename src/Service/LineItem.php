@@ -16,6 +16,16 @@ class LineItem extends AssignmentGrade
 {
 
     /**
+     * Line item media type.
+     */
+    const MEDIA_TYPE_LINE_ITEM = 'application/vnd.ims.lis.v2.lineitem+json';
+
+    /**
+     * Line item container media type.
+     */
+    const MEDIA_TYPE_LINE_ITEMS = 'application/vnd.ims.lis.v2.lineitemcontainer+json';
+
+    /**
      * Access scope.
      */
     public static $SCOPE = 'https://purl.imsglobal.org/spec/lti-ags/scope/lineitem';
@@ -26,14 +36,9 @@ class LineItem extends AssignmentGrade
     public static $SCOPE_READONLY = 'https://purl.imsglobal.org/spec/lti-ags/scope/lineitem.readonly';
 
     /**
-     * Line item media type.
+     * Default limit on size of container to be returned from requests.
      */
-    private static $MEDIA_TYPE_LINE_ITEM = 'application/vnd.ims.lis.v2.lineitem+json';
-
-    /**
-     * Line item container media type.
-     */
-    private static $MEDIA_TYPE_LINE_ITEMS = 'application/vnd.ims.lis.v2.lineitemcontainer+json';
+    public static $defaultLimit = null;
 
     /**
      * Limit on size of container to be returned from requests.
@@ -95,16 +100,20 @@ class LineItem extends AssignmentGrade
         if (!empty($tag)) {
             $params['tag'] = $tag;
         }
+        if (is_null($limit)) {
+            $limit = $this->limit;
+        }
+        if (is_null($limit)) {
+            $limit = self::$defaultLimit;
+        }
         if (!empty($limit)) {
             $params['limit'] = $limit;
-        } elseif (!empty($this->limit)) {
-            $params['limit'] = $this->limit;
         }
         $lineItems = array();
         $endpoint = $this->endpoint;
         do {
             $this->scope = self::$SCOPE_READONLY;
-            $this->mediaType = self::$MEDIA_TYPE_LINE_ITEMS;
+            $this->mediaType = self::MEDIA_TYPE_LINE_ITEMS;
             $http = $this->send('GET', $params);
             $this->scope = self::$SCOPE;
             $url = '';
@@ -138,7 +147,7 @@ class LineItem extends AssignmentGrade
     public function createLineItem($lineItem)
     {
         $lineItem->endpoint = null;
-        $this->mediaType = self::$MEDIA_TYPE_LINE_ITEM;
+        $this->mediaType = self::MEDIA_TYPE_LINE_ITEM;
         $http = $this->send('POST', null, self::toJson($lineItem));
         $ok = $http->ok && !empty($http->responseJson);
         if ($ok) {
@@ -160,7 +169,7 @@ class LineItem extends AssignmentGrade
      */
     public function saveLineItem($lineItem)
     {
-        $this->mediaType = self::$MEDIA_TYPE_LINE_ITEM;
+        $this->mediaType = self::MEDIA_TYPE_LINE_ITEM;
         $http = $this->send('PUT', null, self::toJson($lineItem));
         $ok = $http->ok;
         if ($ok && !empty($http->responseJson)) {
@@ -182,7 +191,7 @@ class LineItem extends AssignmentGrade
      */
     public function deleteLineItem($lineItem)
     {
-        $this->mediaType = self::$MEDIA_TYPE_LINE_ITEM;
+        $this->mediaType = self::MEDIA_TYPE_LINE_ITEM;
         $http = $this->send('DELETE');
 
         return $http->ok;
@@ -200,7 +209,7 @@ class LineItem extends AssignmentGrade
     {
         $service = new self($platform, $endpoint);
         $service->scope = self::$SCOPE_READONLY;
-        $service->mediaType = self::$MEDIA_TYPE_LINE_ITEM;
+        $service->mediaType = self::MEDIA_TYPE_LINE_ITEM;
         $http = $service->send('GET');
         $service->scope = self::$SCOPE;
         if ($http->ok && !empty($http->responseJson)) {

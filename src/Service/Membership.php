@@ -32,6 +32,11 @@ class Membership extends Service
     public static $SCOPE = 'https://purl.imsglobal.org/spec/lti-nrps/scope/contextmembership.readonly';
 
     /**
+     * Default limit on size of container to be returned from requests.
+     */
+    public static $defaultLimit = null;
+
+    /**
      * The object to which the memberships apply (ResourceLink or Context).
      *
      * @var Context|ResourceLink $source
@@ -121,6 +126,9 @@ class Membership extends Service
         if (is_null($limit)) {
             $limit = $this->limit;
         }
+        if (is_null($limit)) {
+            $limit = self::$defaultLimit;
+        }
         if (!empty($limit)) {
             $parameters['limit'] = strval($limit);
         }
@@ -151,6 +159,9 @@ class Membership extends Service
                     isset($http->responseJson->pageOf->membershipSubject->membership)) {
                     $isjsonld = true;
                     $memberships = array_merge($memberships, $http->responseJson->pageOf->membershipSubject->membership);
+                    if (!empty($http->responseJson->nextPage)) {
+                        $http->relativeLinks['next'] = $http->responseJson->nextPage;
+                    }
                 } elseif (isset($http->responseJson->members)) {
                     $memberships = array_merge($memberships, $http->responseJson->members);
                 }
