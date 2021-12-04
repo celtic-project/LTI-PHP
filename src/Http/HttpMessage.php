@@ -238,7 +238,7 @@ class HttpMessage
     public function getRelativeLink($rel)
     {
         $url = null;
-        if (hasRelativeLink($rel)) {
+        if ($this->hasRelativeLink($rel)) {
             $url = $this->relativeLinks[$rel];
         }
 
