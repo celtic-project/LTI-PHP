@@ -23,7 +23,7 @@ class Result extends AssignmentGrade
     /**
      * Default limit on size of container to be returned from requests.
      */
-    public static $defaultLimit = null;
+    public static $defaultLimit = 500;
 
     /**
      * Limit on size of container to be returned from requests.

@@ -34,7 +34,7 @@ class Membership extends Service
     /**
      * Default limit on size of container to be returned from requests.
      */
-    public static $defaultLimit = null;
+    public static $defaultLimit = 100;
 
     /**
      * The object to which the memberships apply (ResourceLink or Context).
