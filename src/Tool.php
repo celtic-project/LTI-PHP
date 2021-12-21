@@ -445,18 +445,18 @@ class Tool
         }
         if ($_SERVER['REQUEST_METHOD'] === 'HEAD') {  // Ignore HEAD requests
             Util::logRequest(true);
-        } elseif (!empty($parameters['iss'])) {  // Initiate login request
+        } elseif (isset($parameters['iss']) && (strlen($parameters['iss']) > 0)) {  // Initiate login request
             Util::logRequest();
-            if (empty($parameters['login_hint'])) {
+            if (!isset($parameters['login_hint']) || (strlen($parameters['login_hint']) <= 0)) {
                 $this->ok = false;
                 $this->reason = 'Missing login_hint parameter';
-            } elseif (empty($parameters['target_link_uri'])) {
+            } elseif (!isset($parameters['target_link_uri']) || (strlen($parameters['target_link_uri']) <= 0)) {
                 $this->ok = false;
                 $this->reason = 'Missing target_link_uri parameter';
             } else {
                 $this->ok = $this->sendAuthenticationRequest($parameters);
             }
-        } elseif (!empty($parameters['openid_configuration'])) {  // Dynamic registration request
+        } elseif (isset($parameters['openid_configuration']) && (strlen($parameters['openid_configuration']) > 0)) {  // Dynamic registration request
             Util::logRequest();
             $this->onRegistration();
         } else {  // LTI message
