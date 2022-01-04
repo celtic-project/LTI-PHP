@@ -100,6 +100,13 @@ class LineItem
         return $lineItem;
     }
 
+    /**
+     * Generate a LineItem object from its JSON or JSON-LD representation.
+     *
+     * @param object $item  A JSON or JSON-LD object representing a content-item
+     *
+     * @return LineItem|null  The LineItem object
+     */
     public static function fromJsonObject($item)
     {
         $obj = null;

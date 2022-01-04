@@ -301,6 +301,11 @@ class Item
         return $objs;
     }
 
+    /**
+     * Wrap the content item to form an item complying with the application/vnd.ims.lti.v1.contentitems+json media type.
+     *
+     * @return object
+     */
     protected function toJsonldObject()
     {
         $item = new \stdClass();
@@ -364,6 +369,11 @@ class Item
         return $item;
     }
 
+    /**
+     * Wrap the content items to form a complete value for the https://purl.imsglobal.org/spec/lti-dl/claim/content_items claim.
+     *
+     * @return object
+     */
     protected function toJsonObject()
     {
         $item = new \stdClass();
@@ -428,6 +438,13 @@ class Item
         return $item;
     }
 
+    /**
+     * Generate an Item object from its JSON or JSON-LD representation.
+     *
+     * @param object $item  A JSON or JSON-LD object representing a content-item
+     *
+     * @return Item|LtiLinkItem|FileItem  The content-item object
+     */
     public static function fromJsonItem($item)
     {
         $obj = null;
@@ -485,6 +502,11 @@ class Item
         return $obj;
     }
 
+    /**
+     * Extract content-item details from its JSON representation.
+     *
+     * @param object $item  A JSON object representing a content-item
+     */
     protected function fromJsonObject($item)
     {
         if (isset($item->{'@id'})) {

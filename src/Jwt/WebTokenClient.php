@@ -20,6 +20,9 @@ use ceLTIc\LTI\Http\HttpMessage;
 class WebTokenClient implements ClientInterface
 {
 
+    /**
+     * Supported signature algorithms.
+     */
     const SUPPORTED_ALGORITHMS = array('RS256', 'RS384', 'RS512');
 
     private $jwe = null;

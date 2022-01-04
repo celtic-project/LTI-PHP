@@ -1571,6 +1571,8 @@ class DataConnector_pdo extends DataConnector
     /**
      * Get the ID for the last record inserted into a table.
      *
+     * @param string $tableName   Name of database table
+     *
      * @return int  Id of last inserted record
      */
     protected function getLastInsertId($tableName)

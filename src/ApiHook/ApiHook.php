@@ -58,6 +58,8 @@ trait ApiHook
      * @param string $hookName  Name of hook
      * @param string $familyCode  Family code for current platform
      * @param string $className  Name of implementing class
+     *
+     * @return void
      */
     public static function registerApiHook($hookName, $familyCode, $className)
     {

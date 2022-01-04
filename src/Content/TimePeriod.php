@@ -66,6 +66,13 @@ class TimePeriod
         return $timePeriod;
     }
 
+    /**
+     * Generate a LineItem object from its JSON or JSON-LD representation.
+     *
+     * @param object $item  A JSON or JSON-LD object representing a content-item
+     *
+     * @return TimePeriod|null  The LineItem object
+     */
     public static function fromJsonObject($item)
     {
         $obj = null;

@@ -54,6 +54,8 @@ class Jwt
      * Set the JWT client to use for handling JWTs.
      *
      * @param Jwt\ClientInterface|null $jwtClient
+     *
+     * @return void
      */
     public static function setJwtClient($jwtClient = null)
     {

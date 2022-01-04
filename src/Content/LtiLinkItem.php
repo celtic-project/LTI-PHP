@@ -115,6 +115,11 @@ class LtiLinkItem extends Item
         $this->noUpdate = $noUpdate;
     }
 
+    /**
+     * Wrap the content item to form an item complying with the application/vnd.ims.lti.v1.contentitems+json media type.
+     *
+     * @return object
+     */
     public function toJsonldObject()
     {
         $item = parent::toJsonldObject();
@@ -131,6 +136,11 @@ class LtiLinkItem extends Item
         return $item;
     }
 
+    /**
+     * Wrap the content items to form a complete value for the https://purl.imsglobal.org/spec/lti-dl/claim/content_items claim.
+     *
+     * @return object
+     */
     public function toJsonObject()
     {
         $item = parent::toJsonObject();
@@ -147,6 +157,11 @@ class LtiLinkItem extends Item
         return $item;
     }
 
+    /**
+     * Extract content-item details from its JSON representation.
+     *
+     * @param object $item  A JSON object representing an LTI link content-item
+     */
     protected function fromJsonObject($item)
     {
         parent::fromJsonObject($item);

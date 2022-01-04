@@ -137,6 +137,8 @@ class HttpMessage
      * Set the HTTP client to use for sending the message.
      *
      * @param ClientInterface|null $httpClient
+     *
+     * @return void
      */
     public static function setHttpClient($httpClient = null)
     {

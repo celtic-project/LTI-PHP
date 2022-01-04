@@ -49,6 +49,13 @@ class DataConnector_pdo_oci extends DataConnector_pdo
 ###    PROTECTED METHODS
 ###
 
+    /**
+     * Get the ID for the last record inserted into a table.
+     *
+     * @param string $tableName   Name of database table
+     *
+     * @return int  Id of last inserted record
+     */
     protected function getLastInsertId($tableName)
     {
         $pk = 0;

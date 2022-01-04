@@ -56,6 +56,11 @@ class ServiceDefinition
         $this->endpoint = $endpoint;
     }
 
+    /**
+     * Set ID.
+     *
+     * @param string $id        ID of service
+     */
     function setId($id)
     {
         $this->id = $id;

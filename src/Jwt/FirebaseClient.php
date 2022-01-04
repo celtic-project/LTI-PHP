@@ -17,6 +17,9 @@ use ceLTIc\LTI\Util;
 class FirebaseClient implements ClientInterface
 {
 
+    /**
+     * Supported signature algorithms.
+     */
     const SUPPORTED_ALGORITHMS = array('RS256', 'RS384', 'RS512');
 
     private $jwtString = null;

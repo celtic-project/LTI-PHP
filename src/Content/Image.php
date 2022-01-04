@@ -85,6 +85,13 @@ class Image
         return $image;
     }
 
+    /**
+     * Generate an Image object from its JSON or JSON-LD representation.
+     *
+     * @param object $item  A JSON or JSON-LD object representing a content-item
+     *
+     * @return Image|null  The Image object
+     */
     public static function fromJsonObject($item)
     {
         $obj = null;

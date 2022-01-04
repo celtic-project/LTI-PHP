@@ -14,6 +14,11 @@ use ceLTIc\LTI\Tool;
 class ToolProfile
 {
 
+    /**
+     * Product instance object.
+     *
+     * @var object $product_instance
+     */
     public $product_instance;
 
     /**
