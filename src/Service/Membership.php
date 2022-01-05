@@ -308,21 +308,21 @@ class Membership extends Service
                                         $userresult->ltiResultSourcedId = $message->{'https://purl.imsglobal.org/spec/lti-bo/claim/basicoutcome'}->lis_result_sourcedid;
                                         $doSave = true;
                                     }
-                                    if (isset($message->ext)) {
+                                    if (isset($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'})) {
                                         if (empty($userresult->username)) {
-                                            if (!empty($message->ext->username)) {
-                                                $userresult->username = $message->ext->username;
-                                            } elseif (!empty($message->ext->user_username)) {
-                                                $userresult->username = $message->ext->user_username;
+                                            if (!empty($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'}->username)) {
+                                                $userresult->username = $message->{'https://purl.imsglobal.org/spec/lti/claim/ext'}->username;
+                                            } elseif (!empty($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'}->user_username)) {
+                                                $userresult->username = $message->{'https://purl.imsglobal.org/spec/lti/claim/ext'}->user_username;
                                             }
                                         }
                                     }
-                                    if (isset($message->custom)) {
+                                    if (isset($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'})) {
                                         if (empty($userresult->username)) {
-                                            if (!empty($message->custom->username)) {
-                                                $userresult->username = $message->custom->username;
-                                            } elseif (!empty($message->custom->user_username)) {
-                                                $userresult->username = $message->custom->user_username;
+                                            if (!empty($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'}->username)) {
+                                                $userresult->username = $message->{'https://purl.imsglobal.org/spec/lti/claim/custom'}->username;
+                                            } elseif (!empty($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'}->user_username)) {
+                                                $userresult->username = $message->{'https://purl.imsglobal.org/spec/lti/claim/custom'}->user_username;
                                             }
                                         }
                                     }
