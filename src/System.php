@@ -563,8 +563,8 @@ trait System
     public function signMessage(&$url, $type, $version, $params, $loginHint = null, $ltiMessageHint = null)
     {
         if (($this instanceof Platform) && ($this->ltiVersion === Util::LTI_VERSION1P3)) {
-            if (empty($loginHint)) {
-                if (!empty($params['user_id'])) {
+            if (!isset($loginHint) || (strlen($loginHint) <= 0)) {
+                if (isset($params['user_id']) && (strlen($params['user_id']) > 0)) {
                     $loginHint = $params['user_id'];
                 } else {
                     $loginHint = 'Anonymous';
