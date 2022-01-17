@@ -934,7 +934,9 @@ class DataConnector_mysqli extends DataConnector
     {
         $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' WHERE (consumer_pk = ?) AND (value = ?)';
         $stmt = $this->db->prepare($sql);
-        $stmt->bind_param('is', $nonce->getPlatform()->getRecordId(), $nonce->getValue());
+        $id = $nonce->getPlatform()->getRecordId();
+        $value = $nonce->getValue();
+        $stmt->bind_param('is', $id, $value);
         $ok = $this->executeQuery($sql, $stmt);
 
         return $ok;

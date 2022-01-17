@@ -109,8 +109,8 @@ class DataConnector_oci extends DataConnector
                 "FROM {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' ' .
                 'WHERE consumer_key = :key';
             $query = oci_parse($this->db, $sql);
-            $consumer_key = $platform->getKey();
-            oci_bind_by_name($query, 'key', $consumer_key);
+            $consumerKey = $platform->getKey();
+            oci_bind_by_name($query, 'key', $consumerKey);
         }
         $ok = $this->executeQuery($sql, $query);
         if ($ok) {
@@ -179,7 +179,7 @@ class DataConnector_oci extends DataConnector
     public function savePlatform($platform)
     {
         $id = $platform->getRecordId();
-        $consumer_key = $platform->getKey();
+        $consumerKey = $platform->getKey();
         $protected = ($platform->protected) ? 1 : 0;
         $enabled = ($platform->enabled) ? 1 : 0;
         $profile = (!empty($platform->profile)) ? json_encode($platform->profile) : null;
@@ -213,7 +213,7 @@ class DataConnector_oci extends DataConnector
                 ':consumer_name, :consumer_version, :consumer_guid, :profile, :tool_proxy, :settings, ' .
                 ':protected, :enabled, :enable_from, :enable_until, :last_access, :created, :updated) returning consumer_pk into :pk';
             $query = oci_parse($this->db, $sql);
-            oci_bind_by_name($query, 'key', $consumer_key);
+            oci_bind_by_name($query, 'key', $consumerKey);
             oci_bind_by_name($query, 'name', $platform->name);
             oci_bind_by_name($query, 'secret', $platform->secret);
             oci_bind_by_name($query, 'platform_id', $platform->platformId);
@@ -246,7 +246,7 @@ class DataConnector_oci extends DataConnector
                 'protected = :protected, enabled = :enabled, enable_from = :enable_from, enable_until = :enable_until, last_access = :last_access, updated = :updated ' .
                 'WHERE consumer_pk = :id';
             $query = oci_parse($this->db, $sql);
-            oci_bind_by_name($query, 'key', $consumer_key);
+            oci_bind_by_name($query, 'key', $consumerKey);
             oci_bind_by_name($query, 'name', $platform->name);
             oci_bind_by_name($query, 'secret', $platform->secret);
             oci_bind_by_name($query, 'platform_id', $platform->platformId);
@@ -1050,11 +1050,11 @@ class DataConnector_oci extends DataConnector
      */
     public function deletePlatformNonce($nonce)
     {
-        $id = $nonce->getPlatform()->getRecordId();
-        $value = $nonce->getValue();
         $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' WHERE (consumer_pk = :id) AND (value = :value)';
         $query = oci_parse($this->db, $sql);
+        $id = $nonce->getPlatform()->getRecordId();
         oci_bind_by_name($query, 'id', $id);
+        $value = $nonce->getValue();
         oci_bind_by_name($query, 'value', $value);
         $ok = $this->executeQuery($sql, $query);
 
@@ -1399,8 +1399,8 @@ class DataConnector_oci extends DataConnector
                 "FROM {$this->dbTableNamePrefix}" . static::TOOL_TABLE_NAME . ' ' .
                 'WHERE consumer_key = :key';
             $query = oci_parse($this->db, $sql);
-            $consumer_key = $tool->getKey();
-            oci_bind_by_name($query, 'key', $consumer_key);
+            $consumerKey = $tool->getKey();
+            oci_bind_by_name($query, 'key', $consumerKey);
         }
         $ok = $this->executeQuery($sql, $query);
         if ($ok) {
@@ -1470,7 +1470,7 @@ class DataConnector_oci extends DataConnector
     public function saveTool($tool)
     {
         $id = $tool->getRecordId();
-        $consumer_key = $tool->getKey();
+        $consumerKey = $tool->getKey();
         $enabled = ($tool->enabled) ? 1 : 0;
         $redirectionUrisValue = json_encode($tool->redirectionUris);
         $this->fixToolSettings($tool, true);
@@ -1502,7 +1502,7 @@ class DataConnector_oci extends DataConnector
                 ':last_access, :created, :updated) returning tool_pk into :pk';
             $query = oci_parse($this->db, $sql);
             oci_bind_by_name($query, 'name', $tool->name);
-            oci_bind_by_name($query, 'key', $consumer_key);
+            oci_bind_by_name($query, 'key', $consumerKey);
             oci_bind_by_name($query, 'secret', $tool->secret);
             oci_bind_by_name($query, 'message_url', $tool->messageUrl);
             oci_bind_by_name($query, 'initiate_login_url', $tool->initiateLoginUrl);
@@ -1527,7 +1527,7 @@ class DataConnector_oci extends DataConnector
                 'WHERE tool_pk = :id';
             $query = oci_parse($this->db, $sql);
             oci_bind_by_name($query, 'name', $tool->name);
-            oci_bind_by_name($query, 'key', $consumer_key);
+            oci_bind_by_name($query, 'key', $consumerKey);
             oci_bind_by_name($query, 'secret', $tool->secret);
             oci_bind_by_name($query, 'message_url', $tool->messageUrl);
             oci_bind_by_name($query, 'initiate_login_url', $tool->initiateLoginUrl);
