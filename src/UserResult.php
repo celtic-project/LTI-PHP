@@ -192,30 +192,34 @@ class UserResult extends User
      *
      * @return string UserResult ID value
      */
-    public function getId($idScope = null)
+    public function getId($idScope = null, $platform = null)
     {
-        if (empty($idScope)) {
-            if (!is_null($this->getResourceLink())) {
-                $idScope = $this->resourceLink->getPlatform()->idScope;
-            } else {
-                $idScope = Tool::ID_SCOPE_ID_ONLY;
-            }
+        $key = '';
+        if (is_null($platform) && !is_null($this->getResourceLink())) {
+            $platform = $this->getResourceLink()->getPlatform();
+        }
+        if (!is_null($platform)) {
+            $key = $platform->getId();
+        }
+        if (is_null($idScope) && !is_null($this->getResourceLink())) {
+            $idScope = $this->resourceLink->getPlatform()->idScope;
+        }
+        if (is_null($idScope)) {
+            $idScope = Tool::ID_SCOPE_ID_ONLY;
         }
         switch ($idScope) {
             case Tool::ID_SCOPE_GLOBAL:
-                $id = $this->getResourceLink()->getPlatform()->getId() . Tool::ID_SCOPE_SEPARATOR . $this->ltiUserId;
+                $id = $key . Tool::ID_SCOPE_SEPARATOR . $this->ltiUserId;
                 break;
             case Tool::ID_SCOPE_CONTEXT:
-                $id = $this->getResourceLink()->getPlatform()->getId();
                 if ($this->resourceLink->getContext() && $this->resourceLink->getContext()->ltiContextId) {
-                    $id .= Tool::ID_SCOPE_SEPARATOR . $this->resourceLink->getContext()->ltiContextId;
+                    $id = $key . Tool::ID_SCOPE_SEPARATOR . $this->resourceLink->getContext()->ltiContextId;
                 }
                 $id .= Tool::ID_SCOPE_SEPARATOR . $this->ltiUserId;
                 break;
             case Tool::ID_SCOPE_RESOURCE:
-                $id = $this->getResourceLink()->getPlatform()->getId();
-                if ($this->resourceLink->ltiResourceLinkId) {
-                    $id .= Tool::ID_SCOPE_SEPARATOR . $this->resourceLink->ltiResourceLinkId;
+                if (!is_null($this->resourceLink) && !empty($this->resourceLink->ltiResourceLinkId)) {
+                    $id = $key . Tool::ID_SCOPE_SEPARATOR . $this->resourceLink->ltiResourceLinkId;
                 }
                 $id .= Tool::ID_SCOPE_SEPARATOR . $this->ltiUserId;
                 break;
