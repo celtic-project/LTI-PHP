@@ -4,6 +4,7 @@ namespace ceLTIc\LTI\Jwt;
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\JWK;
+use Firebase\JWT\Key;
 use ceLTIc\LTI\Http\HttpMessage;
 use ceLTIc\LTI\Util;
 
@@ -221,7 +222,7 @@ class FirebaseClient implements ClientInterface
                 if (!is_null($json)) {
                     try {
                         $jwks = array('keys' => array($json));
-                        $publicKey = JWK::parseKeySet($jwks);
+                        $publicKey = static::parseKeySet($jwks);
                     } catch (\Exception $e) {
 
                     }
@@ -234,15 +235,19 @@ class FirebaseClient implements ClientInterface
         $retry = false;
         do {
             try {
-                JWT::decode($this->jwtString, $publicKey, self::SUPPORTED_ALGORITHMS);
+                JWT::decode($this->jwtString, $publicKey);
                 $ok = true;
             } catch (\Exception $e) {
                 Util::logError($e->getMessage());
                 if ($retry) {
                     $retry = false;
                 } elseif ($hasPublicKey && !empty($jku)) {
-                    $retry = true;
-                    $publicKey = $this->fetchPublicKey($jku);
+                    try {
+                        $publicKey = $this->fetchPublicKey($jku);
+                        $retry = true;
+                    } catch (\Exception $e) {
+
+                    }
                 }
             }
         } while (!$ok && $retry);
@@ -367,7 +372,7 @@ class FirebaseClient implements ClientInterface
     }
 
 ###
-###  PRIVATE METHOD
+###  PRIVATE METHODS
 ###
 
     /**
@@ -383,10 +388,51 @@ class FirebaseClient implements ClientInterface
         $http = new HttpMessage($jku);
         if ($http->send()) {
             $keys = json_decode($http->response, true);
-            $publicKey = JWK::parseKeySet($keys);
+            $publicKey = static::parseKeySet($keys);
         }
 
         return $publicKey;
+    }
+
+    /**
+     * Parse a set of JWK keys.
+     *
+     * This function is based on Firebase\JWT\JWK::parseKeySet but returns an array containing Key objects rather than an OpenSSL key
+     * resource so that the algorithm associated with each key can be identified.
+     *
+     * @param array $jwks The JSON Web Key Set as an associative array
+     *
+     * @return array An associative array of Key objects
+     *
+     * @throws InvalidArgumentException     Provided JWK Set is empty
+     * @throws UnexpectedValueException     Provided JWK Set was invalid
+     * @throws DomainException              OpenSSL failure
+     */
+    private static function parseKeySet($jwks)
+    {
+        $keys = array();
+
+        if (!isset($jwks['keys'])) {
+            throw new \UnexpectedValueException('"keys" member must exist in the JWK Set');
+        }
+        if (empty($jwks['keys'])) {
+            throw new \InvalidArgumentException('JWK Set did not contain any keys');
+        }
+
+        foreach ($jwks['keys'] as $k => $v) {
+            if (!empty($v['alg'])) {
+                $kid = isset($v['kid']) ? $v['kid'] : $k;
+                if ($key = JWK::parseKey($v)) {
+                    $keys[$kid] = new Key($key, $v['alg']);
+                }
+            }
+        }
+
+        if (empty($keys)) {
+            throw new \UnexpectedValueException('No supported algorithms found in JWK Set');
+        }
+
+        return $keys;
     }
 
 }
