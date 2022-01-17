@@ -422,10 +422,12 @@ class Tool
                 }
             }
 // Set return URL if available
-            if (!empty($this->messageParameters['launch_presentation_return_url'])) {
-                $this->returnUrl = $this->messageParameters['launch_presentation_return_url'];
-            } elseif (!empty($this->messageParameters['content_item_return_url'])) {
+            if (!empty($this->messageParameters['lti_message_type']) && ($this->messageParameters['lti_message_type'] === 'ContentItemSelectionRequest') &&
+                !empty($this->messageParameters['content_item_return_url'])) {
                 $this->returnUrl = $this->messageParameters['content_item_return_url'];
+            }
+            if (empty($this->returnUrl) && !empty($this->messageParameters['launch_presentation_return_url'])) {
+                $this->returnUrl = $this->messageParameters['launch_presentation_return_url'];
             }
         }
 
