@@ -422,7 +422,8 @@ class Tool
                 }
             }
 // Set return URL if available
-            if (!empty($this->messageParameters['lti_message_type']) && ($this->messageParameters['lti_message_type'] === 'ContentItemSelectionRequest') &&
+            if (!empty($this->messageParameters['lti_message_type']) &&
+                (($this->messageParameters['lti_message_type'] === 'ContentItemSelectionRequest') || ($this->messageParameters['lti_message_type'] === 'ContentItemUpdateRequest')) &&
                 !empty($this->messageParameters['content_item_return_url'])) {
                 $this->returnUrl = $this->messageParameters['content_item_return_url'];
             }
