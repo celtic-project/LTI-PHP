@@ -488,7 +488,7 @@ class Item
                     $obj = new LtiLinkItem($placements);
                     break;
                 case self::TYPE_LTI_ASSIGNMENT:
-                    $obj = new LtiAssignment($placements);
+                    $obj = new LtiAssignmentItem($placements);
                     break;
                 case self::TYPE_FILE:
                     $obj = new FileItem($placements);
