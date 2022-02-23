@@ -226,6 +226,8 @@ class FirebaseClient implements ClientInterface
                     } catch (\Exception $e) {
 
                     }
+                } else {
+                    $publicKey = new Key($publicKey, $this->getHeader('alg'));
                 }
             }
         } elseif (!empty($jku)) {
@@ -346,7 +348,7 @@ class FirebaseClient implements ClientInterface
      *
      * @return array  JWKS keys
      */
-    public static function getJWKS($pemKey, $signatureMethod, $kid)
+    public static function getJWKS($pemKey, $signatureMethod, $kid = null)
     {
         $keys['keys'] = array();
         $res = openssl_pkey_get_private($pemKey);
