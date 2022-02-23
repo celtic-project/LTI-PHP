@@ -182,7 +182,7 @@ class SpomkyLabsClient implements ClientInterface
      */
     public function hasClaim($name)
     {
-        return $this->jwt->hasClaim($name);
+        return isset($this->payload->{$name});
     }
 
     /**
@@ -195,11 +195,10 @@ class SpomkyLabsClient implements ClientInterface
      */
     public function getClaim($name, $defaultValue = null)
     {
-        try {
-            $value = $this->jwt->getClaim($name);
-            $value = json_decode(json_encode($value));
-        } catch (\Exception $e) {
-            $value = $defaultValue;
+        if ($this->hasClaim($name)) {
+            $value = $this->payload->{$name};
+        } else {
+            $value = defaultValue;
         }
 
         return $value;

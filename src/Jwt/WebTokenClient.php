@@ -27,7 +27,6 @@ class WebTokenClient implements ClientInterface
 
     private $jwe = null;
     private $jwt = null;
-    private $claimsArray = null;
     private $claims = null;
     private static $lastHeaders = null;
     private static $lastPayload = null;
@@ -75,7 +74,6 @@ class WebTokenClient implements ClientInterface
         $ok = true;
         $this->jwe = null;
         $this->jwt = null;
-        $this->claimsArray = null;
         $this->claims = null;
         try {
             $serializer = new Signature\Serializer\CompactSerializer();
@@ -93,7 +91,6 @@ class WebTokenClient implements ClientInterface
             }
         }
         if ($ok) {
-            $this->claimsArray = json_decode($this->jwt->getPayload(), true);
             $this->claims = json_decode($this->jwt->getPayload());
         }
 
@@ -187,7 +184,7 @@ class WebTokenClient implements ClientInterface
      */
     public function hasClaim($name)
     {
-        return array_key_exists($name, $this->claimsArray);
+        return isset($this->claims->{$name});
     }
 
     /**
@@ -201,8 +198,7 @@ class WebTokenClient implements ClientInterface
     public function getClaim($name, $defaultValue = null)
     {
         if ($this->hasClaim($name)) {
-            $value = $this->claimsArray[$name];
-            $value = json_decode(json_encode($value));
+            $value = $this->claims->{$name};
         } else {
             $value = $defaultValue;
         }
@@ -253,7 +249,7 @@ class WebTokenClient implements ClientInterface
                     new Checker\ExpirationTimeChecker($leeway)
                     ]
                 );
-                $claimCheckerManager->check($this->claimsArray);
+                $claimCheckerManager->check(json_decode($this->jwt->getPayload(), true));
                 $algorithmManager = new Core\AlgorithmManager([
                     new Signature\Algorithm\RS256(),
                     new Signature\Algorithm\RS384(),
@@ -273,7 +269,7 @@ class WebTokenClient implements ClientInterface
                                 $jwksUrl = $jku;
                             }
                             $jwks = $this->fetchPublicKey($jwksUrl);
-                            $jwsVerifier->verifyWithKeySet($this->jwt, $jwks, 0);
+                            $ok = $jwsVerifier->verifyWithKeySet($this->jwt, $jwks, 0);
                         } else {
                             $json = json_decode($publicKey, true);
                             if (is_null($json)) {
@@ -281,13 +277,16 @@ class WebTokenClient implements ClientInterface
                             } else {
                                 $jwk = new Core\JWK($json);
                             }
-                            $jwsVerifier->verifyWithKey($this->jwt, $jwk, 0);
+                            $ok = $jwsVerifier->verifyWithKey($this->jwt, $jwk, 0);
                         }
                         break;
                 }
-                $ok = true;
             } catch (\Exception $e) {
                 Util::logError($e->getMessage());
+            } catch (\TypeError $e) {
+                Util::logError($e->getMessage());
+            }
+            if (!$ok) {
                 if ($retry) {
                     $retry = false;
                 } elseif ($hasPublicKey && !empty($jku)) {
@@ -512,7 +511,7 @@ class WebTokenClient implements ClientInterface
      */
     private function fetchPublicKey($jku)
     {
-        $publicKey = array();
+        $publicKey = null;
         $http = new HttpMessage($jku);
         if ($http->send()) {
             $keys = Core\Util\JsonConverter::decode($http->response);
