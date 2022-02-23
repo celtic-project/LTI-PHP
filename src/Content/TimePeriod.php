@@ -45,7 +45,7 @@ class TimePeriod
      */
     public function toJsonldObject()
     {
-        return new \stdClass();
+        return $this->toJsonObject();
     }
 
     /**
@@ -57,10 +57,10 @@ class TimePeriod
     {
         $timePeriod = new \stdClass();
         if (!is_null($this->startDateTime)) {
-            $timePeriod->startDateTime = $this->startDateTime;
+            $timePeriod->startDateTime = gmdate('Y-m-d\TH:i:s\Z', $this->startDateTime);
         }
         if (!is_null($this->endDateTime)) {
-            $timePeriod->endDateTime = $this->endDateTime;
+            $timePeriod->endDateTime = gmdate('Y-m-d\TH:i:s\Z', $this->endDateTime);
         }
 
         return $timePeriod;
@@ -83,10 +83,10 @@ class TimePeriod
             foreach (get_object_vars($item) as $name => $value) {
                 switch ($name) {
                     case 'startDateTime':
-                        $startDateTime = $item->startDateTime;
+                        $startDateTime = strtotime($item->startDateTime);
                         break;
                     case 'endDateTime':
-                        $endDateTime = $item->endDateTime;
+                        $endDateTime = strtotime($item->endDateTime);
                         break;
                 }
             }
