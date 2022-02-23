@@ -56,6 +56,7 @@ class LtiLinkItem extends Item
     function __construct($placementAdvices = null, $id = null)
     {
         parent::__construct(Item::TYPE_LTI_LINK, $placementAdvices, $id);
+        $this->setMediaType(Item::LTI_LINK_MEDIA_TYPE);
     }
 
     /**

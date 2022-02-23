@@ -21,6 +21,7 @@ class LtiAssignmentItem extends LtiLinkItem
     function __construct($placementAdvices = null, $id = null)
     {
         Item::__construct(Item::TYPE_LTI_ASSIGNMENT, $placementAdvices, $id);
+        $this->setMediaType(Item::LTI_ASSIGNMENT_MEDIA_TYPE);
     }
 
 }
