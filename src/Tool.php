@@ -616,6 +616,7 @@ class Tool
      */
     protected function onLaunch()
     {
+        $this->reason = 'No onLaunch method found for tool';
         $this->onError();
     }
 
@@ -624,6 +625,7 @@ class Tool
      */
     protected function onConfigure()
     {
+        $this->reason = 'No onConfigure method found for tool';
         $this->onError();
     }
 
@@ -632,6 +634,7 @@ class Tool
      */
     protected function onDashboard()
     {
+        $this->reason = 'No onDashboard method found for tool';
         $this->onError();
     }
 
@@ -640,6 +643,7 @@ class Tool
      */
     protected function onContentItem()
     {
+        $this->reason = 'No onContentItem method found for tool';
         $this->onError();
     }
 
@@ -648,6 +652,7 @@ class Tool
      */
     protected function onContentItemUpdate()
     {
+        $this->reason = 'No onContentItemUpdate method found for tool';
         $this->onError();
     }
 
@@ -656,6 +661,7 @@ class Tool
      */
     protected function onRegister()
     {
+        $this->reason = 'No onRegister method found for tool';
         $this->onError();
     }
 
@@ -681,6 +687,7 @@ class Tool
      */
     protected function onLtiStartProctoring()
     {
+        $this->reason = 'No onLtiStartProctoring method found for tool';
         $this->onError();
     }
 
@@ -689,6 +696,7 @@ class Tool
      */
     protected function onLtiEndAssessment()
     {
+        $this->reason = 'No onLtiEndAssessment method found for tool';
         $this->onError();
     }
 

@@ -603,6 +603,7 @@ class Platform
      */
     protected function onContentItem()
     {
+        $this->reason = 'No onContentItem method found for platform';
         $this->onError();
     }
 
@@ -611,6 +612,7 @@ class Platform
      */
     protected function onLtiStartAssessment()
     {
+        $this->reason = 'No onLtiStartAssessment method found for platform';
         $this->onError();
     }
 
