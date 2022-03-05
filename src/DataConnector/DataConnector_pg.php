@@ -41,6 +41,7 @@ class DataConnector_pg extends DataConnector
     public function loadPlatform($platform)
     {
         $ok = false;
+        $allowMultiple = false;
         if (!is_null($platform->getRecordId())) {
             $sql = sprintf('SELECT consumer_pk, name, consumer_key, secret, ' .
                 'platform_id, client_id, deployment_id, public_key, ' .
@@ -57,9 +58,9 @@ class DataConnector_pg extends DataConnector
                     'profile, tool_proxy, settings, protected, enabled, ' .
                     'enable_from, enable_until, last_access, created, updated ' .
                     "FROM {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' ' .
-                    'WHERE (platform_id = %s) ' .
-                    'GROUP BY platform_id, client_id', $this->escape($platform->platformId));
+                    'WHERE (platform_id = %s) ', $this->escape($platform->platformId));
             } elseif (empty($platform->deploymentId)) {
+                $allowMultiple = true;
                 $sql = sprintf('SELECT consumer_pk, name, consumer_key, secret, ' .
                     'platform_id, client_id, deployment_id, public_key, ' .
                     'lti_version, signature_method, consumer_name, consumer_version, consumer_guid, ' .
@@ -90,7 +91,7 @@ class DataConnector_pg extends DataConnector
         $rsConsumer = $this->executeQuery($sql);
         if ($rsConsumer) {
             $row = pg_fetch_object($rsConsumer);
-            if ($row) {
+            if ($row && ($allowMultiple || !pg_fetch_object($rsConsumer))) {
                 $platform->setRecordId(intval($row->consumer_pk));
                 $platform->name = $row->name;
                 $platform->setkey($row->consumer_key);

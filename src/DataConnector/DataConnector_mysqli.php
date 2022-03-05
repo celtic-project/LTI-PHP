@@ -40,6 +40,7 @@ class DataConnector_mysqli extends DataConnector
      */
     public function loadPlatform($platform)
     {
+        $allowMultiple = false;
         $id = $platform->getRecordId();
         if (!is_null($id)) {
             $sql = 'SELECT consumer_pk, name, consumer_key, secret, ' .
@@ -59,11 +60,11 @@ class DataConnector_mysqli extends DataConnector
                     'profile, tool_proxy, settings, protected, enabled, ' .
                     'enable_from, enable_until, last_access, created, updated ' .
                     "FROM {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' ' .
-                    'WHERE (platform_id = ?) ' .
-                    'GROUP BY platform_id, client_id';
+                    'WHERE (platform_id = ?)';
                 $stmt = $this->db->prepare($sql);
                 $stmt->bind_param('s', $platform->platformId);
             } elseif (empty($platform->deploymentId)) {
+                $allowMultiple = true;
                 $sql = 'SELECT consumer_pk, name, consumer_key, secret, ' .
                     'platform_id, client_id, deployment_id, public_key, ' .
                     'lti_version, signature_method, consumer_name, consumer_version, consumer_guid, ' .
@@ -99,51 +100,53 @@ class DataConnector_mysqli extends DataConnector
         $ok = $this->executeQuery($sql, $stmt);
         if ($ok) {
             $rsConsumer = $stmt->get_result();
-            $row = $rsConsumer->fetch_object();
-            if ($row) {
-                $platform->setRecordId(intval($row->consumer_pk));
-                $platform->name = $row->name;
-                $platform->setkey($row->consumer_key);
-                $platform->secret = $row->secret;
-                $platform->platformId = $row->platform_id;
-                $platform->clientId = $row->client_id;
-                $platform->deploymentId = $row->deployment_id;
-                $platform->rsaKey = $row->public_key;
-                $platform->ltiVersion = $row->lti_version;
-                $platform->signatureMethod = $row->signature_method;
-                $platform->consumerName = $row->consumer_name;
-                $platform->consumerVersion = $row->consumer_version;
-                $platform->consumerGuid = $row->consumer_guid;
-                $platform->profile = json_decode($row->profile);
-                $platform->toolProxy = $row->tool_proxy;
-                $settings = json_decode($row->settings, true);
-                if (!is_array($settings)) {
-                    $settings = @unserialize($row->settings);  // check for old serialized setting
-                }
-                if (!is_array($settings)) {
-                    $settings = array();
-                }
-                $platform->setSettings($settings);
-                $platform->protected = (intval($row->protected) === 1);
-                $platform->enabled = (intval($row->enabled) === 1);
-                $platform->enableFrom = null;
-                if (!is_null($row->enable_from)) {
-                    $platform->enableFrom = strtotime($row->enable_from);
-                }
-                $platform->enableUntil = null;
-                if (!is_null($row->enable_until)) {
-                    $platform->enableUntil = strtotime($row->enable_until);
-                }
-                $platform->lastAccess = null;
-                if (!is_null($row->last_access)) {
-                    $platform->lastAccess = strtotime($row->last_access);
-                }
-                $platform->created = strtotime($row->created);
-                $platform->updated = strtotime($row->updated);
-                $this->fixPlatformSettings($platform, false);
-            } else {
-                $ok = false;
+            $ok = $rsConsumer !== false;
+            if ($ok) {
+                $row = $rsConsumer->fetch_object();
+                $ok = $row && ($allowMultiple || is_null($rsConsumer->fetch_object()));
             }
+        }
+        if ($ok) {
+            $platform->setRecordId(intval($row->consumer_pk));
+            $platform->name = $row->name;
+            $platform->setkey($row->consumer_key);
+            $platform->secret = $row->secret;
+            $platform->platformId = $row->platform_id;
+            $platform->clientId = $row->client_id;
+            $platform->deploymentId = $row->deployment_id;
+            $platform->rsaKey = $row->public_key;
+            $platform->ltiVersion = $row->lti_version;
+            $platform->signatureMethod = $row->signature_method;
+            $platform->consumerName = $row->consumer_name;
+            $platform->consumerVersion = $row->consumer_version;
+            $platform->consumerGuid = $row->consumer_guid;
+            $platform->profile = json_decode($row->profile);
+            $platform->toolProxy = $row->tool_proxy;
+            $settings = json_decode($row->settings, true);
+            if (!is_array($settings)) {
+                $settings = @unserialize($row->settings);  // check for old serialized setting
+            }
+            if (!is_array($settings)) {
+                $settings = array();
+            }
+            $platform->setSettings($settings);
+            $platform->protected = (intval($row->protected) === 1);
+            $platform->enabled = (intval($row->enabled) === 1);
+            $platform->enableFrom = null;
+            if (!is_null($row->enable_from)) {
+                $platform->enableFrom = strtotime($row->enable_from);
+            }
+            $platform->enableUntil = null;
+            if (!is_null($row->enable_until)) {
+                $platform->enableUntil = strtotime($row->enable_until);
+            }
+            $platform->lastAccess = null;
+            if (!is_null($row->last_access)) {
+                $platform->lastAccess = strtotime($row->last_access);
+            }
+            $platform->created = strtotime($row->created);
+            $platform->updated = strtotime($row->updated);
+            $this->fixPlatformSettings($platform, false);
         }
 
         return $ok;

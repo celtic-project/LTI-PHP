@@ -52,7 +52,7 @@ class DataConnector_oci extends DataConnector
      */
     public function loadPlatform($platform)
     {
-        $ok = false;
+        $allowMultiple = false;
         if (!is_null($platform->getRecordId())) {
             $sql = 'SELECT consumer_pk, name, consumer_key, secret, ' .
                 'platform_id, client_id, deployment_id, public_key, ' .
@@ -72,11 +72,11 @@ class DataConnector_oci extends DataConnector
                     'profile, tool_proxy, settings, protected, enabled, ' .
                     'enable_from, enable_until, last_access, created, updated ' .
                     "FROM {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' ' .
-                    'WHERE (platform_id = :platform_id) ' .
-                    'GROUP BY platform_id, client_id';
+                    'WHERE (platform_id = :platform_id) ';
                 $query = oci_parse($this->db, $sql);
                 oci_bind_by_name($query, 'platform_id', $platform->platformId);
             } elseif (empty($platform->deploymentId)) {
+                $allowMultiple = true;
                 $sql = 'SELECT consumer_pk, name, consumer_key, secret, ' .
                     'platform_id, client_id, deployment_id, public_key, ' .
                     'lti_version, signature_method, consumer_name, consumer_version, consumer_guid, ' .
@@ -115,7 +115,7 @@ class DataConnector_oci extends DataConnector
         $ok = $this->executeQuery($sql, $query);
         if ($ok) {
             $row = oci_fetch_assoc($query);
-            $ok = ($row !== false);
+            $ok = ($row !== false) && ($allowMultiple || !oci_fetch_assoc($query));
         }
         if ($ok) {
             $row = array_change_key_case($row);

@@ -35,7 +35,6 @@ class DataConnector_pdo extends DataConnector
      */
     public function loadPlatform($platform)
     {
-        $ok = false;
         $allowMultiple = false;
         if (!is_null($platform->getRecordId())) {
             $sql = 'SELECT consumer_pk, name, consumer_key, secret, ' .
@@ -56,8 +55,7 @@ class DataConnector_pdo extends DataConnector
                     'profile, tool_proxy, settings, protected, enabled, ' .
                     'enable_from, enable_until, last_access, created, updated ' .
                     "FROM {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' ' .
-                    'WHERE (platform_id = :platform_id) ' .
-                    'GROUP BY platform_id, client_id';
+                    'WHERE (platform_id = :platform_id) ';
                 $query = $this->db->prepare($sql);
                 $query->bindValue('platform_id', $platform->platformId, \PDO::PARAM_STR);
             } elseif (empty($platform->deploymentId)) {
@@ -99,11 +97,11 @@ class DataConnector_pdo extends DataConnector
         }
         $ok = $this->executeQuery($sql, $query);
         if ($ok) {
-            $rows = $query->fetchAll(\PDO::FETCH_ASSOC);
-            $ok = ($rows !== false) && (count($rows) > 0) && ($allowMultiple || (count($rows) === 1));
+            $row = $query->fetch(\PDO::FETCH_ASSOC);
+            $ok = ($row !== false) && ($allowMultiple || !$query->fetch(\PDO::FETCH_ASSOC));
         }
         if ($ok) {
-            $row = array_change_key_case($rows[0]);
+            $row = array_change_key_case($row);
             $platform->setRecordId(intval($row['consumer_pk']));
             $platform->name = $row['name'];
             $platform->setkey($row['consumer_key']);
