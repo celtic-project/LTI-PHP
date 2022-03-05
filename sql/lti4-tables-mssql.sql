@@ -23,8 +23,8 @@ CREATE TABLE lti2_consumer (
   created datetime2 NOT NULL,
   updated datetime2 NOT NULL,
   PRIMARY KEY (consumer_pk),
-  CONSTRAINT UC_lti2_consumer_consumer_key UNIQUE (consumer_key),
-  CONSTRAINT UC_lti2_consumer_platform UNIQUE (platform_id, client_id, deployment_id)
+  INDEX UC_lti2_consumer_consumer_key UNIQUE (consumer_key) WHERE (consumer_key IS NOT NULL),
+  INDEX UC_lti2_consumer_platform UNIQUE (platform_id, client_id, deployment_id) WHERE (platform_id IS NOT NULL) AND (client_id IS NOT NULL) AND (deployment_id IS NOT NULL)
 );
 
 CREATE TABLE lti2_nonce (

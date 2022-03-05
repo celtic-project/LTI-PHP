@@ -17,5 +17,5 @@ CREATE TABLE lti2_tool (
   created datetime2 NOT NULL,
   updated datetime2 NOT NULL,
   PRIMARY KEY (tool_pk),
-  CONSTRAINT UC_lti2_tool_initiate_login_url UNIQUE (initiate_login_url ASC)
+  INDEX UC_lti2_tool_initiate_login_url UNIQUE (initiate_login_url) WHERE (initiate_login_url IS NOT NULL)
 );
