@@ -900,6 +900,16 @@ trait System
                                         if ($this->ok) {
                                             $nonce = new PlatformNonce($this->platform, $this->rawParameters['state']);
                                             $this->ok = $nonce->load();
+                                            if (!$this->ok) {
+                                                $platform = Platform::fromPlatformId($iss, $aud, null, $this->dataConnector);
+                                                $nonce = new PlatformNonce($platform, $this->rawParameters['state']);
+                                                $this->ok = $nonce->load();
+                                            }
+                                            if (!$this->ok) {
+                                                $platform = Platform::fromPlatformId($iss, null, null, $this->dataConnector);
+                                                $nonce = new PlatformNonce($platform, $this->rawParameters['state']);
+                                                $this->ok = $nonce->load();
+                                            }
                                             if ($this->ok) {
                                                 $this->ok = $nonce->delete();
                                             }

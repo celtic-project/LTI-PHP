@@ -69,6 +69,7 @@ class DataConnector_mysql extends DataConnector
                 'WHERE consumer_pk = %d', $platform->getRecordId());
         } elseif (!empty($platform->platformId)) {
             if (empty($platform->clientId)) {
+                $allowMultiple = true;
                 $sql = sprintf('SELECT consumer_pk, name, consumer_key, secret, ' .
                     'platform_id, client_id, deployment_id, public_key, ' .
                     'lti_version, signature_method, consumer_name, consumer_version, consumer_guid, ' .

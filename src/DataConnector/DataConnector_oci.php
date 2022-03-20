@@ -66,6 +66,7 @@ class DataConnector_oci extends DataConnector
             oci_bind_by_name($query, 'id', $id);
         } elseif (!empty($platform->platformId)) {
             if (empty($platform->clientId)) {
+                $allowMultiple = true;
                 $sql = 'SELECT consumer_pk, name, consumer_key, secret, ' .
                     'platform_id, client_id, deployment_id, public_key, ' .
                     'lti_version, signature_method, consumer_name, consumer_version, consumer_guid, ' .
