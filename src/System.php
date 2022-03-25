@@ -1250,7 +1250,6 @@ trait System
             } else {
                 $authorizationId = '';
                 if ($this instanceof Tool) {
-                    $iss = $this->baseUrl;
                     $sub = '';
                     if (!empty($this->platform)) {
                         $sub = $this->platform->clientId;
@@ -1261,7 +1260,6 @@ trait System
                     $kid = $this->kid;
                     $jku = $this->jku;
                 } else {  // Tool-hosted services not yet defined in LTI
-                    $iss = $this->platformId;
                     $sub = $this->clientId;
                     $kid = $this->kid;
                     $jku = $this->jku;
@@ -1270,7 +1268,7 @@ trait System
                         $publicKey = Tool::$defaultTool->rsaKey;
                     }
                 }
-                $payload['iss'] = $iss;
+                $payload['iss'] = $sub;
                 $payload['sub'] = $sub;
                 if (empty($authorizationId)) {
                     $authorizationId = $endpoint;
