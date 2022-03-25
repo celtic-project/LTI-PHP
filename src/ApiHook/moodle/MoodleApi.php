@@ -125,7 +125,13 @@ trait MoodleApi
                             foreach ($grouping->groups as $group) {
                                 $groupId = strval($group->id);
                                 $this->sourceObject->groupSets[$groupingId]['groups'][] = $groupId;
-                                $this->sourceObject->groups[$groupId] = array('title' => $group->name, 'set' => $groupingId);
+                                if (!isset($this->sourceObject->groups[$groupId])) {
+                                    $this->sourceObject->groups[$groupId] = array('title' => $group->name, 'set' => $groupingId);
+                                } elseif (!is_array($this->sourceObject->groups[$groupId]['set'])) {
+                                    $this->sourceObject->groups[$groupId]['set'] = array($this->sourceObject->groups[$groupId]['set'], $groupingId);
+                                } else {
+                                    $this->sourceObject->groups[$groupId]['set'][] = $groupingId;
+                                }
                             }
                         }
                     }
@@ -264,31 +270,36 @@ trait MoodleApi
         foreach ($users as $user) {
             $sets = array();
             foreach ($user->groups as $group) {
-                if (array_key_exists($group, $this->sourceObject->groups)) {
-                    $setId = $this->sourceObject->groups[$group]['set'];
-                    // Check that user is not a member of another group in the same grouping
-                    if (in_array($setId, $sets)) {
-                        // Remove grouping and groups
-                        foreach ($users as $user2) {
-                            foreach ($user2->groups as $groupId) {
-                                if ($this->sourceObject->groups[$groupId]['set'] === $setId) {
-                                    unset($user2->groups[$groupId]);
+                if (array_key_exists($group, $this->sourceObject->groups) && !empty($this->sourceObject->groups[$group]['set'])) {
+                    $setIds = $this->sourceObject->groups[$group]['set'];
+                    if (!is_array($setIds)) {
+                        $setIds = array($setIds);
+                    }
+                    foreach ($setIds as $setId) {
+                        // Check that user is not a member of another group in the same grouping
+                        if (in_array($setId, $sets)) {
+                            // Remove grouping and groups
+                            foreach ($users as $user2) {
+                                foreach ($user2->groups as $groupId) {
+                                    if ($this->sourceObject->groups[$groupId]['set'] === $setId) {
+                                        unset($user2->groups[$groupId]);
+                                    }
                                 }
                             }
+                            foreach ($this->sourceObject->groupSets[$setId]['groups'] as $groupId) {
+                                unset($this->sourceObject->groups[$groupId]);
+                            }
+                            unset($this->sourceObject->groupSets[$setId]);
+                        } elseif (array_key_exists($group, $this->sourceObject->groups)) {
+                            $this->sourceObject->groupSets[$setId]['num_members']++;
+                            if ($user->isStaff()) {
+                                $this->sourceObject->groupSets[$setId]['num_staff']++;
+                            }
+                            if ($user->isLearner()) {
+                                $this->sourceObject->groupSets[$setId]['num_learners']++;
+                            }
+                            $sets[] = $setId;
                         }
-                        foreach ($this->sourceObject->groupSets[$setId]['groups'] as $groupId) {
-                            unset($this->sourceObject->groups[$groupId]);
-                        }
-                        unset($this->sourceObject->groupSets[$setId]);
-                    } elseif (array_key_exists($group, $this->sourceObject->groups)) {
-                        $this->sourceObject->groupSets[$setId]['num_members']++;
-                        if ($user->isStaff()) {
-                            $this->sourceObject->groupSets[$setId]['num_staff']++;
-                        }
-                        if ($user->isLearner()) {
-                            $this->sourceObject->groupSets[$setId]['num_learners']++;
-                        }
-                        $sets[] = $setId;
                     }
                 }
             }

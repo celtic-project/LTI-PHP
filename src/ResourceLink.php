@@ -114,7 +114,7 @@ class ResourceLink
      *
      * A group is represented by an associative array with the following elements:
      *   - title
-     *   - set (ID of group set, omitted if the group is not part of a set)
+     *   - set (ID of group set, array of IDs if the group belongs to more than one set, omitted if the group is not part of a set)
      * The array key value is the group ID.
      *
      * @var array|null $groups
