@@ -1645,6 +1645,7 @@ EOD;
                             $title = "Resource {$this->resourceLink->getId()}";
                         }
                         $this->resourceLink->title = $title;
+                    }
 // Delete any existing custom parameters
                         foreach ($this->platform->getSettings() as $name => $value) {
                             if ((strpos($name, 'custom_') === 0) && (!in_array($name, self::$LTI_RETAIN_SETTING_NAMES))) {
@@ -1659,11 +1660,13 @@ EOD;
                                 }
                             }
                         }
+                    if (!empty($this->resourceLink)) {
                         foreach ($this->resourceLink->getSettings() as $name => $value) {
                             if ((strpos($name, 'custom_') === 0) && (!in_array($name, self::$LTI_RETAIN_SETTING_NAMES))) {
                                 $this->resourceLink->setSetting($name);
                             }
                         }
+                    }
 // Save LTI parameters
                         foreach (self::$LTI_CONSUMER_SETTING_NAMES as $name) {
                             if (isset($this->messageParameters[$name])) {
@@ -1681,6 +1684,7 @@ EOD;
                                 }
                             }
                         }
+                    if (!empty($this->resourceLink)) {
                         foreach (self::$LTI_RESOURCE_LINK_SETTING_NAMES as $name) {
                             if (isset($this->messageParameters[$name])) {
                                 $this->resourceLink->setSetting($name, $this->messageParameters[$name]);
@@ -1688,6 +1692,7 @@ EOD;
                                 $this->resourceLink->setSetting($name);
                             }
                         }
+                    }
 // Save other custom parameters at all levels
                         foreach ($this->messageParameters as $name => $value) {
                             if ((strpos($name, 'custom_') === 0) && !in_array($name,
@@ -1697,6 +1702,7 @@ EOD;
                                 if (!empty($this->context)) {
                                     $this->context->setSetting($name, $value);
                                 }
+                            if (!empty($this->resourceLink)) {
                                 $this->resourceLink->setSetting($name, $value);
                             }
                         }
