@@ -444,9 +444,13 @@ trait System
                         $value = array_filter(explode(',', str_replace(' ', '', $value)), 'strlen');
                         sort($value);
                     } elseif (isset($mapping['isBoolean']) && $mapping['isBoolean']) {
-                        $value = $value === 'true';
+                        $value = (is_bool($value)) ? $value : $value === 'true';
                     } elseif (isset($mapping['isInteger']) && $mapping['isInteger']) {
                         $value = intval($value);
+                    } elseif (is_bool($value)) {
+                        $value = ($value) ? 'true' : 'false';
+                    } else {
+                        $value = strval($value);
                     }
                     $group = '';
                     $claim = Util::JWT_CLAIM_PREFIX;
