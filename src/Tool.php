@@ -283,6 +283,13 @@ class Tool
     public static $defaultTool = null;
 
     /**
+     * Use GET method for authentication request messages when true
+     *
+     * @var bool $authenticateUsingGet
+     */
+    public static $authenticateUsingGet = false;
+
+    /**
      * URL to redirect user to on successful completion of the request.
      *
      * @var string|null $redirectUrl
@@ -2005,7 +2012,11 @@ EOD;
                     $params['lti_message_hint'] = $parameters['lti_message_hint'];
                 }
                 $this->onInitiateLogin($parameters, $params);
-                $this->output = Util::sendForm($this->platform->authenticationUrl, $params);
+                if (!Tool::$authenticateUsingGet) {
+                    $this->output = Util::sendForm($this->platform->authenticationUrl, $params);
+                } else {
+                    Util::redirect($this->platform->authenticationUrl, $params);
+                }
             } else {
                 $this->reason = 'Unable to generate a state value.';
             }
