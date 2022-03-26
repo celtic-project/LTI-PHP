@@ -1647,19 +1647,19 @@ EOD;
                         $this->resourceLink->title = $title;
                     }
 // Delete any existing custom parameters
-                        foreach ($this->platform->getSettings() as $name => $value) {
+                    foreach ($this->platform->getSettings() as $name => $value) {
+                        if ((strpos($name, 'custom_') === 0) && (!in_array($name, self::$LTI_RETAIN_SETTING_NAMES))) {
+                            $this->platform->setSetting($name);
+                            $doSavePlatform = true;
+                        }
+                    }
+                    if (!empty($this->context)) {
+                        foreach ($this->context->getSettings() as $name => $value) {
                             if ((strpos($name, 'custom_') === 0) && (!in_array($name, self::$LTI_RETAIN_SETTING_NAMES))) {
-                                $this->platform->setSetting($name);
-                                $doSavePlatform = true;
+                                $this->context->setSetting($name);
                             }
                         }
-                        if (!empty($this->context)) {
-                            foreach ($this->context->getSettings() as $name => $value) {
-                                if ((strpos($name, 'custom_') === 0) && (!in_array($name, self::$LTI_RETAIN_SETTING_NAMES))) {
-                                    $this->context->setSetting($name);
-                                }
-                            }
-                        }
+                    }
                     if (!empty($this->resourceLink)) {
                         foreach ($this->resourceLink->getSettings() as $name => $value) {
                             if ((strpos($name, 'custom_') === 0) && (!in_array($name, self::$LTI_RETAIN_SETTING_NAMES))) {
@@ -1668,22 +1668,22 @@ EOD;
                         }
                     }
 // Save LTI parameters
-                        foreach (self::$LTI_CONSUMER_SETTING_NAMES as $name) {
+                    foreach (self::$LTI_CONSUMER_SETTING_NAMES as $name) {
+                        if (isset($this->messageParameters[$name])) {
+                            $this->platform->setSetting($name, $this->messageParameters[$name]);
+                        } else if (!in_array($name, self::$LTI_RETAIN_SETTING_NAMES)) {
+                            $this->platform->setSetting($name);
+                        }
+                    }
+                    if (!empty($this->context)) {
+                        foreach (self::$LTI_CONTEXT_SETTING_NAMES as $name) {
                             if (isset($this->messageParameters[$name])) {
-                                $this->platform->setSetting($name, $this->messageParameters[$name]);
+                                $this->context->setSetting($name, $this->messageParameters[$name]);
                             } else if (!in_array($name, self::$LTI_RETAIN_SETTING_NAMES)) {
-                                $this->platform->setSetting($name);
+                                $this->context->setSetting($name);
                             }
                         }
-                        if (!empty($this->context)) {
-                            foreach (self::$LTI_CONTEXT_SETTING_NAMES as $name) {
-                                if (isset($this->messageParameters[$name])) {
-                                    $this->context->setSetting($name, $this->messageParameters[$name]);
-                                } else if (!in_array($name, self::$LTI_RETAIN_SETTING_NAMES)) {
-                                    $this->context->setSetting($name);
-                                }
-                            }
-                        }
+                    }
                     if (!empty($this->resourceLink)) {
                         foreach (self::$LTI_RESOURCE_LINK_SETTING_NAMES as $name) {
                             if (isset($this->messageParameters[$name])) {
@@ -1694,14 +1694,14 @@ EOD;
                         }
                     }
 // Save other custom parameters at all levels
-                        foreach ($this->messageParameters as $name => $value) {
-                            if ((strpos($name, 'custom_') === 0) && !in_array($name,
-                                    array_merge(self::$LTI_CONSUMER_SETTING_NAMES, self::$LTI_CONTEXT_SETTING_NAMES,
-                                        self::$LTI_RESOURCE_LINK_SETTING_NAMES))) {
-                                $this->platform->setSetting($name, $value);
-                                if (!empty($this->context)) {
-                                    $this->context->setSetting($name, $value);
-                                }
+                    foreach ($this->messageParameters as $name => $value) {
+                        if ((strpos($name, 'custom_') === 0) && !in_array($name,
+                                array_merge(self::$LTI_CONSUMER_SETTING_NAMES, self::$LTI_CONTEXT_SETTING_NAMES,
+                                    self::$LTI_RESOURCE_LINK_SETTING_NAMES))) {
+                            $this->platform->setSetting($name, $value);
+                            if (!empty($this->context)) {
+                                $this->context->setSetting($name, $value);
+                            }
                             if (!empty($this->resourceLink)) {
                                 $this->resourceLink->setSetting($name, $value);
                             }
