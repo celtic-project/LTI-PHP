@@ -93,7 +93,7 @@ final class Util
         'resource_link_description' => array('suffix' => '', 'group' => 'resource_link', 'claim' => 'description'),
         'resource_link_id' => array('suffix' => '', 'group' => 'resource_link', 'claim' => 'id'),
         'resource_link_title' => array('suffix' => '', 'group' => 'resource_link', 'claim' => 'title'),
-        'tool_consumer_info_product_family_code' => array('suffix' => '', 'group' => 'tool_platform', 'claim' => 'family_code'),
+        'tool_consumer_info_product_family_code' => array('suffix' => '', 'group' => 'tool_platform', 'claim' => 'product_family_code'),
         'tool_consumer_info_version' => array('suffix' => '', 'group' => 'tool_platform', 'claim' => 'version'),
         'tool_consumer_instance_contact_email' => array('suffix' => '', 'group' => 'tool_platform', 'claim' => 'contact_email'),
         'tool_consumer_instance_description' => array('suffix' => '', 'group' => 'tool_platform', 'claim' => 'description'),
