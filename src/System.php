@@ -360,7 +360,7 @@ trait System
             $messageParameters = $this->messageParameters;
             $messageType = '';
             if (!empty($messageParameters['lti_message_type'])) {
-                if (array_key_exists($messageType, Util::MESSAGE_TYPE_MAPPING)) {
+                if (array_key_exists($messageParameters['lti_message_type'], Util::MESSAGE_TYPE_MAPPING)) {
                     $messageParameters['lti_message_type'] = Util::MESSAGE_TYPE_MAPPING[$messageParameters['lti_message_type']];
                 }
                 $messageType = $messageParameters['lti_message_type'];
