@@ -375,7 +375,7 @@ window.onload=doOnLoad;
 </script>
 </head>
 <body>
-<form action="{$url}" method="post" target="" encType="application/x-www-form-urlencoded">
+<form action="{$url}" method="post" target="{$target}" encType="application/x-www-form-urlencoded">
 
 EOD;
         if (!empty($params)) {
