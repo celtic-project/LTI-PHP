@@ -1967,6 +1967,7 @@ EOD;
                 $nonce = new PlatformNonce($this->platform, Util::getRandomString());
                 $ok = !$nonce->load();
             } while (!$ok);
+            $nonce->expires = time() + 10;  // Expire after 10 seconds
             $ok = $nonce->save();
             if ($ok) {
                 $oauthRequest = OAuth\OAuthRequest::from_request();
