@@ -93,6 +93,7 @@ final class Util
         'resource_link_description' => array('suffix' => '', 'group' => 'resource_link', 'claim' => 'description'),
         'resource_link_id' => array('suffix' => '', 'group' => 'resource_link', 'claim' => 'id'),
         'resource_link_title' => array('suffix' => '', 'group' => 'resource_link', 'claim' => 'title'),
+        'target_link_uri' => array('suffix' => '', 'group' => '', 'claim' => 'target_link_uri'),
         'tool_consumer_info_product_family_code' => array('suffix' => '', 'group' => 'tool_platform', 'claim' => 'product_family_code'),
         'tool_consumer_info_version' => array('suffix' => '', 'group' => 'tool_platform', 'claim' => 'version'),
         'tool_consumer_instance_contact_email' => array('suffix' => '', 'group' => 'tool_platform', 'claim' => 'contact_email'),
@@ -481,6 +482,33 @@ EOD;
         $html = html_entity_decode($html, ENT_QUOTES | ENT_HTML401);
 
         return $html;
+    }
+
+    /**
+     * Clone an object and any objects it contains.
+     *
+     * @param object $obj   Object to be cloned
+     *
+     * @return object
+     */
+    public static function cloneObject($obj)
+    {
+        $clone = clone $obj;
+        $objVars = get_object_vars($clone);
+        foreach ($objVars as $attrName => $attrValue) {
+            if (is_object($clone->$attrName)) {
+                $clone->$attrName = self::cloneObject($clone->$attrName);
+            } else if (is_array($clone->$attrName)) {
+                foreach ($clone->$attrName as &$attrArrayValue) {
+                    if (is_object($attrArrayValue)) {
+                        $attrArrayValue = self::cloneObject($attrArrayValue);
+                    }
+                    unset($attrArrayValue);
+                }
+            }
+        }
+
+        return $clone;
     }
 
 }

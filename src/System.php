@@ -472,20 +472,52 @@ trait System
                 } elseif (substr($key, 0, 4) === 'ext_') {
                     $group = Util::JWT_CLAIM_PREFIX . '/claim/ext';
                     $claim = substr($key, 4);
+                } elseif (substr($key, 0, 7) === 'lti1p1_') {
+                    $group = Util::JWT_CLAIM_PREFIX . '/claim/lti1p1';
+                    $claim = substr($key, 7);
+                    if (empty($value)) {
+                        $value = null;
+                    } else {
+                        $json = json_decode($value);
+                        if (!is_null($json)) {
+                            $value = $json;
+                        }
+                    }
                 } else {
                     $ok = false;
                 }
                 if ($ok) {
                     if ($fullyQualified) {
                         if (empty($group)) {
-                            $messageClaims[$claim] = $value;
+                            $messageClaims = array_merge($messageClaims, self::fullyQualifyClaim($claim, $value));
                         } else {
-                            $messageClaims["{$group}/{$claim}"] = $value;
+                            $messageClaims = array_merge($messageClaims, self::fullyQualifyClaim("{$group}/{$claim}", $value));
                         }
                     } elseif (empty($group)) {
                         $messageClaims[$claim] = $value;
                     } else {
                         $messageClaims[$group][$claim] = $value;
+                    }
+                }
+            }
+            if (!empty($messageParameters['unmapped_claims'])) {
+                $claims = json_decode($messageParameters['unmapped_claims']);
+                foreach ($claims as $claim => $value) {
+                    if ($fullyQualified) {
+                        $messageClaims = array_merge($messageClaims, self::fullyQualifyClaim($claim, $value));
+                    } elseif (!is_object($value)) {
+                        $messageClaims[$claim] = $value;
+                    } elseif (!isset($messageClaims[$claim])) {
+                        $messageClaims[$claim] = $value;
+                    } else {
+                        $objVars = get_object_vars($value);
+                        foreach ($objVars as $attrName => $attrValue) {
+                            if (is_object($messageClaims[$claim])) {
+                                $messageClaims[$claim]->{$attrName} = $attrValue;
+                            } else {
+                                $messageClaims[$claim][$attrName] = $attrValue;
+                            }
+                        }
                     }
                 }
             }
@@ -957,6 +989,7 @@ trait System
      */
     private function parseClaims()
     {
+        $payload = Util::cloneObject($this->jwt->getPayload());
         $errors = array();
         foreach (Util::JWT_CLAIM_MAPPING as $key => $mapping) {
             $claim = Util::JWT_CLAIM_PREFIX;
@@ -974,12 +1007,15 @@ trait System
             if ($this->jwt->hasClaim($claim)) {
                 $value = null;
                 if (empty($mapping['group'])) {
+                    unset($payload->{$claim});
                     $value = $this->jwt->getClaim($claim);
                 } else {
                     $group = $this->jwt->getClaim($claim);
                     if (is_array($group) && array_key_exists($mapping['claim'], $group)) {
+                        unset($payload->{$claim}[$mapping['claim']]);
                         $value = $group[$mapping['claim']];
                     } elseif (is_object($group) && isset($group->{$mapping['claim']})) {
+                        unset($payload->{$claim}->{$mapping['claim']});
                         $value = $group->{$mapping['claim']};
                     }
                 }
@@ -1032,6 +1068,7 @@ trait System
         }
         $claim = Util::JWT_CLAIM_PREFIX . '/claim/custom';
         if ($this->jwt->hasClaim($claim)) {
+            unset($payload->{$claim});
             $custom = $this->jwt->getClaim($claim);
             if (!is_array($custom) && !is_object($custom)) {
                 $errors[] = "'{$claim}' claim must be an object";
@@ -1043,6 +1080,7 @@ trait System
         }
         $claim = Util::JWT_CLAIM_PREFIX . '/claim/ext';
         if ($this->jwt->hasClaim($claim)) {
+            unset($payload->{$claim});
             $ext = $this->jwt->getClaim($claim);
             if (!is_array($ext) && !is_object($ext)) {
                 $errors[] = "'{$claim}' claim must be an object";
@@ -1051,6 +1089,32 @@ trait System
                     $this->messageParameters["ext_{$key}"] = $value;
                 }
             }
+        }
+        $claim = Util::JWT_CLAIM_PREFIX . '/claim/lti1p1';
+        if ($this->jwt->hasClaim($claim)) {
+            unset($payload->{$claim});
+            $lti1p1 = $this->jwt->getClaim($claim);
+            if (!is_array($lti1p1) && !is_object($lti1p1)) {
+                $errors[] = "'{$claim}' claim must be an object";
+            } else {
+                foreach ($lti1p1 as $key => $value) {
+                    if (is_null($value)) {
+                        $value = '';
+                    } elseif (is_object($value)) {
+                        $value = json_encode($value);
+                    }
+                    $this->messageParameters["lti1p1_{$key}"] = $value;
+                }
+            }
+        }
+        if (!empty($payload)) {
+            $objVars = get_object_vars($payload);
+            foreach ($objVars as $attrName => $attrValue) {
+                if (empty((array) $attrValue)) {
+                    unset($payload->{$attrName});
+                }
+            }
+            $this->messageParameters['unmapped_claims'] = json_encode($payload);
         }
         if (!empty($errors)) {
             $this->ok = false;
@@ -1329,6 +1393,31 @@ trait System
 
             return $header;
         }
+    }
+
+    /**
+     * Expand a claim into an array of individual fully-qualified claims.
+     *
+     * @param string $claim          Name of claim
+     * @param string $value          Value of claim
+     *
+     * @return string[] Array of individual claims and values
+     */
+    private static function fullyQualifyClaim($claim, $value)
+    {
+        $claims = array();
+        $empty = true;
+        if (is_object($value)) {
+            foreach ($value as $c => $v) {
+                $empty = false;
+                $claims = array_merge($claims, static::fullyQualifyClaim("{$claim}/{$c}", $v));
+            }
+        }
+        if ($empty) {
+            $claims[$claim] = $value;
+        }
+
+        return $claims;
     }
 
 }
