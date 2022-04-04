@@ -191,7 +191,7 @@ class SpomkyLabsClient implements ClientInterface
      * @param string $name  Claim name
      * @param string $defaultValue  Default value
      *
-     * @return string The value of the claim with the specified name, or the default value if it does not exist
+     * @return string|array|object The value of the claim with the specified name, or the default value if it does not exist
      */
     public function getClaim($name, $defaultValue = null)
     {
