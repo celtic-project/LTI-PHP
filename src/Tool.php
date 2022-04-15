@@ -1219,6 +1219,17 @@ EOD;
     {
         $doSavePlatform = false;
         $this->ok = $this->checkMessage();
+        if ($this->ok && $strictMode && !empty($this->jwt) && !empty($this->jwt->hasJwt())) {
+            if (!empty($this->jwt->getClaim('https://purl.imsglobal.org/spec/lti/claim/context', '')) &&
+                empty($this->messageParameters['context_id'])) {
+                $this->ok = false;
+                $this->reason = 'Missing id property in https://purl.imsglobal.org/spec/lti/claim/context claim';
+            } elseif (!empty($this->jwt->getClaim('https://purl.imsglobal.org/spec/lti/claim/tool_platform', '')) &&
+                empty($this->messageParameters['tool_consumer_instance_guid'])) {
+                $this->ok = false;
+                $this->reason = 'Missing guid property in https://purl.imsglobal.org/spec/lti/claim/tool_platform claim';
+            }
+        }
         if ($this->ok) {
             if ($this->messageParameters['lti_message_type'] === 'basic-lti-launch-request') {
                 $this->ok = isset($this->messageParameters['resource_link_id']) && (strlen(trim($this->messageParameters['resource_link_id'])) > 0);
