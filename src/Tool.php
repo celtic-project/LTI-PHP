@@ -1809,11 +1809,9 @@ EOD;
                         if (is_null($this->platform->consumerGuid)) {
                             $this->platform->consumerGuid = $this->messageParameters['tool_consumer_instance_guid'];
                             $doSavePlatform = true;
-                        } elseif (!$this->platform->protected) {
-                            $doSavePlatform = ($this->platform->consumerGuid !== $this->messageParameters['tool_consumer_instance_guid']);
-                            if ($doSavePlatform) {
-                                $this->platform->consumerGuid = $this->messageParameters['tool_consumer_instance_guid'];
-                            }
+                        } elseif (!$this->platform->protected && ($this->platform->consumerGuid !== $this->messageParameters['tool_consumer_instance_guid'])) {
+                            $this->platform->consumerGuid = $this->messageParameters['tool_consumer_instance_guid'];
+                            $doSavePlatform = true;
                         }
                     }
                     if (isset($this->messageParameters['launch_presentation_css_url'])) {
