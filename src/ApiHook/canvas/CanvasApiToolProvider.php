@@ -2,26 +2,31 @@
 
 namespace ceLTIc\LTI\ApiHook\canvas;
 
+use ceLTIc\LTI\Util;
+
 /**
  * Class to implement canvas-specific functions for LTI messages
+ *
+ * @deprecated Use CanvasApiTool instead
+ * @see CanvasApiTool
  *
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
  * @copyright  SPV Software Products
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3
  */
-//
-class CanvasApiToolProvider extends \ceLTIc\LTI\ApiHook\ApiToolProvider
+class CanvasApiToolProvider extends CanvasApiTool
 {
 
-    public function getUserId()
+    /**
+     * Class constructor.
+     *
+     * @param \ceLTIc\LTI\Tool|null $tool
+     */
+    public function __construct($tool)
     {
-        $userId = '';
-        $messageParameters = $this->tool->getMessageParameters();
-        if (isset($messageParameters['custom_canvas_user_id'])) {
-            $userId = trim($messageParameters['custom_canvas_user_id']);
-        }
-
-        return $userId;
+        parent::__construct($tool);
+        Util::logDebug('Class ceLTIc\LTI\ApiHook\canvas\CanvasApiToolProvider has been deprecated; please use ceLTIc\LTI\ApiHook\canvas\CanvasApiTool instead.',
+            true);
     }
 
 }
