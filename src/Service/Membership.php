@@ -159,7 +159,7 @@ class Membership extends Service
                     isset($http->responseJson->pageOf->membershipSubject->membership)) {
                     $isjsonld = true;
                     $memberships = array_merge($memberships, $http->responseJson->pageOf->membershipSubject->membership);
-                    if (!empty($http->responseJson->nextPage)) {
+                    if (!empty($http->responseJson->nextPage) && !empty($http->responseJson->pageOf->membershipSubject->membership)) {
                         $http->relativeLinks['next'] = $http->responseJson->nextPage;
                     }
                 } elseif (isset($http->responseJson->members)) {
