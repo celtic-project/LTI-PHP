@@ -1570,7 +1570,10 @@ EOF;
             $params['lti_message_type'] = $type;
             $retry = false;
             $newToken = false;
-            if (!$this->getPlatform()->useOAuth1()) {
+            if ($this->getPlatform()->useOAuth1()) {
+                $paramstosign = $params;
+            } else {
+                $paramstosign = null;
                 $accessToken = $this->platform->getAccessToken();
                 $retry = true;
                 if (empty($accessToken)) {
@@ -1587,7 +1590,7 @@ EOF;
             }
             do {
 // Add message signature
-                $signed = $this->getPlatform()->addSignature($url, $params, 'POST', 'application/x-www-form-urlencoded');
+                $signed = $this->platform->addSignature($url, $paramstosign, 'POST', 'application/x-www-form-urlencoded');
 // Connect to platform
                 if (is_array($signed)) {
                     $http = new HttpMessage($url, 'POST', $signed);
