@@ -339,7 +339,7 @@ class Membership extends Service
                         $userresult->groups = array();
                         foreach ($member->group_enrollments as $group) {
                             $groupId = $group->group_id;
-                            if (!array_key_exists($groupId, $this->source->groups)) {
+                            if (empty($this->source->groups) || !array_key_exists($groupId, $this->source->groups)) {
                                 $this->source->groups[$groupId] = array('title' => "Group {$groupId}");
                             }
                             if (!empty($this->source->groups[$groupId]['set'])) {
