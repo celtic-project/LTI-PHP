@@ -279,15 +279,17 @@ trait MoodleApi
                         // Check that user is not a member of another group in the same grouping
                         if (in_array($setId, $sets)) {
                             // Remove grouping and groups
-                            foreach ($users as $user2) {
-                                foreach ($user2->groups as $groupId) {
-                                    if ($this->sourceObject->groups[$groupId]['set'] === $setId) {
-                                        unset($user2->groups[$groupId]);
+                            foreach ($this->sourceObject->groupSets[$setId]['groups'] as $groupId) {
+                                if (!is_array($this->sourceObject->groups[$groupId]['set']) && ($this->sourceObject->groups[$groupId]['set'] === $setId)) {
+                                    unset($this->sourceObject->groups[$groupId]['set']);
+                                } else if (is_array($this->sourceObject->groups[$groupId]['set']) && in_array($setId,
+                                        $this->sourceObject->groups[$groupId]['set'])) {
+                                    $pos = array_search($setId, $this->sourceObject->groups[$groupId]['set']);
+                                    unset($this->sourceObject->groups[$groupId]['set'][$pos]);
+                                    if (empty($this->sourceObject->groups[$groupId]['set'])) {
+                                        unset($this->sourceObject->groups[$groupId]['set']);
                                     }
                                 }
-                            }
-                            foreach ($this->sourceObject->groupSets[$setId]['groups'] as $groupId) {
-                                unset($this->sourceObject->groups[$groupId]);
                             }
                             unset($this->sourceObject->groupSets[$setId]);
                         } elseif (array_key_exists($group, $this->sourceObject->groups)) {
