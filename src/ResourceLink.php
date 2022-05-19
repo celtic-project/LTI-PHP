@@ -1819,7 +1819,8 @@ EOD;
                     $child = $node->childNodes->item($i);
                     $v = $this->domnodeToArray($child);
                     if (isset($child->tagName)) {
-                        $output[$child->tagName][] = $v;
+                        $name = explode(':', $child->tagName, 2);  // Remove any namespace
+                        $output[$name[count($name) - 1]][] = $v;
                     } else {
                         $s = (string) $v;
                         if (!empty($s)) {
