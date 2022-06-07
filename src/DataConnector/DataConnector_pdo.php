@@ -1597,10 +1597,27 @@ class DataConnector_pdo extends DataConnector
         } catch (\PDOException $e) {
             $ok = false;
         }
-        if (!$ok && $reportError) {
-            Util::logError($sql . $this->errorInfoToString($query->errorInfo()));
-        } else {
-            Util::logDebug($sql);
+        if ((Util::$logLevel >= Util::LOGLEVEL_DEBUG) || (!$ok && (Util::$logLevel >= Util::LOGLEVEL_ERROR))) {
+            ob_start();
+            $query->debugDumpParams();
+            $debug = ob_get_contents();
+            ob_end_clean();
+            $pos = strpos($debug, 'Sent SQL: [');
+            if ($pos !== false) {
+                $debug = substr($debug, $pos + 11);
+                $pos = strpos($debug, '] ');
+                if ($pos !== false) {
+                    $n = substr($debug, 0, $pos);
+                    if (is_numeric($n)) {
+                        $sql = substr($debug, $pos + 2, intval($n));
+                    }
+                }
+            }
+            if (!$ok && $reportError) {
+                Util::logError($sql . $this->errorInfoToString($query->errorInfo()));
+            } else {
+                Util::logDebug("{$sql} (row count = {$query->rowCount()})");
+            }
         }
 
         return $ok;
