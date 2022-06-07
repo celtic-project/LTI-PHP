@@ -804,7 +804,10 @@ class Tool
         $domain = substr($toolUrl, $pos + 2);
         $domain = substr($domain, 0, strpos($domain, '/'));
         $claimsSupported = $platformConfig['claims_supported'];
-        $messagesSupported = $platformConfig['https://purl.imsglobal.org/spec/lti-platform-configuration']['messages_supported'];
+        $messagesSupported = array();
+        foreach ($platformConfig['https://purl.imsglobal.org/spec/lti-platform-configuration']['messages_supported'] as $message) {
+            $messagesSupported[] = $message['type'];
+        }
         $scopesSupported = $platformConfig['scopes_supported'];
         $iconUrl = null;
         $messages = array();
