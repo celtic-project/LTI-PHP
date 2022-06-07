@@ -13,6 +13,13 @@ class CurlClient implements ClientInterface
 {
 
     /**
+     * The HTTP version tp be used.
+     *
+     * @var int $httpVersion
+     */
+    public static $httpVersion = null;
+
+    /**
      * Send the request to the target URL.
      *
      * @param HttpMessage $message
@@ -41,6 +48,9 @@ class CurlClient implements ClientInterface
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLINFO_HEADER_OUT, true);
         curl_setopt($ch, CURLOPT_HEADER, true);
+        if (!empty(self::$httpVersion)) {
+            curl_setopt($ch, CURLOPT_HTTP_VERSION, self::$httpVersion);
+        }
         $chResp = curl_exec($ch);
         $message->requestHeaders = trim(str_replace("\r\n", "\n", curl_getinfo($ch, CURLINFO_HEADER_OUT)));
         $chResp = str_replace("\r\n", "\n", $chResp);
