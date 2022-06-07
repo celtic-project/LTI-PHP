@@ -3,6 +3,8 @@
 namespace ceLTIc\LTI;
 
 use ceLTIc\LTI\DataConnector;
+use ceLTIc\LTI\Platform;
+use ceLTIc\LTI\Context;
 
 /**
  * Class to represent a platform user
@@ -189,44 +191,60 @@ class UserResult extends User
      * Get the user ID (which may be a compound of the platform and resource link IDs).
      *
      * @param int $idScope Scope to use for user ID (optional, default is null for consumer default setting)
-     * @param Platform|null $platform   Platform for user (optional)
+     * @param Context|Platform|null $source   Context or Platform for user (optional)
      *
-     * @return string UserResult ID value
+     * @return string|null   UserResult ID value, or null on error
      */
-    public function getId($idScope = null, $platform = null)
+    public function getId($idScope = null, $source = null)
     {
-        $key = '';
-        if (is_null($platform) && !is_null($this->getResourceLink())) {
-            $platform = $this->getResourceLink()->getPlatform();
+        $resourceLink = $this->getResourceLink();
+        $context = null;
+        $platform = null;
+        if ($source instanceof Context) {
+            $context = $source;
+            $platform = $context->getPlatform();
+        } elseif (!is_null($resourceLink)) {
+            $context = $resourceLink->getContext();
+            $platform = $resourceLink->getPlatform();
+        } elseif ($source instanceof Platform) {
+            $platform = $source;
         }
+        $key = '';
         if (!is_null($platform)) {
             $key = $platform->getId();
-        }
-        if (is_null($idScope) && !is_null($this->getResourceLink())) {
-            $idScope = $this->resourceLink->getPlatform()->idScope;
+            if (is_null($idScope)) {
+                $idScope = $platform->idScope;
+            }
         }
         if (is_null($idScope)) {
             $idScope = Tool::ID_SCOPE_ID_ONLY;
         }
-        switch ($idScope) {
-            case Tool::ID_SCOPE_GLOBAL:
-                $id = $key . Tool::ID_SCOPE_SEPARATOR . $this->ltiUserId;
-                break;
-            case Tool::ID_SCOPE_CONTEXT:
-                if ($this->resourceLink->getContext() && $this->resourceLink->getContext()->ltiContextId) {
-                    $id = $key . Tool::ID_SCOPE_SEPARATOR . $this->resourceLink->getContext()->ltiContextId;
-                }
-                $id .= Tool::ID_SCOPE_SEPARATOR . $this->ltiUserId;
-                break;
-            case Tool::ID_SCOPE_RESOURCE:
-                if (!is_null($this->resourceLink) && !empty($this->resourceLink->ltiResourceLinkId)) {
-                    $id = $key . Tool::ID_SCOPE_SEPARATOR . $this->resourceLink->ltiResourceLinkId;
-                }
-                $id .= Tool::ID_SCOPE_SEPARATOR . $this->ltiUserId;
-                break;
-            default:
-                $id = $this->ltiUserId;
-                break;
+        $ok = !empty($key) || ($idScope === Tool::ID_SCOPE_ID_ONLY);
+        if ($ok) {
+            $id = $key . Tool::ID_SCOPE_SEPARATOR;
+            switch ($idScope) {
+                case Tool::ID_SCOPE_GLOBAL:
+                    $id .= $this->ltiUserId;
+                    break;
+                case Tool::ID_SCOPE_CONTEXT:
+                    $ok = !is_null($context) && !empty($context->ltiContextId);
+                    if ($ok) {
+                        $id .= $context->ltiContextId . Tool::ID_SCOPE_SEPARATOR . $this->ltiUserId;
+                    }
+                    break;
+                case Tool::ID_SCOPE_RESOURCE:
+                    $ok = !is_null($resourceLink) && !empty($resourceLink->ltiResourceLinkId);
+                    if ($ok) {
+                        $id .= $resourceLink->ltiResourceLinkId . Tool::ID_SCOPE_SEPARATOR . $this->ltiUserId;
+                    }
+                    break;
+                default:
+                    $id = $this->ltiUserId;
+                    break;
+            }
+        }
+        if (!$ok) {
+            $id = null;
         }
 
         return $id;
