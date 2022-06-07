@@ -470,8 +470,13 @@ trait System
                     $group = Util::JWT_CLAIM_PREFIX . '/claim/custom';
                     $claim = substr($key, 7);
                 } elseif (substr($key, 0, 4) === 'ext_') {
-                    $group = Util::JWT_CLAIM_PREFIX . '/claim/ext';
-                    $claim = substr($key, 4);
+                    if ($key === 'ext_d2l_username') {
+                        $group = 'http://www.brightspace.com';
+                        $claim = 'username';
+                    } else {
+                        $group = Util::JWT_CLAIM_PREFIX . '/claim/ext';
+                        $claim = substr($key, 4);
+                    }
                 } elseif (substr($key, 0, 7) === 'lti1p1_') {
                     $group = Util::JWT_CLAIM_PREFIX . '/claim/lti1p1';
                     $claim = substr($key, 7);
@@ -1104,6 +1109,21 @@ trait System
                         $value = json_encode($value);
                     }
                     $this->messageParameters["lti1p1_{$key}"] = $value;
+                }
+            }
+        }
+        $claim = 'http://www.brightspace.com';
+        if ($this->jwt->hasClaim($claim)) {
+            $d2l = $this->jwt->getClaim($claim);
+            if (is_array($d2l)) {
+                if (!empty($d2l['username'])) {
+                    $this->messageParameters['ext_d2l_username'] = $d2l['username'];
+                    unset($payload->{$claim}['username']);
+                }
+            } else if (is_object($ext)) {
+                if (!empty($d2l->username)) {
+                    $this->messageParameters['ext_d2l_username'] = $d2l->username;
+                    unset($payload->{$claim}->username);
                 }
             }
         }

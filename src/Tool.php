@@ -1758,6 +1758,8 @@ EOD;
                         $this->userResult->username = $this->messageParameters['ext_username'];
                     } elseif (isset($this->messageParameters['ext_user_username'])) {
                         $this->userResult->username = $this->messageParameters['ext_user_username'];
+                    } elseif (isset($this->messageParameters['ext_d2l_username'])) {
+                        $this->userResult->username = $this->messageParameters['ext_d2l_username'];
                     } elseif (isset($this->messageParameters['custom_username'])) {
                         $this->userResult->username = $this->messageParameters['custom_username'];
                     } elseif (isset($this->messageParameters['custom_user_username'])) {
