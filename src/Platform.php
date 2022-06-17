@@ -124,33 +124,6 @@ class Platform
     public $cssPath = null;
 
     /**
-     * Access token to authorize service requests.
-     *
-     * @var AccessToken|null $accessToken
-     */
-    private $accessToken = null;
-
-    /**
-     * Get the authorization access token
-     *
-     * @return AccessToken Access token
-     */
-    public function getAccessToken()
-    {
-        return $this->accessToken;
-    }
-
-    /**
-     * Set the authorization access token
-     *
-     * @param AccessToken $accessToken  Access token
-     */
-    public function setAccessToken($accessToken)
-    {
-        $this->accessToken = $accessToken;
-    }
-
-    /**
      * Whether the platform instance is protected by matching the consumer_guid value in incoming requests.
      *
      * @var bool $protected
@@ -177,6 +150,13 @@ class Platform
      * @var HttpMessage|null $lastServiceRequest
      */
     public $lastServiceRequest = null;
+
+    /**
+     * Access token to authorize service requests.
+     *
+     * @var AccessToken|null $accessToken
+     */
+    private $accessToken = null;
 
     /**
      * Class constructor.
@@ -310,6 +290,26 @@ class Platform
     public function getDataConnector()
     {
         return $this->dataConnector;
+    }
+
+    /**
+     * Get the authorization access token
+     *
+     * @return AccessToken Access token
+     */
+    public function getAccessToken()
+    {
+        return $this->accessToken;
+    }
+
+    /**
+     * Set the authorization access token
+     *
+     * @param AccessToken $accessToken  Access token
+     */
+    public function setAccessToken($accessToken)
+    {
+        $this->accessToken = $accessToken;
     }
 
     /**
