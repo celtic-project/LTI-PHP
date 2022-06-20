@@ -1252,8 +1252,8 @@ EOD;
                 $contentTypes = array();
                 $fileTypes = array();
                 if (isset($this->messageParameters['accept_media_types']) && (strlen(trim($this->messageParameters['accept_media_types'])) > 0)) {
-                    $mediaTypes = array_filter(explode(',', str_replace(' ', '', $this->messageParameters['accept_media_types'])),
-                        'strlen');
+                    $mediaTypes = array_map('trim', explode(',', $this->messageParameters['accept_media_types']));
+                    $mediaTypes = array_filter($mediaTypes);
                 }
                 $this->ok = (count($mediaTypes) > 0) || ($this->messageParameters['lti_version'] === Util::LTI_VERSION1P3);
                 if (!$this->ok) {
@@ -1296,8 +1296,9 @@ EOD;
                 if ($this->ok) {
                     if (isset($this->messageParameters['accept_presentation_document_targets']) &&
                         (strlen(trim($this->messageParameters['accept_presentation_document_targets'])) > 0)) {
-                        $documentTargets = array_filter(explode(',',
-                                str_replace(' ', '', $this->messageParameters['accept_presentation_document_targets'])), 'strlen');
+                        $documentTargets = array_map('trim',
+                            explode(',', $this->messageParameters['accept_presentation_document_targets']));
+                        $documentTargets = array_filter($mediaTypes);
                         $documentTargets = array_unique($documentTargets);
                         $this->ok = count($documentTargets) > 0;
                         if (!$this->ok) {

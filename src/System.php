@@ -366,10 +366,12 @@ trait System
                 $messageType = $messageParameters['lti_message_type'];
             }
             if (!empty($messageParameters['accept_media_types'])) {
-                $mediaTypes = array_filter(explode(',', str_replace(' ', '', $messageParameters['accept_media_types'])), 'strlen');
+                $mediaTypes = array_map('trim', explode(',', $messageParameters['accept_media_types']));
+                $mediaTypes = array_filter($mediaTypes);
                 $types = array();
                 if (!empty($messageParameters['accept_types'])) {
-                    $types = array_filter(explode(',', str_replace(' ', '', $messageParameters['accept_types'])), 'strlen');
+                    $types = array_map('trim', explode(',', $this->messageParameters['accept_types']));
+                    $types = array_filter($types);
                     foreach ($mediaTypes as $mediaType) {
                         if (strpos($mediaType, 'application/vnd.ims.lti.') === 0) {
                             unset($mediaTypes[array_search($mediaType, $mediaTypes)]);
@@ -408,8 +410,8 @@ trait System
                 }
             }
             if (!empty($messageParameters['accept_presentation_document_targets'])) {
-                $documentTargets = array_filter(explode(',',
-                        str_replace(' ', '', $messageParameters['accept_presentation_document_targets'])), 'strlen');
+                $documentTargets = array_map('trim', explode(',', $messageParameters['accept_presentation_document_targets']));
+                $documentTargets = array_filter($documentTargets);
                 $targets = array();
                 foreach ($documentTargets as $documentTarget) {
                     switch ($documentTarget) {
@@ -441,7 +443,8 @@ trait System
                     if (isset($mapping['isObject']) && $mapping['isObject']) {
                         $value = json_decode($value);
                     } elseif (isset($mapping['isArray']) && $mapping['isArray']) {
-                        $value = array_filter(explode(',', str_replace(' ', '', $value)), 'strlen');
+                        $value = array_map('trim', explode(',', $value));
+                        $value = array_filter($value);
                         sort($value);
                     } elseif (isset($mapping['isBoolean']) && $mapping['isBoolean']) {
                         $value = (is_bool($value)) ? $value : $value === 'true';
@@ -542,7 +545,8 @@ trait System
     public static function parseRoles($roles, $ltiVersion = Util::LTI_VERSION1)
     {
         if (!is_array($roles)) {
-            $roles = array_filter(explode(',', str_replace(' ', '', $roles)), 'strlen');
+            $roles = array_map('trim', explode(',', $roles));
+            $roles = array_filter($roles);
         }
         $parsedRoles = array();
         foreach ($roles as $role) {
@@ -1050,11 +1054,12 @@ trait System
                 Util::MESSAGE_TYPE_MAPPING);
         }
         if (!empty($this->messageParameters['accept_types'])) {
-            $types = array_filter(explode(',', str_replace(' ', '', $this->messageParameters['accept_types'])), 'strlen');
+            $types = array_map('trim', explode(',', $this->messageParameters['accept_types']));
+            $types = array_filter($types);
             $mediaTypes = array();
             if (!empty($this->messageParameters['accept_media_types'])) {
-                $mediaTypes = array_filter(explode(',', str_replace(' ', '', $this->messageParameters['accept_media_types'])),
-                    'strlen');
+                $mediaTypes = array_map('trim', explode(',', $this->messageParameters['accept_media_types']));
+                $mediaTypes = array_filter($mediaTypes);
             }
             if (in_array(Item::TYPE_LTI_LINK, $types)) {
                 $mediaTypes[] = Item::LTI_LINK_MEDIA_TYPE;
