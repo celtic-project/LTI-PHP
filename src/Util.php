@@ -82,6 +82,7 @@ final class Util
         'lis_person_name_family' => array('suffix' => '', 'group' => null, 'claim' => 'family_name'),
         'lis_person_name_full' => array('suffix' => '', 'group' => null, 'claim' => 'name'),
         'lis_person_name_given' => array('suffix' => '', 'group' => null, 'claim' => 'given_name'),
+        'lis_person_name_middle' => array('suffix' => '', 'group' => null, 'claim' => 'middle_name'),
         'lis_person_sourcedid' => array('suffix' => '', 'group' => 'lis', 'claim' => 'person_sourcedid'),
         'user_id' => array('suffix' => '', 'group' => null, 'claim' => 'sub'),
         'user_image' => array('suffix' => '', 'group' => null, 'claim' => 'picture'),

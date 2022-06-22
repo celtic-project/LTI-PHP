@@ -20,6 +20,13 @@ class User
     public $firstname = '';
 
     /**
+     * User's middle name.
+     *
+     * @var string $middlename
+     */
+    public $middlename = '';
+
+    /**
      * User's last name (surname or family name).
      *
      * @var string $lastname
@@ -103,6 +110,7 @@ class User
     public function initialize()
     {
         $this->firstname = '';
+        $this->middlename = '';
         $this->lastname = '';
         $this->fullname = '';
         $this->sourcedId = null;
@@ -129,13 +137,14 @@ class User
      * @param string $firstname User's first name.
      * @param string $lastname User's last name.
      * @param string $fullname User's full name.
+     * @param string $middlename User's middle name (optional, default is none).
      */
-    public function setNames($firstname, $lastname, $fullname)
+    public function setNames($firstname, $lastname, $fullname, $middlename = null)
     {
         $names = array(0 => '', 1 => '');
         if (!empty($fullname)) {
             $this->fullname = trim($fullname);
-            $names = preg_split("/[\s]+/", $this->fullname, 2);
+            $names = preg_split("/[\s]+/", $this->fullname);
         }
         if (!empty($firstname)) {
             $this->firstname = trim($firstname);
@@ -147,18 +156,32 @@ class User
         } else {
             $this->firstname = '';
         }
+        if (!empty($middlename)) {
+            $this->middlename = trim($middlename);
+        } elseif ((count($names) > 2) && !empty($names[1])) {
+            $this->middlename = '';
+            for ($i = 1; $i < count($names); $i++) {
+                $this->middlename .= $names[$i] . ' ';
+            }
+            $this->middlename = trim($this->middlename);
+        } else {
+            $this->middlename = '';
+        }
         if (!empty($lastname)) {
             $this->lastname = trim($lastname);
-            $names[1] = $this->lastname;
-        } elseif (!empty($names[1])) {
-            $this->lastname = $names[1];
+        } elseif ((count($names) > 1) && !empty($names[count($names) - 1])) {
+            $this->lastname = $names[count($names) - 1];
         } elseif (!static::$allowEmptyName) {
             $this->lastname = $this->ltiUserId;
         } else {
             $this->lastname = '';
         }
         if (empty($this->fullname) && (!empty($this->firstname) || !empty($this->lastname))) {
-            $this->fullname = trim("{$this->firstname} {$this->lastname}");
+            $this->fullname = $this->firstname;
+            if (!empty($this->middlename)) {
+                $this->fullname .= " {$this->middlename}";
+            }
+            $this->fullname .= " {$this->lastname}";
         }
     }
 

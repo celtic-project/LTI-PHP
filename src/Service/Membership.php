@@ -191,6 +191,7 @@ class Membership extends Service
 
 // Set the user name
                     $firstname = (isset($member->givenName)) ? $member->givenName : '';
+                    $middlename = (isset($member->middleName)) ? $member->middleName : '';
                     $lastname = (isset($member->familyName)) ? $member->familyName : '';
                     $fullname = (isset($member->name)) ? $member->name : '';
                     $userresult->setNames($firstname, $lastname, $fullname);
@@ -279,6 +280,7 @@ class Membership extends Service
 
 // Set the user name
                     $firstname = (isset($member->given_name)) ? $member->given_name : '';
+                    $middlename = (isset($member->middle_name)) ? $member->middle_name : '';
                     $lastname = (isset($member->family_name)) ? $member->family_name : '';
                     $fullname = (isset($member->name)) ? $member->name : '';
                     $userresult->setNames($firstname, $lastname, $fullname);

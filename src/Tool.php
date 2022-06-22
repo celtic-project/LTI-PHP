@@ -112,6 +112,7 @@ class Tool
         'Person.name.full' => 'lis_person_name_full',
         'Person.name.family' => 'lis_person_name_family',
         'Person.name.given' => 'lis_person_name_given',
+        'Person.name.middle' => 'lis_person_name_middle',
         'Person.email.primary' => 'lis_person_contact_email_primary',
         'Context.id' => 'context_id',
         'Context.type' => 'context_type',
@@ -793,6 +794,7 @@ class Tool
             'User.id' => 'sub',
             'Person.name.full' => 'name',
             'Person.name.given' => 'given_name',
+            'Person.name.middle' => 'middle_name',
             'Person.name.family' => 'family_name',
             'Person.email.primary' => 'email'
         );
@@ -1745,6 +1747,7 @@ EOD;
 
 // Set the user name
                     $firstname = (isset($this->messageParameters['lis_person_name_given'])) ? $this->messageParameters['lis_person_name_given'] : '';
+                    $middlename = (isset($this->messageParameters['lis_person_name_middle'])) ? $this->messageParameters['lis_person_name_middle'] : '';
                     $lastname = (isset($this->messageParameters['lis_person_name_family'])) ? $this->messageParameters['lis_person_name_family'] : '';
                     $fullname = (isset($this->messageParameters['lis_person_name_full'])) ? $this->messageParameters['lis_person_name_full'] : '';
                     $this->userResult->setNames($firstname, $lastname, $fullname);
