@@ -309,9 +309,11 @@ class FirebaseClient implements ClientInterface
             "private_key_type" => OPENSSL_KEYTYPE_RSA
         );
         $res = openssl_pkey_new($config);
-        if (openssl_pkey_export($res, $privateKey)) {
-            $privateKey = str_replace('-----BEGIN PRIVATE KEY-----', '-----BEGIN RSA PRIVATE KEY-----', $privateKey);
-            $privateKey = str_replace('-----END PRIVATE KEY-----', '-----END RSA PRIVATE KEY-----', $privateKey);
+        if ($res !== false) {
+            if (openssl_pkey_export($res, $privateKey)) {
+                $privateKey = str_replace('-----BEGIN PRIVATE KEY-----', '-----BEGIN RSA PRIVATE KEY-----', $privateKey);
+                $privateKey = str_replace('-----END PRIVATE KEY-----', '-----END RSA PRIVATE KEY-----', $privateKey);
+            }
         }
 
         return $privateKey;

@@ -262,13 +262,13 @@ class WebTokenClient implements ClientInterface
                     case 'RS256':
                     case 'RS384':
                     case 'RS512':
-                        if ((Jwt::$allowJkuHeader && $this->hasHeader('jku')) || (!empty($jku) && empty($publicKey))) {
+                        if ($this->hasHeader('kid') && ((Jwt::$allowJkuHeader && $this->hasHeader('jku')) || (!empty($jku) && empty($publicKey)))) {
                             if (Jwt::$allowJkuHeader && $this->hasHeader('jku')) {
                                 $jwksUrl = $this->getHeader('jku');
                             } else {
                                 $jwksUrl = $jku;
                             }
-                            $jwks = $this->fetchPublicKey($jwksUrl);
+                            $jwks = $this->fetchPublicKey($jwksUrl, $this->getHeader('kid'));
                             $ok = $jwsVerifier->verifyWithKeySet($this->jwt, $jwks, 0);
                         } else {
                             $json = json_decode($publicKey, true);
@@ -506,15 +506,21 @@ class WebTokenClient implements ClientInterface
      * Fetch the public keys from a URL.
      *
      * @param string $jku     Endpoint for retrieving JSON web keys
+     * @param string $kid     Key ID
      *
      * @return array    Array of keys
      */
-    private function fetchPublicKey($jku)
+    private function fetchPublicKey($jku, $kid)
     {
         $publicKey = null;
         $http = new HttpMessage($jku);
         if ($http->send()) {
             $keys = Core\Util\JsonConverter::decode($http->response);
+            foreach ($keys['keys'] as $id => $key) {
+                if (!isset($key['kid']) || ($key['kid'] !== $kid)) {
+                    unset($keys['keys'][$id]);
+                }
+            }
             $publicKey = Core\JWKSet::createFromKeyData($keys);
         }
 
