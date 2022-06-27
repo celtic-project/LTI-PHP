@@ -74,10 +74,10 @@ final class Util
         'lis_course_section_sourcedid' => array('suffix' => '', 'group' => 'lis', 'claim' => 'course_section_sourcedid'),
         'launch_presentation_css_url' => array('suffix' => '', 'group' => 'launch_presentation', 'claim' => 'css_url'),
         'launch_presentation_document_target' => array('suffix' => '', 'group' => 'launch_presentation', 'claim' => 'document_target'),
-        'launch_presentation_height' => array('suffix' => '', 'group' => 'launch_presentation', 'claim' => 'height'),
+        'launch_presentation_height' => array('suffix' => '', 'group' => 'launch_presentation', 'claim' => 'height', 'isInteger' => true),
         'launch_presentation_locale' => array('suffix' => '', 'group' => 'launch_presentation', 'claim' => 'locale'),
         'launch_presentation_return_url' => array('suffix' => '', 'group' => 'launch_presentation', 'claim' => 'return_url'),
-        'launch_presentation_width' => array('suffix' => '', 'group' => 'launch_presentation', 'claim' => 'width'),
+        'launch_presentation_width' => array('suffix' => '', 'group' => 'launch_presentation', 'claim' => 'width', 'isInteger' => true),
         'lis_person_contact_email_primary' => array('suffix' => '', 'group' => null, 'claim' => 'email'),
         'lis_person_name_family' => array('suffix' => '', 'group' => null, 'claim' => 'family_name'),
         'lis_person_name_full' => array('suffix' => '', 'group' => null, 'claim' => 'name'),
@@ -87,6 +87,7 @@ final class Util
         'user_id' => array('suffix' => '', 'group' => null, 'claim' => 'sub'),
         'user_image' => array('suffix' => '', 'group' => null, 'claim' => 'picture'),
         'roles' => array('suffix' => '', 'group' => '', 'claim' => 'roles', 'isArray' => true),
+        'role_scope_mentor' => array('suffix' => '', 'group' => '', 'claim' => 'role_scope_mentor', 'isArray' => true),
         'platform_id' => array('suffix' => '', 'group' => null, 'claim' => 'iss'),
         'deployment_id' => array('suffix' => '', 'group' => '', 'claim' => 'deployment_id'),
         'lti_message_type' => array('suffix' => '', 'group' => '', 'claim' => 'message_type'),
@@ -147,6 +148,11 @@ final class Util
      * Log all messages.
      */
     const LOGLEVEL_DEBUG = 3;
+
+    /**
+     * Name of test cookie.
+     */
+    const TEST_COOKIE_NAME = 'celtic_lti_test_cookie';
 
     /**
      * Permitted LTI versions for messages.
@@ -365,11 +371,14 @@ final class Util
         $page = <<< EOD
 <html>
 <head>
-<title>IMS LTI message</title>
+<title>1EdTech LTI message</title>
 <script type="text/javascript">
 //<![CDATA[
 function doOnLoad() {
-    document.forms[0].submit();
+  if ((document.forms[0].target === '_blank') && (window.top === window.self)) {
+    document.forms[0].target = '';
+  }
+  document.forms[0].submit();
 }
 
 window.onload=doOnLoad;
@@ -377,7 +386,7 @@ window.onload=doOnLoad;
 </script>
 </head>
 <body>
-<form action="{$url}" method="post" target="{$target}" encType="application/x-www-form-urlencoded">
+  <form action="{$url}" method="post" target="{$target}" encType="application/x-www-form-urlencoded">
 
 EOD;
         if (!empty($params)) {
@@ -402,7 +411,7 @@ EOD;
         }
 
         $page .= <<< EOD
-</form>
+  </form>
 </body>
 </html>
 EOD;
@@ -445,6 +454,37 @@ EOD;
 
         header("Location: {$url}");
         exit;
+    }
+
+    /**
+     * Set or delete a test cookie.
+     *
+     * @param bool $delete  True if the cookie is to be deleted (optional, default is false)
+     */
+    public static function setTestCookie($delete = false)
+    {
+        if (!$delete || isset($_COOKIE[self::TEST_COOKIE_NAME])) {
+            $oauthRequest = OAuth\OAuthRequest::from_request();
+            $url = $oauthRequest->get_normalized_http_url();
+            $secure = (parse_url($url, PHP_URL_SCHEME) === 'https');
+            $path = parse_url($url, PHP_URL_PATH);
+            if (empty($path)) {
+                $path = '/';
+            } elseif (substr($path, -1) == '/') {
+                $path = substr($path, 0, -1);
+            }
+            if (!$delete) {
+                $expires = 0;
+            } else {
+                $expires = time() - 3600;
+            }
+            if ((PHP_MAJOR_VERSION > 7) || ((PHP_MAJOR_VERSION >= 7) && (PHP_MINOR_VERSION >= 3))) {  // PHP 7.3 or later?
+                setcookie(self::TEST_COOKIE_NAME, 'LTI cookie check',
+                    array("expires" => $expires, "path" => $path, "domain" => $_SERVER['HTTP_HOST'], "secure" => $secure, "httponly" => true, "SameSite" => "None"));
+            } else {
+                setcookie(self::TEST_COOKIE_NAME, 'LTI cookie check', $expires, $path, $_SERVER['HTTP_HOST'], $secure);
+            }
+        }
     }
 
     /**

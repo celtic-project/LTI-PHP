@@ -15,7 +15,7 @@ class CanvasApiTool extends \ceLTIc\LTI\ApiHook\ApiTool
     public function getUserId()
     {
         $userId = '';
-        $messageParameters = $this->tool->getMessageParameters();
+        $messageParameters = $this->tool->getMessageParameters(true, true, false);
         if (isset($messageParameters['custom_canvas_user_id'])) {
             $userId = trim($messageParameters['custom_canvas_user_id']);
         }

@@ -10,6 +10,7 @@ use ceLTIc\LTI\Jwt\Jwt;
 use ceLTIc\LTI\Http\HttpMessage;
 use ceLTIc\LTI\OAuth;
 use ceLTIc\LTI\ApiHook\ApiHook;
+use ceLTIc\LTI\User;
 use ceLTIc\LTI\Util;
 
 /**
@@ -214,6 +215,13 @@ class Tool
     public $message = null;
 
     /**
+     * Warnings relating to last request processed.
+     *
+     * @var array $warnings
+     */
+    public $warnings = array();
+
+    /**
      * Base URL for tool service
      *
      * @var string|null $baseUrl
@@ -413,14 +421,18 @@ class Tool
     }
 
     /**
-     * Get the message parameters
+     * Get the message parameters.
+     *
+     * @param bool    $strictMode          True if full compliance with the LTI specification is required (optional, default is false)
+     * @param bool    $disableCookieCheck  True if no cookie check should be made (optional, default is false)
+     * @param bool    $generateWarnings    True if warning messages should be generated (optional, default is false)
      *
      * @return array The message parameter array
      */
-    public function getMessageParameters()
+    public function getMessageParameters($strictMode = false, $disableCookieCheck = false, $generateWarnings = false)
     {
         if (is_null($this->messageParameters)) {
-            $this->parseMessage();
+            $this->parseMessage($strictMode, $disableCookieCheck, $generateWarnings);
 // Set debug mode
             if (Util::$logLevel < Util::LOGLEVEL_DEBUG) {
                 $this->debugMode = (isset($this->messageParameters['custom_debug']) &&
@@ -446,9 +458,11 @@ class Tool
     /**
      * Process an incoming request
      *
-     * @param bool    $strictMode      True if full compliance with the LTI specification is required (optional, default is false)
+     * @param bool    $strictMode          True if full compliance with the LTI specification is required (optional, default is false)
+     * @param bool    $disableCookieCheck  True if no cookie check should be made (optional, default is false)
+     * @param bool    $generateWarnings    True if warning messages should be generated (optional, default is false)
      */
-    public function handleRequest($strictMode = false)
+    public function handleRequest($strictMode = false, $disableCookieCheck = false, $generateWarnings = false)
     {
         $parameters = Util::getRequestParameters();
         if ($this->debugMode) {
@@ -460,20 +474,20 @@ class Tool
             Util::logRequest();
             if (!isset($parameters['login_hint']) || (strlen($parameters['login_hint']) <= 0)) {
                 $this->ok = false;
-                $this->reason = 'Missing login_hint parameter';
+                $this->reason = 'Missing login_hint parameter.';
             } elseif (!isset($parameters['target_link_uri']) || (strlen($parameters['target_link_uri']) <= 0)) {
                 $this->ok = false;
-                $this->reason = 'Missing target_link_uri parameter';
+                $this->reason = 'Missing target_link_uri parameter.';
             } else {
-                $this->ok = $this->sendAuthenticationRequest($parameters);
+                $this->ok = $this->sendAuthenticationRequest($parameters, $disableCookieCheck);
             }
         } elseif (isset($parameters['openid_configuration']) && (strlen($parameters['openid_configuration']) > 0)) {  // Dynamic registration request
             Util::logRequest();
             $this->onRegistration();
         } else {  // LTI message
-            $this->getMessageParameters();
+            $this->getMessageParameters($strictMode, $disableCookieCheck, $generateWarnings);
             Util::logRequest();
-            if ($this->ok && $this->authenticate($strictMode)) {
+            if ($this->ok && $this->authenticate($strictMode, $disableCookieCheck, $generateWarnings)) {
                 if (empty($this->output)) {
                     $this->doCallback();
                     if ($this->ok && ($this->messageParameters['lti_message_type'] === 'ToolProxyRegistrationRequest')) {
@@ -624,7 +638,7 @@ class Tool
      */
     protected function onLaunch()
     {
-        $this->reason = 'No onLaunch method found for tool';
+        $this->reason = 'No onLaunch method found for tool.';
         $this->onError();
     }
 
@@ -633,7 +647,7 @@ class Tool
      */
     protected function onConfigure()
     {
-        $this->reason = 'No onConfigure method found for tool';
+        $this->reason = 'No onConfigure method found for tool.';
         $this->onError();
     }
 
@@ -642,7 +656,7 @@ class Tool
      */
     protected function onDashboard()
     {
-        $this->reason = 'No onDashboard method found for tool';
+        $this->reason = 'No onDashboard method found for tool.';
         $this->onError();
     }
 
@@ -651,7 +665,7 @@ class Tool
      */
     protected function onContentItem()
     {
-        $this->reason = 'No onContentItem method found for tool';
+        $this->reason = 'No onContentItem method found for tool.';
         $this->onError();
     }
 
@@ -660,7 +674,7 @@ class Tool
      */
     protected function onContentItemUpdate()
     {
-        $this->reason = 'No onContentItemUpdate method found for tool';
+        $this->reason = 'No onContentItemUpdate method found for tool.';
         $this->onError();
     }
 
@@ -669,7 +683,7 @@ class Tool
      */
     protected function onRegister()
     {
-        $this->reason = 'No onRegister method found for tool';
+        $this->reason = 'No onRegister method found for tool.';
         $this->onError();
     }
 
@@ -695,7 +709,7 @@ class Tool
      */
     protected function onLtiStartProctoring()
     {
-        $this->reason = 'No onLtiStartProctoring method found for tool';
+        $this->reason = 'No onLtiStartProctoring method found for tool.';
         $this->onError();
     }
 
@@ -704,7 +718,7 @@ class Tool
      */
     protected function onLtiEndAssessment()
     {
-        $this->reason = 'No onLtiEndAssessment method found for tool';
+        $this->reason = 'No onLtiEndAssessment method found for tool.';
         $this->onError();
     }
 
@@ -715,6 +729,14 @@ class Tool
      * @param array $authParameters     Authentication request parameters
      */
     protected function onInitiateLogin($requestParameters, &$authParameters)
+    {
+
+    }
+
+    /**
+     * Process a change in the session ID
+     */
+    protected function onResetSessionId()
     {
 
     }
@@ -1182,11 +1204,11 @@ EOD;
                         $errorUrl .= '&';
                     }
                     if ($this->debugMode && !is_null($this->reason)) {
-                        $errorUrl .= 'lti_errormsg=' . urlencode("Debug error: $this->reason");
+                        $errorUrl .= 'lti_errormsg=' . urlencode("Debug error: {$this->reason}");
                     } else {
                         $errorUrl .= 'lti_errormsg=' . urlencode($this->message);
                         if (!is_null($this->reason)) {
-                            $errorUrl .= '&lti_errorlog=' . urlencode("Debug error: $this->reason");
+                            $errorUrl .= '&lti_errorlog=' . urlencode("Debug error: {$this->reason}");
                         }
                     }
                     header("Location: {$errorUrl}");
@@ -1216,35 +1238,42 @@ EOD;
      *
      * The platform, resource link and user objects will be initialised if the request is valid.
      *
-     * @param bool    $strictMode      True if full compliance with the LTI specification is required
+     * @param bool    $strictMode          True if full compliance with the LTI specification is required
+     * @param bool    $disableCookieCheck  True if no cookie check should be made
+     * @param bool    $generateWarnings    True if warning messages should be generated
      *
      * @return bool    True if the request has been successfully validated.
      */
-    private function authenticate($strictMode)
+    private function authenticate($strictMode, $disableCookieCheck, $generateWarnings)
     {
         $doSavePlatform = false;
         $this->ok = $this->checkMessage();
-        if ($this->ok && $strictMode && !empty($this->jwt) && !empty($this->jwt->hasJwt())) {
+        if (($this->ok || $generateWarnings) && !empty($this->jwt) && !empty($this->jwt->hasJwt())) {
+            if ($this->jwt->hasClaim('sub') && (strlen($this->jwt->getClaim('sub')) <= 0)) {
+                $this->setError('Empty sub claim', $strictMode, $generateWarnings);
+            }
             if (!empty($this->jwt->getClaim('https://purl.imsglobal.org/spec/lti/claim/context', '')) &&
                 empty($this->messageParameters['context_id'])) {
-                $this->ok = false;
-                $this->reason = 'Missing id property in https://purl.imsglobal.org/spec/lti/claim/context claim';
+                $this->setError('Missing id property in https://purl.imsglobal.org/spec/lti/claim/context claim', $strictMode,
+                    $generateWarnings);
             } elseif (!empty($this->jwt->getClaim('https://purl.imsglobal.org/spec/lti/claim/tool_platform', '')) &&
                 empty($this->messageParameters['tool_consumer_instance_guid'])) {
-                $this->ok = false;
-                $this->reason = 'Missing guid property in https://purl.imsglobal.org/spec/lti/claim/tool_platform claim';
+                $this->setError('Missing guid property in https://purl.imsglobal.org/spec/lti/claim/tool_platform claim',
+                    $strictMode, $generateWarnings);
             }
         }
-        if ($this->ok) {
+        if ($this->ok || $generateWarnings) {
             if ($this->messageParameters['lti_message_type'] === 'basic-lti-launch-request') {
-                $this->ok = isset($this->messageParameters['resource_link_id']) && (strlen(trim($this->messageParameters['resource_link_id'])) > 0);
-                if (!$this->ok) {
+                if ($this->ok && (!isset($this->messageParameters['resource_link_id']) || (strlen(trim($this->messageParameters['resource_link_id'])) <= 0))) {
+                    $this->ok = false;
                     $this->reason = 'Missing resource link ID.';
                 }
-                if ($this->ok && ($this->messageParameters['lti_version'] === Util::LTI_VERSION1P3)) {
-                    $this->ok = isset($this->messageParameters['roles']);
-                    if (!$this->ok) {
-                        $this->reason = 'Missing roles parameter.';
+                if ($this->messageParameters['lti_version'] === Util::LTI_VERSION1P3) {
+                    if (!isset($this->messageParameters['roles'])) {
+                        $this->setError('Missing roles parameter.', $strictMode, $generateWarnings);
+                    } elseif (!empty($this->messageParameters['roles']) && empty(array_intersect(self::parseRoles($this->messageParameters['roles'],
+                                    Util::LTI_VERSION1P3), User::PRINCIPAL_ROLES))) {
+                        $this->setError('No principal role found in roles parameter.', $strictMode, $generateWarnings);
                     }
                 }
             } elseif (($this->messageParameters['lti_message_type'] === 'ContentItemSelectionRequest') ||
@@ -1253,28 +1282,29 @@ EOD;
                 $mediaTypes = array();
                 $contentTypes = array();
                 $fileTypes = array();
+                $documentTargets = array();
                 if (isset($this->messageParameters['accept_media_types']) && (strlen(trim($this->messageParameters['accept_media_types'])) > 0)) {
                     $mediaTypes = array_map('trim', explode(',', $this->messageParameters['accept_media_types']));
                     $mediaTypes = array_filter($mediaTypes);
+                    $mediaTypes = array_unique($mediaTypes);
                 }
-                $this->ok = (count($mediaTypes) > 0) || ($this->messageParameters['lti_version'] === Util::LTI_VERSION1P3);
-                if (!$this->ok) {
-                    $this->reason = 'No content types specified.';
-                } elseif ($isUpdate) {
+                if ((count($mediaTypes) <= 0) && ($this->messageParameters['lti_version'] !== Util::LTI_VERSION1P3)) {
+                    $this->setError('Missing or empty accept_media_types parameter.', $strictMode, $generateWarnings);
+                }
+                if ($isUpdate) {
                     if ($this->messageParameters['lti_version'] !== Util::LTI_VERSION1P3) {
                         if (!$this->checkValue($this->messageParameters['accept_media_types'],
                                 array(Item::LTI_LINK_MEDIA_TYPE, Item::LTI_ASSIGNMENT_MEDIA_TYPE),
-                                'Invalid value in accept_media_types parameter: \'%s\'.', $strictMode, true)) {
+                                'Invalid value in accept_media_types parameter: \'%s\'.', $strictMode, $generateWarnings, true)) {
                             $this->ok = false;
                         }
                     } elseif (!$this->checkValue($this->messageParameters['accept_types'],
                             array(Item::TYPE_LTI_LINK, Item::TYPE_LTI_ASSIGNMENT),
-                            'Invalid value in accept_types parameter: \'%s\'.', $strictMode, true)) {
+                            'Invalid value in accept_types parameter: \'%s\'.', $strictMode, $generateWarnings, true)) {
                         $this->ok = false;
                     }
                 }
                 if ($this->ok) {
-                    $mediaTypes = array_unique($mediaTypes);
                     foreach ($mediaTypes as $mediaType) {
                         if (strpos($mediaType, 'application/vnd.ims.lti.') !== 0) {
                             $fileTypes[] = $mediaType;
@@ -1295,91 +1325,88 @@ EOD;
                     }
                     $contentTypes = array_unique($contentTypes);
                 }
-                if ($this->ok) {
-                    if (isset($this->messageParameters['accept_presentation_document_targets']) &&
-                        (strlen(trim($this->messageParameters['accept_presentation_document_targets'])) > 0)) {
-                        $documentTargets = array_map('trim',
-                            explode(',', $this->messageParameters['accept_presentation_document_targets']));
-                        $documentTargets = array_filter($mediaTypes);
-                        $documentTargets = array_unique($documentTargets);
-                        $this->ok = count($documentTargets) > 0;
-                        if (!$this->ok) {
-                            $this->reason = 'Missing or empty accept_presentation_document_targets parameter.';
-                        } else {
-                            if (empty($this->jwt) || !$this->jwt->hasJwt()) {
-                                $permittedTargets = array('embed', 'frame', 'iframe', 'window', 'popup', 'overlay', 'none');
-                            } else {  // JWT
-                                $permittedTargets = array('embed', 'iframe', 'window');
-                            }
-                            foreach ($documentTargets as $documentTarget) {
-                                if (!$this->checkValue($documentTarget, $permittedTargets,
-                                        'Invalid value in accept_presentation_document_targets parameter: \'%s\'.', $strictMode,
-                                        true)) {
-                                    $this->ok = false;
-                                    break;
-                                }
-                            }
-                            if ($this->ok) {
-                                $this->documentTargets = $documentTargets;
+                if (isset($this->messageParameters['accept_presentation_document_targets']) &&
+                    (strlen(trim($this->messageParameters['accept_presentation_document_targets'])) > 0)) {
+                    $documentTargets = array_map('trim',
+                        explode(',', $this->messageParameters['accept_presentation_document_targets']));
+                    $documentTargets = array_filter($documentTargets);
+                    $documentTargets = array_unique($documentTargets);
+                    if (count($documentTargets) <= 0) {
+                        $this->setError('Missing or empty accept_presentation_document_targets parameter.', $strictMode,
+                            $generateWarnings);
+                    } elseif (!empty($documentTargets)) {
+                        if (empty($this->jwt) || !$this->jwt->hasJwt()) {
+                            $permittedTargets = array('embed', 'frame', 'iframe', 'window', 'popup', 'overlay', 'none');
+                        } else {  // JWT
+                            $permittedTargets = array('embed', 'iframe', 'window');
+                        }
+                        foreach ($documentTargets as $documentTarget) {
+                            if (!$this->checkValue($documentTarget, $permittedTargets,
+                                    'Invalid value in accept_presentation_document_targets parameter: \'%s\'.', $strictMode,
+                                    $generateWarnings, true)) {
+                                $this->ok = false;
                             }
                         }
-                    } else {
-                        $this->ok = false;
-                        $this->reason = 'No accept_presentation_document_targets parameter found.';
+                    }
+                } else {
+                    $this->setError('No accept_presentation_document_targets parameter found.', $strictMode, $generateWarnings);
+                }
+                if ($this->ok || $generateWarnings) {
+                    if (empty($this->messageParameters['content_item_return_url'])) {
+                        $this->setError('Missing content_item_return_url parameter.', true, $generateWarnings);
                     }
                 }
                 if ($this->ok) {
-                    $this->ok = !empty($this->messageParameters['content_item_return_url']);
-                    if (!$this->ok) {
-                        $this->reason = 'Missing content_item_return_url parameter.';
-                    } else {
-                        $this->mediaTypes = $mediaTypes;
-                        $this->contentTypes = $contentTypes;
-                        $this->fileTypes = $fileTypes;
-                    }
+                    $this->mediaTypes = $mediaTypes;
+                    $this->contentTypes = $contentTypes;
+                    $this->fileTypes = $fileTypes;
+                    $this->documentTargets = $documentTargets;
                 }
             } elseif ($this->messageParameters['lti_message_type'] === 'ToolProxyRegistrationRequest') {
-                $this->ok = ((isset($this->messageParameters['reg_key']) && (strlen(trim($this->messageParameters['reg_key'])) > 0)) && (isset($this->messageParameters['reg_password']) && (strlen(trim($this->messageParameters['reg_password'])) >
-                    0)) && (isset($this->messageParameters['tc_profile_url']) && (strlen(trim($this->messageParameters['tc_profile_url'])) >
-                    0)) && (isset($this->messageParameters['launch_presentation_return_url']) && (strlen(trim($this->messageParameters['launch_presentation_return_url'])) > 0)));
-                if ($this->debugMode && !$this->ok) {
-                    $this->reason = 'Missing message parameters.';
+                if ((!isset($this->messageParameters['reg_key']) ||
+                    (strlen(trim($this->messageParameters['reg_key'])) <= 0)) ||
+                    (!isset($this->messageParameters['reg_password']) ||
+                    (strlen(trim($this->messageParameters['reg_password'])) <= 0)) ||
+                    (!isset($this->messageParameters['tc_profile_url']) ||
+                    (strlen(trim($this->messageParameters['tc_profile_url'])) <= 0)) ||
+                    (!isset($this->messageParameters['launch_presentation_return_url']) ||
+                    (strlen(trim($this->messageParameters['launch_presentation_return_url'])) <= 0))) {
+                    $this->setError('Missing message parameters.', true, $generateWarnings);
                 }
             } elseif ($this->messageParameters['lti_message_type'] === 'LtiStartProctoring') {
-                $this->ok = isset($this->messageParameters['resource_link_id']) && (strlen(trim($this->messageParameters['resource_link_id'])) > 0);
-                if (!$this->ok) {
-                    $this->reason = 'Missing resource link ID.';
-                } else {
-                    $this->ok = isset($this->messageParameters['custom_ap_attempt_number']) && (strlen(trim($this->messageParameters['custom_ap_attempt_number'])) > 0) &&
-                        is_numeric($this->messageParameters['custom_ap_attempt_number']);
-                    if (!$this->ok) {
-                        $this->reason = 'Missing or invalid value for attempt number.';
-                    }
+                if (!isset($this->messageParameters['resource_link_id']) && (strlen(trim($this->messageParameters['resource_link_id'])) > 0)) {
+                    $this->setError('Missing resource link ID.', true, $generateWarnings);
                 }
-                if ($this->ok) {
-                    $this->ok = isset($this->messageParameters['user_id']) && (strlen(trim($this->messageParameters['user_id'])) > 0);
-                    if (!$this->ok) {
-                        $this->reason = 'Missing user ID.';
-                    }
+                if (!isset($this->messageParameters['custom_ap_attempt_number']) && (strlen(trim($this->messageParameters['custom_ap_attempt_number'])) > 0) &&
+                    is_numeric($this->messageParameters['custom_ap_attempt_number'])) {
+                    $this->setError('Missing or invalid value for attempt number.', true, $generateWarnings);
+                }
+                if (!isset($this->messageParameters['user_id']) && (strlen(trim($this->messageParameters['user_id'])) > 0)) {
+                    $this->setError('Empty user ID.', true, $generateWarnings);
                 }
             }
         }
-        $now = time();
-// Check consumer key
-        if ($this->ok && ($this->messageParameters['lti_message_type'] !== 'ToolProxyRegistrationRequest')) {
-            $this->ok = isset($this->messageParameters['oauth_consumer_key']);
-            if (!$this->ok) {
-                $this->reason = 'Missing consumer key.';
-            }
-            if ($this->ok) {
-                $this->ok = !is_null($this->platform->created);
-                if (!$this->ok) {
-                    if (empty($this->jwt) || !$this->jwt->hasJwt()) {
-                        $this->reason = "Consumer key not recognised: {$this->messageParameters['oauth_consumer_key']}";
-                    } else {
-                        $this->reason = "Platform not recognised (Platform ID | Client ID | Deployment ID): {$this->messageParameters['platform_id']} | {$this->messageParameters['oauth_consumer_key']} | {$this->messageParameters['deployment_id']}";
-                    }
+        if ($this->ok || $generateWarnings) {
+            if (isset($this->messageParameters['role_scope_mentor'])) {
+                if (!isset($this->messageParameters['roles']) ||
+                    !in_array('urn:lti:role:ims/lis/Mentor', self::parseRoles($this->messageParameters['roles']))) {
+                    $this->setError('Found role_scope_mentor parameter without a Mentor role.', $strictMode, $generateWarnings);
                 }
+            }
+        }
+// Check consumer key
+        if (($this->ok || $generateWarnings) && ($this->messageParameters['lti_message_type'] !== 'ToolProxyRegistrationRequest')) {
+            $now = time();
+            if (!isset($this->messageParameters['oauth_consumer_key'])) {
+                $this->setError('Missing consumer key.', true, $generateWarnings);
+            }
+            if (is_null($this->platform->created)) {
+                if (empty($this->jwt) || !$this->jwt->hasJwt()) {
+                    $reason = "Consumer key not recognised: '{$this->messageParameters['oauth_consumer_key']}'.";
+                } else {
+                    $reason = "Platform not recognised (Platform ID | Client ID | Deployment ID): '{$this->messageParameters['platform_id']}' | '{$this->messageParameters['oauth_consumer_key']}' | '{$this->messageParameters['deployment_id']}'.";
+                }
+                $this->setError($reason, true, $generateWarnings);
             }
             if ($this->ok) {
                 if ($this->messageParameters['oauth_signature_method'] !== $this->platform->signatureMethod) {
@@ -1406,7 +1433,7 @@ EOD;
                     } else {
                         $this->ok = isset($this->messageParameters['tool_consumer_instance_guid']);
                         if (!$this->ok) {
-                            $this->reason = 'A platform GUID must be included in the launch request.';
+                            $this->reason = 'A platform GUID must be included in the launch request as this configuration is protected.';
                         }
                     }
                 }
@@ -1429,51 +1456,81 @@ EOD;
                 }
             }
 // Validate other message parameter values
-            if ($this->ok) {
-                if (($this->messageParameters['lti_message_type'] === 'ContentItemSelectionRequest') ||
-                    ($this->messageParameters['lti_message_type'] === 'ContentItemUpdateRequest')) {
-                    $isUpdate = ($this->messageParameters['lti_message_type'] === 'ContentItemUpdateRequest');
-                    if (isset($this->messageParameters['accept_unsigned'])) {
-                        $this->ok = $this->checkValue($this->messageParameters['accept_unsigned'], array('true', 'false'),
-                            'Invalid value for accept_unsigned parameter: \'%s\'.', $strictMode);
+            if ($this->ok || $generateWarnings) {
+                if (isset($this->messageParameters['context_type'])) {
+                    $context_types = explode(',', $this->messageParameters['context_type']);
+                    $permitted_types = array('CourseTemplate', 'CourseOffering', 'CourseSection', 'Group',
+                        'urn:lti:context-type:ims/lis/CourseTemplate', 'urn:lti:context-type:ims/lis/CourseOffering', 'urn:lti:context-type:ims/lis/CourseSection', 'urn:lti:context-type:ims/lis/Group');
+                    if ($this->messageParameters['lti_version'] !== Util::LTI_VERSION1) {
+                        $permitted_types = array_merge($permitted_types,
+                            array('http://purl.imsglobal.org/vocab/lis/v2/course#CourseTemplate', 'http://purl.imsglobal.org/vocab/lis/v2/course#CourseOffering', 'http://purl.imsglobal.org/vocab/lis/v2/course#CourseSection', 'http://purl.imsglobal.org/vocab/lis/v2/course#Group'));
                     }
-                    if ($this->ok && isset($this->messageParameters['accept_multiple'])) {
-                        if (!$isUpdate) {
-                            $this->ok = $this->checkValue($this->messageParameters['accept_multiple'], array('true', 'false'),
-                                'Invalid value for accept_multiple parameter: \'%s\'.', $strictMode);
-                        } else {
-                            $this->ok = $this->checkValue($this->messageParameters['accept_multiple'], array('false'),
-                                'Invalid value for accept_multiple parameter: \'%s\'.', $strictMode);
+                    $found = false;
+                    foreach ($context_types as $context_type) {
+                        $found = in_array(trim($context_type), $permitted_types);
+                        if ($found) {
+                            break;
                         }
                     }
-                    if ($this->ok && isset($this->messageParameters['accept_copy_advice'])) {
-                        if (!$isUpdate) {
-                            $this->ok = $this->checkValue($this->messageParameters['accept_copy_advice'], array('true', 'false'),
-                                'Invalid value for accept_copy_advice parameter: \'%s\'.', $strictMode);
-                        } else {
-                            $this->ok = $this->checkValue($this->messageParameters['accept_copy_advice'], array('false'),
-                                'Invalid value for accept_copy_advice parameter: \'%s\'.', $strictMode);
-                        }
-                    }
-                    if ($this->ok && isset($this->messageParameters['auto_create'])) {
-                        $this->ok = $this->checkValue($this->messageParameters['auto_create'], array('true', 'false'),
-                            'Invalid value for auto_create parameter: \'%s\'.', $strictMode);
-                    }
-                    if ($this->ok && isset($this->messageParameters['can_confirm'])) {
-                        $this->ok = $this->checkValue($this->messageParameters['can_confirm'], array('true', 'false'),
-                            'Invalid value for can_confirm parameter: \'%s\'.', $strictMode);
+                    if (!$found) {
+                        $this->setError(sprintf('No valid value found in context_type parameter: \'%s\'.',
+                                $this->messageParameters['context_type']), $strictMode, $generateWarnings);
                     }
                 }
-                if ($this->ok && isset($this->messageParameters['launch_presentation_document_target'])) {
-                    $this->ok = $this->checkValue($this->messageParameters['launch_presentation_document_target'],
-                        array('embed', 'frame', 'iframe', 'window', 'popup', 'overlay'),
-                        'Invalid value for launch_presentation_document_target parameter: \'%s\'.', $strictMode, true);
-                    if ($this->ok && ($this->messageParameters['lti_message_type'] === 'LtiStartProctoring') &&
+                if (($this->ok || $generateWarnings) && (($this->messageParameters['lti_message_type'] === 'ContentItemSelectionRequest') ||
+                    ($this->messageParameters['lti_message_type'] === 'ContentItemUpdateRequest'))) {
+                    $isUpdate = ($this->messageParameters['lti_message_type'] === 'ContentItemUpdateRequest');
+                    if (isset($this->messageParameters['accept_unsigned']) &&
+                        !$this->checkValue($this->messageParameters['accept_unsigned'], array('true', 'false'),
+                            'Invalid value for accept_unsigned parameter: \'%s\'.', $strictMode, $generateWarnings)) {
+                        $this->ok = false;
+                    }
+                    if (isset($this->messageParameters['accept_multiple'])) {
+                        if (!$isUpdate) {
+                            if (!$this->checkValue($this->messageParameters['accept_multiple'], array('true', 'false'),
+                                    'Invalid value for accept_multiple parameter: \'%s\'.', $strictMode, $generateWarnings)) {
+                                $this->ok = false;
+                            }
+                        } elseif (!$this->checkValue($this->messageParameters['accept_multiple'], array('false'),
+                                'Invalid value for accept_multiple parameter: \'%s\'.', $strictMode, $generateWarnings)) {
+                            $this->ok = false;
+                        }
+                    }
+                    if (isset($this->messageParameters['accept_copy_advice'])) {
+                        if (!$isUpdate) {
+                            if (!$this->checkValue($this->messageParameters['accept_copy_advice'], array('true', 'false'),
+                                    'Invalid value for accept_copy_advice parameter: \'%s\'.', $strictMode, $generateWarnings)) {
+                                $this->ok = false;
+                            }
+                        } elseif (!$this->checkValue($this->messageParameters['accept_copy_advice'], array('false'),
+                                'Invalid value for accept_copy_advice parameter: \'%s\'.', $strictMode, $generateWarnings)) {
+                            $this->ok = false;
+                        }
+                    }
+                    if (isset($this->messageParameters['auto_create']) &&
+                        !$this->checkValue($this->messageParameters['auto_create'], array('true', 'false'),
+                            'Invalid value for auto_create parameter: \'%s\'.', $strictMode, $generateWarnings)) {
+                        $this->ok = false;
+                    }
+                    if (isset($this->messageParameters['can_confirm']) &&
+                        !$this->checkValue($this->messageParameters['can_confirm'], array('true', 'false'),
+                            'Invalid value for can_confirm parameter: \'%s\'.', $strictMode, $generateWarnings)) {
+                        $this->ok = false;
+                    }
+                }
+                if (isset($this->messageParameters['launch_presentation_document_target'])) {
+                    if (!$this->checkValue($this->messageParameters['launch_presentation_document_target'],
+                            array('embed', 'frame', 'iframe', 'window', 'popup', 'overlay'),
+                            'Invalid value for launch_presentation_document_target parameter: \'%s\'.', $strictMode,
+                            $generateWarnings, true)) {
+                        $this->ok = false;
+                    }
+                    if (($this->messageParameters['lti_message_type'] === 'LtiStartProctoring') &&
                         ($this->messageParameters['launch_presentation_document_target'] !== 'window')) {
-                        $this->ok = !isset($this->messageParameters['launch_presentation_height']) &&
-                            !isset($this->messageParameters['launch_presentation_width']);
-                        if (!$this->ok) {
-                            $this->reason = 'Height and width parameters must only be included for the window document target.';
+                        if (isset($this->messageParameters['launch_presentation_height']) ||
+                            isset($this->messageParameters['launch_presentation_width'])) {
+                            $this->setError('Height and width parameters must only be included for the window document target.',
+                                $strictMode, $generateWarnings);
                         }
                     }
                 }
@@ -1528,7 +1585,7 @@ EOD;
                 }
                 if (!empty($missing)) {
                     ksort($missing);
-                    $this->reason = 'Required capability not offered - \'' . implode('\', \'', array_keys($missing)) . '\'';
+                    $this->reason = 'Required capability not offered - \'' . implode('\', \'', array_keys($missing)) . '\'.';
                     $this->ok = false;
                 }
             }
@@ -1543,7 +1600,7 @@ EOD;
                             } else {
                                 $this->reason .= ', ';
                             }
-                            $this->reason .= "'{$format}' [" . implode(', ', $service->actions) . ']';
+                            $this->reason .= "'{$format}' [" . implode(', ', $service->actions) . '].';
                         }
                     }
                 }
@@ -1584,14 +1641,14 @@ EOD;
 
 // Check if a relaunch is being requested
             if (isset($this->messageParameters['relaunch_url'])) {
+                Util::logRequest();
                 if (empty($this->messageParameters['platform_state'])) {
                     $this->ok = false;
                     $this->reason = 'Missing or empty platform_state parameter.';
                 } else {
-                    $this->sendRelaunchRequest();
+                    $this->ok = $this->sendRelaunchRequest($disableCookieCheck);
                 }
             } else {
-
 // Validate message parameter constraints
                 $invalidParameters = array();
                 foreach ($this->constraints as $name => $constraint) {
@@ -1957,11 +2014,12 @@ EOD;
     /**
      * Generate a form to perform an authentication request.
      *
-     * @param array $parameters     Request parameters
+     * @param array $parameters          Request parameters
+     * @param bool  $disableCookieCheck  True if no cookie check should be made
      *
      * @return bool True if form was generated
      */
-    private function sendAuthenticationRequest($parameters)
+    private function sendAuthenticationRequest($parameters, $disableCookieCheck)
     {
         $clientId = null;
         if (isset($parameters['client_id'])) {
@@ -1981,8 +2039,22 @@ EOD;
         if (!$ok) {
             $this->reason = 'Platform not found or no platform authentication request URL.';
         } else {
+            $session_id = '';
+            if (!$disableCookieCheck) {
+                if (empty(session_id())) {
+                    if (empty($_COOKIE)) {
+                        Util::setTestCookie();
+                    }
+                } elseif (empty($_COOKIE[session_name()]) || ($_COOKIE[session_name()] !== session_id())) {
+                    $session_id = '.' . session_id();
+                    if (empty($_COOKIE[session_name()])) {
+                        Util::setTestCookie();
+                    }
+                }
+            }
             do {
-                $nonce = new PlatformNonce($this->platform, Util::getRandomString());
+                $state = Util::getRandomString();
+                $nonce = new PlatformNonce($this->platform, "{$state}{$session_id}");
                 $ok = !$nonce->load();
             } while (!$ok);
             $nonce->expires = time() + 10;  // Expire after 10 seconds
@@ -2046,15 +2118,34 @@ EOD;
 
     /**
      * Generate a form to perform a relaunch request.
+     *
+     * @param bool  $disableCookieCheck  True if no cookie check should be made
+     *
+     * @return bool  True if a relaunch request was sent
      */
-    private function sendRelaunchRequest()
+    private function sendRelaunchRequest($disableCookieCheck)
     {
+        $session_id = '';
+        if (!$disableCookieCheck) {
+            if (empty(session_id())) {
+                if (empty($_COOKIE)) {
+                    Util::setTestCookie();
+                }
+            } elseif (empty($_COOKIE[session_name()]) || ($_COOKIE[session_name()] !== session_id())) {
+                $session_id = '.' . session_id();
+                if (empty($_COOKIE[session_name()])) {
+                    Util::setTestCookie();
+                }
+            }
+        }
         do {
-            $nonce = new PlatformNonce($this->platform, Util::getRandomString());
+            $state = Util::getRandomString();
+            $nonce = new PlatformNonce($this->platform, "{$state}{$session_id}");
             $ok = !$nonce->load();
         } while (!$ok);
-        $ok = $nonce->save();
-        if ($ok) {
+        $nonce->expires = time() + 10;  // Expire after 10 seconds
+        $this->ok = $nonce->save();
+        if ($this->ok) {
             $params = array(
                 'tool_state' => $nonce->getValue(),
                 'platform_state' => $this->messageParameters['platform_state']
@@ -2064,37 +2155,63 @@ EOD;
         } else {
             $this->reason = 'Unable to generate a state value.';
         }
+
+        return $this->ok;
     }
 
     /**
      * Validate a parameter value from an array of permitted values.
      *
-     * @param mixed  $value          Value to be checked
-     * @param array  $values         Array of permitted values
-     * @param string $reason         Reason to generate when the value is not permitted
-     * @param bool   $strictMode     True if full compliance with the LTI specification is required
-     * @param bool   $ignoreInvalid  True if invalid values are to be ignored (optional default is false)
+     * @param mixed  $value             Value to be checked
+     * @param array  $values            Array of permitted values
+     * @param string $reason            Reason to generate when the value is not permitted
+     * @param bool   $strictMode        True if full compliance with the LTI specification is required
+     * @param bool   $generateWarnings  True if warning messages should be generated
+     * @param bool   $ignoreInvalid     True if invalid values are to be ignored (optional default is false)
      *
      * @return bool    True if value is valid
      */
-    private function checkValue(&$value, $values, $reason, $strictMode, $ignoreInvalid = false)
+    private function checkValue(&$value, $values, $reason, $strictMode, $generateWarnings, $ignoreInvalid = false)
     {
         $lookupValue = $value;
         if (!$strictMode) {
             $lookupValue = strtolower($value);
         }
         $ok = in_array($lookupValue, $values);
-        if (!$ok && !$strictMode && $ignoreInvalid) {
-            Util::logInfo(sprintf($reason, $value) . " [Error ignored]");
-            $ok = true;
-        } elseif (!$ok && !empty($reason)) {
-            $this->reason = sprintf($reason, $value);
+        if (!$ok) {
+            if ($this->ok && $strictMode) {
+                $this->reason = sprintf($reason, $value);
+            } else {
+                $ok = true;
+                if ($generateWarnings) {
+                    $this->warnings[] = sprintf($reason, $value);
+                }
+            }
         } elseif ($lookupValue !== $value) {
-            Util::logInfo(sprintf($reason, $value) . " [Changed to '{$lookupValue}']");
+            if ($generateWarnings) {
+                $this->warnings[] = sprintf($reason, $value) . " [Changed to '{$lookupValue}']";
+            }
             $value = $lookupValue;
         }
 
         return $ok;
+    }
+
+    /**
+     * Set error reason or add warning.
+     *
+     * @param string  $reason            Reason to generate when the value is not permitted
+     * @param bool    $strictMode        True if full compliance with the LTI specification is required
+     * @param bool    $generateWarnings  True if warning messages should be generated
+     */
+    private function setError($reason, $strictMode, $generateWarnings)
+    {
+        if ($strictMode && $this->ok) {
+            $this->ok = false;
+            $this->reason = $reason;
+        } elseif ($generateWarnings) {
+            $this->warnings[] = $reason;
+        }
     }
 
 }

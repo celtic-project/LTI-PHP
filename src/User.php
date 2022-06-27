@@ -13,6 +13,41 @@ class User
 {
 
     /**
+     * List of principal roles for LTI 1.3.
+     */
+    const PRINCIPAL_ROLES = array(
+        'http://purl.imsglobal.org/vocab/lis/v2/system/person#Administrator',
+        'http://purl.imsglobal.org/vocab/lis/v2/system/person#None',
+        'http://purl.imsglobal.org/vocab/lis/v2/system/person#AccountAdmin',
+        'http://purl.imsglobal.org/vocab/lis/v2/system/person#Creator',
+        'http://purl.imsglobal.org/vocab/lis/v2/system/person#SysAdmin',
+        'http://purl.imsglobal.org/vocab/lis/v2/system/person#SysSupport',
+        'http://purl.imsglobal.org/vocab/lis/v2/system/person#User',
+        'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Administrator',
+        'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Faculty',
+        'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Guest',
+        'http://purl.imsglobal.org/vocab/lis/v2/institution/person#None',
+        'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Other',
+        'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Staff',
+        'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Student',
+        'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Alumni',
+        'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Instructor',
+        'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Learner',
+        'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Member',
+        'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Mentor',
+        'http://purl.imsglobal.org/vocab/lis/v2/institution/person#Observer',
+        'http://purl.imsglobal.org/vocab/lis/v2/institution/person#ProspectiveStudent',
+        'http://purl.imsglobal.org/vocab/lis/v2/membership#Administrator',
+        'http://purl.imsglobal.org/vocab/lis/v2/membership#ContentDeveloper',
+        'http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor',
+        'http://purl.imsglobal.org/vocab/lis/v2/membership#Learner',
+        'http://purl.imsglobal.org/vocab/lis/v2/membership#Mentor',
+        'http://purl.imsglobal.org/vocab/lis/v2/membership#Manager',
+        'http://purl.imsglobal.org/vocab/lis/v2/membership#Member',
+        'http://purl.imsglobal.org/vocab/lis/v2/membership#Officer'
+    );
+
+    /**
      * User's first name.
      *
      * @var string $firstname

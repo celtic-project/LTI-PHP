@@ -430,7 +430,7 @@ class Platform
     public function getMessageParameters()
     {
         if ($this->ok && is_null($this->messageParameters)) {
-            $this->parseMessage();
+            $this->parseMessage(true, true, false);
         }
 
         return $this->messageParameters;
@@ -637,7 +637,7 @@ class Platform
      */
     private function authenticate()
     {
-        $this->checkMessage();
+        $this->ok = $this->checkMessage();
         if ($this->ok) {
             $this->ok = $this->verifySignature();
         }

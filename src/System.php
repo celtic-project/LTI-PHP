@@ -748,11 +748,11 @@ trait System
      */
     public function checkMessage()
     {
-        $this->ok = $_SERVER['REQUEST_METHOD'] === 'POST';
-        if (!$this->ok) {
+        $ok = $_SERVER['REQUEST_METHOD'] === 'POST';
+        if (!$ok) {
             $this->reason = 'LTI messages must use HTTP POST';
         } elseif (!empty($this->jwt) && !empty($this->jwt->hasJwt())) {
-            $this->ok = false;
+            $ok = false;
             if (is_null($this->messageParameters['oauth_consumer_key']) || (strlen($this->messageParameters['oauth_consumer_key']) <= 0)) {
                 $this->reason = 'Missing iss claim';
             } elseif (empty($this->jwt->getClaim('iat', ''))) {
@@ -764,7 +764,7 @@ trait System
             } elseif (empty($this->jwt->getClaim('nonce', ''))) {
                 $this->reason = 'Missing nonce claim';
             } else {
-                $this->ok = true;
+                $ok = true;
             }
         }
 // Set signature method from request
@@ -775,21 +775,21 @@ trait System
             }
         }
 // Check all required launch parameters
-        if ($this->ok) {
-            $this->ok = isset($this->messageParameters['lti_message_type']);
-            if (!$this->ok) {
+        if ($ok) {
+            $ok = isset($this->messageParameters['lti_message_type']);
+            if (!$ok) {
                 $this->reason = 'Missing lti_message_type parameter.';
             }
         }
-        if ($this->ok) {
-            $this->ok = isset($this->messageParameters['lti_version']) && in_array($this->messageParameters['lti_version'],
+        if ($ok) {
+            $ok = isset($this->messageParameters['lti_version']) && in_array($this->messageParameters['lti_version'],
                     Util::$LTI_VERSIONS);
-            if (!$this->ok) {
+            if (!$ok) {
                 $this->reason = 'Invalid or missing lti_version parameter.';
             }
         }
 
-        return $this->ok;
+        return $ok;
     }
 
     /**
@@ -839,6 +839,9 @@ trait System
                 $method = new OAuth\OAuthSignatureMethod_HMAC_SHA1();
                 $server->add_signature_method($method);
                 $request = OAuth\OAuthRequest::from_request();
+                if (isset($request->get_parameters()['_new_window']) && !isset($this->messageParameters['_new_window'])) {
+                    $request->unset_parameter('_new_window');
+                }
                 $server->verify_request($request);
                 $ok = true;
             } catch (\Exception $e) {
@@ -884,9 +887,13 @@ trait System
 ###
 
     /**
-     * Parse the message
+     * Parse the message.
+     *
+     * @param bool    $strictMode      True if full compliance with the LTI specification is required
+     * @param bool    $disableCookieCheck  True if no cookie check should be made
+     * @param bool    $generateWarnings    True if warning messages should be generated
      */
-    private function parseMessage()
+    private function parseMessage($strictMode, $disableCookieCheck, $generateWarnings)
     {
         if (is_null($this->messageParameters)) {
             $this->getRawParameters();
@@ -943,16 +950,32 @@ trait System
                                     if (isset($this->rawParameters['id_token'])) {
                                         $this->ok = !empty($this->rawParameters['state']);
                                         if ($this->ok) {
-                                            $nonce = new PlatformNonce($this->platform, $this->rawParameters['state']);
+                                            $state = $this->rawParameters['state'];
+                                            if (!$disableCookieCheck) {
+                                                $parts = explode('.', $state);
+                                                if (empty($_COOKIE) && !isset($_POST['_new_window'])) {  // Reopen in a new window
+                                                    Util::setTestCookie();
+                                                    $_POST['_new_window'] = '';
+                                                    echo Util::sendForm($_SERVER['REQUEST_URI'], $_POST, '_blank');
+                                                    exit;
+                                                } elseif (!empty(session_id()) && (count($parts) > 1) && (session_id() !== $parts[1])) {  // Reset to original session
+                                                    session_abort();
+                                                    session_id($parts[1]);
+                                                    session_start();
+                                                    $this->onResetSessionId();
+                                                }
+                                                Util::setTestCookie(true);
+                                            }
+                                            $nonce = new PlatformNonce($this->platform, $state);
                                             $this->ok = $nonce->load();
                                             if (!$this->ok) {
                                                 $platform = Platform::fromPlatformId($iss, $aud, null, $this->dataConnector);
-                                                $nonce = new PlatformNonce($platform, $this->rawParameters['state']);
+                                                $nonce = new PlatformNonce($platform, $state);
                                                 $this->ok = $nonce->load();
                                             }
                                             if (!$this->ok) {
                                                 $platform = Platform::fromPlatformId($iss, null, null, $this->dataConnector);
-                                                $nonce = new PlatformNonce($platform, $this->rawParameters['state']);
+                                                $nonce = new PlatformNonce($platform, $state);
                                                 $this->ok = $nonce->load();
                                             }
                                             if ($this->ok) {
@@ -965,7 +988,7 @@ trait System
                                     $this->messageParameters = array();
                                     $this->messageParameters['oauth_consumer_key'] = $aud;
                                     $this->messageParameters['oauth_signature_method'] = $this->jwt->getHeader('alg');
-                                    $this->parseClaims();
+                                    $this->parseClaims($strictMode, $generateWarnings);
                                 } else {
                                     $this->reason = 'state parameter is invalid or missing';
                                 }
@@ -985,8 +1008,34 @@ trait System
                     $this->reason .= ": {$this->rawParameters['error_description']}";
                 }
             } else {  // OAuth
-                if (isset($this->rawParameters['oauth_consumer_key']) && ($this instanceof Tool)) {
-                    $this->platform = Platform::fromConsumerKey($this->rawParameters['oauth_consumer_key'], $this->dataConnector);
+                if ($this instanceof Tool) {
+                    if (isset($this->rawParameters['oauth_consumer_key'])) {
+                        $this->platform = Platform::fromConsumerKey($this->rawParameters['oauth_consumer_key'], $this->dataConnector);
+                    }
+                    if (isset($this->rawParameters['tool_state'])) {  // Relaunch?
+                        $state = $this->rawParameters['tool_state'];
+                        if (!$disableCookieCheck) {
+                            $parts = explode('.', $state);
+                            if (empty($_COOKIE) && !isset($_POST['_new_window'])) {  // Reopen in a new window
+                                Util::setTestCookie();
+                                $_POST['_new_window'] = '';
+                                echo Util::sendForm($_SERVER['REQUEST_URI'], $_POST, '_blank');
+                                exit;
+                            } elseif (!empty(session_id()) && (count($parts) > 1) && (session_id() !== $parts[1])) {  // Reset to original session
+                                session_abort();
+                                session_id($parts[1]);
+                                session_start();
+                                $this->onResetSessionId();
+                            }
+                            unset($this->rawParameters['_new_window']);
+                            Util::setTestCookie(true);
+                        }
+                        $nonce = new PlatformNonce($this->platform, $state);
+                        $this->ok = $nonce->load();
+                        if (!$this->ok) {
+                            $this->reason = "Invalid tool_state parameter: '{$state}'";
+                        }
+                    }
                 }
                 $this->messageParameters = $this->rawParameters;
             }
@@ -995,8 +1044,11 @@ trait System
 
     /**
      * Parse the claims
+     *
+     * @param bool    $strictMode      True if full compliance with the LTI specification is required
+     * @param bool    $generateWarnings    True if warning messages should be generated
      */
-    private function parseClaims()
+    private function parseClaims($strictMode, $generateWarnings)
     {
         $payload = Util::cloneObject($this->jwt->getPayload());
         $errors = array();
@@ -1041,6 +1093,13 @@ trait System
                         $value = $value ? 'true' : 'false';
                     } elseif (isset($mapping['isInteger']) && $mapping['isInteger']) {
                         $value = strval($value);
+                    } elseif (!is_string($value)) {
+                        if ($generateWarnings) {
+                            $this->warnings[] = "Value of claim '{$claim}' is not a string: '{$value}'";
+                        }
+                        if (!$strictMode) {
+                            $value = strval($value);
+                        }
                     }
                 }
                 if (!is_null($value) && is_string($value)) {
