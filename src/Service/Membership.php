@@ -231,6 +231,9 @@ class Membership extends Service
                                     if (isset($message->lis_result_sourcedid)) {
                                         $userresult->ltiResultSourcedId = $message->lis_result_sourcedid;
                                         $doSave = true;
+                                    } elseif ($userresult->isLearner()) {  // Ensure all learners are recorded in case Assignment and Grade services are used
+                                        $userresult->ltiResultSourcedId = '';
+                                        $doSave = true;
                                     }
                                     if (isset($message->ext)) {
                                         if (empty($userresult->username)) {
