@@ -883,24 +883,28 @@ class DataConnector_mysqli extends DataConnector
      */
     public function loadPlatformNonce($nonce)
     {
+        if (parent::useMemcache()) {
+            $ok = parent::loadPlatformNonce($nonce);
+        } else {
 // Delete any expired nonce values
-        $now = date("{$this->dateFormat} {$this->timeFormat}", time());
-        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . " WHERE expires <= ?";
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param('s', $now);
-        $this->executeQuery($sql, $stmt);
+            $now = date("{$this->dateFormat} {$this->timeFormat}", time());
+            $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . " WHERE expires <= ?";
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param('s', $now);
+            $this->executeQuery($sql, $stmt);
 
 // Load the nonce
-        $id = $nonce->getPlatform()->getRecordId();
-        $value = $nonce->getValue();
-        $sql = "SELECT value AS T FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' WHERE (consumer_pk = ?) AND (value = ?)';
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param('is', $id, $value);
-        $ok = $this->executeQuery($sql, $stmt);
-        if ($ok) {
-            $rsNonce = $stmt->get_result();
-            if (!$rsNonce->fetch_object()) {
-                $ok = false;
+            $id = $nonce->getPlatform()->getRecordId();
+            $value = $nonce->getValue();
+            $sql = "SELECT value AS T FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' WHERE (consumer_pk = ?) AND (value = ?)';
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param('is', $id, $value);
+            $ok = $this->executeQuery($sql, $stmt);
+            if ($ok) {
+                $rsNonce = $stmt->get_result();
+                if (!$rsNonce->fetch_object()) {
+                    $ok = false;
+                }
             }
         }
 
@@ -916,13 +920,17 @@ class DataConnector_mysqli extends DataConnector
      */
     public function savePlatformNonce($nonce)
     {
-        $id = $nonce->getPlatform()->getRecordId();
-        $value = $nonce->getValue();
-        $expires = date("{$this->dateFormat} {$this->timeFormat}", $nonce->expires);
-        $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . " (consumer_pk, value, expires) VALUES (?, ?, ?)";
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param('iss', $id, $value, $expires);
-        $ok = $this->executeQuery($sql, $stmt);
+        if (parent::useMemcache()) {
+            $ok = parent::savePlatformNonce($nonce);
+        } else {
+            $id = $nonce->getPlatform()->getRecordId();
+            $value = $nonce->getValue();
+            $expires = date("{$this->dateFormat} {$this->timeFormat}", $nonce->expires);
+            $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . " (consumer_pk, value, expires) VALUES (?, ?, ?)";
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param('iss', $id, $value, $expires);
+            $ok = $this->executeQuery($sql, $stmt);
+        }
 
         return $ok;
     }
@@ -936,12 +944,16 @@ class DataConnector_mysqli extends DataConnector
      */
     public function deletePlatformNonce($nonce)
     {
-        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' WHERE (consumer_pk = ?) AND (value = ?)';
-        $stmt = $this->db->prepare($sql);
-        $id = $nonce->getPlatform()->getRecordId();
-        $value = $nonce->getValue();
-        $stmt->bind_param('is', $id, $value);
-        $ok = $this->executeQuery($sql, $stmt);
+        if (parent::useMemcache()) {
+            $ok = parent::deletePlatformNonce($nonce);
+        } else {
+            $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' WHERE (consumer_pk = ?) AND (value = ?)';
+            $stmt = $this->db->prepare($sql);
+            $id = $nonce->getPlatform()->getRecordId();
+            $value = $nonce->getValue();
+            $stmt->bind_param('is', $id, $value);
+            $ok = $this->executeQuery($sql, $stmt);
+        }
 
         return $ok;
     }

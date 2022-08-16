@@ -936,25 +936,29 @@ class DataConnector_pdo extends DataConnector
      */
     public function loadPlatformNonce($nonce)
     {
+        if (parent::useMemcache()) {
+            $ok = parent::loadPlatformNonce($nonce);
+        } else {
 // Delete any expired nonce values
-        $now = date("{$this->dateFormat} {$this->timeFormat}", time());
-        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' WHERE expires <= :now';
-        $query = $this->db->prepare($sql);
-        $query->bindValue('now', $now, \PDO::PARAM_STR);
-        $this->executeQuery($sql, $query);
+            $now = date("{$this->dateFormat} {$this->timeFormat}", time());
+            $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' WHERE expires <= :now';
+            $query = $this->db->prepare($sql);
+            $query->bindValue('now', $now, \PDO::PARAM_STR);
+            $this->executeQuery($sql, $query);
 
 // Load the nonce
-        $id = $nonce->getPlatform()->getRecordId();
-        $value = $nonce->getValue();
-        $sql = "SELECT value T FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' WHERE (consumer_pk = :id) AND (value = :value)';
-        $query = $this->db->prepare($sql);
-        $query->bindValue('id', $id, \PDO::PARAM_INT);
-        $query->bindValue('value', $value, \PDO::PARAM_STR);
-        $ok = $this->executeQuery($sql, $query, false);
-        if ($ok) {
-            $row = $query->fetch(\PDO::FETCH_ASSOC);
-            if ($row === false) {
-                $ok = false;
+            $id = $nonce->getPlatform()->getRecordId();
+            $value = $nonce->getValue();
+            $sql = "SELECT value T FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' WHERE (consumer_pk = :id) AND (value = :value)';
+            $query = $this->db->prepare($sql);
+            $query->bindValue('id', $id, \PDO::PARAM_INT);
+            $query->bindValue('value', $value, \PDO::PARAM_STR);
+            $ok = $this->executeQuery($sql, $query, false);
+            if ($ok) {
+                $row = $query->fetch(\PDO::FETCH_ASSOC);
+                if ($row === false) {
+                    $ok = false;
+                }
             }
         }
 
@@ -970,15 +974,19 @@ class DataConnector_pdo extends DataConnector
      */
     public function savePlatformNonce($nonce)
     {
-        $id = $nonce->getPlatform()->getRecordId();
-        $value = $nonce->getValue();
-        $expires = date("{$this->dateFormat} {$this->timeFormat}", $nonce->expires);
-        $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' (consumer_pk, value, expires) VALUES (:id, :value, :expires)';
-        $query = $this->db->prepare($sql);
-        $query->bindValue('id', $id, \PDO::PARAM_INT);
-        $query->bindValue('value', $value, \PDO::PARAM_STR);
-        $query->bindValue('expires', $expires, \PDO::PARAM_STR);
-        $ok = $this->executeQuery($sql, $query);
+        if (parent::useMemcache()) {
+            $ok = parent::savePlatformNonce($nonce);
+        } else {
+            $id = $nonce->getPlatform()->getRecordId();
+            $value = $nonce->getValue();
+            $expires = date("{$this->dateFormat} {$this->timeFormat}", $nonce->expires);
+            $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' (consumer_pk, value, expires) VALUES (:id, :value, :expires)';
+            $query = $this->db->prepare($sql);
+            $query->bindValue('id', $id, \PDO::PARAM_INT);
+            $query->bindValue('value', $value, \PDO::PARAM_STR);
+            $query->bindValue('expires', $expires, \PDO::PARAM_STR);
+            $ok = $this->executeQuery($sql, $query);
+        }
 
         return $ok;
     }
@@ -992,14 +1000,18 @@ class DataConnector_pdo extends DataConnector
      */
     public function deletePlatformNonce($nonce)
     {
-        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' ' .
-            'WHERE (consumer_pk = :id) AND (value = :value)';
-        $query = $this->db->prepare($sql);
-        $id = $nonce->getPlatform()->getRecordId();
-        $query->bindValue('id', $id, \PDO::PARAM_STR);
-        $value = $nonce->getValue();
-        $query->bindValue('value', $value, \PDO::PARAM_STR);
-        $ok = $this->executeQuery($sql, $query);
+        if (parent::useMemcache()) {
+            $ok = parent::deletePlatformNonce($nonce);
+        } else {
+            $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' ' .
+                'WHERE (consumer_pk = :id) AND (value = :value)';
+            $query = $this->db->prepare($sql);
+            $id = $nonce->getPlatform()->getRecordId();
+            $query->bindValue('id', $id, \PDO::PARAM_STR);
+            $value = $nonce->getValue();
+            $query->bindValue('value', $value, \PDO::PARAM_STR);
+            $ok = $this->executeQuery($sql, $query);
+        }
 
         return $ok;
     }

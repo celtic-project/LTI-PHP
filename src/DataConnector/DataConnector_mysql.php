@@ -812,21 +812,25 @@ class DataConnector_mysql extends DataConnector
      */
     public function loadPlatformNonce($nonce)
     {
-        $ok = false;
+        if (parent::useMemcache()) {
+            $ok = parent::loadPlatformNonce($nonce);
+        } else {
+            $ok = false;
 
 // Delete any expired nonce values
-        $now = date("{$this->dateFormat} {$this->timeFormat}", time());
-        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . " WHERE expires <= '{$now}'";
-        $this->executeQuery($sql);
+            $now = date("{$this->dateFormat} {$this->timeFormat}", time());
+            $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . " WHERE expires <= '{$now}'";
+            $this->executeQuery($sql);
 
 // Load the nonce
-        $sql = sprintf("SELECT value AS T FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' WHERE (consumer_pk = %d) AND (value = %s)',
-            $nonce->getPlatform()->getRecordId(), $this->escape($nonce->getValue()));
-        $rsNonce = $this->executeQuery($sql, false);
-        if ($rsNonce) {
-            $row = mysql_fetch_object($rsNonce);
-            if ($row !== false) {
-                $ok = true;
+            $sql = sprintf("SELECT value AS T FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' WHERE (consumer_pk = %d) AND (value = %s)',
+                $nonce->getPlatform()->getRecordId(), $this->escape($nonce->getValue()));
+            $rsNonce = $this->executeQuery($sql, false);
+            if ($rsNonce) {
+                $row = mysql_fetch_object($rsNonce);
+                if ($row !== false) {
+                    $ok = true;
+                }
             }
         }
 
@@ -842,10 +846,14 @@ class DataConnector_mysql extends DataConnector
      */
     public function savePlatformNonce($nonce)
     {
-        $expires = date("{$this->dateFormat} {$this->timeFormat}", $nonce->expires);
-        $sql = sprintf("INSERT INTO {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . " (consumer_pk, value, expires) VALUES (%d, %s, %s)",
-            $nonce->getPlatform()->getRecordId(), $this->escape($nonce->getValue()), $this->escape($expires));
-        $ok = $this->executeQuery($sql);
+        if (parent::useMemcache()) {
+            $ok = parent::savePlatformNonce($nonce);
+        } else {
+            $expires = date("{$this->dateFormat} {$this->timeFormat}", $nonce->expires);
+            $sql = sprintf("INSERT INTO {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . " (consumer_pk, value, expires) VALUES (%d, %s, %s)",
+                $nonce->getPlatform()->getRecordId(), $this->escape($nonce->getValue()), $this->escape($expires));
+            $ok = $this->executeQuery($sql);
+        }
 
         return $ok;
     }
@@ -859,9 +867,13 @@ class DataConnector_mysql extends DataConnector
      */
     public function deletePlatformNonce($nonce)
     {
-        $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' ' .
-            'WHERE (consumer_pk = %d) AND (value = %s)', $nonce->getPlatform()->getRecordId(), $this->escape($nonce->getValue()));
-        $ok = $this->executeQuery($sql);
+        if (parent::useMemcache()) {
+            $ok = parent::deletePlatformNonce($nonce);
+        } else {
+            $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' ' .
+                'WHERE (consumer_pk = %d) AND (value = %s)', $nonce->getPlatform()->getRecordId(), $this->escape($nonce->getValue()));
+            $ok = $this->executeQuery($sql);
+        }
 
         return $ok;
     }

@@ -101,6 +101,13 @@ class DataConnector
     protected $timeFormat = 'H:i:s';
 
     /**
+     * memcache object.
+     *
+     * @var object $memcache
+     */
+    private static $memcache = null;
+
+    /**
      * Class constructor
      *
      * @param object|resource $db                 Database connection object
@@ -110,6 +117,48 @@ class DataConnector
     {
         $this->db = $db;
         $this->dbTableNamePrefix = $dbTableNamePrefix;
+    }
+
+    /**
+     * Set/check whether memcached should be used when available.
+     *
+     * @param string  $host   Name or IP address of host running memcache server (use an empty string to disable)
+     * @param int     $port   Port number used by memcache server (use -1 for default)
+     *
+     * @return bool  True if memcache is enabled
+     */
+    public static function useMemcache($host = null, $port = -1)
+    {
+        if (is_null($host)) {
+            $useMemcache = !empty(self::$memcache);
+        } else {
+            $useMemcache = !empty($host);
+            if ($useMemcache) {
+                if (!class_exists('Memcache')) {
+                    $useMemcache = false;
+                    Util::logError("Memcache extension not installed");
+                } else {
+                    if ($port < 0) {
+                        self::$memcache = memcache_connect($host);
+                    } else {
+                        self::$memcache = memcache_connect($host, $port);
+                    }
+                    $useMemcache = !empty(self::$memcache);
+                    if (!$useMemcache) {
+                        if ($port < 0) {
+                            Util::logError("Unable to connect to memcache at {$host}");
+                        } else {
+                            Util::logError("Unable to connect to memcache at {$host}:{$port}");
+                        }
+                    }
+                }
+            }
+            if (!$useMemcache) {
+                self::$memcache = null;
+            }
+        }
+
+        return $useMemcache;
     }
 
 ###
@@ -427,7 +476,15 @@ class DataConnector
      */
     public function loadPlatformNonce($nonce)
     {
-        return false;  // assume the nonce does not already exist
+        $ok = false;  // assume the nonce does not already exist
+        if (!empty(self::$memcache)) {
+            $id = $nonce->getPlatform()->getRecordId();
+            $value = $nonce->getValue();
+            $name = self::NONCE_TABLE_NAME . "_{$id}_{$value}";
+            $ok = self::$memcache->get($name) !== false;
+        }
+
+        return $ok;
     }
 
     /**
@@ -439,7 +496,20 @@ class DataConnector
      */
     public function savePlatformNonce($nonce)
     {
-        return true;
+        $ok = true;  // assume the nonce was saved
+        if (!empty(self::$memcache)) {
+            $ok = false;
+            $id = $nonce->getPlatform()->getRecordId();
+            $value = $nonce->getValue();
+            $expires = $nonce->expires;
+            $name = self::NONCE_TABLE_NAME . "_{$id}_{$value}";
+            $current = self::$memcache->get($name);
+            if ($current === false) {
+                $ok = self::$memcache->set($name, true, 0, $expires);
+            }
+        }
+
+        return $ok;
     }
 
     /**
@@ -451,7 +521,18 @@ class DataConnector
      */
     public function deletePlatformNonce($nonce)
     {
-        return true;
+        $ok = true;  // assume the nonce was deleted
+        if (!empty(self::$memcache)) {
+            $id = $nonce->getPlatform()->getRecordId();
+            $value = $nonce->getValue();
+            $name = self::NONCE_TABLE_NAME . "_{$id}_{$value}";
+            $ok = self::$memcache->get($name);
+            if ($ok !== false) {
+                $ok = self::$memcache->delete($name);
+            }
+        }
+
+        return $ok;
     }
 
 ###
