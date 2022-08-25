@@ -925,22 +925,19 @@ class Tool
     {
         if ($this->ok) {
             $parameters = Util::getRequestParameters();
-            $this->ok = !empty($parameters['registration_token']);
+            $body = json_encode($toolConfig);
+            $headers = "Content-type: application/json";
+            if (!empty($parameters['registration_token'])) {
+                $headers .= "\nAuthorization: Bearer {$parameters['registration_token']}";
+            }
+            $http = new HttpMessage($platformConfig['registration_endpoint'], 'POST', $body, $headers);
+            $this->ok = $http->send();
             if ($this->ok) {
-                $body = json_encode($toolConfig);
-                $headers = "Content-type: application/json\n" .
-                    "Authorization: Bearer {$parameters['registration_token']}";
-                $http = new HttpMessage($platformConfig['registration_endpoint'], 'POST', $body, $headers);
-                $this->ok = $http->send();
-                if ($this->ok) {
-                    $registrationConfig = json_decode($http->response, true);
-                    $this->ok = !empty($registrationConfig);
-                }
-                if (!$this->ok) {
-                    $this->reason = 'Unable to register with platform.';
-                }
-            } else {
-                $this->reason = 'Invalid registration request: missing registration_token parameter.';
+                $registrationConfig = json_decode($http->response, true);
+                $this->ok = !empty($registrationConfig);
+            }
+            if (!$this->ok) {
+                $this->reason = 'Unable to register with platform.';
             }
         }
         if (!$this->ok) {
