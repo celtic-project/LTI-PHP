@@ -13,7 +13,7 @@ class CurlClient implements ClientInterface
 {
 
     /**
-     * The HTTP version tp be used.
+     * The HTTP version to be used.
      *
      * @var int $httpVersion
      */
