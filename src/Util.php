@@ -425,7 +425,7 @@ EOD;
      * @param string $url         URL to which the form should be submitted
      * @param array    $params    Array of form parameters
      *
-     * @return string
+     * @return void
      */
     public static function redirect($url, $params)
     {
@@ -460,6 +460,8 @@ EOD;
      * Set or delete a test cookie.
      *
      * @param bool $delete  True if the cookie is to be deleted (optional, default is false)
+     *
+     * @return void
      */
     public static function setTestCookie($delete = false)
     {
