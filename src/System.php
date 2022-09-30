@@ -1315,7 +1315,7 @@ trait System
                     $header .= "\nAccept: {$type}";
                 }
             } elseif (isset($type)) {
-                $header .= "\nContent-Type: {$type}";
+                $header .= "\nContent-Type: {$type}; charset=UTF-8";
                 $header .= "\nContent-Length: " . strlen($data);
             }
             return $header;
@@ -1469,7 +1469,7 @@ trait System
                     $header .= "\nAccept: {$type}";
                 }
             } elseif (isset($type)) {
-                $header .= "\nContent-Type: {$type}";
+                $header .= "\nContent-Type: {$type}; charset=UTF-8";
                 if (!empty($data) && is_string($data)) {
                     $header .= "\nContent-Length: " . strlen($data);
                 }
