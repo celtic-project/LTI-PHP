@@ -424,7 +424,10 @@ class FirebaseClient implements ClientInterface
             if (!empty($v['alg'])) {
                 $kid = isset($v['kid']) ? $v['kid'] : $k;
                 if ($key = JWK::parseKey($v)) {
-                    $keys[$kid] = new Key($key, $v['alg']);
+                    if (!$key instanceof Key) {
+                        $key = new Key($key, $v['alg']);
+                    }
+                    $keys[$kid] = $key;
                 }
             }
         }
