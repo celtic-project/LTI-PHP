@@ -31,11 +31,17 @@ class CurlClient implements ClientInterface
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30);
         curl_setopt($ch, CURLOPT_URL, $message->getUrl());
-        if (!empty($message->requestHeaders)) {
-            curl_setopt($ch, CURLOPT_HTTPHEADER, $message->requestHeaders);
-        } else {
-            curl_setopt($ch, CURLOPT_HEADER, 0);
+        if (!is_array($message->requestHeaders)) {
+            $message->requestHeaders = array();
         }
+        if (count(preg_grep("/^Accept:/i", $message->requestHeaders)) === 0) {
+            $message->requestHeaders[] = 'Accept: */*';
+        }
+        if (($message->getMethod() !== 'GET') && !is_null($message->request) &&
+            (count(preg_grep("/^Content-Type:/i", $message->requestHeaders)) === 0)) {
+            $message->requestHeaders[] = 'Content-Type: application/x-www-form-urlencoded; charset=UTF-8';
+        }
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $message->requestHeaders);
         if ($message->getMethod() === 'POST') {
             curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_POSTFIELDS, $message->request);

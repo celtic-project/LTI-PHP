@@ -23,10 +23,15 @@ class StreamClient implements ClientInterface
      */
     public function send(HttpMessage $message)
     {
-        if (empty($message->requestHeaders)) {
-            $message->requestHeaders = ["Accept: */*"];
-        } elseif (count(preg_grep("/^Accept:/", $message->requestHeaders)) === 0) {
-            $message->requestHeaders[] = "Accept: */*";
+        if (!is_array($message->requestHeaders)) {
+            $message->requestHeaders = array();
+        }
+        if (count(preg_grep("/^Accept:/i", $message->requestHeaders)) === 0) {
+            $message->requestHeaders[] = 'Accept: */*';
+        }
+        if (($message->getMethod() !== 'GET') && !is_null($message->request) &&
+            (count(preg_grep("/^Content-Type:/i", $message->requestHeaders)) === 0)) {
+            $message->requestHeaders[] = 'Content-Type: application/x-www-form-urlencoded; charset=UTF-8';
         }
         $opts = [
             'method' => $message->getMethod(),
@@ -35,12 +40,12 @@ class StreamClient implements ClientInterface
             'ignore_errors' => true,
         ];
 
-        $message->requestHeaders = implode("\n", $message->requestHeaders);
+        $message->requestHeaders = "{$message->getMethod()} {$message->getUrl()}\n" . implode("\n", $message->requestHeaders);
         try {
             $ctx = stream_context_create(['http' => $opts]);
             $fp = @fopen($message->getUrl(), 'rb', false, $ctx);
             if ($fp) {
-                $resp = @stream_get_contents($fp);
+                $resp = stream_get_contents($fp);
                 $message->ok = $resp !== false;
                 if ($message->ok) {
                     $message->response = $resp;

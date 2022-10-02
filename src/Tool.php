@@ -926,7 +926,7 @@ class Tool
         if ($this->ok) {
             $parameters = Util::getRequestParameters();
             $body = json_encode($toolConfig);
-            $headers = "Content-type: application/json";
+            $headers = "Content-type: application/json; charset=UTF-8";
             if (!empty($parameters['registration_token'])) {
                 $headers .= "\nAuthorization: Bearer {$parameters['registration_token']}";
             }

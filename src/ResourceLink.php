@@ -1594,9 +1594,9 @@ EOF;
                 $signed = $this->platform->addSignature($url, $paramstosign, 'POST', 'application/x-www-form-urlencoded');
 // Connect to platform
                 if (is_array($signed)) {
-                    $http = new HttpMessage($url, 'POST', $signed);
+                    $http = new HttpMessage($url, 'POST', $signed, 'Accept: application/xml');
                 } else {
-                    $http = new HttpMessage($url, 'POST', $params, $signed);
+                    $http = new HttpMessage($url, 'POST', $params, "{$signed}\nAccept: application/xml");
                 }
                 if ($http->send()) {
 // Parse XML response
@@ -1748,6 +1748,7 @@ EOD;
             do {
 // Add message signature
                 $header = $this->getPlatform()->addSignature($url, $xmlRequest, 'POST', 'application/xml');
+                $header .= "\nAccept: application/xml";
 // Connect to platform
                 $http = new HttpMessage($url, 'POST', $xmlRequest, $header);
                 if ($http->send()) {

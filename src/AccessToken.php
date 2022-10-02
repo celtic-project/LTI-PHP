@@ -173,7 +173,7 @@ class AccessToken
                     } else {
                         $body = $this->platform->signServiceRequest($url, $method, $type, $body);
                     }
-                    $http = new HttpMessage($url, $method, $body);
+                    $http = new HttpMessage($url, $method, $body, 'Accept: application/json');
                     if ($http->send() && !empty($http->response)) {
                         $http->responseJson = json_decode($http->response);
                         if (!is_null($http->responseJson) && !empty($http->responseJson->access_token) && !empty($http->responseJson->expires_in)) {
