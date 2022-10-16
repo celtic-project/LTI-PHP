@@ -34,8 +34,12 @@ class TimePeriod
      */
     function __construct($startDateTime, $endDateTime)
     {
-        $this->startDateTime = $startDateTime;
-        $this->endDateTime = $endDateTime;
+        if (is_int($startDateTime)) {
+            $this->startDateTime = $startDateTime;
+        }
+        if (is_int($endDateTime)) {
+            $this->endDateTime = $endDateTime;
+        }
     }
 
     /**
@@ -58,9 +62,13 @@ class TimePeriod
         $timePeriod = new \stdClass();
         if (!is_null($this->startDateTime)) {
             $timePeriod->startDateTime = gmdate('Y-m-d\TH:i:s\Z', $this->startDateTime);
+        } else {
+            $timePeriod->startDateTime = null;
         }
         if (!is_null($this->endDateTime)) {
             $timePeriod->endDateTime = gmdate('Y-m-d\TH:i:s\Z', $this->endDateTime);
+        } else {
+            $timePeriod->endDateTime = null;
         }
 
         return $timePeriod;
