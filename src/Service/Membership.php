@@ -229,9 +229,11 @@ class Membership extends Service
                             foreach ($membership->message as $message) {
                                 if (isset($message->message_type) && (($message->message_type === 'basic-lti-launch-request') || ($message->message_type) === 'LtiResourceLinkRequest')) {
                                     if (isset($message->lis_result_sourcedid)) {
-                                        $userresult->ltiResultSourcedId = $message->lis_result_sourcedid;
-                                        $doSave = true;
-                                    } elseif ($userresult->isLearner()) {  // Ensure all learners are recorded in case Assignment and Grade services are used
+                                        if (empty($userresult->ltiResultSourcedId) || ($userresult->ltiResultSourcedId !== $message->lis_result_sourcedid)) {
+                                            $userresult->ltiResultSourcedId = $message->lis_result_sourcedid;
+                                            $doSave = true;
+                                        }
+                                    } elseif ($userresult->isLearner() && empty($userresult->created)) {  // Ensure all learners are recorded in case Assignment and Grade services are used
                                         $userresult->ltiResultSourcedId = '';
                                         $doSave = true;
                                     }
@@ -256,6 +258,9 @@ class Membership extends Service
                                     break;
                                 }
                             }
+                        } elseif ($userresult->isLearner() && empty($userresult->created)) {  // Ensure all learners are recorded in case Assignment and Grade services are used
+                            $userresult->ltiResultSourcedId = '';
+                            $doSave = true;
                         }
                         if (!$doSave && isset($member->resultSourcedId)) {
                             $userresult->setResourceLinkId($this->source->getId());
@@ -312,6 +317,9 @@ class Membership extends Service
                                         isset($message->{'https://purl.imsglobal.org/spec/lti-bo/claim/basicoutcome'}->lis_result_sourcedid)) {
                                         $userresult->ltiResultSourcedId = $message->{'https://purl.imsglobal.org/spec/lti-bo/claim/basicoutcome'}->lis_result_sourcedid;
                                         $doSave = true;
+                                    } elseif ($userresult->isLearner() && empty($userresult->created)) {  // Ensure all learners are recorded in case Assignment and Grade services are used
+                                        $userresult->ltiResultSourcedId = '';
+                                        $doSave = true;
                                     }
                                     if (isset($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'})) {
                                         if (empty($userresult->username)) {
@@ -334,6 +342,9 @@ class Membership extends Service
                                     break;
                                 }
                             }
+                        } elseif ($userresult->isLearner() && empty($userresult->created)) {  // Ensure all learners are recorded in case Assignment and Grade services are used
+                            $userresult->ltiResultSourcedId = '';
+                            $doSave = true;
                         }
                         if ($doSave) {
                             $userresult->save();
