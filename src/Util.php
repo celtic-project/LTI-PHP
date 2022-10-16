@@ -123,6 +123,7 @@ final class Util
         'custom_ap_proctoring_settings_data' => array('suffix' => 'ap', 'group' => 'proctoring_settings', 'claim' => 'data'),
         'custom_ap_email_verified' => array('suffix' => '', 'group' => null, 'claim' => 'email_verified', 'isBoolean' => true),
         'custom_ap_verified_user_given_name' => array('suffix' => 'ap', 'group' => 'verified_user', 'claim' => 'given_name'),
+        'custom_ap_verified_user_middle_name' => array('suffix' => 'ap', 'group' => 'verified_user', 'claim' => 'middle_name'),
         'custom_ap_verified_user_family_name' => array('suffix' => 'ap', 'group' => 'verified_user', 'claim' => 'family_name'),
         'custom_ap_verified_user_full_name' => array('suffix' => 'ap', 'group' => 'verified_user', 'claim' => 'full_name'),
         'custom_ap_verified_user_image' => array('suffix' => 'ap', 'group' => 'verified_user', 'claim' => 'picture'),
