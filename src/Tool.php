@@ -64,6 +64,7 @@ class Tool
         'DashboardRequest',
         'ContentItemSelectionRequest',
         'ContentItemUpdateRequest',
+        'LtiSubmissionReviewRequest',
         'ToolProxyRegistrationRequest',
         'LtiStartProctoring',
         'LtiEndAssessment'
@@ -675,6 +676,15 @@ class Tool
     protected function onContentItemUpdate()
     {
         $this->reason = 'No onContentItemUpdate method found for tool.';
+        $this->onError();
+    }
+
+    /**
+     * Process a valid submission review request
+     */
+    protected function onSubmissionReview()
+    {
+        $this->reason = 'No onSubmissionReview method found for tool.';
         $this->onError();
     }
 
@@ -1358,6 +1368,18 @@ EOD;
                     $this->contentTypes = $contentTypes;
                     $this->fileTypes = $fileTypes;
                     $this->documentTargets = $documentTargets;
+                }
+            } elseif ($this->messageParameters['lti_message_type'] === 'LtiSubmissionReviewRequest') {
+                if (!isset($this->messageParameters['custom_lineitem_url']) && (strlen(trim($this->messageParameters['custom_lineitem_url'])) > 0)) {
+                    $this->setError('Missing LineItem service URL.', true, $generateWarnings);
+                }
+                if (!isset($this->messageParameters['for_user_id']) && (strlen(trim($this->messageParameters['for_user_id'])) > 0)) {
+                    $this->setError('Missing ID of \'for user\'', true, $generateWarnings);
+                }
+                if (($this->ok || $generateWarnings) && ($this->messageParameters['lti_version'] === Util::LTI_VERSION1P3)) {
+                    if (!isset($this->messageParameters['roles'])) {
+                        $this->setError('Missing roles parameter.', $strictMode, $generateWarnings);
+                    }
                 }
             } elseif ($this->messageParameters['lti_message_type'] === 'ToolProxyRegistrationRequest') {
                 if ((!isset($this->messageParameters['reg_key']) ||

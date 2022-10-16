@@ -255,6 +255,9 @@ class LineItem extends AssignmentGrade
             if (!empty($json->endDateTime)) {
                 $lineItem->submitUntil = strtotime($json->endDateTime);
             }
+            if (!empty($json->submissionReview)) {
+                $lineItem->submissionReview = LTI\SubmissionReview::fromJson($json->submissionReview);
+            }
         } else {
             $lineItem = null;
         }
@@ -295,6 +298,9 @@ class LineItem extends AssignmentGrade
         }
         if (!empty($lineItem->submitUntil)) {
             $json->endDateTime = date('Y-m-d\TH:i:sP', $lineItem->submitUntil);
+        }
+        if (!empty($lineItem->submissionReview)) {
+            $json->submissionReview = $lineItem->submissionReview->toJsonObject();
         }
 
         return json_encode($json);

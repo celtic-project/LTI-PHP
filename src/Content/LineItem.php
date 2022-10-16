@@ -2,6 +2,8 @@
 
 namespace ceLTIc\LTI\Content;
 
+use ceLTIc\LTI\SubmissionReview;
+
 /**
  * Class to represent a line-item object
  *
@@ -41,19 +43,28 @@ class LineItem
     private $tag = null;
 
     /**
+     * Submission review.
+     *
+     * @var SubmissionReview $submissionReview
+     */
+    private $submissionReview = null;
+
+    /**
      * Class constructor.
      *
      * @param string  $label          Label
      * @param int     $scoreMaximum   Maximum score
      * @param string  $resourceId     Resource ID (optional)
      * @param string  $tag            Tag (optional)
+     * @param SubmissionReview $submissionReview  Submission Review (optional)
      */
-    function __construct($label, $scoreMaximum, $resourceId = null, $tag = null)
+    function __construct($label, $scoreMaximum, $resourceId = null, $tag = null, $submissionReview = null)
     {
         $this->label = $label;
         $this->scoreMaximum = $scoreMaximum;
         $this->resourceId = $resourceId;
         $this->tag = $tag;
+        $this->submissionReview = $submissionReview;
     }
 
     /**
@@ -75,6 +86,9 @@ class LineItem
         $lineItem->scoreConstraints = new \stdClass();
         $lineItem->scoreConstraints->{'@type'} = 'NumericLimits';
         $lineItem->scoreConstraints->normalMaximum = $this->scoreMaximum;
+        if (!empty($this->submissionReview)) {
+            $lineItem->submissionReview = $this->submissionReview->toJsonObject();
+        }
 
         return $lineItem;
     }
@@ -95,6 +109,9 @@ class LineItem
         }
         if (!empty($this->tag)) {
             $lineItem->tag = $this->tag;
+        }
+        if (!empty($this->submissionReview)) {
+            $lineItem->submissionReview = $this->submissionReview->toJsonObject();
         }
 
         return $lineItem;
@@ -117,6 +134,7 @@ class LineItem
         $tag = null;
         $available = null;
         $submission = null;
+        $submissionReview = null;
         foreach (get_object_vars($item) as $name => $value) {
             switch ($name) {
                 case 'label':
@@ -142,6 +160,9 @@ class LineItem
                 case 'tag':
                     $tag = $item->tag;
                     break;
+                case 'submissionReview':
+                    $submissionReview = SubmissionReview::fromJson($item->submissionReview);
+                    break;
             }
         }
         if (is_null($scoreMaximum) && $label && $reportingMethod && $scoreConstraints) {
@@ -154,7 +175,7 @@ class LineItem
             }
         }
         if (!is_null($scoreMaximum)) {
-            $obj = new LineItem($label, $scoreMaximum, $activityId, $tag);
+            $obj = new LineItem($label, $scoreMaximum, $activityId, $tag, $submissionReview);
         }
 
         return $obj;

@@ -71,6 +71,13 @@ class LineItem
     public $endpoint = null;
 
     /**
+     * Submission review.
+     *
+     * @var SubmissionReview $submissionReview
+     */
+    public $submissionReview = null;
+
+    /**
      * Platform for this line item.
      *
      * @var Platform|null $platform

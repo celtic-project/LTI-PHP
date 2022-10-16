@@ -1,0 +1,87 @@
+<?php
+
+namespace ceLTIc\LTI;
+
+/**
+ * Class to represent a submission review
+ *
+ * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
+ * @copyright  SPV Software Products
+ * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3
+ */
+class SubmissionReview
+{
+
+    /**
+     * Label value.
+     *
+     * @var string|null $label
+     */
+    private $label = null;
+
+    /**
+     * Endpoint.
+     *
+     * @var string|null $endpoint
+     */
+    private $endpoint = null;
+
+    /**
+     * Custom parameters.
+     *
+     * @var array|null $custom
+     */
+    private $custom = null;
+
+    /**
+     * Class constructor.
+     *
+     * @param string   $label                       Label (optional)
+     * @param string   $endpoint                Endpojnt (optional)
+     * @param string   $custom                   Custom parameters (optional)
+     */
+    public function __construct($label = null, $endpoint = null, $custom = null)
+    {
+        $this->label = $label;
+        $this->endpoint = $endpoint;
+        $this->custom = $custom;
+    }
+
+    public static function fromJson($json)
+    {
+        if (!empty($json->label)) {
+            $label = $json->label;
+        } else {
+            $label = null;
+        }
+        if (!empty($json->url)) {
+            $endpoint = $json->url;
+        } else {
+            $endpoint = null;
+        }
+        if (!empty($json->custom)) {
+            $custom = $json->custom;
+        } else {
+            $custom = null;
+        }
+
+        return new SubmissionReview($label, $endpoint, $custom);
+    }
+
+    public function toJsonObject()
+    {
+        $obj = new \stdClass();
+        if (!empty($this->label)) {
+            $obj->label = $this->label;
+        }
+        if (!empty($this->endpoint)) {
+            $obj->url = $this->endpoint;
+        }
+        if (!empty($this->custom)) {
+            $obj->custom = $this->custom;
+        }
+
+        return $obj;
+    }
+
+}
