@@ -278,7 +278,7 @@ trait MoodleApi
                     foreach ($setIds as $setId) {
                         // Check that user is not a member of another group in the same grouping
                         if (in_array($setId, $sets)) {
-                            // Remove grouping and groups
+                            // Remove groups but leave grouping as empty to acknowledge its existence in the platform
                             foreach ($this->sourceObject->groupSets[$setId]['groups'] as $groupId) {
                                 if (!is_array($this->sourceObject->groups[$groupId]['set']) && ($this->sourceObject->groups[$groupId]['set'] === $setId)) {
                                     unset($this->sourceObject->groups[$groupId]['set']);
@@ -291,7 +291,6 @@ trait MoodleApi
                                     }
                                 }
                             }
-                            unset($this->sourceObject->groupSets[$setId]);
                         } elseif (array_key_exists($group, $this->sourceObject->groups)) {
                             $this->sourceObject->groupSets[$setId]['num_members']++;
                             if ($user->isStaff()) {
