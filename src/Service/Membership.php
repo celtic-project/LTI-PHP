@@ -311,7 +311,11 @@ class Membership extends Service
                     if ($isLink) {
                         $doSave = false;
                         if (isset($member->message)) {
-                            foreach ($member->message as $message) {
+                            $messages = $member->message;
+                            if (!is_array($messages)) {
+                                $messages = array($member->message);
+                            }
+                            foreach ($messages as $message) {
                                 if (isset($message->{'https://purl.imsglobal.org/spec/lti/claim/message_type'}) && (($message->{'https://purl.imsglobal.org/spec/lti/claim/message_type'} === 'basic-lti-launch-request') || ($message->{'https://purl.imsglobal.org/spec/lti/claim/message_type'}) === 'LtiResourceLinkRequest')) {
                                     if (isset($message->{'https://purl.imsglobal.org/spec/lti-bo/claim/basicoutcome'}) &&
                                         isset($message->{'https://purl.imsglobal.org/spec/lti-bo/claim/basicoutcome'}->lis_result_sourcedid)) {
