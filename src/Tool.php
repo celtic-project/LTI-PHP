@@ -300,6 +300,13 @@ class Tool
     public static $authenticateUsingGet = false;
 
     /**
+     * Life in seconds for the state value issued during the OIDC login process
+     *
+     * @var int $stateLife
+     */
+    public static $stateLife = 10;
+
+    /**
      * URL to redirect user to on successful completion of the request.
      *
      * @var string|null $redirectUrl
@@ -2076,7 +2083,7 @@ EOD;
                 $nonce = new PlatformNonce($this->platform, "{$state}{$session_id}");
                 $ok = !$nonce->load();
             } while (!$ok);
-            $nonce->expires = time() + 10;  // Expire after 10 seconds
+            $nonce->expires = time() + Tool::$stateLife;
             $ok = $nonce->save();
             if ($ok) {
                 $oauthRequest = OAuth\OAuthRequest::from_request();
@@ -2162,7 +2169,7 @@ EOD;
             $nonce = new PlatformNonce($this->platform, "{$state}{$session_id}");
             $ok = !$nonce->load();
         } while (!$ok);
-        $nonce->expires = time() + 10;  // Expire after 10 seconds
+        $nonce->expires = time() + Tool::$stateLife;
         $this->ok = $nonce->save();
         if ($this->ok) {
             $params = array(
