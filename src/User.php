@@ -245,6 +245,96 @@ class User
     }
 
     /**
+     * Check if the user is a learner.
+     *
+     * @return bool    True if the user has a context role of Learner
+     */
+    public function isLearner()
+    {
+        return $this->hasRole('Learner');
+    }
+
+    /**
+     * Check if the user is an instructor.
+     *
+     * @return bool    True if the user has a context role of Instructor
+     */
+    public function isInstructor()
+    {
+        return $this->hasRole('Instructor');
+    }
+
+    /**
+     * Check if the user is a content developer.
+     *
+     * @return bool    True if the user has a context role of ContentDeveloper
+     */
+    public function isContentDeveloper()
+    {
+        return $this->hasRole('ContentDeveloper');
+    }
+
+    /**
+     * Check if the user is a teaching assistant.
+     *
+     * @return bool    True if the user has a context role of TeachingAssistant
+     */
+    public function isTeachingAssistant()
+    {
+        return $this->hasRole('TeachingAssistant');
+    }
+
+    /**
+     * Check if the user is a manager.
+     *
+     * @return bool    True if the user has a context role of Manager
+     */
+    public function isManager()
+    {
+        return $this->hasRole('Manager');
+    }
+
+    /**
+     * Check if the user is a member.
+     *
+     * @return bool    True if the user has a context role of Member
+     */
+    public function isMember()
+    {
+        return $this->hasRole('Member');
+    }
+
+    /**
+     * Check if the user is an officer.
+     *
+     * @return bool    True if the user has a context role of Officer
+     */
+    public function isOfficer()
+    {
+        return $this->hasRole('Officer');  // NB Role not defined for LTI versions prior to 1.3
+    }
+
+    /**
+     * Check if the user is staff.
+     *
+     * @return bool    True if the user has a context role of Instructor, ContentDeveloper or TeachingAssistant
+     */
+    public function isStaff()
+    {
+        return $this->isInstructor() || $this->isContentDeveloper() || $this->isTeachingAssistant();
+    }
+
+    /**
+     * Check if the user is a mentor.
+     *
+     * @return bool    True if the user has a context role of Mentor
+     */
+    public function isMentor()
+    {
+        return $this->hasRole('Mentor');
+    }
+
+    /**
      * Check if the user is an administrator (at any of the system, institution or context levels).
      *
      * @return bool    True if the user has a role of administrator
@@ -253,26 +343,6 @@ class User
     {
         return $this->hasRole('Administrator') || $this->hasRole('urn:lti:sysrole:ims/lis/SysAdmin') ||
             $this->hasRole('urn:lti:sysrole:ims/lis/Administrator') || $this->hasRole('urn:lti:instrole:ims/lis/Administrator');
-    }
-
-    /**
-     * Check if the user is staff.
-     *
-     * @return bool    True if the user has a role of instructor, contentdeveloper or teachingassistant
-     */
-    public function isStaff()
-    {
-        return ($this->hasRole('Instructor') || $this->hasRole('ContentDeveloper') || $this->hasRole('TeachingAssistant'));
-    }
-
-    /**
-     * Check if the user is a learner.
-     *
-     * @return bool    True if the user has a role of learner
-     */
-    public function isLearner()
-    {
-        return $this->hasRole('Learner');
     }
 
 ###
