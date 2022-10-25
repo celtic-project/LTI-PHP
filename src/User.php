@@ -299,6 +299,9 @@ class User
             if (strpos($role, 'urn:') === 0) {
                 if (strpos($role, 'urn:lti:role:ims/lis/') === 0) {
                     $role2 = 'http://purl.imsglobal.org/vocab/lis/v2/membership#' . substr($role, 21);
+                    if (substr($role, 21) === 'TeachingAssistant') {
+                        $role3 = 'http://purl.imsglobal.org/vocab/lis/v2/membership/Instructor#TeachingAssistant';
+                    }
                 } elseif (strpos($role, 'urn:lti:instrole:ims/lis/') === 0) {
                     $role2 = 'http://purl.imsglobal.org/vocab/lis/v2/person#' . substr($role, 25);
                     $role3 = 'http://purl.imsglobal.org/vocab/lis/v2/institution/person#' . substr($role, 25);

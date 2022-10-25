@@ -558,7 +558,11 @@ trait System
                         $role = 'urn:lti:role:ims/lis/' . $role;
                     }
                 } elseif ((substr($role, 0, 7) !== 'http://') && (substr($role, 0, 8) !== 'https://')) {
-                    $role = 'http://purl.imsglobal.org/vocab/lis/v2/membership#' . $role;
+                    if (($role !== 'TeachingAssistant') || ($ltiVersion !== Util::LTI_VERSION1P3)) {
+                        $role = 'http://purl.imsglobal.org/vocab/lis/v2/membership#' . $role;
+                    } else {
+                        $role = 'http://purl.imsglobal.org/vocab/lis/v2/membership/Instructor#TeachingAssistant';
+                    }
                 }
                 $parsedRoles[] = $role;
             }
