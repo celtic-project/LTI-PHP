@@ -47,7 +47,14 @@ class SubmissionReview
         $this->custom = $custom;
     }
 
-    public static function fromJson($json)
+    /**
+     * Generate a SubmissionReview object from its JSON representation.
+     *
+     * @param object $json  A JSON object representing a submission review
+     *
+     * @return SubmissionReview  The SubmissionReview object
+     */
+    public static function fromJsonObject($json)
     {
         if (!empty($json->label)) {
             $label = $json->label;
@@ -68,6 +75,11 @@ class SubmissionReview
         return new SubmissionReview($label, $endpoint, $custom);
     }
 
+    /**
+     * Generate the JSON object representation of the submission review.
+     *
+     * @return object
+     */
     public function toJsonObject()
     {
         $obj = new \stdClass();

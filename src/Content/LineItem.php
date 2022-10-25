@@ -161,7 +161,7 @@ class LineItem
                     $tag = $item->tag;
                     break;
                 case 'submissionReview':
-                    $submissionReview = SubmissionReview::fromJson($item->submissionReview);
+                    $submissionReview = SubmissionReview::fromJsonObject($item->submissionReview);
                     break;
             }
         }

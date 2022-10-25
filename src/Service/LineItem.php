@@ -256,7 +256,7 @@ class LineItem extends AssignmentGrade
                 $lineItem->submitUntil = strtotime($json->endDateTime);
             }
             if (!empty($json->submissionReview)) {
-                $lineItem->submissionReview = LTI\SubmissionReview::fromJson($json->submissionReview);
+                $lineItem->submissionReview = LTI\SubmissionReview::fromJsonObject($json->submissionReview);
             }
         } else {
             $lineItem = null;

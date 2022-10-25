@@ -69,7 +69,7 @@ class Image
     /**
      * Generate the JSON object representation of the image.
      *
-     * @return string
+     * @return object
      */
     public function toJsonObject()
     {
