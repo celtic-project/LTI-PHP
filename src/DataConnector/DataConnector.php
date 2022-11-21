@@ -548,7 +548,23 @@ class DataConnector
      */
     public function loadAccessToken($accessToken)
     {
-        return false;  // assume the access token does not already exist
+        $ok = false;  // assume the access token does not already exist
+        if (!empty(self::$memcache)) {
+            $id = $accessToken->getPlatform()->getRecordId();
+            $value = $accessToken->token;
+            $name = self::ACCESS_TOKEN_TABLE_NAME . "_{$id}_{$value}";
+            $current = self::$memcache->get($name);
+            $ok = is_array($current);
+            if ($ok) {
+                $accessToken->scopes = $current['scopes'];
+                $accessToken->token = $current['token'];
+                $accessToken->expires = $current['expires'];
+                $accessToken->created = $current['created'];
+                $accessToken->updated = $current['updated'];
+            }
+        }
+
+        return $ok;
     }
 
     /**
@@ -560,7 +576,27 @@ class DataConnector
      */
     public function saveAccessToken($accessToken)
     {
-        return true;
+        $ok = true;  // assume the access token was saved
+        if (!empty(self::$memcache)) {
+            $ok = false;
+            $id = $accessToken->getPlatform()->getRecordId();
+            $value = $accessToken->token;
+            $expires = $accessToken->expires;
+            $name = self::ACCESS_TOKEN_TABLE_NAME . "_{$id}_{$value}";
+            $current = self::$memcache->get($name);
+            if ($current === false) {
+                $current = array(
+                    'scopes' => $accessToken->scopes,
+                    'token' => $value,
+                    'expires' => $expires,
+                    'created' => $accessToken->created,
+                    'updated' => $accessToken->updated
+                );
+                $ok = self::$memcache->set($name, $current, 0, $expires);
+            }
+        }
+
+        return $ok;
     }
 
 ###

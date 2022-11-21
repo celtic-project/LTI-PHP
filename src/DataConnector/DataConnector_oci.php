@@ -1087,28 +1087,31 @@ class DataConnector_oci extends DataConnector
      */
     public function loadAccessToken($accessToken)
     {
-        $ok = false;
-
-        $consumer_pk = $accessToken->getPlatform()->getRecordId();
-        $sql = "SELECT scopes, token, expires, created, updated FROM {$this->dbTableNamePrefix}" . static::ACCESS_TOKEN_TABLE_NAME . ' ' .
-            'WHERE (consumer_pk = :consumer_pk)';
-        $query = oci_parse($this->db, $sql);
-        oci_bind_by_name($query, 'consumer_pk', $consumer_pk);
-        $this->executeQuery($sql, $query, false);
-        if ($this->executeQuery($sql, $query)) {
-            $row = oci_fetch_assoc($query);
-            if ($row !== false) {
-                $row = array_change_key_case($row);
-                $scopes = json_decode($row['scopes']->load(), true);
-                if (!is_array($scopes)) {
-                    $scopes = array();
+        if (parent::useMemcache()) {
+            $ok = parent::loadAccessToken($accessToken);
+        } else {
+            $ok = false;
+            $consumer_pk = $accessToken->getPlatform()->getRecordId();
+            $sql = "SELECT scopes, token, expires, created, updated FROM {$this->dbTableNamePrefix}" . static::ACCESS_TOKEN_TABLE_NAME . ' ' .
+                'WHERE (consumer_pk = :consumer_pk)';
+            $query = oci_parse($this->db, $sql);
+            oci_bind_by_name($query, 'consumer_pk', $consumer_pk);
+            $this->executeQuery($sql, $query, false);
+            if ($this->executeQuery($sql, $query)) {
+                $row = oci_fetch_assoc($query);
+                if ($row !== false) {
+                    $row = array_change_key_case($row);
+                    $scopes = json_decode($row['scopes']->load(), true);
+                    if (!is_array($scopes)) {
+                        $scopes = array();
+                    }
+                    $accessToken->scopes = $scopes;
+                    $accessToken->token = $row['token'];
+                    $accessToken->expires = strtotime($row['expires']);
+                    $accessToken->created = strtotime($row['created']);
+                    $accessToken->updated = strtotime($row['updated']);
+                    $ok = true;
                 }
-                $accessToken->scopes = $scopes;
-                $accessToken->token = $row['token'];
-                $accessToken->expires = strtotime($row['expires']);
-                $accessToken->created = strtotime($row['created']);
-                $accessToken->updated = strtotime($row['updated']);
-                $ok = true;
             }
         }
 
@@ -1124,35 +1127,39 @@ class DataConnector_oci extends DataConnector
      */
     public function saveAccessToken($accessToken)
     {
-        $consumer_pk = $accessToken->getPlatform()->getRecordId();
-        $scopes = json_encode($accessToken->scopes, JSON_UNESCAPED_SLASHES);
-        $token = $accessToken->token;
-        $expires = date("{$this->dateFormat} {$this->timeFormat}", $accessToken->expires);
-        $time = time();
-        $now = date("{$this->dateFormat} {$this->timeFormat}", $time);
-        if (empty($accessToken->created)) {
-            $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::ACCESS_TOKEN_TABLE_NAME . ' ' .
-                '(consumer_pk, scopes, token, expires, created, updated) ' .
-                'VALUES (:consumer_pk, :scopes, :token, :expires, :created, :updated)';
-            $query = oci_parse($this->db, $sql);
-            oci_bind_by_name($query, 'consumer_pk', $consumer_pk);
-            oci_bind_by_name($query, 'scopes', $scopes);
-            oci_bind_by_name($query, 'token', $token);
-            oci_bind_by_name($query, 'expires', $expires);
-            oci_bind_by_name($query, 'created', $now);
-            oci_bind_by_name($query, 'updated', $now);
+        if (parent::useMemcache()) {
+            $ok = parent::saveAccessToken($accessToken);
         } else {
-            $sql = 'UPDATE ' . $this->dbTableNamePrefix . static::ACCESS_TOKEN_TABLE_NAME . ' ' .
-                'SET scopes = :scopes, token = :token, expires = :expires, updated = :updated ' .
-                'WHERE consumer_pk = :consumer_pk';
-            $query = oci_parse($this->db, $sql);
-            oci_bind_by_name($query, 'scopes', $scopes);
-            oci_bind_by_name($query, 'token', $token);
-            oci_bind_by_name($query, 'expires', $expires);
-            oci_bind_by_name($query, 'updated', $now);
-            oci_bind_by_name($query, 'consumer_pk', $consumer_pk);
+            $consumer_pk = $accessToken->getPlatform()->getRecordId();
+            $scopes = json_encode($accessToken->scopes, JSON_UNESCAPED_SLASHES);
+            $token = $accessToken->token;
+            $expires = date("{$this->dateFormat} {$this->timeFormat}", $accessToken->expires);
+            $time = time();
+            $now = date("{$this->dateFormat} {$this->timeFormat}", $time);
+            if (empty($accessToken->created)) {
+                $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::ACCESS_TOKEN_TABLE_NAME . ' ' .
+                    '(consumer_pk, scopes, token, expires, created, updated) ' .
+                    'VALUES (:consumer_pk, :scopes, :token, :expires, :created, :updated)';
+                $query = oci_parse($this->db, $sql);
+                oci_bind_by_name($query, 'consumer_pk', $consumer_pk);
+                oci_bind_by_name($query, 'scopes', $scopes);
+                oci_bind_by_name($query, 'token', $token);
+                oci_bind_by_name($query, 'expires', $expires);
+                oci_bind_by_name($query, 'created', $now);
+                oci_bind_by_name($query, 'updated', $now);
+            } else {
+                $sql = 'UPDATE ' . $this->dbTableNamePrefix . static::ACCESS_TOKEN_TABLE_NAME . ' ' .
+                    'SET scopes = :scopes, token = :token, expires = :expires, updated = :updated ' .
+                    'WHERE consumer_pk = :consumer_pk';
+                $query = oci_parse($this->db, $sql);
+                oci_bind_by_name($query, 'scopes', $scopes);
+                oci_bind_by_name($query, 'token', $token);
+                oci_bind_by_name($query, 'expires', $expires);
+                oci_bind_by_name($query, 'updated', $now);
+                oci_bind_by_name($query, 'consumer_pk', $consumer_pk);
+            }
+            $ok = $this->executeQuery($sql, $query);
         }
-        $ok = $this->executeQuery($sql, $query);
 
         return $ok;
     }

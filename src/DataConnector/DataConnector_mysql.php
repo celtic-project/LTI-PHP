@@ -891,26 +891,29 @@ class DataConnector_mysql extends DataConnector
      */
     public function loadAccessToken($accessToken)
     {
-        $ok = false;
-
-        $consumer_pk = $accessToken->getPlatform()->getRecordId();
-        $sql = sprintf('SELECT scopes, token, expires, created, updated ' .
-            "FROM {$this->dbTableNamePrefix}" . static::ACCESS_TOKEN_TABLE_NAME . ' ' .
-            'WHERE (consumer_pk = %d)', $consumer_pk);
-        $rsAccessToken = $this->executeQuery($sql, false);
-        if ($rsAccessToken) {
-            $row = mysql_fetch_object($rsAccessToken);
-            if ($row) {
-                $scopes = json_decode($row->scopes, true);
-                if (!is_array($scopes)) {
-                    $scopes = array();
+        if (parent::useMemcache()) {
+            $ok = parent::loadAccessToken($accessToken);
+        } else {
+            $ok = false;
+            $consumer_pk = $accessToken->getPlatform()->getRecordId();
+            $sql = sprintf('SELECT scopes, token, expires, created, updated ' .
+                "FROM {$this->dbTableNamePrefix}" . static::ACCESS_TOKEN_TABLE_NAME . ' ' .
+                'WHERE (consumer_pk = %d)', $consumer_pk);
+            $rsAccessToken = $this->executeQuery($sql, false);
+            if ($rsAccessToken) {
+                $row = mysql_fetch_object($rsAccessToken);
+                if ($row) {
+                    $scopes = json_decode($row->scopes, true);
+                    if (!is_array($scopes)) {
+                        $scopes = array();
+                    }
+                    $accessToken->scopes = $scopes;
+                    $accessToken->token = $row->token;
+                    $accessToken->expires = strtotime($row->expires);
+                    $accessToken->created = strtotime($row->created);
+                    $accessToken->updated = strtotime($row->updated);
+                    $ok = true;
                 }
-                $accessToken->scopes = $scopes;
-                $accessToken->token = $row->token;
-                $accessToken->expires = strtotime($row->expires);
-                $accessToken->created = strtotime($row->created);
-                $accessToken->updated = strtotime($row->updated);
-                $ok = true;
             }
         }
 
@@ -926,23 +929,27 @@ class DataConnector_mysql extends DataConnector
      */
     public function saveAccessToken($accessToken)
     {
-        $consumer_pk = $accessToken->getPlatform()->getRecordId();
-        $scopes = json_encode($accessToken->scopes, JSON_UNESCAPED_SLASHES);
-        $token = $accessToken->token;
-        $expires = date("{$this->dateFormat} {$this->timeFormat}", $accessToken->expires);
-        $time = time();
-        $now = date("{$this->dateFormat} {$this->timeFormat}", $time);
-        if (empty($accessToken->created)) {
-            $sql = sprintf("INSERT INTO {$this->dbTableNamePrefix}" . static::ACCESS_TOKEN_TABLE_NAME . ' ' .
-                '(consumer_pk, scopes, token, expires, created, updated) ' .
-                'VALUES (%d, %s, %s, %s, %s, %s)', $consumer_pk, $this->escape($scopes), $this->escape($token),
-                $this->escape($expires), $this->escape($now), $this->escape($now));
+        if (parent::useMemcache()) {
+            $ok = parent::saveAccessToken($accessToken);
         } else {
-            $sql = sprintf('UPDATE ' . $this->dbTableNamePrefix . static::ACCESS_TOKEN_TABLE_NAME . ' ' .
-                'SET scopes = %s, token = %s, expires = %s, updated = %s WHERE consumer_pk = %d', $this->escape($scopes),
-                $this->escape($token), $this->escape($expires), $this->escape($now), $consumer_pk);
+            $consumer_pk = $accessToken->getPlatform()->getRecordId();
+            $scopes = json_encode($accessToken->scopes, JSON_UNESCAPED_SLASHES);
+            $token = $accessToken->token;
+            $expires = date("{$this->dateFormat} {$this->timeFormat}", $accessToken->expires);
+            $time = time();
+            $now = date("{$this->dateFormat} {$this->timeFormat}", $time);
+            if (empty($accessToken->created)) {
+                $sql = sprintf("INSERT INTO {$this->dbTableNamePrefix}" . static::ACCESS_TOKEN_TABLE_NAME . ' ' .
+                    '(consumer_pk, scopes, token, expires, created, updated) ' .
+                    'VALUES (%d, %s, %s, %s, %s, %s)', $consumer_pk, $this->escape($scopes), $this->escape($token),
+                    $this->escape($expires), $this->escape($now), $this->escape($now));
+            } else {
+                $sql = sprintf('UPDATE ' . $this->dbTableNamePrefix . static::ACCESS_TOKEN_TABLE_NAME . ' ' .
+                    'SET scopes = %s, token = %s, expires = %s, updated = %s WHERE consumer_pk = %d', $this->escape($scopes),
+                    $this->escape($token), $this->escape($expires), $this->escape($now), $consumer_pk);
+            }
+            $ok = $this->executeQuery($sql);
         }
-        $ok = $this->executeQuery($sql);
 
         return $ok;
     }

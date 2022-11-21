@@ -1029,27 +1029,30 @@ class DataConnector_pdo extends DataConnector
      */
     public function loadAccessToken($accessToken)
     {
-        $ok = false;
-
-        $consumer_pk = $accessToken->getPlatform()->getRecordId();
-        $sql = "SELECT scopes, token, expires, created, updated FROM {$this->dbTableNamePrefix}" . static::ACCESS_TOKEN_TABLE_NAME . ' ' .
-            'WHERE (consumer_pk = :consumer_pk)';
-        $query = $this->db->prepare($sql);
-        $query->bindValue('consumer_pk', $consumer_pk, \PDO::PARAM_INT);
-        if ($this->executeQuery($sql, $query, false)) {
-            $row = $query->fetch(\PDO::FETCH_ASSOC);
-            if ($row !== false) {
-                $row = array_change_key_case($row);
-                $scopes = json_decode($row['scopes'], true);
-                if (!is_array($scopes)) {
-                    $scopes = array();
+        if (parent::useMemcache()) {
+            $ok = parent::loadAccessToken($accessToken);
+        } else {
+            $ok = false;
+            $consumer_pk = $accessToken->getPlatform()->getRecordId();
+            $sql = "SELECT scopes, token, expires, created, updated FROM {$this->dbTableNamePrefix}" . static::ACCESS_TOKEN_TABLE_NAME . ' ' .
+                'WHERE (consumer_pk = :consumer_pk)';
+            $query = $this->db->prepare($sql);
+            $query->bindValue('consumer_pk', $consumer_pk, \PDO::PARAM_INT);
+            if ($this->executeQuery($sql, $query, false)) {
+                $row = $query->fetch(\PDO::FETCH_ASSOC);
+                if ($row !== false) {
+                    $row = array_change_key_case($row);
+                    $scopes = json_decode($row['scopes'], true);
+                    if (!is_array($scopes)) {
+                        $scopes = array();
+                    }
+                    $accessToken->scopes = $scopes;
+                    $accessToken->token = $row['token'];
+                    $accessToken->expires = strtotime($row['expires']);
+                    $accessToken->created = strtotime($row['created']);
+                    $accessToken->updated = strtotime($row['updated']);
+                    $ok = true;
                 }
-                $accessToken->scopes = $scopes;
-                $accessToken->token = $row['token'];
-                $accessToken->expires = strtotime($row['expires']);
-                $accessToken->created = strtotime($row['created']);
-                $accessToken->updated = strtotime($row['updated']);
-                $ok = true;
             }
         }
 
@@ -1065,35 +1068,39 @@ class DataConnector_pdo extends DataConnector
      */
     public function saveAccessToken($accessToken)
     {
-        $consumer_pk = $accessToken->getPlatform()->getRecordId();
-        $scopes = json_encode($accessToken->scopes, JSON_UNESCAPED_SLASHES);
-        $token = $accessToken->token;
-        $expires = date("{$this->dateFormat} {$this->timeFormat}", $accessToken->expires);
-        $time = time();
-        $now = date("{$this->dateFormat} {$this->timeFormat}", $time);
-        if (empty($accessToken->created)) {
-            $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::ACCESS_TOKEN_TABLE_NAME . ' ' .
-                '(consumer_pk, scopes, token, expires, created, updated) ' .
-                'VALUES (:consumer_pk, :scopes, :token, :expires, :created, :updated)';
-            $query = $this->db->prepare($sql);
-            $query->bindValue('consumer_pk', $consumer_pk, \PDO::PARAM_INT);
-            $query->bindValue('scopes', $scopes, \PDO::PARAM_STR);
-            $query->bindValue('token', $token, \PDO::PARAM_STR);
-            $query->bindValue('expires', $expires, \PDO::PARAM_STR);
-            $query->bindValue('created', $now, \PDO::PARAM_STR);
-            $query->bindValue('updated', $now, \PDO::PARAM_STR);
+        if (parent::useMemcache()) {
+            $ok = parent::saveAccessToken($accessToken);
         } else {
-            $sql = 'UPDATE ' . $this->dbTableNamePrefix . static::ACCESS_TOKEN_TABLE_NAME . ' ' .
-                'SET scopes = :scopes, token = :token, expires = :expires, updated = :updated ' .
-                'WHERE consumer_pk = :consumer_pk';
-            $query = $this->db->prepare($sql);
-            $query->bindValue('scopes', $scopes, \PDO::PARAM_STR);
-            $query->bindValue('token', $token, \PDO::PARAM_STR);
-            $query->bindValue('expires', $expires, \PDO::PARAM_STR);
-            $query->bindValue('updated', $now, \PDO::PARAM_STR);
-            $query->bindValue('consumer_pk', $consumer_pk, \PDO::PARAM_INT);
+            $consumer_pk = $accessToken->getPlatform()->getRecordId();
+            $scopes = json_encode($accessToken->scopes, JSON_UNESCAPED_SLASHES);
+            $token = $accessToken->token;
+            $expires = date("{$this->dateFormat} {$this->timeFormat}", $accessToken->expires);
+            $time = time();
+            $now = date("{$this->dateFormat} {$this->timeFormat}", $time);
+            if (empty($accessToken->created)) {
+                $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::ACCESS_TOKEN_TABLE_NAME . ' ' .
+                    '(consumer_pk, scopes, token, expires, created, updated) ' .
+                    'VALUES (:consumer_pk, :scopes, :token, :expires, :created, :updated)';
+                $query = $this->db->prepare($sql);
+                $query->bindValue('consumer_pk', $consumer_pk, \PDO::PARAM_INT);
+                $query->bindValue('scopes', $scopes, \PDO::PARAM_STR);
+                $query->bindValue('token', $token, \PDO::PARAM_STR);
+                $query->bindValue('expires', $expires, \PDO::PARAM_STR);
+                $query->bindValue('created', $now, \PDO::PARAM_STR);
+                $query->bindValue('updated', $now, \PDO::PARAM_STR);
+            } else {
+                $sql = 'UPDATE ' . $this->dbTableNamePrefix . static::ACCESS_TOKEN_TABLE_NAME . ' ' .
+                    'SET scopes = :scopes, token = :token, expires = :expires, updated = :updated ' .
+                    'WHERE consumer_pk = :consumer_pk';
+                $query = $this->db->prepare($sql);
+                $query->bindValue('scopes', $scopes, \PDO::PARAM_STR);
+                $query->bindValue('token', $token, \PDO::PARAM_STR);
+                $query->bindValue('expires', $expires, \PDO::PARAM_STR);
+                $query->bindValue('updated', $now, \PDO::PARAM_STR);
+                $query->bindValue('consumer_pk', $consumer_pk, \PDO::PARAM_INT);
+            }
+            $ok = $this->executeQuery($sql, $query);
         }
-        $ok = $this->executeQuery($sql, $query);
 
         return $ok;
     }
