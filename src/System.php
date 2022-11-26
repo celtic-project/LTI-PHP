@@ -641,6 +641,14 @@ trait System
             if (!empty(Tool::$defaultTool)) {
                 $url = Tool::$defaultTool->initiateLoginUrl;
             }
+            if (!empty(static::$browserStorageFrame)) {
+                if (strpos($url, '?') === FALSE) {
+                    $sep = '?';
+                } else {
+                    $sep = '&';
+                }
+                $url .= "{$sep}lti_storage_target=" . static::$browserStorageFrame;
+            }
         } else {
             $params = $this->signParameters($url, $type, $version, $params);
         }
@@ -912,7 +920,7 @@ trait System
                     if (!$this->ok) {
                         $this->reason = 'Message does not contain a valid JWT';
                     } else {
-                        $this->ok = $this->jwt->hasClaim('iss') && $this->jwt->hasClaim('aud') &&
+                        $this->ok = $this->jwt->hasClaim('iss') && $this->jwt->hasClaim('aud') && $this->jwt->hasClaim('nonce') &&
                             $this->jwt->hasClaim(Util::JWT_CLAIM_PREFIX . '/claim/deployment_id');
                         if ($this->ok) {
                             $iss = $this->jwt->getClaim('iss');
@@ -955,21 +963,32 @@ trait System
                                         $this->ok = !empty($this->rawParameters['state']);
                                         if ($this->ok) {
                                             $state = $this->rawParameters['state'];
+                                            $parts = explode('.', $state);
+                                            if (!empty(session_id()) && (count($parts) > 1) && (session_id() !== $parts[1]) &&
+                                                ($parts[1] !== 'platformStorage')) {  // Reset to original session
+                                                session_abort();
+                                                session_id($parts[1]);
+                                                session_start();
+                                                $this->onResetSessionId();
+                                            }
+                                            $usePlatformStorage = (substr($state, -16) === '.platformStorage');
+                                            if ($usePlatformStorage) {
+                                                $state = substr($state, 0, -16);
+                                            }
+                                            $this->onAuthenticate($state, $this->jwt->getClaim('nonce'), $usePlatformStorage);
                                             if (!$disableCookieCheck) {
-                                                $parts = explode('.', $state);
                                                 if (empty($_COOKIE) && !isset($_POST['_new_window'])) {  // Reopen in a new window
                                                     Util::setTestCookie();
                                                     $_POST['_new_window'] = '';
                                                     echo Util::sendForm($_SERVER['REQUEST_URI'], $_POST, '_blank');
                                                     exit;
-                                                } elseif (!empty(session_id()) && (count($parts) > 1) && (session_id() !== $parts[1])) {  // Reset to original session
-                                                    session_abort();
-                                                    session_id($parts[1]);
-                                                    session_start();
-                                                    $this->onResetSessionId();
                                                 }
                                                 Util::setTestCookie(true);
                                             }
+                                        } else {
+                                            $this->reason = 'state parameter is missing';
+                                        }
+                                        if ($this->ok) {
                                             $nonce = new PlatformNonce($this->platform, $state);
                                             $this->ok = $nonce->load();
                                             if (!$this->ok) {
@@ -985,20 +1004,21 @@ trait System
                                             if ($this->ok) {
                                                 $this->ok = $nonce->delete();
                                             }
+                                            if (!$this->ok) {
+                                                $this->reason = 'state parameter is invalid or has expired';
+                                            }
                                         }
                                     }
                                 }
+                                $this->messageParameters = array();
                                 if ($this->ok) {
-                                    $this->messageParameters = array();
                                     $this->messageParameters['oauth_consumer_key'] = $aud;
                                     $this->messageParameters['oauth_signature_method'] = $this->jwt->getHeader('alg');
                                     $this->parseClaims($strictMode, $generateWarnings);
-                                } else {
-                                    $this->reason = 'state parameter is invalid or missing';
                                 }
                             }
                         } else {
-                            $this->reason = 'iss, aud and/or deployment_id claim not found';
+                            $this->reason = 'iss, aud, deployment_id and/or nonce claim not found';
                         }
                     }
                 } catch (\Exception $e) {

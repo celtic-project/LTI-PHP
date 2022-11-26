@@ -26,6 +26,13 @@ class Platform
     );
 
     /**
+     * Name of browser storage frame.
+     *
+     * @var string|null $browserStorageFrame
+     */
+    public static $browserStorageFrame = null;
+
+    /**
      * Local name of platform.
      *
      * @var string|null $name
@@ -538,6 +545,155 @@ class Platform
         return $platform;
     }
 
+    /**
+     * Get the JavaScript for handling storage postMessages from a tool.
+     *
+     * @return string       The JavaScript to handle storage postMessages
+     */
+    public static function getStorageJS()
+    {
+        $javascript = <<< EOD
+(function () {
+  let storageData = {};
+
+  window.addEventListener('message', function (event) {
+    let ok = true;
+    if (typeof event.data !== "object") {
+      ok = false;
+      event.source.postMessage({
+        subject: '.response',
+        message_id: 0,
+        error: {
+          code: 'bad_request',
+          message: 'Event data is not an object'
+        }
+      }, event.origin);
+    }
+    let messageid = '';
+    if (event.data.message_id) {
+      messageid = event.data.message_id;
+    }
+    if (!event.data.subject) {
+      ok = false;
+      event.source.postMessage({
+        subject: '.response',
+        message_id: messageid,
+        error: {
+          code: 'bad_request',
+          message: 'There is no subject specified'
+        }
+      }, event.origin);
+    } else if (!event.data.message_id) {
+      ok = false;
+      event.source.postMessage({
+        subject: event.data.subject + '.response',
+        message_id: messageid,
+        error: {
+          code: 'bad_request',
+          message: 'There is no message ID specified'
+        }
+      }, event.origin);
+    }
+    if (ok) {
+      switch (event.data.subject) {
+        case 'lti.capabilities':
+          event.source.postMessage({
+            subject: 'lti.capabilities.response',
+            message_id: event.data.message_id,
+            supported_messages: [
+              {
+                subject: 'lti.capabilities'
+              },
+              {
+                subject: 'lti.get_data'
+              },
+              {
+                subject: 'lti.put_data'
+              }
+            ]
+          }, event.origin);
+          break;
+        case 'lti.put_data':
+          if (!event.data.key) {
+            event.source.postMessage({
+              subject: event.data.subject + '.response',
+              message_id: messageid,
+              error: {
+                code: 'bad_request',
+                message: 'There is no key specified'
+              }
+            }, event.origin);
+          } else if (!event.data.value) {
+            event.source.postMessage({
+              subject: event.data.subject + '.response',
+              message_id: messageid,
+              error: {
+                code: 'bad_request',
+                message: 'There is no value specified'
+              }
+            }, event.origin);
+          } else {
+            if (!storageData[event.origin]) {
+              storageData[event.origin] = {};
+            }
+            storageData[event.origin][event.data.key] = event.data.value;
+            event.source.postMessage({
+              subject: 'lti.put_data.response',
+              message_id: event.data.message_id,
+              key: event.data.key,
+              value: event.data.value
+            }, event.origin);
+          }
+          break;
+        case 'lti.get_data':
+          if (!event.data.key) {
+            event.source.postMessage({
+              subject: event.data.subject + '.response',
+              message_id: messageid,
+              error: {
+                code: 'bad_request',
+                message: 'There is no key specified'
+              }
+            }, event.origin);
+          } else if (storageData[event.origin] && storageData[event.origin][event.data.key]) {
+            event.source.postMessage({
+              subject: 'lti.get_data.response',
+              message_id: event.data.message_id,
+              key: event.data.key,
+              value: storageData[event.origin][event.data.key]
+            }, event.origin);
+          } else {
+            console.log('There is no value stored with origin/key of \'' + event.origin + '/' + event.data.key + '\'');
+            event.source.postMessage({
+              subject: 'lti.get_data.response',
+              message_id: event.data.message_id,
+              error: {
+                code: 'bad_request',
+                message: 'There is no value stored for this key'
+              }
+            }, event.origin);
+          }
+          break;
+        default:
+          event.source.postMessage({
+            subject: event.data.subject + '.response',
+            message_id: event.data.message_id,
+            error: {
+              code: 'unsupported_subject',
+              message: 'Subject \'' + event.data.subject + '\' not recognised'
+            }
+          }, event.origin);
+          break;
+      }
+    }
+  }, false);
+})();
+
+EOD;
+
+        return $javascript;
+    }
+
 ###
 ###    PROTECTED METHODS
 ###
@@ -708,6 +864,14 @@ class Platform
         }
         if (isset($parameters['state'])) {
             $this->messageParameters['state'] = $parameters['state'];
+        }
+        if (!empty(static::$browserStorageFrame)) {
+            if (strpos($parameters['redirect_uri'], '?') === FALSE) {
+                $sep = '?';
+            } else {
+                $sep = '&';
+            }
+            $parameters['redirect_uri'] .= "{$sep}lti_storage_target=" . static::$browserStorageFrame;
         }
         $html = Util::sendForm($parameters['redirect_uri'], $this->messageParameters);
         echo $html;

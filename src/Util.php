@@ -369,21 +369,17 @@ final class Util
     /**
      * Generate a web page containing an auto-submitted form of parameters.
      *
-     * @param string $url       URL to which the form should be submitted
-     * @param array  $params    Array of form parameters
-     * @param string $target    Name of target (optional)
+     * @param string $url         URL to which the form should be submitted
+     * @param array  $params      Array of form parameters
+     * @param string $target      Name of target (optional)
+     * @param string $javascript  Javascript to be inserted (optional, default is to just auto-submit form)
      *
      * @return string
      */
-    public static function sendForm($url, $params, $target = '')
+    public static function sendForm($url, $params, $target = '', $javascript = '')
     {
-        self::logForm($url, $params, 'POST');
-        $page = <<< EOD
-<html>
-<head>
-<title>1EdTech LTI message</title>
-<script type="text/javascript">
-//<![CDATA[
+        if (empty($javascript)) {
+            $javascript = <<< EOD
 function doOnLoad() {
   if ((document.forms[0].target === '_blank') && (window.top === window.self)) {
     document.forms[0].target = '';
@@ -392,7 +388,15 @@ function doOnLoad() {
 }
 
 window.onload=doOnLoad;
-//]]>
+EOD;
+        }
+        self::logForm($url, $params, 'POST');
+        $page = <<< EOD
+<!DOCTYPE html>
+<head>
+<title>1EdTech LTI message</title>
+<script type="text/javascript">
+{$javascript}
 </script>
 </head>
 <body>
@@ -405,7 +409,7 @@ EOD;
                 if (!is_array($value)) {
                     $value = htmlentities($value, ENT_COMPAT | ENT_HTML401, 'UTF-8');
                     $page .= <<< EOD
-    <input type="hidden" name="{$key}" value="{$value}" />
+    <input type="hidden" name="{$key}" id="id_{$key}" value="{$value}" />
 
 EOD;
                 } else {

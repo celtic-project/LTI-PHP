@@ -307,6 +307,13 @@ class Tool
     public static $stateLife = 10;
 
     /**
+     * Period in milliseconds to wait for a response to a postMessage
+     *
+     * @var int $postMessageTimeoutDelay
+     */
+    public static $postMessageTimeoutDelay = 20;
+
+    /**
      * URL to redirect user to on successful completion of the request.
      *
      * @var string|null $redirectUrl
@@ -747,7 +754,64 @@ class Tool
      */
     protected function onInitiateLogin($requestParameters, &$authParameters)
     {
+        $hasSession = !empty(session_id());
+        if (!$hasSession) {
+            session_start();
+        }
+        $_SESSION['ceLTIc_lti_authentication_request'] = array(
+            'state' => $authParameters['state'],
+            'nonce' => $authParameters['nonce']
+        );
+        if (!$hasSession) {
+            session_write_close();
+        }
+    }
 
+    /**
+     * Process response to an authentication request
+     *
+     * @param string $state                 State value
+     * @param string $nonce                 Nonce value
+     * @param bool   $usePlatformStorage    True if platform storage is being used
+     */
+    protected function onAuthenticate($state, $nonce, $usePlatformStorage)
+    {
+        $hasSession = !empty(session_id());
+        if (!$hasSession) {
+            session_start();
+        }
+        $parts = explode('.', $state);
+        if (!isset($this->rawParameters['_storage_check']) && $usePlatformStorage) {  // Check browser storage
+            $this->rawParameters['_storage_check'] = '';
+            $javascript = $this->getStorageJS('lti.get_data', $state, '');
+            echo Util::sendForm($_SERVER['REQUEST_URI'], $this->rawParameters, '', $javascript);
+            exit;
+        } elseif (isset($this->rawParameters['_storage_check'])) {
+            if (!empty(($this->rawParameters['_storage_check']))) {
+                $state = $parts[0];
+                $parts = explode('.', $this->rawParameters['_storage_check']);
+                if ((count($parts) !== 2) || ($parts[0] !== $state) || ($parts[1] !== $nonce)) {
+                    $this->ok = false;
+                    $this->reason = 'Invalid state and/or nonce values';
+                }
+            } else {
+                $this->ok = false;
+                $this->reason = 'Error accessing platform storage';
+            }
+        } elseif (isset($_SESSION['ceLTIc_lti_authentication_request'])) {
+            $auth = $_SESSION['ceLTIc_lti_authentication_request'];
+            if (substr($state, -16) === '.platformStorage') {
+                $state = substr($state, 0, -16);
+            }
+            if (($state !== $auth['state']) || ($nonce !== $auth['nonce'])) {
+                $this->ok = false;
+                $this->reason = 'Invalid state parameter value and/or nonce claim value';
+            }
+            unset($_SESSION['ceLTIc_lti_authentication_request']);
+        }
+        if (!$hasSession) {
+            session_write_close();
+        }
     }
 
     /**
@@ -2065,7 +2129,12 @@ EOD;
         if (!$ok) {
             $this->reason = 'Platform not found or no platform authentication request URL.';
         } else {
+            $oauthRequest = OAuth\OAuthRequest::from_request();
+            $usePlatformStorage = !empty($oauthRequest->get_parameter('lti_storage_target'));
             $session_id = '';
+            if ($usePlatformStorage) {
+                $usePlatformStorage = empty($_COOKIE[session_name()]) || ($_COOKIE[session_name()] !== session_id());
+            }
             if (!$disableCookieCheck) {
                 if (empty(session_id())) {
                     if (empty($_COOKIE)) {
@@ -2086,38 +2155,38 @@ EOD;
             $nonce->expires = time() + Tool::$stateLife;
             $ok = $nonce->save();
             if ($ok) {
-                $oauthRequest = OAuth\OAuthRequest::from_request();
                 $redirectUri = $oauthRequest->get_normalized_http_url();
                 if (!empty($_SERVER['QUERY_STRING'])) {
                     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                        $redirectUri .= "?{$_SERVER['QUERY_STRING']}";
+                        $ignoreParams = array('lti_storage_target');
                     } else {  // Remove all parameters added by platform from query string
-                        $queryString = '';
-                        $params = explode('&', $_SERVER['QUERY_STRING']);
-                        $ignore = false;  // Only include those query parameters which come before any of the standard OpenID Connect ones
-                        foreach ($params as $param) {
-                            $parts = explode('=', $param, 2);
-                            if (in_array($parts[0],
-                                    array('iss', 'target_link_uri', 'login_hint', 'lti_message_hint', 'client_id', 'lti_deployment_id'))) {
-                                $ignore = true;
-                            } elseif (!$ignore) {
-                                if ((count($parts) <= 1) || empty($parts[1])) {  // Drop equals sign for empty parameters to workaround Canvas bug
-                                    $queryString .= "&{$parts[0]}";
-                                } else {
-                                    $queryString .= "&{$parts[0]}={$parts[1]}";
-                                }
+                        $ignoreParams = array('iss', 'target_link_uri', 'login_hint', 'lti_message_hint', 'client_id', 'lti_deployment_id', 'lti_storage_target');
+                    }
+                    $queryString = '';
+                    $params = explode('&', $_SERVER['QUERY_STRING']);
+                    $ignore = false;  // Only include those query parameters which come before any of the standard OpenID Connect ones
+                    foreach ($params as $param) {
+                        $parts = explode('=', $param, 2);
+                        if (in_array($parts[0], $ignoreParams)) {
+                            $ignore = true;
+                        } elseif (!$ignore) {
+                            if ((count($parts) <= 1) || empty($parts[1])) {  // Drop equals sign for empty parameters to workaround Canvas bug
+                                $queryString .= "&{$parts[0]}";
+                            } else {
+                                $queryString .= "&{$parts[0]}={$parts[1]}";
                             }
                         }
-                        if (!empty($queryString)) {
-                            $queryString = substr($queryString, 1);
-                            $redirectUri .= "?{$queryString}";
-                        }
+                    }
+                    if (!empty($queryString)) {
+                        $queryString = substr($queryString, 1);
+                        $redirectUri .= "?{$queryString}";
                     }
                 }
+                $requestNonce = Util::getRandomString(32);
                 $params = array(
                     'client_id' => $this->platform->clientId,
                     'login_hint' => $parameters['login_hint'],
-                    'nonce' => Util::getRandomString(32),
+                    'nonce' => $requestNonce,
                     'prompt' => 'none',
                     'redirect_uri' => $redirectUri,
                     'response_mode' => 'form_post',
@@ -2129,10 +2198,14 @@ EOD;
                     $params['lti_message_hint'] = $parameters['lti_message_hint'];
                 }
                 $this->onInitiateLogin($parameters, $params);
+                $javascript = '';
+                if ($usePlatformStorage) {
+                    $javascript = $this->getStorageJS('lti.put_data', $nonce->getValue(), $requestNonce);
+                }
                 if (!Tool::$authenticateUsingGet) {
-                    $this->output = Util::sendForm($this->platform->authenticationUrl, $params);
+                    $this->output = Util::sendForm($this->platform->authenticationUrl, $params, '', $javascript);
                 } else {
-                    Util::redirect($this->platform->authenticationUrl, $params);
+                    Util::redirect($this->platform->authenticationUrl, $params, '', $javascript);
                 }
             } else {
                 $this->reason = 'Unable to generate a state value.';
@@ -2238,6 +2311,237 @@ EOD;
         } elseif ($generateWarnings) {
             $this->warnings[] = $reason;
         }
+    }
+
+    private function getStorageJS($message, $state, $nonce)
+    {
+        $parts = explode('.', $state);
+        $state = $parts[0];
+        $capabilitiesId = Util::getRandomString();
+        $messageId = Util::getRandomString();
+        $timeoutDelay = static::$postMessageTimeoutDelay;
+        $javascript = <<< EOD
+let origin = new URL('{$this->platform->authenticationUrl}').origin;
+let params = new URLSearchParams(window.location.search);
+let target = params.get('lti_storage_target');
+let state = '{$state}';
+let nonce = '{$nonce}';
+let capabilitiesid = '{$capabilitiesId}';
+let messageid = '{$messageId}';
+let supported = new Map();
+let timeout;
+
+window.addEventListener('message', function (event) {
+  let ok = true;
+  if (typeof event.data !== "object") {
+    ok = false;
+    console.log('Error \'response is not an object\': ' + event.data);
+  }
+  if (ok && event.data.error) {
+    ok = false;
+    if (event.data.error.code && event.data.error.message) {
+      console.log('Error \'' + event.data.error.code + '\': ' + event.data.error.message);
+    } else {
+      console.log(event.data.error);
+    }
+  }
+  if (ok && !event.data.subject) {
+    ok = false;
+    console.log('Error: There is no subject specified');
+  }
+  if (ok) {
+    switch (event.data.subject) {
+      case 'lti.capabilities.response':
+      case 'org.imsglobal.lti.capabilities.response':
+        clearTimeout(timeout);
+        if (event.data.message_id !== capabilitiesid) {
+          ok = false;
+          console.log('Invalid message ID');
+        } else {
+          event.data.supported_messages.forEach(function(capability) {
+            supported.set(capability.subject, (capability.frame) ? capability.frame : target);
+          });
+          if (supported.has('{$message}') || supported.has('org.imsglobal.{$message}')) {
+            sendMessages();
+          } else {
+            submitForm();
+          }
+        }
+        break;
+      case '{$message}.response':
+      case 'org.imsglobal.{$message}.response':
+        clearTimeout(timeout);
+        if ((event.data.message_id !== messageid) || (event.origin !== origin)) {
+          ok = false;
+          console.log('Invalid message ID or origin');
+        } else if (event.data.key !== state) {
+          ok = false;
+          console.log('Key not expected: ' + event.data.key);
+        } else if (('{$message}' === 'lti.put_data') && (event.data.value != nonce)) {
+          ok = false;
+          console.log('Invalid value for key ' + event.data.key + ': ' + event.data.value + ' (expected ' + nonce + ')');
+        } else {
+          if (document.getElementById('id__storage_check')) {
+            document.getElementById('id__storage_check').value = state + '.' + event.data.value;
+          } else if (document.getElementById('id_state')) {
+            document.getElementById('id_state').value += '.platformStorage';
+          }
+          submitForm();
+        }
+        break;
+      default:
+        console.log('Subject \'' + event.data.subject + '\' not recognised');
+        break;
+    }
+  } else {
+    clearTimeout(timeout);
+  }
+  if (!ok) {
+    submitForm();
+  }
+});
+
+function getTarget(frame = '') {
+  let wdw = window.opener || window.parent;
+  let targetframe = wdw;
+  if (frame && (frame !== '_parent')) {
+    try {
+      targetframe = wdw.frames[frame];
+    } catch(err) {
+      targetframe = null;
+    }
+    if (!targetframe) {
+      try {
+        targetframe = window.top.frames[frame];
+      } catch(err) {
+        console.log('Cannot access storage frame (' + frame + '): ' + err.message);
+        targetframe = null;
+      }
+    }
+  }
+  if (targetframe === window) {
+    targetframe = null;
+  }
+  if (!targetframe) {
+    console.log('No target frame found');
+  }
+
+  return targetframe;
+}
+
+
+EOD;
+        switch ($message) {
+            case 'lti.put_data':
+                $javascript .= <<< EOD
+function sendMessages() {
+  let subject = 'lti.put_data';
+  if (supported.has(subject)) {
+    target = supported.get(subject);
+  } else if (supported.has('org.imsglobal.' + subject)) {
+    subject = 'org.imsglobal.' + subject;
+    target = supported.get(subject);
+  }
+  let targetframe = getTarget(target);
+  if (targetframe) {
+    try {
+      targetframe.postMessage({
+        'subject': subject,
+        'message_id': messageid,
+        'key': state,
+        'value': nonce
+      }, origin);
+    } catch(err) {
+      console.log(err.name + ': ' + err.message);
+    }
+  } else {
+    saveData();
+  }
+}
+
+function doOnLoad() {
+  timeout = setTimeout(function() {  // Allow time to check platform capabilities
+    timeout = setTimeout(function() {  // Allow time to send postMessages
+      setTimeout(function() {  // Allow time to send postMessages
+        submitForm();
+      }, {$timeoutDelay});
+      sendMessages();
+    }, {$timeoutDelay});
+    checkCapabilities('org.imsglobal.lti.capabilities');
+  }, {$timeoutDelay});
+  checkCapabilities('lti.capabilities');
+}
+
+EOD;
+                break;
+            case 'lti.get_data':
+                $javascript .= <<< EOD
+function sendMessages() {
+  let subject = 'lti.get_data';
+  if (supported.has(subject)) {
+    target = supported.get(subject);
+  } else if (supported.has('org.imsglobal.' + subject)) {
+    subject = 'org.imsglobal.' + subject;
+    target = supported.get(subject);
+  }
+  let targetframe = getTarget(target);
+  if (targetframe) {
+    try {
+      targetframe.postMessage({
+        'subject': subject,
+        'message_id': messageid,
+        'key': state
+      }, origin);
+    } catch(err) {
+      console.log(err.name + ': ' + err.message);
+    }
+  }
+}
+
+function doOnLoad() {
+  timeout = setTimeout(function() {  // Allow time to check platform capabilities
+    timeout = setTimeout(function() {  // Allow time to send postMessages
+      setTimeout(function() {  // Allow time to send postMessages
+        submitForm();
+      }, {$timeoutDelay});
+      sendMessages();
+    }, {$timeoutDelay});
+    checkCapabilities('org.imsglobal.lti.capabilities');
+  }, {$timeoutDelay});
+  checkCapabilities('lti.capabilities');
+}
+
+EOD;
+                break;
+        }
+
+        $javascript .= <<< EOD
+
+function checkCapabilities(subject) {
+  let wdw = getTarget(target);
+  if (wdw) {
+    try {
+      wdw.postMessage({
+        'subject': subject,
+        'message_id': capabilitiesid
+      }, '*');
+    } catch(err) {
+      console.log(err.name + ': ' + err.message);
+    }
+  }
+}
+
+function submitForm() {
+  if ((document.forms[0].target === '_blank') && (window.top === window.self)) {
+    document.forms[0].target = '';
+  }
+  document.forms[0].submit();
+}
+
+window.onload=doOnLoad;
+EOD;
+
+        return $javascript;
     }
 
 }
