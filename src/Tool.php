@@ -2361,8 +2361,10 @@ window.addEventListener('message', function (event) {
           event.data.supported_messages.forEach(function(capability) {
             supported.set(capability.subject, (capability.frame) ? capability.frame : target);
           });
-          if (supported.has('{$message}') || supported.has('org.imsglobal.{$message}')) {
-            sendMessages();
+          if (supported.has('{$message}')) {
+            sendMessage('{$message}');
+          } else if (supported.has('org.imsglobal.{$message}')) {
+            sendMessage('org.imsglobal.{$message}');
           } else {
             submitForm();
           }
@@ -2434,15 +2436,12 @@ EOD;
         switch ($message) {
             case 'lti.put_data':
                 $javascript .= <<< EOD
-function sendMessages() {
-  let subject = 'lti.put_data';
+function sendMessage(subject) {
+  let usetarget = target;
   if (supported.has(subject)) {
-    target = supported.get(subject);
-  } else if (supported.has('org.imsglobal.' + subject)) {
-    subject = 'org.imsglobal.' + subject;
-    target = supported.get(subject);
+    usetarget = supported.get(subject);
   }
-  let targetframe = getTarget(target);
+  let targetframe = getTarget(usetarget);
   if (targetframe) {
     try {
       targetframe.postMessage({
@@ -2461,30 +2460,27 @@ function sendMessages() {
 
 function doOnLoad() {
   timeout = setTimeout(function() {  // Allow time to check platform capabilities
-    timeout = setTimeout(function() {  // Allow time to send postMessages
-      setTimeout(function() {  // Allow time to send postMessages
+    timeout = setTimeout(function() {  // Allow time to check platform capabilities
+      timeout = setTimeout(function() {  // Allow time to send postMessage
         submitForm();
       }, {$timeoutDelay});
-      sendMessages();
+      sendMessage('lti.put_data');
     }, {$timeoutDelay});
-    checkCapabilities('org.imsglobal.lti.capabilities');
+    checkCapabilities('org.imsglobal.lti.capabilities', true);
   }, {$timeoutDelay});
-  checkCapabilities('lti.capabilities');
+  checkCapabilities('lti.capabilities', false);
 }
 
 EOD;
                 break;
             case 'lti.get_data':
                 $javascript .= <<< EOD
-function sendMessages() {
-  let subject = 'lti.get_data';
+function sendMessage(subject) {
+  let usetarget = target;
   if (supported.has(subject)) {
-    target = supported.get(subject);
-  } else if (supported.has('org.imsglobal.' + subject)) {
-    subject = 'org.imsglobal.' + subject;
-    target = supported.get(subject);
+    usetarget = supported.get(subject);
   }
-  let targetframe = getTarget(target);
+  let targetframe = getTarget(usetarget);
   if (targetframe) {
     try {
       targetframe.postMessage({
@@ -2500,15 +2496,15 @@ function sendMessages() {
 
 function doOnLoad() {
   timeout = setTimeout(function() {  // Allow time to check platform capabilities
-    timeout = setTimeout(function() {  // Allow time to send postMessages
-      setTimeout(function() {  // Allow time to send postMessages
+    timeout = setTimeout(function() {  // Allow time to check platform capabilities
+      timeout = setTimeout(function() {  // Allow time to send postMessage
         submitForm();
       }, {$timeoutDelay});
-      sendMessages();
+      sendMessage('lti.get_data');
     }, {$timeoutDelay});
-    checkCapabilities('org.imsglobal.lti.capabilities');
+    checkCapabilities('org.imsglobal.lti.capabilities', true);
   }, {$timeoutDelay});
-  checkCapabilities('lti.capabilities');
+  checkCapabilities('lti.capabilities', false);
 }
 
 EOD;
@@ -2517,7 +2513,7 @@ EOD;
 
         $javascript .= <<< EOD
 
-function checkCapabilities(subject) {
+function checkCapabilities(subject, checkparent) {
   let wdw = getTarget(target);
   if (wdw) {
     try {
@@ -2525,6 +2521,12 @@ function checkCapabilities(subject) {
         'subject': subject,
         'message_id': capabilitiesid
       }, '*');
+      if (checkparent && (wdw !== window.parent)) {
+        window.parent.postMessage({
+          'subject': subject,
+          'message_id': capabilitiesid
+        }, '*');
+      }
     } catch(err) {
       console.log(err.name + ': ' + err.message);
     }
