@@ -668,7 +668,7 @@ trait System
      *
      * @return string
      */
-    public function sendMessage($url, $type, $messageParams, $target = '', $userId = null, $hint = '')
+    public function sendMessage($url, $type, $messageParams, $target = '', $userId = null, $hint = null)
     {
         $sendParams = $this->signMessage($url, $type, $this->ltiVersion, $messageParams, $userId, $hint);
         $html = Util::sendForm($url, $sendParams, $target);
