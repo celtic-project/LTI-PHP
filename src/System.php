@@ -535,14 +535,15 @@ trait System
     }
 
     /**
-     * Get an array of fully qualified user roles
+     * Parse a set of roles to comply with a specified version of LTI.
      *
-     * @param mixed  $roles       Comma-separated list of roles or array of roles
-     * @param string $ltiVersion  LTI version (default is LTI-1p0)
+     * @param mixed   $roles             Comma-separated list of roles or array of roles
+     * @param string  $ltiVersion        LTI version for roles being returned (optional, default is LTI-1p0)
+     * @param bool    $addPrincipalRole  Add principal role when true (optional, default is false)
      *
      * @return array Array of roles
      */
-    public static function parseRoles($roles, $ltiVersion = Util::LTI_VERSION1)
+    public static function parseRoles($roles, $ltiVersion = Util::LTI_VERSION1, $addPrincipalRole = false)
     {
         if (!is_array($roles)) {
             $roles = array_map('trim', explode(',', $roles));
@@ -551,24 +552,278 @@ trait System
         $parsedRoles = array();
         foreach ($roles as $role) {
             $role = trim($role);
-            if (!empty($role)) {
-                if ($ltiVersion === Util::LTI_VERSION1) {
-                    if ((substr($role, 0, 4) !== 'urn:') &&
-                        (substr($role, 0, 7) !== 'http://') && (substr($role, 0, 8) !== 'https://')) {
-                        $role = 'urn:lti:role:ims/lis/' . $role;
-                    }
-                } elseif ((substr($role, 0, 7) !== 'http://') && (substr($role, 0, 8) !== 'https://')) {
-                    if (($role !== 'TeachingAssistant') || ($ltiVersion !== Util::LTI_VERSION1P3)) {
-                        $role = 'http://purl.imsglobal.org/vocab/lis/v2/membership#' . $role;
-                    } else {
-                        $role = 'http://purl.imsglobal.org/vocab/lis/v2/membership/Instructor#TeachingAssistant';
-                    }
+            if ((substr($role, 0, 4) !== 'urn:') &&
+                (substr($role, 0, 7) !== 'http://') && (substr($role, 0, 8) !== 'https://')) {
+                switch ($ltiVersion) {
+                    case Util::LTI_VERSION1:
+                        $role = str_replace('#', '/', $role);
+                        $role = "urn:lti:role:ims/lis/{$role}";
+                        break;
+                    case Util::LTI_VERSION2:
+                    case Util::LTI_VERSION1P3:
+                        $pos = strrpos($role, '#');
+                        if ($pos === false) {
+                            $sep = '#';
+                        } else {
+                            $sep = '/';
+                        }
+                        $role = "http://purl.imsglobal.org/vocab/lis/v2/membership{$sep}{$role}";
+                        break;
                 }
+            }
+            $systemRoles = array(
+                'AccountAdmin',
+                'Administrator',
+                'Creator',
+                'None',
+                'SysAdmin',
+                'SysSupport',
+                'User');
+            $institutionRoles = array(
+//            'Administrator',  // System Administrator role takes precedence
+                'Alumni',
+                'Faculty',
+                'Guest',
+                'Instructor',
+                'Learner',
+                'Member',
+                'Mentor',
+                'None',
+                'Observer',
+                'Other',
+                'ProspectiveStudent',
+                'Staff',
+                'Student'
+            );
+            switch ($ltiVersion) {
+                case Util::LTI_VERSION1:
+                    if (in_array(substr($role, 0, 53),
+                            array('http://purl.imsglobal.org/vocab/lis/v2/system/person#',
+                                'http://purl.imsglobal.org/vocab/lis/v2/system/person/'))) {
+                        $role = 'urn:lti:sysrole:ims/lis/' . substr($role, 53);
+                    } elseif (in_array(substr($role, 0, 58),
+                            array('http://purl.imsglobal.org/vocab/lis/v2/institution/person#',
+                                'http://purl.imsglobal.org/vocab/lis/v2/institution/person/'))) {
+                        $role = 'urn:lti:instrole:ims/lis/' . substr($role, 58);
+                    } elseif (substr($role, 0, 50) === 'http://purl.imsglobal.org/vocab/lis/v2/membership#') {
+                        $principalRole = substr($role, 50);
+                        if (($principalRole === 'Instructor') &&
+                            (!empty(preg_grep('/^http:\/\/purl.imsglobal.org\/vocab\/lis\/v2\/membership\/Instructor#TeachingAssistant.*$/',
+                                    $roles)) ||
+                            !empty(preg_grep('/^Instructor#TeachingAssistant.*$/', $roles)))) {
+                            $role = '';
+                        } elseif (!empty(preg_grep("/^http:\/\/purl.imsglobal.org\/vocab\/lis\/v2\/membership\/{$principalRole}#.*$/",
+                                    $roles)) ||
+                            !empty(preg_grep('/^{$principalRole}#.*$/', $roles))) {
+                            $role = '';
+                        } else {
+                            $role = "urn:lti:role:ims/lis/{$principalRole}";
+                        }
+                    } elseif (substr($role, 0, 50) === 'http://purl.imsglobal.org/vocab/lis/v2/membership/') {
+                        $subroles = explode('#', substr($role, 50));
+                        if (count($subroles) === 2) {
+                            if (($subroles[0] === 'Instructor') && ($subroles[1] === 'TeachingAssistant')) {
+                                $role = 'urn:lti:role:ims/lis/TeachingAssistant';
+                            } elseif (($subroles[0] === 'Instructor') && (substr($subroles[1], 0, 17) === 'TeachingAssistant')) {
+                                $role = "urn:lti:role:ims/lis/TeachingAssistant#{$subroles[1]}";
+                            } else {
+                                $role = "urn:lti:role:ims/lis/{$subroles[0]}/{$subroles[1]}";
+                            }
+                        } else {
+                            $role = 'urn:lti:role:ims/lis/' . substr($role, 50);
+                        }
+                    } elseif (in_array(substr($role, 0, 46),
+                            array('http://purl.imsglobal.org/vocab/lis/v2/person#',
+                                'http://purl.imsglobal.org/vocab/lis/v2/person/'))) {
+                        if (in_array(substr($role, 46), $systemRoles)) {
+                            $role = 'urn:lti:sysrole:ims/lis/' . substr($role, 46);
+                        } elseif (in_array(substr($role, 46), $institutionRoles)) {
+                            $role = 'urn:lti:instrole:ims/lis/' . substr($role, 46);
+                        }
+                    } elseif (strpos($role, 'Instructor#TeachingAssistant') !== false) {
+                        if (substr($role, -28) === 'Instructor#TeachingAssistant') {
+                            $role = str_replace('Instructor#', '', $role);
+                        } else {
+                            $role = str_replace('Instructor#', 'TeachingAssistant/', $role);
+                        }
+                    } elseif ((substr($role, -10) === 'Instructor') &&
+                        !empty(preg_grep('/^http:\/\/purl.imsglobal.org\/vocab\/lis\/v2\/membership\/Instructor#TeachingAssistant.*$/',
+                                $roles))) {
+                        $role = '';
+                    }
+                    $role = str_replace('#', '/', $role);
+                    break;
+                case Util::LTI_VERSION2:
+                    $prefix = '';
+                    if (substr($role, 0, 24) === 'urn:lti:sysrole:ims/lis/') {
+                        $prefix = 'http://purl.imsglobal.org/vocab/lis/v2/person';
+                        $role = substr($role, 24);
+                    } elseif (substr($role, 0, 25) === 'urn:lti:instrole:ims/lis/') {
+                        $prefix = 'http://purl.imsglobal.org/vocab/lis/v2/person';
+                        $role = substr($role, 25);
+                    } elseif (substr($role, 0, 21) === 'urn:lti:role:ims/lis/') {
+                        $prefix = 'http://purl.imsglobal.org/vocab/lis/v2/membership';
+                        $subroles = explode('/', substr($role, 21));
+                        if (count($subroles) === 2) {
+                            if (($subroles[0] === 'Instructor') && ($subroles[1] === 'TeachingAssistant')) {
+                                $role = 'TeachingAssistant';
+                            } elseif (($subroles[0] === 'Instructor') && (substr($subroles[1], 0, 17) === 'TeachingAssistant')) {
+                                $role = "TeachingAssistant#{$subroles[1]}";
+                            } else {
+                                $role = "{$subroles[0]}#{$subroles[1]}";
+                            }
+                        } elseif ((count($subroles) === 1) && (!empty(preg_grep("/^http:\/\/purl.imsglobal.org\/vocab\/lis\/v2\/membership\/{$subroles[0]}#.*$/",
+                                    $roles)) ||
+                            !empty(preg_grep('/^{$subroles[0]#.*$/', $roles)))) {
+                            $role = '';
+                        } else {
+                            $role = substr($role, 21);
+                        }
+                    } elseif (in_array(substr($role, 0, 53),
+                            array('http://purl.imsglobal.org/vocab/lis/v2/system/person#',
+                                'http://purl.imsglobal.org/vocab/lis/v2/system/person/'))) {
+                        $prefix = 'http://purl.imsglobal.org/vocab/lis/v2/person';
+                        $role = substr($role, 53);
+                    } elseif (in_array(substr($role, 0, 58),
+                            array('http://purl.imsglobal.org/vocab/lis/v2/institution/person#',
+                                'http://purl.imsglobal.org/vocab/lis/v2/institution/person/'))) {
+                        $prefix = 'http://purl.imsglobal.org/vocab/lis/v2/person';
+                        $role = substr($role, 58);
+                    } elseif (substr($role, 0, 50) === 'http://purl.imsglobal.org/vocab/lis/v2/membership#') {
+                        $prefix = 'http://purl.imsglobal.org/vocab/lis/v2/membership';
+                        $principalRole = substr($role, 50);
+                        $principalRole2 = str_replace('/', '\\/', $principalRole);
+                        if (($principalRole === 'Instructor') &&
+                            (!empty(preg_grep('/^http:\/\/purl.imsglobal.org\/vocab\/lis\/v2\/membership\/Instructor#TeachingAssistant.*$/',
+                                    $roles)) ||
+                            !empty(preg_grep('/^Instructor#TeachingAssistant.*$/', $roles)))) {
+                            $role = '';
+                        } elseif (!empty(preg_grep("/^http:\/\/purl.imsglobal.org\/vocab\/lis\/v2\/membership\/{$principalRole2}#.*$/",
+                                    $roles)) ||
+                            !empty(preg_grep('/^{$principalRole2}#.*$/', $roles))) {
+                            $role = '';
+                        } else {
+                            $role = $principalRole;
+                        }
+                    } elseif (substr($role, 0, 50) === 'http://purl.imsglobal.org/vocab/lis/v2/membership/') {
+                        $prefix = 'http://purl.imsglobal.org/vocab/lis/v2/membership';
+                        $subroles = explode('#', substr($role, 50));
+                        if (count($subroles) === 2) {
+                            if (($subroles[0] === 'Instructor') && ($subroles[1] === 'TeachingAssistant')) {
+                                $role = 'TeachingAssistant';
+                            } elseif (($subroles[0] === 'Instructor') && (substr($subroles[1], 0, 17) === 'TeachingAssistant')) {
+                                $role = "TeachingAssistant#{$subroles[1]}";
+                            } else {
+                                $role = "{$subroles[0]}#{$subroles[1]}";
+                            }
+                        } else {
+                            $role = substr($role, 50);
+                        }
+                    }
+                    if (!empty($role)) {
+                        $pos = strrpos($role, '/');
+                        if ((strpos($role, '#') !== false) || ($pos !== false)) {
+                            $prefix .= '/';
+                            if ($pos !== false) {
+                                $role = substr($role, 0, $pos) . '#' . substr($role, $pos + 1);
+                            }
+                        } else {
+                            $prefix .= '#';
+                        }
+                        $role = "{$prefix}{$role}";
+                    }
+                    break;
+                case Util::LTI_VERSION1P3:
+                    $prefix = '';
+                    if (substr($role, 0, 24) === 'urn:lti:sysrole:ims/lis/') {
+                        $prefix = 'http://purl.imsglobal.org/vocab/lis/v2/system/person';
+                        $role = substr($role, 24);
+                    } elseif (substr($role, 0, 25) === 'urn:lti:instrole:ims/lis/') {
+                        $prefix = 'http://purl.imsglobal.org/vocab/lis/v2/institution/person';
+                        $role = substr($role, 25);
+                    } elseif (substr($role, 0, 21) === 'urn:lti:role:ims/lis/') {
+                        $prefix = 'http://purl.imsglobal.org/vocab/lis/v2/membership';
+                        $subroles = explode('/', substr($role, 21));
+                        if (count($subroles) === 2) {
+                            if ($subroles[0] === 'TeachingAssistant') {
+                                $role = "Instructor#{$subroles[1]}";
+                                if ($addPrincipalRole) {
+                                    $parsedRoles[] = "{$prefix}#Instructor";
+                                }
+                            } else {
+                                $role = "{$subroles[0]}#{$subroles[1]}";
+                                if ($addPrincipalRole) {
+                                    $parsedRoles[] = "{$prefix}#{$subroles[0]}";
+                                }
+                            }
+                        } elseif ($subroles[0] === 'TeachingAssistant') {
+                            $role = 'Instructor#TeachingAssistant';
+                            if ($addPrincipalRole) {
+                                $parsedRoles[] = "{$prefix}#Instructor";
+                            }
+                        } else {
+                            $role = substr($role, 21);
+                        }
+                    } elseif (substr($role, 0, 46) === 'http://purl.imsglobal.org/vocab/lis/v2/person#') {
+                        if (in_array(substr($role, 46), $systemRoles)) {
+                            $prefix = 'http://purl.imsglobal.org/vocab/lis/v2/system/person';
+                        } elseif (in_array(substr($role, 46), $institutionRoles)) {
+                            $prefix = 'http://purl.imsglobal.org/vocab/lis/v2/institution/person';
+                        }
+                        $role = substr($role, 46);
+                        $pos = strrpos($role, '/');
+                        if ($pos !== false) {
+                            $role = substr($role, 0, $pos - 1) . '#' . substr($role, $pos + 1);
+                        }
+                    } elseif (substr($role, 0, 50) === 'http://purl.imsglobal.org/vocab/lis/v2/membership#') {
+                        $prefix = 'http://purl.imsglobal.org/vocab/lis/v2/membership';
+                        if (substr($role, 50, 18) === 'TeachingAssistant') {
+                            $role = 'Instructor#TeachingAssistant';
+                            if ($addPrincipalRole) {
+                                $parsedRoles[] = "{$prefix}#Instructor";
+                            }
+                        } else {
+                            $role = substr($role, 50);
+                        }
+                    } elseif (substr($role, 0, 50) === 'http://purl.imsglobal.org/vocab/lis/v2/membership/') {
+                        $prefix = 'http://purl.imsglobal.org/vocab/lis/v2/membership';
+                        $subroles = explode('#', substr($role, 50));
+                        if (count($subroles) === 2) {
+                            if ($subroles[0] === 'TeachingAssistant') {
+                                $role = "Instructor#{subroles[1]}";
+                                if ($addPrincipalRole) {
+                                    $parsedRoles[] = "{$prefix}#Instructor";
+                                }
+                            } else {
+                                $role = substr($role, 50);
+                                if ($addPrincipalRole) {
+                                    $parsedRoles[] = "{$prefix}#{$subroles[0]}";
+                                }
+                            }
+                        } else {
+                            $role = substr($role, 50);
+                        }
+                    }
+                    if (!empty($role)) {
+                        $pos = strrpos($role, '/');
+                        if ((strpos($role, '#') !== false) || ($pos !== false)) {
+                            $prefix .= '/';
+                            if ($pos !== false) {
+                                $role = substr($role, 0, $pos) . '#' . substr($role, $pos + 1);
+                            }
+                        } else {
+                            $prefix .= '#';
+                        }
+                        $role = "{$prefix}{$role}";
+                    }
+                    break;
+            }
+            if (!empty($role)) {
                 $parsedRoles[] = $role;
             }
         }
 
-        return $parsedRoles;
+        return array_unique($parsedRoles);
     }
 
     /**
