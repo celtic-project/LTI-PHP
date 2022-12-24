@@ -215,7 +215,7 @@ final class Util
     }
 
     /**
-     * Return GET and POST request parameters (POST parameters take precedence)
+     * Return GET and POST request parameters (POST parameters take precedence).
      *
      * @return array
      */
