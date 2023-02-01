@@ -60,6 +60,8 @@ class OAuthRequest
                         $_SERVER['SERVER_PORT'] = 80;
                     }
                 }
+            } elseif (!empty($_SERVER['HTTP_X_ORIGINAL_HOST'])) {
+                $_SERVER['SERVER_NAME'] = $_SERVER['HTTP_X_ORIGINAL_HOST'];
             }
             $scheme = ($_SERVER['HTTPS'] === 'on') ? 'https' : 'http';
             $http_url = "{$scheme}://{$_SERVER['SERVER_NAME']}:{$_SERVER['SERVER_PORT']}{$_SERVER['REQUEST_URI']}";
