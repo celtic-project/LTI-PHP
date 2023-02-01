@@ -61,8 +61,10 @@ class OAuthRequest
                     }
                 }
             }
-            $scheme = ($_SERVER['HTTPS'] === 'on') ? 'https' : 'http';
-            $http_url = "{$scheme}://{$_SERVER['SERVER_NAME']}:{$_SERVER['SERVER_PORT']}{$_SERVER['REQUEST_URI']}";
+            // @note: When exposing local server ports (Ngrok) on the internet use the HTTP_X_ORIGINAL_HOST
+            // @note: https://github.com/laravel/valet/issues/342
+            $serverName = $_SERVER['HTTP_HOST'] ?? $_SERVER['HTTP_X_ORIGINAL_HOST'] ?? $_SERVER['SERVER_NAME'];
+            $http_url = "{$scheme}://{$serverName}:{$_SERVER['SERVER_PORT']}{$_SERVER['REQUEST_URI']}";
         }
         $http_method = ($http_method) ? $http_method : $_SERVER['REQUEST_METHOD'];
 
