@@ -2,7 +2,7 @@
 
 namespace ceLTIc\LTI;
 
-use ceLTIc\LTI\DataConnector;
+use ceLTIc\LTI\DataConnector\DataConnector;
 use ceLTIc\LTI\Platform;
 use ceLTIc\LTI\Context;
 
