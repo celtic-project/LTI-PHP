@@ -2313,14 +2313,25 @@ EOD;
         }
     }
 
+    /**
+     * Get the JavaScript for handling storage postMessages from a tool.
+     *
+     * @param string  $message           Type of postMessage
+     * @param string  $state             Value of state
+     * @param string  $nonce             Value of nonce
+     *
+     * @return string       The JavaScript to handle storage postMessages
+     */
     private function getStorageJS($message, $state, $nonce)
     {
-        $parts = explode('.', $state);
-        $state = $parts[0];
-        $capabilitiesId = Util::getRandomString();
-        $messageId = Util::getRandomString();
+        $javascript = '';
         $timeoutDelay = static::$postMessageTimeoutDelay;
-        $javascript = <<< EOD
+        if ($timeoutDelay > 0) {
+            $parts = explode('.', $state);
+            $state = $parts[0];
+            $capabilitiesId = Util::getRandomString();
+            $messageId = Util::getRandomString();
+            $javascript = <<< EOD
 let origin = new URL('{$this->platform->authenticationUrl}').origin;
 let params = new URLSearchParams(window.location.search);
 let target = params.get('lti_storage_target');
@@ -2433,9 +2444,9 @@ function getTarget(frame = '') {
 
 
 EOD;
-        switch ($message) {
-            case 'lti.put_data':
-                $javascript .= <<< EOD
+            switch ($message) {
+                case 'lti.put_data':
+                    $javascript .= <<< EOD
 function sendMessage(subject) {
   let usetarget = target;
   if (supported.has(subject)) {
@@ -2472,9 +2483,9 @@ function doOnLoad() {
 }
 
 EOD;
-                break;
-            case 'lti.get_data':
-                $javascript .= <<< EOD
+                    break;
+                case 'lti.get_data':
+                    $javascript .= <<< EOD
 function sendMessage(subject) {
   let usetarget = target;
   if (supported.has(subject)) {
@@ -2508,10 +2519,10 @@ function doOnLoad() {
 }
 
 EOD;
-                break;
-        }
+                    break;
+            }
 
-        $javascript .= <<< EOD
+            $javascript .= <<< EOD
 
 function checkCapabilities(subject, checkparent) {
   let wdw = getTarget(target);
@@ -2542,6 +2553,7 @@ function submitForm() {
 
 window.onload=doOnLoad;
 EOD;
+        }
 
         return $javascript;
     }
