@@ -317,7 +317,7 @@ class DataConnector_sqlsrv extends DataConnector
      */
     public function getPlatforms()
     {
-        $consumers = array();
+        $platforms = array();
 
         $sql = 'SELECT consumer_pk, consumer_key, name, secret, ' .
             'platform_id, client_id, deployment_id, public_key, ' .
@@ -370,12 +370,12 @@ class DataConnector_sqlsrv extends DataConnector
                 $platform->created = date_timestamp_get($row->created);
                 $platform->updated = date_timestamp_get($row->updated);
                 $this->fixPlatformSettings($platform, false);
-                $consumers[] = $platform;
+                $platforms[] = $platform;
             }
             sqlsrv_free_stmt($rsConsumers);
         }
 
-        return $consumers;
+        return $platforms;
     }
 
 ###
@@ -1372,6 +1372,11 @@ class DataConnector_sqlsrv extends DataConnector
         return $value;
     }
 
+    /**
+     * Get the ID for the last record inserted into a table.
+     *
+     * @return int  Id of last inserted record
+     */
     private function insert_id()
     {
         $id = 0;

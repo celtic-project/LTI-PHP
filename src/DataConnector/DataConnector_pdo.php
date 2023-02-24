@@ -377,7 +377,7 @@ class DataConnector_pdo extends DataConnector
      */
     public function getPlatforms()
     {
-        $consumers = array();
+        $platforms = array();
 
         $sql = 'SELECT consumer_pk, name, consumer_key, secret, ' .
             'platform_id, client_id, deployment_id, public_key, ' .
@@ -436,11 +436,11 @@ class DataConnector_pdo extends DataConnector
                 $platform->created = strtotime($row['created']);
                 $platform->updated = strtotime($row['updated']);
                 $this->fixPlatformSettings($platform, false);
-                $consumers[] = $platform;
+                $platforms[] = $platform;
             }
         }
 
-        return $consumers;
+        return $platforms;
     }
 
 ###
@@ -550,6 +550,13 @@ class DataConnector_pdo extends DataConnector
         return $ok;
     }
 
+    /**
+     * Delete context object.
+     *
+     * @param Context $context Context object
+     *
+     * @return bool    True if the Context object was successfully deleted
+     */
     public function deleteContext($context)
     {
         $id = $context->getRecordId();

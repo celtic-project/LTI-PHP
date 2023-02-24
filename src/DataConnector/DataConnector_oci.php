@@ -401,7 +401,7 @@ class DataConnector_oci extends DataConnector
      */
     public function getPlatforms()
     {
-        $consumers = array();
+        $platforms = array();
 
         $sql = 'SELECT consumer_pk, name, consumer_key, secret, ' .
             'platform_id, client_id, deployment_id, public_key, ' .
@@ -466,11 +466,11 @@ class DataConnector_oci extends DataConnector
                 $platform->created = strtotime($row['created']);
                 $platform->updated = strtotime($row['updated']);
                 $this->fixPlatformSettings($platform, false);
-                $consumers[] = $platform;
+                $platforms[] = $platform;
             }
         }
 
-        return $consumers;
+        return $platforms;
     }
 
 ###

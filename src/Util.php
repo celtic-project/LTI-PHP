@@ -496,7 +496,7 @@ EOD;
             }
             if ((PHP_MAJOR_VERSION > 7) || ((PHP_MAJOR_VERSION >= 7) && (PHP_MINOR_VERSION >= 3))) {  // PHP 7.3 or later?
                 setcookie(self::TEST_COOKIE_NAME, 'LTI cookie check',
-                    array("expires" => $expires, "path" => $path, "domain" => $_SERVER['HTTP_HOST'], "secure" => $secure, "httponly" => true, "SameSite" => "None"));
+                    array('expires' => $expires, 'path' => $path, 'domain' => $_SERVER['HTTP_HOST'], 'secure' => $secure, 'httponly' => true, 'SameSite' => 'None'));
             } else {
                 setcookie(self::TEST_COOKIE_NAME, 'LTI cookie check', $expires, $path, $_SERVER['HTTP_HOST'], $secure);
             }

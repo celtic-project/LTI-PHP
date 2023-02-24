@@ -350,7 +350,7 @@ class DataConnector_mysqli extends DataConnector
      */
     public function getPlatforms()
     {
-        $consumers = array();
+        $platforms = array();
 
         $sql = 'SELECT consumer_pk, consumer_key, name, secret, ' .
             'platform_id, client_id, deployment_id, public_key, ' .
@@ -404,12 +404,12 @@ class DataConnector_mysqli extends DataConnector
                 $platform->created = strtotime($row->created);
                 $platform->updated = strtotime($row->updated);
                 $this->fixPlatformSettings($platform, false);
-                $consumers[] = $platform;
+                $platforms[] = $platform;
             }
             $rsConsumers->free_result();
         }
 
-        return $consumers;
+        return $platforms;
     }
 
 ###
