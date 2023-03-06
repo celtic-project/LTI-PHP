@@ -660,7 +660,7 @@ class DataConnector_oci extends DataConnector
     public function loadResourceLink($resourceLink)
     {
         if (!is_null($resourceLink->getRecordId())) {
-            $sql = 'SELECT resource_link_pk, context_pk, consumer_pk, lti_resource_link_id, settings, primary_resource_link_pk, share_approved, created, updated ' .
+            $sql = 'SELECT resource_link_pk, context_pk, consumer_pk, title, lti_resource_link_id, settings, primary_resource_link_pk, share_approved, created, updated ' .
                 "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
                 'WHERE (resource_link_pk = :id)';
             $query = oci_parse($this->db, $sql);
@@ -681,7 +681,7 @@ class DataConnector_oci extends DataConnector
             oci_bind_by_name($query, 'id1', $id);
             oci_bind_by_name($query, 'id2', $id);
         } else {
-            $sql = 'SELECT r.resource_link_pk, r.context_pk, r.consumer_pk, r.lti_resource_link_id, r.settings, r.primary_resource_link_pk, r.share_approved, r.created, r.updated ' .
+            $sql = 'SELECT r.resource_link_pk, r.context_pk, r.consumer_pk, r.title, r.lti_resource_link_id, r.settings, r.primary_resource_link_pk, r.share_approved, r.created, r.updated ' .
                 "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' r LEFT OUTER JOIN ' .
                 $this->dbTableNamePrefix . static::CONTEXT_TABLE_NAME . ' c ON r.context_pk = c.context_pk ' .
                 ' WHERE ((r.consumer_pk = :id1) OR (c.consumer_pk = :id2)) AND (lti_resource_link_id = :rlid)';
@@ -712,6 +712,7 @@ class DataConnector_oci extends DataConnector
             } else {
                 $resourceLink->setPlatformId(null);
             }
+            $resourceLink->title = $row['title'];
             $resourceLink->ltiResourceLinkId = $row['lti_resource_link_id'];
             $settings = $row['settings']->load();
             $settingsValue = $row['settings']->load();
