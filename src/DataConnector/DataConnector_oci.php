@@ -512,7 +512,7 @@ class DataConnector_oci extends DataConnector
             $row = array_change_key_case($row);
             $context->setRecordId(intval($row['context_pk']));
             $context->setPlatformId(intval($row['consumer_pk']));
-            $context->ltiContextId = $row['title'];
+            $context->title = $row['title'];
             $context->ltiContextId = $row['lti_context_id'];
             $context->type = $row['type'];
             $settingsValue = $row['settings']->load();
