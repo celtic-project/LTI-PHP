@@ -2,9 +2,7 @@
 
 namespace ceLTIc\LTI;
 
-use ceLTIc\LTI\Tool;
 use ceLTIc\LTI\DataConnector\DataConnector;
-use ceLTIc\LTI\Util;
 
 /**
  * Class to represent an LTI Tool Provider

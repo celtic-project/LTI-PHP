@@ -2,6 +2,8 @@
 
 namespace ceLTIc\LTI\Service;
 
+use ceLTIc\LTI\Platform;
+
 /**
  * Class to implement the Assignment and Grade services
  *

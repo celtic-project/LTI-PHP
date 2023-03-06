@@ -2,7 +2,7 @@
 
 namespace ceLTIc\LTI;
 
-use ceLTIc\LTI\Platform;
+use ceLTIc\LTI\DataConnector\DataConnector;
 
 /**
  * Class to represent a tool consumer

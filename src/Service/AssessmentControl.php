@@ -22,15 +22,15 @@ class AssessmentControl extends Service
     /**
      * Resource link for this service request.
      *
-     * @var ResourceLink  $resourceLink
+     * @var LTI\ResourceLink  $resourceLink
      */
     private $resourceLink = null;
 
     /**
      * Class constructor.
      *
-     * @param ResourceLink  $resourceLink  Resource link object for this service request
-     * @param string        $endpoint      Service endpoint
+     * @param LTI\ResourceLink  $resourceLink  Resource link object for this service request
+     * @param string            $endpoint      Service endpoint
      */
     public function __construct($resourceLink, $endpoint)
     {

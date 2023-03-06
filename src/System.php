@@ -8,7 +8,6 @@ use ceLTIc\LTI\Http\HttpMessage;
 use ceLTIc\LTI\OAuth;
 use ceLTIc\LTI\Jwt\Jwt;
 use ceLTIc\LTI\Jwt\ClientInterface;
-use ceLTIc\LTI\Tool;
 
 /**
  * Class to represent an LTI system
@@ -152,7 +151,7 @@ trait System
     /**
      * JWT object, if any.
      *
-     * @var JWS|null $jwt
+     * @var ClientInterface|null $jwt
      */
     protected $jwt = null;
 

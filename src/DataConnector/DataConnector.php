@@ -2,12 +2,15 @@
 
 namespace ceLTIc\LTI\DataConnector;
 
+use ceLTIc\LTI\AccessToken;
+use ceLTIc\LTI\ConsumerNonce;
 use ceLTIc\LTI\PlatformNonce;
 use ceLTIc\LTI\Context;
 use ceLTIc\LTI\ResourceLink;
 use ceLTIc\LTI\ResourceLinkShare;
 use ceLTIc\LTI\ResourceLinkShareKey;
 use ceLTIc\LTI\Platform;
+use ceLTIc\LTI\ToolConsumer;
 use ceLTIc\LTI\UserResult;
 use ceLTIc\LTI\Tool;
 use ceLTIc\LTI\Util;

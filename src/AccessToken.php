@@ -2,7 +2,6 @@
 
 namespace ceLTIc\LTI;
 
-use ceLTIc\LTI\Tool;
 use ceLTIc\LTI\Http\HttpMessage;
 
 /**

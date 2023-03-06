@@ -22,7 +22,7 @@ class Score extends AssignmentGrade
     /**
      * Class constructor.
      *
-     * @param Platform     $platform   Platform object for this service request
+     * @param LTI\Platform $platform   Platform object for this service request
      * @param string       $endpoint   Service endpoint
      */
     public function __construct($platform, $endpoint)

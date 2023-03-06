@@ -2,6 +2,7 @@
 
 namespace ceLTIc\LTI\Service;
 
+use ceLTIc\LTI\Platform;
 use ceLTIc\LTI\User;
 use ceLTIc\LTI\Outcome;
 

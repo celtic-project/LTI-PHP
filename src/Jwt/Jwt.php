@@ -53,7 +53,7 @@ class Jwt
     /**
      * Set the JWT client to use for handling JWTs.
      *
-     * @param Jwt\ClientInterface|null $jwtClient
+     * @param ClientInterface|null $jwtClient
      *
      * @return void
      */

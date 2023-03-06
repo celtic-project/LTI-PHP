@@ -10,8 +10,6 @@ use ceLTIc\LTI\Jwt\Jwt;
 use ceLTIc\LTI\Http\HttpMessage;
 use ceLTIc\LTI\OAuth;
 use ceLTIc\LTI\ApiHook\ApiHook;
-use ceLTIc\LTI\User;
-use ceLTIc\LTI\Util;
 
 /**
  * Class to represent an LTI Tool
@@ -232,14 +230,14 @@ class Tool
     /**
      * Vendor details
      *
-     * @var Item|null $vendor
+     * @var Profile\Item|null $vendor
      */
     public $vendor = null;
 
     /**
      * Product details
      *
-     * @var Item|null $product
+     * @var Profile\Item|null $product
      */
     public $product = null;
 

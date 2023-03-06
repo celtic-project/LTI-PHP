@@ -2,10 +2,10 @@
 
 namespace ceLTIc\LTI;
 
+use ceLTIc\LTI\DataConnector\DataConnector;
 use ceLTIc\LTI\Service;
 use ceLTIc\LTI\Http\HttpMessage;
 use ceLTIc\LTI\ApiHook\ApiHook;
-use ceLTIc\LTI\Util;
 
 /**
  * Class to represent a platform context
@@ -123,7 +123,7 @@ class Context
     private $settingsChanged = false;
 
     /**
-     * Data connector object or string.
+     * Data connector object.
      *
      * @var DataConnector|null $dataConnector
      */
@@ -283,7 +283,7 @@ class Context
     /**
      * Get the data connector.
      *
-     * @return mixed Data connector object or string
+     * @return DataConnector Data connector object
      */
     public function getDataConnector()
     {

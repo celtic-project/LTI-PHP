@@ -2,6 +2,8 @@
 
 namespace ceLTIc\LTI;
 
+use DateTime;
+
 /**
  * Class to represent an assessment control action
  *

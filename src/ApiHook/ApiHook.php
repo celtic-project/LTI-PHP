@@ -2,6 +2,10 @@
 
 namespace ceLTIc\LTI\ApiHook;
 
+use ceLTIc\LTI\Context;
+use ceLTIc\LTI\Platform;
+use ceLTIc\LTI\ResourceLink;
+
 /**
  * Trait to handle API hook registrations
  *
