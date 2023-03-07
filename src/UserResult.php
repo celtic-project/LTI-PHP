@@ -26,14 +26,14 @@ class UserResult extends User
     /**
      * Date/time the record was created.
      *
-     * @var datetime|null $created
+     * @var int|null $created
      */
     public $created = null;
 
     /**
      * Date/time the record was last updated.
      *
-     * @var datetime|null $updated
+     * @var int|null $updated
      */
     public $updated = null;
 
