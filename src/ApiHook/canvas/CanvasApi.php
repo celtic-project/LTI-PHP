@@ -2,6 +2,8 @@
 
 namespace ceLTIc\LTI\ApiHook\canvas;
 
+use ceLTIc\LTI\Context;
+use ceLTIc\LTI\ResourceLink;
 use ceLTIc\LTI\UserResult;
 use ceLTIc\LTI\Http\HttpMessage;
 
@@ -38,6 +40,7 @@ trait CanvasApi
 
     /**
      * Resource link or context source object
+     * @var ResourceLink|Context
      */
     private $sourceObject = null;
 
