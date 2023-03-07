@@ -115,5 +115,3 @@ trait ApiHook
     }
 
 }
-
-?>
