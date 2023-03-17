@@ -897,7 +897,7 @@ trait System
                 $url = Tool::$defaultTool->initiateLoginUrl;
             }
             if (!empty(static::$browserStorageFrame)) {
-                if (strpos($url, '?') === FALSE) {
+                if (strpos($url, '?') === false) {
                     $sep = '?';
                 } else {
                     $sep = '&';
