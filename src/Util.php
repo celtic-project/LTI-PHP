@@ -380,10 +380,16 @@ final class Util
     {
         if (empty($javascript)) {
             $javascript = <<< EOD
+function doUnblock() {
+  var el = document.getElementById('id_blocked');
+  el.style.display = 'block';
+}
+
 function doOnLoad() {
   if ((document.forms[0].target === '_blank') && (window.top === window.self)) {
     document.forms[0].target = '';
   }
+  window.setTimeout(doUnblock, 5000);
   document.forms[0].submit();
 }
 
@@ -401,6 +407,10 @@ EOD;
 </head>
 <body>
   <form action="{$url}" method="post" target="{$target}" encType="application/x-www-form-urlencoded">
+    <p id="id_blocked" style="display: none; color: red; font-weight: bold;">
+      Your browser may be blocking this request; try clicking the button below.<br><br>
+      <input type="submit" value="Continue" />
+    </p>
 
 EOD;
         if (!empty($params)) {
