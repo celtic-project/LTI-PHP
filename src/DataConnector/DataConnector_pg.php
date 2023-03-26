@@ -116,8 +116,8 @@ class DataConnector_pg extends DataConnector
                     $settings = array();
                 }
                 $platform->setSettings($settings);
-                $platform->protected = $row->protected;
-                $platform->enabled = $row->enabled;
+                $platform->protected = ($row->protected === 't');
+                $platform->enabled = ($row->enabled === 't');
                 $platform->enableFrom = null;
                 if (!is_null($row->enable_from)) {
                     $platform->enableFrom = strtotime($row->enable_from);
@@ -346,8 +346,8 @@ class DataConnector_pg extends DataConnector
                     $settings = array();
                 }
                 $platform->setSettings($settings);
-                $platform->protected = (intval($row->protected) === 1);
-                $platform->enabled = (intval($row->enabled) === 1);
+                $platform->protected = ($row->protected === 't');
+                $platform->enabled = ($row->enabled === 't');
                 $platform->enableFrom = null;
                 if (!is_null($row->enable_from)) {
                     $platform->enableFrom = strtotime($row->enable_from);
@@ -1164,7 +1164,7 @@ class DataConnector_pg extends DataConnector
                     $settings = array();
                 }
                 $tool->setSettings($settings);
-                $tool->enabled = $row->enabled;
+                $tool->enabled = ($row->enabled === 't');
                 $tool->enableFrom = null;
                 if (!is_null($row->enable_from)) {
                     $tool->enableFrom = strtotime($row->enable_from);
@@ -1307,7 +1307,7 @@ class DataConnector_pg extends DataConnector
                     $settings = array();
                 }
                 $tool->setSettings($settings);
-                $tool->enabled = (intval($row->enabled) === 1);
+                $tool->enabled = ($row->enabled === 't');
                 $tool->enableFrom = null;
                 if (!is_null($row->enable_from)) {
                     $tool->enableFrom = strtotime($row->enable_from);
