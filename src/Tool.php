@@ -2327,6 +2327,7 @@ EOD;
     {
         $javascript = '';
         $timeoutDelay = static::$postMessageTimeoutDelay;
+        $formSubmissionTimeout = Util::$formSubmissionTimeout;
         if ($timeoutDelay > 0) {
             $parts = explode('.', $state);
             $state = $parts[0];
@@ -2545,10 +2546,16 @@ function checkCapabilities(subject, checkparent) {
   }
 }
 
+function doUnblock() {
+  var el = document.getElementById('id_blocked');
+  el.style.display = 'block';
+}
+
 function submitForm() {
   if ((document.forms[0].target === '_blank') && (window.top === window.self)) {
     document.forms[0].target = '';
   }
+  window.setTimeout(doUnblock, {$formSubmissionTimeout}000);
   document.forms[0].submit();
 }
 

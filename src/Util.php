@@ -198,6 +198,13 @@ final class Util
     public static $logLevel = self::LOGLEVEL_NONE;
 
     /**
+     * Delay (in seconds) before a manual button is displayed in case a browser is blocking a form submission.
+     *
+     * @var int $formSubmissionTimeout
+     */
+    public static $formSubmissionTimeout = 2;
+
+    /**
      * Check whether the request received could be an LTI message.
      *
      * @return bool
@@ -378,6 +385,7 @@ final class Util
      */
     public static function sendForm($url, $params, $target = '', $javascript = '')
     {
+        $timeout = static::$formSubmissionTimeout;
         if (empty($javascript)) {
             $javascript = <<< EOD
 function doUnblock() {
@@ -389,7 +397,7 @@ function doOnLoad() {
   if ((document.forms[0].target === '_blank') && (window.top === window.self)) {
     document.forms[0].target = '';
   }
-  window.setTimeout(doUnblock, 5000);
+  window.setTimeout(doUnblock, {$timeout}000);
   document.forms[0].submit();
 }
 
