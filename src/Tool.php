@@ -1464,14 +1464,15 @@ EOD;
                     $this->setError('Missing message parameters.', true, $generateWarnings);
                 }
             } elseif ($this->messageParameters['lti_message_type'] === 'LtiStartProctoring') {
-                if (!isset($this->messageParameters['resource_link_id']) && (strlen(trim($this->messageParameters['resource_link_id'])) > 0)) {
+                if (!isset($this->messageParameters['resource_link_id']) || (strlen(trim($this->messageParameters['resource_link_id'])) <= 0)) {
                     $this->setError('Missing resource link ID.', true, $generateWarnings);
                 }
-                if (!isset($this->messageParameters['custom_ap_attempt_number']) && (strlen(trim($this->messageParameters['custom_ap_attempt_number'])) > 0) &&
-                    is_numeric($this->messageParameters['custom_ap_attempt_number'])) {
+                if (!isset($this->messageParameters['custom_ap_attempt_number']) || (strlen(trim($this->messageParameters['custom_ap_attempt_number'])) <= 0) ||
+                    !is_numeric($this->messageParameters['custom_ap_attempt_number'])) {
                     $this->setError('Missing or invalid value for attempt number.', true, $generateWarnings);
                 }
-                if (!isset($this->messageParameters['user_id']) && (strlen(trim($this->messageParameters['user_id'])) > 0)) {
+                if ((!isset($this->messageParameters['user_id']) || (strlen(trim($this->messageParameters['user_id'])) <= 0)) &&
+                    !isset($this->messageParameters['relaunch_url'])) {
                     $this->setError('Empty user ID.', true, $generateWarnings);
                 }
             }
