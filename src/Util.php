@@ -373,10 +373,11 @@ final class Util
      * @param array  $params      Array of form parameters
      * @param string $target      Name of target (optional)
      * @param string $javascript  Javascript to be inserted (optional, default is to just auto-submit form)
+     * @param int $timeout        Delay (in seconds) before a manual button is displayed in case a browser is blocking a form submission.
      *
      * @return string
      */
-    public static function sendForm($url, $params, $target = '', $javascript = '')
+    public static function sendForm($url, $params, $target = '', $javascript = '', $timeout = 5)
     {
         if (empty($javascript)) {
             $javascript = <<< EOD
@@ -389,7 +390,7 @@ function doOnLoad() {
   if ((document.forms[0].target === '_blank') && (window.top === window.self)) {
     document.forms[0].target = '';
   }
-  window.setTimeout(doUnblock, 5000);
+  window.setTimeout(doUnblock, {$timeout}000);
   document.forms[0].submit();
 }
 

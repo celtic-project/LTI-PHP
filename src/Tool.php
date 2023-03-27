@@ -2204,7 +2204,8 @@ EOD;
                     $javascript = $this->getStorageJS('lti.put_data', $nonce->getValue(), $requestNonce);
                 }
                 if (!Tool::$authenticateUsingGet) {
-                    $this->output = Util::sendForm($this->platform->authenticationUrl, $params, '', $javascript);
+                    $this->output = Util::sendForm($this->platform->authenticationUrl, $params, '', $javascript,
+                            self::$formSubmissionTimeout);
                 } else {
                     Util::redirect($this->platform->authenticationUrl, $params, '', $javascript);
                 }
@@ -2251,7 +2252,7 @@ EOD;
                 'platform_state' => $this->messageParameters['platform_state']
             );
             $params = $this->platform->addSignature($this->messageParameters['relaunch_url'], $params);
-            $this->output = Util::sendForm($this->messageParameters['relaunch_url'], $params);
+            $this->output = Util::sendForm($this->messageParameters['relaunch_url'], $params, '', '', self::$formSubmissionTimeout);
         } else {
             $this->reason = 'Unable to generate a state value.';
         }
@@ -2327,6 +2328,7 @@ EOD;
     {
         $javascript = '';
         $timeoutDelay = static::$postMessageTimeoutDelay;
+        $formSubmissionTimeout = Tool::$formSubmissionTimeout;
         if ($timeoutDelay > 0) {
             $parts = explode('.', $state);
             $state = $parts[0];
@@ -2545,10 +2547,16 @@ function checkCapabilities(subject, checkparent) {
   }
 }
 
+function doUnblock() {
+  var el = document.getElementById('id_blocked');
+  el.style.display = 'block';
+}
+
 function submitForm() {
   if ((document.forms[0].target === '_blank') && (window.top === window.self)) {
     document.forms[0].target = '';
   }
+  window.setTimeout(doUnblock, {$formSubmissionTimeout}000);
   document.forms[0].submit();
 }
 

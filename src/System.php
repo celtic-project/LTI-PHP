@@ -150,6 +150,13 @@ trait System
     public $updated = null;
 
     /**
+     * Delay (in seconds) before a manual button is displayed in case a browser is blocking a form submission.
+     *
+     * @var int $formSubmissionTimeout
+     */
+    public static $formSubmissionTimeout = 5;
+
+    /**
      * JWT object, if any.
      *
      * @var JWS|null $jwt
@@ -926,7 +933,7 @@ trait System
     public function sendMessage($url, $type, $messageParams, $target = '', $userId = null, $hint = null)
     {
         $sendParams = $this->signMessage($url, $type, $this->ltiVersion, $messageParams, $userId, $hint);
-        $html = Util::sendForm($url, $sendParams, $target);
+        $html = Util::sendForm($url, $sendParams, $target, '', self::$formSubmissionTimeout);
 
         return $html;
     }
@@ -1235,7 +1242,8 @@ trait System
                                                 if (empty($_COOKIE) && !isset($_POST['_new_window'])) {  // Reopen in a new window
                                                     Util::setTestCookie();
                                                     $_POST['_new_window'] = '';
-                                                    echo Util::sendForm($_SERVER['REQUEST_URI'], $_POST, '_blank');
+                                                    echo Util::sendForm($_SERVER['REQUEST_URI'], $_POST, '_blank', '',
+                                                        self::$formSubmissionTimeout);
                                                     exit;
                                                 }
                                                 Util::setTestCookie(true);
@@ -1298,7 +1306,7 @@ trait System
                             if (empty($_COOKIE) && !isset($_POST['_new_window'])) {  // Reopen in a new window
                                 Util::setTestCookie();
                                 $_POST['_new_window'] = '';
-                                echo Util::sendForm($_SERVER['REQUEST_URI'], $_POST, '_blank');
+                                echo Util::sendForm($_SERVER['REQUEST_URI'], $_POST, '_blank', '', self::$formSubmissionTimeout);
                                 exit;
                             } elseif (!empty(session_id()) && (count($parts) > 1) && (session_id() !== $parts[1])) {  // Reset to original session
                                 session_abort();
