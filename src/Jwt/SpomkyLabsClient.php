@@ -19,6 +19,9 @@ use ceLTIc\LTI\Util;
 /**
  * Class to implement the JWT interface using the Spomky-Labs JWT library from https://github.com/Spomky-Labs/jose.
  *
+ * @deprecated Use WebTokenClient instead
+ * @see WebTokenClient
+ *
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
  * @copyright  SPV Software Products
  * @license   GNU Lesser General Public License, version 3 (<http://www.gnu.org/licenses/lgpl.html>)
@@ -36,6 +39,15 @@ class SpomkyLabsClient implements ClientInterface
     private $payload = null;
     private static $lastHeaders = null;
     private static $lastPayload = null;
+
+    /**
+     * Class constructor.
+     */
+    public function __construct()
+    {
+        Util::logDebug('Class ceLTIc\LTI\Jwt\SpomkyLabsClient has been deprecated; please try using ceLTIc\LTI\Jwt\WebTokenClient instead.',
+            true);
+    }
 
     /**
      * Return an array of supported signature algorithms.
