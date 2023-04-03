@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\DataConnector;
 
@@ -8,9 +9,12 @@ use ceLTIc\LTI\ResourceLink;
 use ceLTIc\LTI\ResourceLinkShare;
 use ceLTIc\LTI\ResourceLinkShareKey;
 use ceLTIc\LTI\Platform;
+use ceLTIc\LTI\AccessToken;
 use ceLTIc\LTI\UserResult;
 use ceLTIc\LTI\Tool;
 use ceLTIc\LTI\Util;
+use ceLTIc\LTI\Enum\LogLevel;
+use ceLTIc\LTI\Enum\IdScope;
 
 /**
  * Class to provide a connection to a persistent store for LTI objects
@@ -28,14 +32,6 @@ class DataConnector
      * Default name for database table used to store platforms.
      */
     const PLATFORM_TABLE_NAME = 'lti2_consumer';
-
-    /**
-     * Default name for database table used to store platforms.
-     *
-     * @deprecated Use DataConnector::PLATFORM_TABLE_NAME instead
-     * @see DataConnector::PLATFORM_TABLE_NAME
-     */
-    const CONSUMER_TABLE_NAME = self::PLATFORM_TABLE_NAME;
 
     /**
      * Default name for database table used to store contexts.
@@ -77,43 +73,43 @@ class DataConnector
      *
      * @var object|resource $db
      */
-    protected $db = null;
+    protected mixed $db = null;
 
     /**
      * Prefix for database table names.
      *
      * @var string $dbTableNamePrefix
      */
-    protected $dbTableNamePrefix = '';
+    protected string $dbTableNamePrefix = '';
 
     /**
      * SQL date format (default = 'Y-m-d')
      *
      * @var string $dateFormat
      */
-    protected $dateFormat = 'Y-m-d';
+    protected string $dateFormat = 'Y-m-d';
 
     /**
      * SQL time format (default = 'H:i:s')
      *
      * @var string $timeFormat
      */
-    protected $timeFormat = 'H:i:s';
+    protected string $timeFormat = 'H:i:s';
 
     /**
      * memcache object.
      *
      * @var object $memcache
      */
-    private static $memcache = null;
+    private static ?object $memcache = null;
 
     /**
      * Class constructor
      *
      * @param object|resource $db                 Database connection object
-     * @param string $dbTableNamePrefix  Prefix for database table names (optional, default is none)
+     * @param string          $dbTableNamePrefix  Prefix for database table names (optional, default is none)
      */
-    protected function __construct($db, $dbTableNamePrefix = '')
+    protected function __construct(mixed $db, string $dbTableNamePrefix = '')
     {
         $this->db = $db;
         $this->dbTableNamePrefix = $dbTableNamePrefix;
@@ -122,12 +118,12 @@ class DataConnector
     /**
      * Set/check whether memcached should be used when available.
      *
-     * @param string  $host   Name or IP address of host running memcache server (use an empty string to disable)
-     * @param int     $port   Port number used by memcache server (use -1 for default)
+     * @param string $host  Name or IP address of host running memcache server (use an empty string to disable)
+     * @param int    $port  Port number used by memcache server (use -1 for default)
      *
      * @return bool  True if memcache is enabled
      */
-    public static function useMemcache($host = null, $port = -1)
+    public static function useMemcache(string $host = null, int $port = -1): bool
     {
         if (is_null($host)) {
             $useMemcache = !empty(self::$memcache);
@@ -166,79 +162,13 @@ class DataConnector
 ###
 
     /**
-     * Load tool consumer object.
-     *
-     * @deprecated Use loadPlatform() instead
-     * @see DataConnector::loadPlatform()
-     *
-     * @param ToolConsumer $consumer  Tool consumer object
-     *
-     * @return bool    True if the tool consumer object was successfully loaded
-     */
-    public function loadToolConsumer($consumer)
-    {
-        Util::logDebug('Method ceLTIc\LTI\DataConnector\DataConnector::loadToolConsumer() has been deprecated; please use ceLTIc\LTI\DataConnector\DataConnector::loadPlatform() instead.',
-            true);
-        return $this->loadPlatform($consumer);
-    }
-
-    /**
-     * Save tool consumer object.
-     *
-     * @deprecated Use savePlatform() instead
-     * @see DataConnector::savePlatform()
-     *
-     * @param ToolConsumer $consumer  Tool consumer object
-     *
-     * @return bool    True if the tool consumer object was successfully saved
-     */
-    public function saveToolConsumer($consumer)
-    {
-        Util::logDebug('Method ceLTIc\LTI\DataConnector\DataConnector::saveToolConsumer() has been deprecated; please use ceLTIc\LTI\DataConnector\DataConnector::savePlatform() instead.',
-            true);
-        return $this->savePlatform($consumer);
-    }
-
-    /**
-     * Delete tool consumer object.
-     *
-     * @deprecated Use deletePlatform() instead
-     * @see DataConnector::deletePlatform()
-     *
-     * @param ToolConsumer $consumer  Tool consumer object
-     *
-     * @return bool    True if the tool consumer object was successfully deleted
-     */
-    public function deleteToolConsumer($consumer)
-    {
-        Util::logDebug('Method ceLTIc\LTI\DataConnector\DataConnector::deleteToolConsumer() has been deprecated; please use ceLTIc\LTI\DataConnector\DataConnector::deletePlatform() instead.',
-            true);
-        return $this->deletePlatform($consumer);
-    }
-
-    /**
-     * Load tool consumer objects.
-     *
-     * @deprecated Use getPlatforms() instead
-     * @see DataConnector::getPlatforms()
-     *
-     * @return ToolConsumer[] Array of all defined tool consumer objects
-     */
-    public function getToolConsumers()
-    {
-        Util::logDebug('Method ceLTIc\LTI\DataConnector\DataConnector::getToolConsumers() has been deprecated; please use ceLTIc\LTI\DataConnector\DataConnector::getPlatforms() instead.',
-            true);
-        return $this->getPlatforms();
-    }
-
-    /**
      * Load platform object.
      *
      * @param Platform $platform  Platform object
      *
-     * @return bool    True if the platform object was successfully loaded
+     * @return bool  True if the platform object was successfully loaded
      */
-    public function loadPlatform($platform)
+    public function loadPlatform(Platform $platform): bool
     {
         $platform->secret = 'secret';
         $platform->enabled = true;
@@ -254,9 +184,9 @@ class DataConnector
      *
      * @param Platform $platform  Platform object
      *
-     * @return bool    True if the platform object was successfully saved
+     * @return bool  True if the platform object was successfully saved
      */
-    public function savePlatform($platform)
+    public function savePlatform(Platform $platform): bool
     {
         $platform->updated = time();
 
@@ -268,9 +198,9 @@ class DataConnector
      *
      * @param Platform $platform  Platform object
      *
-     * @return bool    True if the platform object was successfully deleted
+     * @return bool  True if the platform object was successfully deleted
      */
-    public function deletePlatform($platform)
+    public function deletePlatform(Platform $platform): bool
     {
         $platform->initialize();
 
@@ -280,11 +210,11 @@ class DataConnector
     /**
      * Load platform objects.
      *
-     * @return Platform[] Array of all defined Platform objects
+     * @return Platform[]  Array of all defined Platform objects
      */
-    public function getPlatforms()
+    public function getPlatforms(): array
     {
-        return array();
+        return [];
     }
 
 ###
@@ -294,11 +224,11 @@ class DataConnector
     /**
      * Load context object.
      *
-     * @param Context $context Context object
+     * @param Context $context  Context object
      *
-     * @return bool    True if the context object was successfully loaded
+     * @return bool  True if the context object was successfully loaded
      */
-    public function loadContext($context)
+    public function loadContext(Context $context): bool
     {
         $now = time();
         $context->created = $now;
@@ -310,11 +240,11 @@ class DataConnector
     /**
      * Save context object.
      *
-     * @param Context $context Context object
+     * @param Context $context  Context object
      *
-     * @return bool    True if the context object was successfully saved
+     * @return bool  True if the context object was successfully saved
      */
-    public function saveContext($context)
+    public function saveContext(Context $context): bool
     {
         $context->updated = time();
 
@@ -324,11 +254,11 @@ class DataConnector
     /**
      * Delete context object.
      *
-     * @param Context $context Context object
+     * @param Context $context  Context object
      *
-     * @return bool    True if the Context object was successfully deleted
+     * @return bool  True if the Context object was successfully deleted
      */
-    public function deleteContext($context)
+    public function deleteContext(Context $context): bool
     {
         $context->initialize();
 
@@ -342,11 +272,11 @@ class DataConnector
     /**
      * Load resource link object.
      *
-     * @param ResourceLink $resourceLink ResourceLink object
+     * @param ResourceLink $resourceLink  ResourceLink object
      *
-     * @return bool    True if the resource link object was successfully loaded
+     * @return bool  True if the resource link object was successfully loaded
      */
-    public function loadResourceLink($resourceLink)
+    public function loadResourceLink(ResourceLink $resourceLink): bool
     {
         $now = time();
         $resourceLink->created = $now;
@@ -358,11 +288,11 @@ class DataConnector
     /**
      * Save resource link object.
      *
-     * @param ResourceLink $resourceLink ResourceLink object
+     * @param ResourceLink $resourceLink  ResourceLink object
      *
-     * @return bool    True if the resource link object was successfully saved
+     * @return bool  True if the resource link object was successfully saved
      */
-    public function saveResourceLink($resourceLink)
+    public function saveResourceLink(ResourceLink $resourceLink): bool
     {
         $resourceLink->updated = time();
 
@@ -372,11 +302,11 @@ class DataConnector
     /**
      * Delete resource link object.
      *
-     * @param ResourceLink $resourceLink ResourceLink object
+     * @param ResourceLink $resourceLink  ResourceLink object
      *
-     * @return bool    True if the resource link object was successfully deleted
+     * @return bool  True if the resource link object was successfully deleted
      */
-    public function deleteResourceLink($resourceLink)
+    public function deleteResourceLink(ResourceLink $resourceLink): bool
     {
         $resourceLink->initialize();
 
@@ -389,27 +319,27 @@ class DataConnector
      * Obtain an array of UserResult objects for users with a result sourcedId.  The array may include users from other
      * resource links which are sharing this resource link.  It may also be optionally indexed by the user ID of a specified scope.
      *
-     * @param ResourceLink $resourceLink      Resource link object
-     * @param bool         $localOnly True if only users within the resource link are to be returned (excluding users sharing this resource link)
-     * @param int          $idScope     Scope value to use for user IDs
+     * @param ResourceLink $resourceLink  Resource link object
+     * @param bool         $localOnly     True if only users within the resource link are to be returned (excluding users sharing this resource link)
+     * @param IdScope|null $idScope       Scope value to use for user IDs
      *
-     * @return UserResult[] Array of UserResult objects
+     * @return UserResult[]  Array of UserResult objects
      */
-    public function getUserResultSourcedIDsResourceLink($resourceLink, $localOnly, $idScope)
+    public function getUserResultSourcedIDsResourceLink(ResourceLink $resourceLink, bool $localOnly, ?IdScope $idScope): array
     {
-        return array();
+        return [];
     }
 
     /**
      * Get array of shares defined for this resource link.
      *
-     * @param ResourceLink $resourceLink ResourceLink object
+     * @param ResourceLink $resourceLink  ResourceLink object
      *
-     * @return ResourceLinkShare[] Array of ResourceLinkShare objects
+     * @return ResourceLinkShare[]  Array of ResourceLinkShare objects
      */
-    public function getSharesResourceLink($resourceLink)
+    public function getSharesResourceLink(ResourceLink $resourceLink): array
     {
-        return array();
+        return [];
     }
 
 ###
@@ -419,62 +349,11 @@ class DataConnector
     /**
      * Load nonce object.
      *
-     * @deprecated Use loadPlatformNonce() instead
-     * @see DataConnector::loadPlatformNonce()
+     * @param PlatformNonce $nonce  Nonce object
      *
-     * @param ConsumerNonce $nonce Nonce object
-     *
-     * @return bool    True if the nonce object was successfully loaded
+     * @return bool  True if the nonce object was successfully loaded
      */
-    public function loadConsumerNonce($nonce)
-    {
-        Util::logDebug('Method ceLTIc\LTI\DataConnector\DataConnector::loadConsumerNonce() has been deprecated; please use ceLTIc\LTI\DataConnector\DataConnector::loadPlatformNonce() instead.',
-            true);
-        return $this->loadPlatformNonce($nonce);
-    }
-
-    /**
-     * Save nonce object.
-     *
-     * @deprecated Use savePlatformNonce() instead
-     * @see DataConnector::savePlatformNonce()
-     *
-     * @param ConsumerNonce $nonce Nonce object
-     *
-     * @return bool    True if the nonce object was successfully saved
-     */
-    public function saveConsumerNonce($nonce)
-    {
-        Util::logDebug('Method ceLTIc\LTI\DataConnector\DataConnector::saveConsumerNonce() has been deprecated; please use ceLTIc\LTI\DataConnector\DataConnector::savePlatformNonce() instead.',
-            true);
-        return $this->savePlatformNonce($nonce);
-    }
-
-    /**
-     * Delete nonce object.
-     *
-     * @deprecated Use deletePlatformNonce() instead
-     * @see DataConnector::deletePlatformNonce()
-     *
-     * @param ConsumerNonce $nonce Nonce object
-     *
-     * @return bool    True if the nonce object was successfully deleted
-     */
-    public function deleteConsumerNonce($nonce)
-    {
-        Util::logDebug('Method ceLTIc\LTI\DataConnector\DataConnector::deleteConsumerNonce() has been deprecated; please use ceLTIc\LTI\DataConnector\DataConnector::deletePlatformNonce() instead.',
-            true);
-        return $this->deletePlatformNonce($nonce);
-    }
-
-    /**
-     * Load nonce object.
-     *
-     * @param PlatformNonce $nonce Nonce object
-     *
-     * @return bool    True if the nonce object was successfully loaded
-     */
-    public function loadPlatformNonce($nonce)
+    public function loadPlatformNonce(PlatformNonce $nonce): bool
     {
         $ok = false;  // assume the nonce does not already exist
         if (!empty(self::$memcache)) {
@@ -490,11 +369,11 @@ class DataConnector
     /**
      * Save nonce object.
      *
-     * @param PlatformNonce $nonce Nonce object
+     * @param PlatformNonce $nonce  Nonce object
      *
-     * @return bool    True if the nonce object was successfully saved
+     * @return bool  True if the nonce object was successfully saved
      */
-    public function savePlatformNonce($nonce)
+    public function savePlatformNonce(PlatformNonce $nonce): bool
     {
         $ok = true;  // assume the nonce was saved
         if (!empty(self::$memcache)) {
@@ -515,11 +394,11 @@ class DataConnector
     /**
      * Delete nonce object.
      *
-     * @param PlatformNonce $nonce Nonce object
+     * @param PlatformNonce $nonce  Nonce object
      *
-     * @return bool    True if the nonce object was successfully deleted
+     * @return bool  True if the nonce object was successfully deleted
      */
-    public function deletePlatformNonce($nonce)
+    public function deletePlatformNonce(PlatformNonce $nonce): bool
     {
         $ok = true;  // assume the nonce was deleted
         if (!empty(self::$memcache)) {
@@ -544,9 +423,9 @@ class DataConnector
      *
      * @param AccessToken $accessToken  Access token object
      *
-     * @return bool    True if the nonce object was successfully loaded
+     * @return bool  True if the nonce object was successfully loaded
      */
-    public function loadAccessToken($accessToken)
+    public function loadAccessToken(AccessToken $accessToken): bool
     {
         $ok = false;  // assume the access token does not already exist
         if (!empty(self::$memcache)) {
@@ -572,9 +451,9 @@ class DataConnector
      *
      * @param AccessToken $accessToken  Access token object
      *
-     * @return bool    True if the access token object was successfully saved
+     * @return bool  True if the access token object was successfully saved
      */
-    public function saveAccessToken($accessToken)
+    public function saveAccessToken(AccessToken $accessToken): bool
     {
         $ok = true;  // assume the access token was saved
         if (!empty(self::$memcache)) {
@@ -585,13 +464,13 @@ class DataConnector
             $name = self::ACCESS_TOKEN_TABLE_NAME . "_{$id}_{$value}";
             $current = self::$memcache->get($name);
             if ($current === false) {
-                $current = array(
+                $current = [
                     'scopes' => $accessToken->scopes,
                     'token' => $value,
                     'expires' => $expires,
                     'created' => $accessToken->created,
                     'updated' => $accessToken->updated
-                );
+                ];
                 $ok = self::$memcache->set($name, $current, 0, $expires);
             }
         }
@@ -606,11 +485,11 @@ class DataConnector
     /**
      * Load resource link share key object.
      *
-     * @param ResourceLinkShareKey $shareKey ResourceLink share key object
+     * @param ResourceLinkShareKey $shareKey  ResourceLink share key object
      *
-     * @return bool    True if the resource link share key object was successfully loaded
+     * @return bool  True if the resource link share key object was successfully loaded
      */
-    public function loadResourceLinkShareKey($shareKey)
+    public function loadResourceLinkShareKey(ResourceLinkShareKey $shareKey): bool
     {
         return true;
     }
@@ -618,11 +497,11 @@ class DataConnector
     /**
      * Save resource link share key object.
      *
-     * @param ResourceLinkShareKey $shareKey Resource link share key object
+     * @param ResourceLinkShareKey $shareKey  Resource link share key object
      *
-     * @return bool    True if the resource link share key object was successfully saved
+     * @return bool  True if the resource link share key object was successfully saved
      */
-    public function saveResourceLinkShareKey($shareKey)
+    public function saveResourceLinkShareKey(ResourceLinkShareKey $shareKey): bool
     {
         return true;
     }
@@ -630,11 +509,11 @@ class DataConnector
     /**
      * Delete resource link share key object.
      *
-     * @param ResourceLinkShareKey $shareKey Resource link share key object
+     * @param ResourceLinkShareKey $shareKey  Resource link share key object
      *
-     * @return bool    True if the resource link share key object was successfully deleted
+     * @return bool  True if the resource link share key object was successfully deleted
      */
-    public function deleteResourceLinkShareKey($shareKey)
+    public function deleteResourceLinkShareKey(ResourceLinkShareKey $shareKey): bool
     {
         return true;
     }
@@ -646,15 +525,15 @@ class DataConnector
     /**
      * Load user object.
      *
-     * @param UserResult $userresult UserResult object
+     * @param UserResult $userResult  UserResult object
      *
-     * @return bool    True if the user object was successfully loaded
+     * @return bool  True if the user object was successfully loaded
      */
-    public function loadUserResult($userresult)
+    public function loadUserResult(UserResult $userResult): bool
     {
         $now = time();
-        $userresult->created = $now;
-        $userresult->updated = $now;
+        $userResult->created = $now;
+        $userResult->updated = $now;
 
         return true;
     }
@@ -662,13 +541,13 @@ class DataConnector
     /**
      * Save user object.
      *
-     * @param UserResult $userresult UserResult object
+     * @param UserResult $userResult  UserResult object
      *
-     * @return bool    True if the user object was successfully saved
+     * @return bool  True if the user object was successfully saved
      */
-    public function saveUserResult($userresult)
+    public function saveUserResult(UserResult $userResult): bool
     {
-        $userresult->updated = time();
+        $userResult->updated = time();
 
         return true;
     }
@@ -676,13 +555,13 @@ class DataConnector
     /**
      * Delete user object.
      *
-     * @param UserResult $userresult UserResult object
+     * @param UserResult $userResult  UserResult object
      *
-     * @return bool    True if the user object was successfully deleted
+     * @return bool  True if the user object was successfully deleted
      */
-    public function deleteUserResult($userresult)
+    public function deleteUserResult(UserResult $userResult): bool
     {
-        $userresult->initialize();
+        $userResult->initialize();
 
         return true;
     }
@@ -696,9 +575,9 @@ class DataConnector
      *
      * @param Tool $tool  Tool object
      *
-     * @return bool    True if the tool object was successfully loaded
+     * @return bool  True if the tool object was successfully loaded
      */
-    public function loadTool($tool)
+    public function loadTool(Tool $tool): bool
     {
         $tool->secret = 'secret';
         $tool->enabled = true;
@@ -714,9 +593,9 @@ class DataConnector
      *
      * @param Tool $tool  Tool object
      *
-     * @return bool    True if the tool object was successfully saved
+     * @return bool  True if the tool object was successfully saved
      */
-    public function saveTool($tool)
+    public function saveTool(Tool $tool): bool
     {
         $tool->updated = time();
 
@@ -728,9 +607,9 @@ class DataConnector
      *
      * @param Tool $tool  Tool object
      *
-     * @return bool    True if the tool object was successfully deleted
+     * @return bool  True if the tool object was successfully deleted
      */
-    public function deleteTool($tool)
+    public function deleteTool(Tool $tool): bool
     {
         $tool->initialize();
 
@@ -740,11 +619,11 @@ class DataConnector
     /**
      * Load platform objects.
      *
-     * @return Tool[] Array of all defined Tool objects
+     * @return Tool[]  Array of all defined Tool objects
      */
-    public function getTools()
+    public function getTools(): array
     {
-        return array();
+        return [];
     }
 
 ###
@@ -761,31 +640,27 @@ class DataConnector
      * (for example, to use a bespoke connector) by specifying a type.  If no database is passed then this class is used which acts as a dummy
      * connector with no persistence.
      *
-     * @param object|resource  $db                 A database connection object or string (optional, default is no persistence)
-     * @param string           $dbTableNamePrefix  Prefix for database table names (optional, default is none)
-     * @param string           $type               The type of data connector (optional, default is based on $db parameter)
+     * @param object|resource $db                 A database connection object or string (optional, default is no persistence)
+     * @param string          $dbTableNamePrefix  Prefix for database table names (optional, default is none)
+     * @param string          $type               The type of data connector (optional, default is based on $db parameter)
      *
      * @return DataConnector Data connector object
      */
-    public static function getDataConnector($db = null, $dbTableNamePrefix = '', $type = '')
+    public static function getDataConnector(mixed $db = null, string $dbTableNamePrefix = '', string $type = ''): DataConnector
     {
         if (is_null($dbTableNamePrefix)) {
             $dbTableNamePrefix = '';
         }
         if (!is_null($db) && empty($type)) {
             if (is_object($db)) {
-                $type = get_class($db);
+                $type = explode('\\', get_class($db), 2)[0];
             } elseif (is_resource($db)) {
                 $type = strtok(get_resource_type($db), ' ');
             }
         }
         $type = strtolower($type);
         if ($type === 'pdo') {
-            if ($db->getAttribute(\PDO::ATTR_DRIVER_NAME) === 'pgsql') {
-                $type .= '_pgsql';
-            } elseif ($db->getAttribute(\PDO::ATTR_DRIVER_NAME) === 'oci') {
-                $type .= '_oci';
-            }
+            $type .= '_' . $db->getAttribute(\PDO::ATTR_DRIVER_NAME);
         }
         if (!empty($type)) {
             $type = "DataConnector_{$type}";
@@ -799,72 +674,14 @@ class DataConnector
     }
 
     /**
-     * Generate a random string.
-     *
-     * The generated string will only comprise letters (upper- and lower-case) and digits.
-     *
-     * @deprecated Use Util::getRandomString() instead
-     * @see Util::getRandomString()
-     *
-     * @param int $length Length of string to be generated (optional, default is 8 characters)
-     *
-     * @return string Random string
-     */
-    public static function getRandomString($length = 8)
-    {
-        Util::logDebug('Method ceLTIc\LTI\DataConnector::getRandomString() has been deprecated; please use ceLTIc\LTI\Util::getRandomString() instead.',
-            true);
-        return Util::getRandomString($length);
-    }
-
-    /**
-     * Escape a string for use in a database query.
-     *
-     * Any single quotes in the value passed will be replaced with two single quotes.  If a null value is passed, a string
-     * of 'null' is returned (which will never be enclosed in quotes irrespective of the value of the $addQuotes parameter.
-     *
-     * @param string $value     Value to be escaped
-     * @param bool $addQuotes If true the returned string will be enclosed in single quotes (optional, default is true)
-     *
-     * @return string The escaped string.
-     */
-    public function escape($value, $addQuotes = true)
-    {
-        return static::quoted($value, $addQuotes);
-    }
-
-    /**
-     * Quote a string for use in a database query.
-     *
-     * Any single quotes in the value passed will be replaced with two single quotes.  If a null value is passed, a string
-     * of 'null' is returned (which will never be enclosed in quotes irrespective of the value of the $addQuotes parameter.
-     *
-     * @param string $value     Value to be quoted
-     * @param bool $addQuotes If true the returned string will be enclosed in single quotes (optional, default is true)
-     *
-     * @return string The quoted string.
-     */
-    public static function quoted($value, $addQuotes = true)
-    {
-        if (is_null($value)) {
-            $value = 'null';
-        } else {
-            $value = str_replace('\'', '\'\'', $value);
-            if ($addQuotes) {
-                $value = "'{$value}'";
-            }
-        }
-
-        return $value;
-    }
-
-    /**
      * Adjust the settings for any platform properties being stored as a setting value.
      *
-     * @param Platform  $platform   Platform object
-     * @param bool      $isSave     True if the settings are being saved
+     * @param Platform $platform  Platform object
+     * @param bool     $isSave    True if the settings are being saved
+     *
+     * @return void
      */
-    protected function fixPlatformSettings($platform, $isSave)
+    protected function fixPlatformSettings(Platform $platform, bool $isSave): void
     {
         if (!$isSave) {
             $platform->authorizationServerId = $platform->getSetting('_authorization_server_id', $platform->authorizationServerId);
@@ -880,7 +697,7 @@ class DataConnector
             $platform->debugMode = $platform->getSetting('_debug', $platform->debugMode ? 'true' : 'false') === 'true';
             $platform->setSetting('_debug');
             if ($platform->debugMode) {
-                Util::$logLevel = Util::LOGLEVEL_DEBUG;
+                Util::$logLevel = LogLevel::Debug;
             }
         } else {
             $platform->setSetting('_authorization_server_id',
@@ -897,10 +714,12 @@ class DataConnector
     /**
      * Adjust the settings for any tool properties being stored as a setting value.
      *
-     * @param Tool      $tool       Tool object
-     * @param bool      $isSave     True if the settings are being saved
+     * @param Tool $tool    Tool object
+     * @param bool $isSave  True if the settings are being saved
+     *
+     * @return void
      */
-    protected function fixToolSettings($tool, $isSave)
+    protected function fixToolSettings(Tool $tool, bool $isSave): void
     {
         if (!$isSave) {
             $tool->encryptionMethod = $tool->getSetting('_encryption_method', $tool->encryptionMethod);
@@ -908,12 +727,24 @@ class DataConnector
             $tool->debugMode = $tool->getSetting('_debug', $tool->debugMode ? 'true' : 'false') === 'true';
             $tool->setSetting('_debug');
             if ($tool->debugMode) {
-                Util::$logLevel = Util::LOGLEVEL_DEBUG;
+                Util::$logLevel = LogLevel::Debug;
             }
         } else {
             $tool->setSetting('_encryption_method', !empty($tool->encryptionMethod) ? $tool->encryptionMethod : null);
             $tool->setSetting('_debug', $tool->debugMode ? 'true' : null);
         }
+    }
+
+    /**
+     * Add the prefix to the name for a database table.
+     *
+     * @param string $table  Name of table without prefix
+     *
+     * @return string  The fullname of the database table
+     */
+    protected function dbTableName(string $table)
+    {
+        return "{$this->dbTableNamePrefix}{$table}";
     }
 
 }

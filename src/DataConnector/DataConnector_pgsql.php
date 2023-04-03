@@ -17,18 +17,18 @@ use ceLTIc\LTI\Util;
 use ceLTIc\LTI\Enum\IdScope;
 
 /**
- * Class to represent an LTI Data Connector for MySQLi
+ * Class to represent an LTI Data Connector for PostgreSQL
  *
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
  * @copyright  SPV Software Products
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3
  */
 ###
-#    NB This class assumes that a MySQLi connection has already been opened to the appropriate schema
+#    NB This class assumes that a PostgreSQL connection has already been opened to the appropriate schema
 ###
 
 
-class DataConnector_mysqli extends DataConnector
+class DataConnector_pgsql extends DataConnector
 {
 ###
 ###  Platform methods
@@ -37,24 +37,25 @@ class DataConnector_mysqli extends DataConnector
     /**
      * Load platform object.
      *
-     * @param Platform $platform  Platform object
+     * @param Platform $platform Platform object
      *
      * @return bool  True if the platform object was successfully loaded
      */
     public function loadPlatform(Platform $platform): bool
     {
+        $ok = false;
         $allowMultiple = false;
-        $id = $platform->getRecordId();
-        if (!is_null($id)) {
+        if (!is_null($platform->getRecordId())) {
             $sql = <<< EOD
 SELECT consumer_pk, name, consumer_key, secret, platform_id, client_id, deployment_id, public_key,
   lti_version, signature_method, consumer_name, consumer_version, consumer_guid, profile, tool_proxy, settings,
   protected, enabled, enable_from, enable_until, last_access, created, updated
 FROM {$this->dbTableName(static::PLATFORM_TABLE_NAME)}
-WHERE consumer_pk = ?
+WHERE (consumer_pk = $1)
 EOD;
-            $stmt = $this->db->prepare($sql);
-            $stmt->bind_param('i', $id);
+            $params = [
+                $platform->getRecordId()
+            ];
         } elseif (!empty($platform->platformId)) {
             if (empty($platform->clientId)) {
                 $allowMultiple = true;
@@ -63,10 +64,11 @@ SELECT consumer_pk, name, consumer_key, secret, platform_id, client_id, deployme
   lti_version, signature_method, consumer_name, consumer_version, consumer_guid, profile, tool_proxy, settings,
   protected, enabled, enable_from, enable_until, last_access, created, updated
 FROM {$this->dbTableName(static::PLATFORM_TABLE_NAME)}
-WHERE (platform_id = ?)
+WHERE (platform_id = $1)
 EOD;
-                $stmt = $this->db->prepare($sql);
-                $stmt->bind_param('s', $platform->platformId);
+                $params = [
+                    $platform->platformId
+                ];
             } elseif (empty($platform->deploymentId)) {
                 $allowMultiple = true;
                 $sql = <<< EOD
@@ -74,83 +76,84 @@ SELECT consumer_pk, name, consumer_key, secret, platform_id, client_id, deployme
   lti_version, signature_method, consumer_name, consumer_version, consumer_guid, profile, tool_proxy, settings,
   protected, enabled, enable_from, enable_until, last_access, created, updated
 FROM {$this->dbTableName(static::PLATFORM_TABLE_NAME)}
-WHERE (platform_id = ?) AND (client_id = ?)
+WHERE (platform_id = $1) AND (client_id = $2)
 EOD;
-                $stmt = $this->db->prepare($sql);
-                $stmt->bind_param('ss', $platform->platformId, $platform->clientId);
+                $params = [
+                    $platform->platformId,
+                    $platform->clientId
+                ];
             } else {
                 $sql = <<< EOD
-SELECT consumer_pk, name, consumer_key, secret, platform_id,client_id,  deployment_id, public_key,
+SELECT consumer_pk, name, consumer_key, secret, platform_id, client_id, deployment_id, public_key,
   lti_version, signature_method, consumer_name, consumer_version, consumer_guid, profile, tool_proxy, settings,
   protected, enabled, enable_from, enable_until, last_access, created, updated
 FROM {$this->dbTableName(static::PLATFORM_TABLE_NAME)}
-WHERE (platform_id = ?) AND (client_id = ?) AND (deployment_id = ?)
+WHERE (platform_id = $1) AND (client_id = $2) AND (deployment_id = $3)
 EOD;
-                $stmt = $this->db->prepare($sql);
-                $stmt->bind_param('sss', $platform->platformId, $platform->clientId, $platform->deploymentId);
+                $params = [
+                    $platform->platformId,
+                    $platform->clientId,
+                    $platform->deploymentId
+                ];
             }
         } else {
-            $key = $platform->getKey();
             $sql = <<< EOD
 SELECT consumer_pk, name, consumer_key, secret, platform_id, client_id, deployment_id, public_key,
   lti_version, signature_method, consumer_name, consumer_version, consumer_guid, profile, tool_proxy, settings,
   protected, enabled, enable_from, enable_until, last_access, created, updated
 FROM {$this->dbTableName(static::PLATFORM_TABLE_NAME)}
-WHERE consumer_key = ?
+WHERE (consumer_key = $1)
 EOD;
-            $stmt = $this->db->prepare($sql);
-            $stmt->bind_param('s', $key);
+            $params = [
+                $platform->getKey()
+            ];
         }
-        $ok = $this->executeQuery($sql, $stmt);
-        if ($ok) {
-            $rsConsumer = $stmt->get_result();
-            $ok = $rsConsumer !== false;
-            if ($ok) {
-                $row = $rsConsumer->fetch_object();
-                $ok = $row && ($allowMultiple || is_null($rsConsumer->fetch_object()));
+        $rsConsumer = $this->executeQuery($sql, $params);
+        if ($rsConsumer) {
+            $row = pg_fetch_object($rsConsumer);
+            if ($row && ($allowMultiple || !pg_fetch_object($rsConsumer))) {
+                $platform->setRecordId(intval($row->consumer_pk));
+                $platform->name = $row->name;
+                $platform->setkey($row->consumer_key);
+                $platform->secret = $row->secret;
+                $platform->platformId = $row->platform_id;
+                $platform->clientId = $row->client_id;
+                $platform->deploymentId = $row->deployment_id;
+                $platform->rsaKey = $row->public_key;
+                $platform->ltiVersion = $row->lti_version;
+                $platform->signatureMethod = $row->signature_method;
+                $platform->consumerName = $row->consumer_name;
+                $platform->consumerVersion = $row->consumer_version;
+                $platform->consumerGuid = $row->consumer_guid;
+                $platform->profile = Util::json_decode($row->profile);
+                $platform->toolProxy = $row->tool_proxy;
+                $settings = Util::json_decode($row->settings, true);
+                if (!is_array($settings)) {
+                    $settings = @unserialize($row->settings);  // check for old serialized setting
+                }
+                if (!is_array($settings)) {
+                    $settings = [];
+                }
+                $platform->setSettings($settings);
+                $platform->protected = ($row->protected === 't');
+                $platform->enabled = ($row->enabled === 't');
+                $platform->enableFrom = null;
+                if (!is_null($row->enable_from)) {
+                    $platform->enableFrom = strtotime($row->enable_from);
+                }
+                $platform->enableUntil = null;
+                if (!is_null($row->enable_until)) {
+                    $platform->enableUntil = strtotime($row->enable_until);
+                }
+                $platform->lastAccess = null;
+                if (!is_null($row->last_access)) {
+                    $platform->lastAccess = strtotime($row->last_access);
+                }
+                $platform->created = strtotime($row->created);
+                $platform->updated = strtotime($row->updated);
+                $this->fixPlatformSettings($platform, false);
+                $ok = true;
             }
-        }
-        if ($ok) {
-            $platform->setRecordId(intval($row->consumer_pk));
-            $platform->name = $row->name;
-            $platform->setkey($row->consumer_key);
-            $platform->secret = $row->secret;
-            $platform->platformId = $row->platform_id;
-            $platform->clientId = $row->client_id;
-            $platform->deploymentId = $row->deployment_id;
-            $platform->rsaKey = $row->public_key;
-            $platform->ltiVersion = $row->lti_version;
-            $platform->signatureMethod = $row->signature_method;
-            $platform->consumerName = $row->consumer_name;
-            $platform->consumerVersion = $row->consumer_version;
-            $platform->consumerGuid = $row->consumer_guid;
-            $platform->profile = Util::json_decode($row->profile);
-            $platform->toolProxy = $row->tool_proxy;
-            $settings = Util::json_decode($row->settings, true);
-            if (!is_array($settings)) {
-                $settings = @unserialize($row->settings);  // check for old serialized setting
-            }
-            if (!is_array($settings)) {
-                $settings = [];
-            }
-            $platform->setSettings($settings);
-            $platform->protected = (intval($row->protected) === 1);
-            $platform->enabled = (intval($row->enabled) === 1);
-            $platform->enableFrom = null;
-            if (!is_null($row->enable_from)) {
-                $platform->enableFrom = strtotime($row->enable_from);
-            }
-            $platform->enableUntil = null;
-            if (!is_null($row->enable_until)) {
-                $platform->enableUntil = strtotime($row->enable_until);
-            }
-            $platform->lastAccess = null;
-            if (!is_null($row->last_access)) {
-                $platform->lastAccess = strtotime($row->last_access);
-            }
-            $platform->created = strtotime($row->created);
-            $platform->updated = strtotime($row->updated);
-            $this->fixPlatformSettings($platform, false);
         }
 
         return $ok;
@@ -166,12 +169,8 @@ EOD;
     public function savePlatform(Platform $platform): bool
     {
         $id = $platform->getRecordId();
-        $key = $platform->getKey();
-        $protected = ($platform->protected) ? 1 : 0;
-        $enabled = ($platform->enabled) ? 1 : 0;
         $profile = (!empty($platform->profile)) ? json_encode($platform->profile) : null;
         $this->fixPlatformSettings($platform, true);
-        $settingsValue = json_encode($platform->getSettings());
         $this->fixPlatformSettings($platform, false);
         $time = time();
         $now = date("{$this->dateFormat} {$this->timeFormat}", $time);
@@ -192,34 +191,70 @@ EOD;
 INSERT INTO {$this->dbTableName(static::PLATFORM_TABLE_NAME)} (
   consumer_key, name, secret, platform_id, client_id, deployment_id, public_key,
   lti_version, signature_method, consumer_name, consumer_version, consumer_guid, profile, tool_proxy, settings,
-  protected, enabled, enable_from, enable_until, last_access, created, updated
-)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  protected, enabled, enable_from, enable_until, last_access, created, updated)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $21)
 EOD;
-            $stmt = $this->db->prepare($sql);
-            $stmt->bind_param('sssssssssssssssiisssss', $key, $platform->name, $platform->secret, $platform->platformId,
-                $platform->clientId, $platform->deploymentId, $platform->rsaKey, $platform->ltiVersion, $platform->signatureMethod,
-                $platform->consumerName, $platform->consumerVersion, $platform->consumerGuid, $profile, $platform->toolProxy,
-                $settingsValue, $protected, $enabled, $from, $until, $last, $now, $now);
+            $params = [
+                $platform->getKey(),
+                $platform->name,
+                $platform->secret,
+                $platform->platformId,
+                $platform->clientId,
+                $platform->deploymentId,
+                $platform->rsaKey,
+                $platform->ltiVersion,
+                $platform->signatureMethod,
+                $platform->consumerName,
+                $platform->consumerVersion,
+                $platform->consumerGuid,
+                $profile,
+                $platform->toolProxy,
+                json_encode($platform->getSettings()),
+                $platform->protected ? 't' : 'f',
+                $platform->enabled ? 't' : 'f',
+                $from,
+                $until,
+                $last,
+                $now
+            ];
         } else {
             $sql = <<< EOD
 UPDATE {$this->dbTableName(static::PLATFORM_TABLE_NAME)} SET
-  consumer_key = ?, name = ?, secret= ?, platform_id = ?, client_id = ?, deployment_id = ?, public_key = ?,
-  lti_version = ?, signature_method = ?, consumer_name = ?, consumer_version = ?, consumer_guid = ?,
-  profile = ?, tool_proxy = ?, settings = ?, protected = ?, enabled = ?, enable_from = ?, enable_until = ?,
-  last_access = ?, updated = ?
-WHERE consumer_pk = ?
+  consumer_key = $1, name = $2, secret = $3, platform_id = $4, client_id = $5, deployment_id = $6, public_key = $7,
+  lti_version = $8, signature_method = $9, consumer_name = $10, consumer_version = $11, consumer_guid = $12,
+  profile = $13, tool_proxy = $14, settings = $15,
+  protected = $16, enabled = $17, enable_from = $18, enable_until = $19, last_access = $20, updated = $21
+WHERE (consumer_pk = $22)
 EOD;
-            $stmt = $this->db->prepare($sql);
-            $stmt->bind_param('sssssssssssssssiissssi', $key, $platform->name, $platform->secret, $platform->platformId,
-                $platform->clientId, $platform->deploymentId, $platform->rsaKey, $platform->ltiVersion, $platform->signatureMethod,
-                $platform->consumerName, $platform->consumerVersion, $platform->consumerGuid, $profile, $platform->toolProxy,
-                $settingsValue, $protected, $enabled, $from, $until, $last, $now, $id);
+            $params = [
+                $platform->getKey(),
+                $platform->name,
+                $platform->secret,
+                $platform->platformId,
+                $platform->clientId,
+                $platform->deploymentId,
+                $platform->rsaKey,
+                $platform->ltiVersion,
+                $platform->signatureMethod,
+                $platform->consumerName,
+                $platform->consumerVersion,
+                $platform->consumerGuid,
+                $profile,
+                $platform->toolProxy,
+                json_encode($platform->getSettings()),
+                $platform->protected ? 't' : 'f',
+                $platform->enabled ? 't' : 'f',
+                $from,
+                $until,
+                $last,
+                $now,
+                $platform->getRecordId()
+            ];
         }
-        $ok = $this->executeQuery($sql, $stmt);
+        $ok = $this->executeQuery($sql, $params) !== false;
         if ($ok) {
             if (empty($id)) {
-                $platform->setRecordId($this->db->insert_id);
+                $platform->setRecordId($this->insert_id());
                 $platform->created = $time;
             }
             $platform->updated = $time;
@@ -237,133 +272,156 @@ EOD;
      */
     public function deletePlatform(Platform $platform): bool
     {
-        $id = $platform->getRecordId();
-
 // Delete any access token value for this consumer
         $sql = <<< EOD
-DELETE FROM {$this->dbTableName(static::ACCESS_TOKEN_TABLE_NAME)} WHERE consumer_pk = ?
+DELETE FROM {$this->dbTableName(static::ACCESS_TOKEN_TABLE_NAME)}
+WHERE (consumer_pk = $1)
 EOD;
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param('i', $id);
-        $this->executeQuery($sql, $stmt);
+        $params = [
+            $platform->getRecordId()
+        ];
+        $this->executeQuery($sql, $params);
 
 // Delete any nonce values for this consumer
         $sql = <<< EOD
-DELETE FROM {$this->dbTableName(static::NONCE_TABLE_NAME)} WHERE consumer_pk = ?
+DELETE FROM {$this->dbTableName(static::NONCE_TABLE_NAME)}
+WHERE (consumer_pk = $1)
 EOD;
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param('i', $id);
-        $this->executeQuery($sql, $stmt);
+        $params = [
+            $platform->getRecordId()
+        ];
+        $this->executeQuery($sql, $params);
 
 // Delete any outstanding share keys for resource links for this consumer
         $sql = <<< EOD
-DELETE sk
-FROM {$this->dbTableName(static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME)} sk
-  INNER JOIN {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)} rl ON sk.resource_link_pk = rl.resource_link_pk
-WHERE rl.consumer_pk = ?
+DELETE FROM {$this->dbTableName(static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME)}
+WHERE resource_link_pk IN (
+  SELECT resource_link_pk
+  FROM {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)}
+  WHERE (consumer_pk = $1)
+)
 EOD;
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param('i', $id);
-        $this->executeQuery($sql, $stmt);
+        $params = [
+            $platform->getRecordId()
+        ];
+        $this->executeQuery($sql, $params);
 
 // Delete any outstanding share keys for resource links for contexts in this consumer
         $sql = <<< EOD
-DELETE sk
-FROM {$this->dbTableName(static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME)} sk
-  INNER JOIN {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)} rl ON sk.resource_link_pk = rl.resource_link_pk
-  INNER JOIN {$this->dbTableName(static::CONTEXT_TABLE_NAME)} c ON rl.context_pk = c.context_pk
-WHERE c.consumer_pk = ?
+DELETE FROM {$this->dbTableName(static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME)}
+WHERE resource_link_pk IN (
+  SELECT resource_link_pk
+  FROM {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)} rl
+    INNER JOIN {$this->dbTableName(static::CONTEXT_TABLE_NAME)} c ON (rl.context_pk = c.context_pk)
+  WHERE (c.consumer_pk = $1)
+)
 EOD;
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param('i', $id);
-        $this->executeQuery($sql, $stmt);
+        $params = [
+            $platform->getRecordId()
+        ];
+        $this->executeQuery($sql, $params);
 
 // Delete any users in resource links for this consumer
         $sql = <<< EOD
-DELETE u
-FROM {$this->dbTableName(static::USER_RESULT_TABLE_NAME)} u
-  INNER JOIN {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)} rl ON u.resource_link_pk = rl.resource_link_pk
-WHERE rl.consumer_pk = ?
+DELETE FROM {$this->dbTableName(static::USER_RESULT_TABLE_NAME)}
+WHERE resource_link_pk IN (
+  SELECT resource_link_pk
+  FROM {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)}
+  WHERE (consumer_pk = $1)
+)
 EOD;
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param('i', $id);
-        $this->executeQuery($sql, $stmt);
+        $params = [
+            $platform->getRecordId()
+        ];
+        $this->executeQuery($sql, $params);
 
 // Delete any users in resource links for contexts in this consumer
         $sql = <<< EOD
-DELETE u
-FROM {$this->dbTableName(static::USER_RESULT_TABLE_NAME)} u
-  INNER JOIN {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)} rl ON u.resource_link_pk = rl.resource_link_pk
-  INNER JOIN {$this->dbTableName(static::CONTEXT_TABLE_NAME)} c ON rl.context_pk = c.context_pk
-WHERE c.consumer_pk = ?
+DELETE FROM {$this->dbTableName(static::USER_RESULT_TABLE_NAME)}
+WHERE resource_link_pk IN (
+  SELECT resource_link_pk
+  FROM {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)} rl
+    INNER JOIN {$this->dbTableName(static::CONTEXT_TABLE_NAME)} c ON (rl.context_pk = c.context_pk)
+  WHERE (c.consumer_pk = $1)
+)
 EOD;
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param('i', $id);
-        $this->executeQuery($sql, $stmt);
+        $params = [
+            $platform->getRecordId()
+        ];
+        $this->executeQuery($sql, $params);
 
 // Update any resource links for which this consumer is acting as a primary resource link
         $sql = <<< EOD
-UPDATE {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)} prl
-  INNER JOIN {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)} rl ON prl.primary_resource_link_pk = rl.resource_link_pk
-SET prl.primary_resource_link_pk = NULL, prl.share_approved = NULL
-WHERE rl.consumer_pk = ?
+UPDATE {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)}
+SET primary_resource_link_pk = NULL, share_approved = NULL
+WHERE primary_resource_link_pk IN (
+  SELECT resource_link_pk FROM {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)}
+  WHERE (consumer_pk = $1)
+)
 EOD;
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param('i', $id);
-        $this->executeQuery($sql, $stmt);
+        $params = [
+            $platform->getRecordId()
+        ];
+        $this->executeQuery($sql, $params);
 
 // Update any resource links for contexts in which this consumer is acting as a primary resource link
         $sql = <<< EOD
-UPDATE {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)} prl
-  INNER JOIN {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)} rl ON prl.primary_resource_link_pk = rl.resource_link_pk
-  INNER JOIN {$this->dbTableName(static::CONTEXT_TABLE_NAME)} c ON rl.context_pk = c.context_pk
-SET prl.primary_resource_link_pk = NULL, prl.share_approved = NULL
-WHERE c.consumer_pk = ?
+UPDATE {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)}
+SET primary_resource_link_pk = NULL, share_approved = NULL
+WHERE primary_resource_link_pk IN (
+  SELECT rl.resource_link_pk FROM {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)} rl
+    INNER JOIN {$this->dbTableName(static::CONTEXT_TABLE_NAME)} c ON (rl.context_pk = c.context_pk)
+  WHERE (c.consumer_pk = $1)
+)
 EOD;
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param('i', $id);
-        $this->executeQuery($sql, $stmt);
+        $params = [
+            $platform->getRecordId()
+        ];
+        $this->executeQuery($sql, $params);
 
 // Delete any resource links for this consumer
         $sql = <<< EOD
-DELETE rl
-FROM {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)} rl
-WHERE rl.consumer_pk = ?
+DELETE FROM {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)}
+WHERE (consumer_pk = $1)
 EOD;
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param('i', $id);
-        $this->executeQuery($sql, $stmt);
+        $params = [
+            $platform->getRecordId()
+        ];
+        $this->executeQuery($sql, $params);
 
 // Delete any resource links for contexts in this consumer
         $sql = <<< EOD
-DELETE rl
-FROM {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)} rl
-  INNER JOIN {$this->dbTableName(static::CONTEXT_TABLE_NAME)} c ON rl.context_pk = c.context_pk
-WHERE c.consumer_pk = ?
+DELETE FROM {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)}
+WHERE context_pk IN (
+  SELECT context_pk
+  FROM {$this->dbTableName(static::CONTEXT_TABLE_NAME)}
+  WHERE (consumer_pk = $1)
+)
 EOD;
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param('i', $id);
-        $this->executeQuery($sql, $stmt);
+        $params = [
+            $platform->getRecordId()
+        ];
+        $this->executeQuery($sql, $params);
 
 // Delete any contexts for this consumer
         $sql = <<< EOD
-DELETE c
-FROM {$this->dbTableName(static::CONTEXT_TABLE_NAME)} c
-WHERE c.consumer_pk = ?
+DELETE FROM {$this->dbTableName(static::CONTEXT_TABLE_NAME)}
+WHERE (consumer_pk = $1)
 EOD;
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param('i', $id);
-        $this->executeQuery($sql, $stmt);
+        $params = [
+            $platform->getRecordId()
+        ];
+        $this->executeQuery($sql, $params);
 
 // Delete consumer
         $sql = <<< EOD
-DELETE c
-FROM {$this->dbTableName(static::PLATFORM_TABLE_NAME)} c
-WHERE c.consumer_pk = ?
+DELETE FROM {$this->dbTableName(static::PLATFORM_TABLE_NAME)}
+WHERE (consumer_pk = $1)
 EOD;
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param('i', $id);
-        $ok = $this->executeQuery($sql, $stmt);
+        $params = [
+            $platform->getRecordId()
+        ];
+        $ok = $this->executeQuery($sql, $params) !== false;
 
         if ($ok) {
             $platform->initialize();
@@ -388,10 +446,9 @@ SELECT consumer_pk, consumer_key, name, secret, platform_id, client_id, deployme
 FROM {$this->dbTableName(static::PLATFORM_TABLE_NAME)}
 ORDER BY name
 EOD;
-        $stmt = $this->db->prepare($sql);
-        if ($this->executeQuery($sql, $stmt)) {
-            $rsConsumers = $stmt->get_result();
-            while ($row = $rsConsumers->fetch_object()) {
+        $rsConsumers = $this->executeQuery($sql);
+        if ($rsConsumers) {
+            while ($row = pg_fetch_object($rsConsumers)) {
                 $platform = new Platform($this);
                 $platform->setRecordId(intval($row->consumer_pk));
                 $platform->name = $row->name;
@@ -435,7 +492,7 @@ EOD;
                 $this->fixPlatformSettings($platform, false);
                 $platforms[] = $platform;
             }
-            $rsConsumers->free_result();
+            pg_free_result($rsConsumers);
         }
 
         return $platforms;
@@ -454,29 +511,30 @@ EOD;
      */
     public function loadContext(Context $context): bool
     {
-        $id = $context->getRecordId();
-        if (!is_null($id)) {
+        $ok = false;
+        if (!is_null($context->getRecordId())) {
             $sql = <<< EOD
 SELECT context_pk, consumer_pk, title, lti_context_id, type, settings, created, updated
 FROM {$this->dbTableName(static::CONTEXT_TABLE_NAME)}
-WHERE (context_pk = ?)
+WHERE (context_pk = $1)
 EOD;
-            $stmt = $this->db->prepare($sql);
-            $stmt->bind_param('i', $id);
+            $params = [
+                $context->getRecordId()
+            ];
         } else {
-            $id = $context->getPlatform()->getRecordId();
             $sql = <<< EOD
 SELECT context_pk, consumer_pk, title, lti_context_id, type, settings, created, updated
 FROM {$this->dbTableName(static::CONTEXT_TABLE_NAME)}
-WHERE (consumer_pk = ?) AND (lti_context_id = ?)
+WHERE (consumer_pk = $1) AND (lti_context_id = $2)
 EOD;
-            $stmt = $this->db->prepare($sql);
-            $stmt->bind_param('is', $id, $context->ltiContextId);
+            $params = [
+                $context->getPlatform()->getRecordId(),
+                $context->ltiContextId
+            ];
         }
-        $ok = $this->executeQuery($sql, $stmt);
-        if ($ok) {
-            $rsContext = $stmt->get_result();
-            $row = $rsContext->fetch_object();
+        $rsContext = $this->executeQuery($sql, $params);
+        if ($rsContext) {
+            $row = pg_fetch_object($rsContext);
             if ($row) {
                 $context->setRecordId(intval($row->context_pk));
                 $context->setPlatformId(intval($row->consumer_pk));
@@ -493,8 +551,7 @@ EOD;
                 $context->setSettings($settings);
                 $context->created = strtotime($row->created);
                 $context->updated = strtotime($row->updated);
-            } else {
-                $ok = false;
+                $ok = true;
             }
         }
 
@@ -512,32 +569,42 @@ EOD;
     {
         $time = time();
         $now = date("{$this->dateFormat} {$this->timeFormat}", $time);
-        $settingsValue = json_encode($context->getSettings());
         $id = $context->getRecordId();
         $consumer_pk = $context->getPlatform()->getRecordId();
         if (empty($id)) {
             $sql = <<< EOD
 INSERT INTO {$this->dbTableName(static::CONTEXT_TABLE_NAME)} (
   consumer_pk, title, lti_context_id, type, settings, created, updated)
-VALUES (?, ?, ?, ?, ?, ?, ?)
+VALUES ($1, $2, $3, $4, $5, $6, $6)
 EOD;
-            $stmt = $this->db->prepare($sql);
-            $stmt->bind_param('issssss', $consumer_pk, $context->title, $context->ltiContextId, $context->type, $settingsValue,
-                $now, $now);
+            $params = [
+                $consumer_pk,
+                $context->title,
+                $context->ltiContextId,
+                $context->type,
+                json_encode($context->getSettings()),
+                $now
+            ];
         } else {
             $sql = <<< EOD
-UPDATE {$this->dbTableName(static::CONTEXT_TABLE_NAME)} SET
-  title = ?, lti_context_id = ?, type = ?, settings = ?, updated = ?
-WHERE (consumer_pk = ?) AND (context_pk = ?)
+UPDATE {$this->dbTableName(static::CONTEXT_TABLE_NAME)}
+SET title =  $1, lti_context_id = $2, type = $3, settings = $4, updated = $5
+WHERE (consumer_pk = $6) AND (context_pk = $7)
 EOD;
-            $stmt = $this->db->prepare($sql);
-            $stmt->bind_param('sssssii', $context->title, $context->ltiContextId, $context->type, $settingsValue, $now,
-                $consumer_pk, $id);
+            $params = [
+                $context->title,
+                $context->ltiContextId,
+                $context->type,
+                json_encode($context->getSettings()),
+                $now,
+                $consumer_pk,
+                $id
+            ];
         }
-        $ok = $this->executeQuery($sql, $stmt);
+        $ok = $this->executeQuery($sql, $params) !== false;
         if ($ok) {
             if (empty($id)) {
-                $context->setRecordId($this->db->insert_id);
+                $context->setRecordId($this->insert_id());
                 $context->created = $time;
             }
             $context->updated = $time;
@@ -555,60 +622,68 @@ EOD;
      */
     public function deleteContext(Context $context): bool
     {
-        $id = $context->getRecordId();
-
 // Delete any outstanding share keys for resource links for this context
         $sql = <<< EOD
-DELETE sk
-FROM {$this->dbTableName(static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME)} sk
-  INNER JOIN {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)} rl ON (sk.resource_link_pk = rl.resource_link_pk)
-WHERE rl.context_pk = ?
+DELETE FROM {$this->dbTableName(static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME)}
+WHERE resource_link_pk IN (
+  SELECT resource_link_pk
+  FROM {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)}
+  WHERE (context_pk = $1)
+)
 EOD;
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param('i', $id);
-        $this->executeQuery($sql, $stmt);
+        $params = [
+            $context->getRecordId()
+        ];
+        $this->executeQuery($sql, $params);
 
 // Delete any users in resource links for this context
         $sql = <<< EOD
-DELETE u
-FROM {$this->dbTableName(static::USER_RESULT_TABLE_NAME)} u
-  INNER JOIN {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)} rl ON (u.resource_link_pk = rl.resource_link_pk)
-WHERE (rl.context_pk = ?)
+DELETE FROM {$this->dbTableName(static::USER_RESULT_TABLE_NAME)}
+WHERE resource_link_pk IN (
+  SELECT resource_link_pk
+  FROM {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)}
+  WHERE (context_pk = $1)
+)
 EOD;
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param('i', $id);
-        $this->executeQuery($sql, $stmt);
+        $params = [
+            $context->getRecordId()
+        ];
+        $this->executeQuery($sql, $params);
 
 // Update any resource links for which this context is acting as a primary resource link
         $sql = <<< EOD
-UPDATE {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)} prl
-  INNER JOIN {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)} rl ON (prl.primary_resource_link_pk = rl.resource_link_pk)
-SET prl.primary_resource_link_pk = NULL, prl.share_approved = NULL
-WHERE (rl.context_pk = ?)
+UPDATE {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)}
+SET primary_resource_link_pk = NULL, share_approved = NULL
+WHERE primary_resource_link_pk IN (
+  SELECT resource_link_pk
+  FROM {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)}
+  WHERE (context_pk = $1)
+)
 EOD;
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param('i', $id);
-        $this->executeQuery($sql, $stmt);
+        $params = [
+            $context->getRecordId()
+        ];
+        $this->executeQuery($sql, $params);
 
 // Delete any resource links for this context
         $sql = <<< EOD
-DELETE rl
-FROM {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)} rl
-WHERE (rl.context_pk = ?)
+DELETE FROM {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)}
+WHERE (context_pk = $1)
 EOD;
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param('i', $id);
-        $this->executeQuery($sql, $stmt);
+        $params = [
+            $context->getRecordId()
+        ];
+        $this->executeQuery($sql, $params);
 
 // Delete context
         $sql = <<< EOD
-DELETE c
-FROM {$this->dbTableName(static::CONTEXT_TABLE_NAME)} c
-WHERE (c.context_pk = ?)
+DELETE FROM {$this->dbTableName(static::CONTEXT_TABLE_NAME)}
+WHERE (context_pk = $1)
 EOD;
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param('i', $id);
-        $ok = $this->executeQuery($sql, $stmt);
+        $params = [
+            $context->getRecordId()
+        ];
+        $ok = $this->executeQuery($sql, $params) !== false;
 
         if ($ok) {
             $context->initialize();
@@ -630,48 +705,48 @@ EOD;
      */
     public function loadResourceLink(ResourceLink $resourceLink): bool
     {
-        $id = $resourceLink->getRecordId();
-        if (!is_null($id)) {
+        $ok = false;
+        if (!is_null($resourceLink->getRecordId())) {
             $sql = <<< EOD
 SELECT resource_link_pk, context_pk, consumer_pk, title, lti_resource_link_id, settings,
   primary_resource_link_pk, share_approved, created, updated
 FROM {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)}
-WHERE (resource_link_pk = ?)
+WHERE (resource_link_pk = $1)
 EOD;
-            $stmt = $this->db->prepare($sql);
-            $stmt->bind_param('i', $id);
+            $params = [
+                $resourceLink->getRecordId()
+            ];
         } elseif (!is_null($resourceLink->getContext())) {
-            $rid = $resourceLink->getId();
-            $cid = $resourceLink->getContext()->getRecordId();
             $sql = <<< EOD
 SELECT r.resource_link_pk, r.context_pk, r.consumer_pk, r.title, r.lti_resource_link_id, r.settings,
   r.primary_resource_link_pk, r.share_approved, r.created, r.updated
 FROM {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)} r
-WHERE (r.lti_resource_link_id = ?) AND ((r.context_pk = ?) OR (r.consumer_pk IN (
+WHERE (r.lti_resource_link_id = $1) AND ((r.context_pk = $2) OR (r.consumer_pk IN (
   SELECT c.consumer_pk
   FROM {$this->dbTableName(static::CONTEXT_TABLE_NAME)} c
-  WHERE (c.context_pk = ?)
+  WHERE (c.context_pk = $2)
 )))
 EOD;
-            $stmt = $this->db->prepare($sql);
-            $stmt->bind_param('sii', $rid, $cid, $cid);
+            $params = [
+                $resourceLink->getId(),
+                $resourceLink->getContext()->getRecordId()
+            ];
         } else {
-            $id = $resourceLink->getPlatform()->getRecordId();
-            $rid = $resourceLink->getId();
             $sql = <<< EOD
 SELECT r.resource_link_pk, r.context_pk, r.consumer_pk, r.title, r.lti_resource_link_id, r.settings,
   r.primary_resource_link_pk, r.share_approved, r.created, r.updated
 FROM {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)} r
-  LEFT OUTER JOIN {$this->dbTableName(static::CONTEXT_TABLE_NAME)} c ON r.context_pk = c.context_pk
-WHERE ((r.consumer_pk = ?) OR (c.consumer_pk = ?)) AND (lti_resource_link_id = ?)
+  LEFT OUTER JOIN {$this->dbTableName(static::CONTEXT_TABLE_NAME)} c ON (r.context_pk = c.context_pk)
+WHERE ((r.consumer_pk = $1) OR (c.consumer_pk = $1)) AND (lti_resource_link_id = $2)
 EOD;
-            $stmt = $this->db->prepare($sql);
-            $stmt->bind_param('iis', $id, $id, $rid);
+            $params = [
+                $resourceLink->getPlatform()->getRecordId(),
+                $resourceLink->getId()
+            ];
         }
-        $ok = $this->executeQuery($sql, $stmt);
-        if ($ok) {
-            $rsResourceLink = $stmt->get_result();
-            $row = $rsResourceLink->fetch_object();
+        $rsResourceLink = $this->executeQuery($sql, $params);
+        if ($rsResourceLink) {
+            $row = pg_fetch_object($rsResourceLink);
             if ($row) {
                 $resourceLink->setRecordId(intval($row->resource_link_pk));
                 if (!is_null($row->context_pk)) {
@@ -702,8 +777,7 @@ EOD;
                 $resourceLink->shareApproved = (is_null($row->share_approved)) ? null : (intval($row->share_approved) === 1);
                 $resourceLink->created = strtotime($row->created);
                 $resourceLink->updated = strtotime($row->updated);
-            } else {
-                $ok = false;
+                $ok = true;
             }
         }
 
@@ -719,21 +793,8 @@ EOD;
      */
     public function saveResourceLink(ResourceLink $resourceLink): bool
     {
-        if (is_null($resourceLink->shareApproved)) {
-            $approved = null;
-        } elseif ($resourceLink->shareApproved) {
-            $approved = 1;
-        } else {
-            $approved = 0;
-        }
-        if (empty($resourceLink->primaryResourceLinkId)) {
-            $primaryResourceLinkId = null;
-        } else {
-            $primaryResourceLinkId = strval($resourceLink->primaryResourceLinkId);
-        }
         $time = time();
         $now = date("{$this->dateFormat} {$this->timeFormat}", $time);
-        $settingsValue = json_encode($resourceLink->getSettings());
         if (!is_null($resourceLink->getContext())) {
             $consumerId = null;
             $contextId = $resourceLink->getContext()->getRecordId();
@@ -745,42 +806,63 @@ EOD;
             $contextId = null;
         }
         $id = $resourceLink->getRecordId();
-        $rid = $resourceLink->getId();
         if (empty($id)) {
             $sql = <<< EOD
 INSERT INTO {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)} (
   consumer_pk, context_pk, title, lti_resource_link_id, settings,
   primary_resource_link_pk, share_approved, created, updated)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8)
 EOD;
-            $stmt = $this->db->prepare($sql);
-            $stmt->bind_param('ssssssiss', $consumerId, $contextId, $resourceLink->title, $rid, $settingsValue,
-                $primaryResourceLinkId, $approved, $now, $now);
+            $params = [
+                $consumerId,
+                $contextId,
+                $resourceLink->title,
+                $resourceLink->getId(),
+                json_encode($resourceLink->getSettings()),
+                $resourceLink->primaryResourceLinkId,
+                $resourceLink->shareApproved,
+                $now
+            ];
         } elseif (!is_null($contextId)) {
             $sql = <<< EOD
-UPDATE {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)} SET
-  consumer_pk = ?, title = ?, lti_resource_link_id = ?, settings = ?,
-  primary_resource_link_pk = ?, share_approved = ?, updated = ?
-WHERE (context_pk = ?) AND (resource_link_pk = ?)
+UPDATE {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)}
+SET consumer_pk = $1, title = $2, lti_resource_link_id = $3, settings = $4,
+  primary_resource_link_pk = $5, share_approved = $6, updated = $7
+WHERE (context_pk = $8) AND (resource_link_pk = $9)
 EOD;
-            $stmt = $this->db->prepare($sql);
-            $stmt->bind_param('sssssisii', $consumerId, $resourceLink->title, $rid, $settingsValue, $primaryResourceLinkId,
-                $approved, $now, $contextId, $id);
+            $params = [
+                $consumerId,
+                $resourceLink->title,
+                $resourceLink->getId(),
+                json_encode($resourceLink->getSettings()),
+                $resourceLink->primaryResourceLinkId,
+                $resourceLink->shareApproved,
+                $now,
+                $contextId,
+                $id
+            ];
         } else {
             $sql = <<< EOD
-UPDATE {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)} SET
-  context_pk = NULL, title = ?, lti_resource_link_id = ?, settings = ?,
-  primary_resource_link_pk = ?, share_approved = ?, updated = ?
-WHERE (consumer_pk = ?) AND (resource_link_pk = ?)
+UPDATE {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)}
+SET context_pk = NULL, title = $1, lti_resource_link_id = $2, settings = $3,
+  primary_resource_link_pk = $4, share_approved = $5, updated = $6
+WHERE (consumer_pk = $7) AND (resource_link_pk = $8)
 EOD;
-            $stmt = $this->db->prepare($sql);
-            $stmt->bind_param('sssiisii', $resourceLink->title, $rid, $settingsValue, $primaryResourceLinkId, $approved, $now,
-                $consumerId, $id);
+            $params = [
+                $resourceLink->title,
+                $resourceLink->getId(),
+                json_encode($resourceLink->getSettings()),
+                $resourceLink->primaryResourceLinkId,
+                $resourceLink->shareApproved,
+                $now,
+                $consumerId,
+                $id
+            ];
         }
-        $ok = $this->executeQuery($sql, $stmt);
+        $ok = $this->executeQuery($sql, $params) !== false;
         if ($ok) {
             if (empty($id)) {
-                $resourceLink->setRecordId($this->db->insert_id);
+                $resourceLink->setRecordId($this->insert_id());
                 $resourceLink->created = $time;
             }
             $resourceLink->updated = $time;
@@ -798,26 +880,26 @@ EOD;
      */
     public function deleteResourceLink(ResourceLink $resourceLink): bool
     {
-        $id = $resourceLink->getRecordId();
-
 // Delete any outstanding share keys for resource links for this consumer
         $sql = <<< EOD
 DELETE FROM {$this->dbTableName(static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME)}
-WHERE (resource_link_pk = ?)
+WHERE (resource_link_pk = $1)
 EOD;
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param('i', $id);
-        $ok = $this->executeQuery($sql, $stmt);
+        $params = [
+            $resourceLink->getRecordId()
+        ];
+        $ok = $this->executeQuery($sql, $params) !== false;
 
 // Delete users
         if ($ok) {
             $sql = <<< EOD
 DELETE FROM {$this->dbTableName(static::USER_RESULT_TABLE_NAME)}
-WHERE (resource_link_pk = ?)
+WHERE (resource_link_pk = $1)
 EOD;
-            $stmt = $this->db->prepare($sql);
-            $stmt->bind_param('i', $id);
-            $ok = $this->executeQuery($sql, $stmt);
+            $params = [
+                $resourceLink->getRecordId()
+            ];
+            $ok = $this->executeQuery($sql, $params) !== false;
         }
 
 // Update any resource links for which this is the primary resource link
@@ -825,22 +907,24 @@ EOD;
             $sql = <<< EOD
 UPDATE {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)}
 SET primary_resource_link_pk = NULL
-WHERE (primary_resource_link_pk = ?)
+WHERE (primary_resource_link_pk = $1)
 EOD;
-            $stmt = $this->db->prepare($sql);
-            $stmt->bind_param('i', $id);
-            $ok = $this->executeQuery($sql, $stmt);
+            $params = [
+                $resourceLink->getRecordId()
+            ];
+            $ok = $this->executeQuery($sql, $params) !== false;
         }
 
 // Delete resource link
         if ($ok) {
             $sql = <<< EOD
 DELETE FROM {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)}
-WHERE (resource_link_pk = ?)
+WHERE (resource_link_pk = $1)
 EOD;
-            $stmt = $this->db->prepare($sql);
-            $stmt->bind_param('i', $id);
-            $ok = $this->executeQuery($sql, $stmt);
+            $params = [
+                $resourceLink->getRecordId()
+            ];
+            $ok = $this->executeQuery($sql, $params) !== false;
         }
 
         if ($ok) {
@@ -860,36 +944,37 @@ EOD;
      * @param bool         $localOnly     True if only users within the resource link are to be returned (excluding users sharing this resource link)
      * @param IdScope|null $idScope       Scope value to use for user IDs
      *
-     * @return UserResult[]  Array of UserResult objects
+     * @return UserResult[] Array of UserResult objects
      */
     public function getUserResultSourcedIDsResourceLink(ResourceLink $resourceLink, bool $localOnly, ?IdScope $idScope): array
     {
         $userResults = [];
 
-        $id = $resourceLink->getRecordId();
         if ($localOnly) {
             $sql = <<< EOD
 SELECT u.user_result_pk, u.lti_result_sourcedid, u.lti_user_id, u.created, u.updated
 FROM {$this->dbTableName(static::USER_RESULT_TABLE_NAME)} AS u
   INNER JOIN {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)} AS rl ON (u.resource_link_pk = rl.resource_link_pk)
-WHERE (rl.resource_link_pk = ?) AND (rl.primary_resource_link_pk IS NULL)
+WHERE (rl.resource_link_pk = $1) AND (rl.primary_resource_link_pk IS NULL)
 EOD;
-            $stmt = $this->db->prepare($sql);
-            $stmt->bind_param('i', $id);
+            $params = [
+                $resourceLink->getRecordId()
+            ];
         } else {
             $sql = <<< EOD
 SELECT u.user_result_pk, u.lti_result_sourcedid, u.lti_user_id, u.created, u.updated
 FROM {$this->dbTableName(static::USER_RESULT_TABLE_NAME)} AS u
   INNER JOIN {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)} AS rl ON (u.resource_link_pk = rl.resource_link_pk)
-WHERE ((rl.resource_link_pk = ?) AND (rl.primary_resource_link_pk IS NULL)) OR
-  ((rl.primary_resource_link_pk = ?) AND (share_approved = 1))
+WHERE ((rl.resource_link_pk = $1) AND (rl.primary_resource_link_pk IS NULL)) OR
+  ((rl.primary_resource_link_pk = $1) AND share_approved)
 EOD;
-            $stmt = $this->db->prepare($sql);
-            $stmt->bind_param('ii', $id, $id);
+            $params = [
+                $resourceLink->getRecordId()
+            ];
         }
-        if ($this->executeQuery($sql, $stmt)) {
-            $rsUser = $stmt->get_result();
-            while ($row = $rsUser->fetch_object()) {
+        $rsUser = $this->executeQuery($sql, $params);
+        if ($rsUser) {
+            while ($row = pg_fetch_object($rsUser)) {
                 $userResult = LTI\UserResult::fromResourceLink($resourceLink, $row->lti_user_id);
                 if (is_null($idScope)) {
                     $userResults[] = $userResult;
@@ -897,7 +982,6 @@ EOD;
                     $userResults[$userResult->getId($idScope)] = $userResult;
                 }
             }
-            $rsUser->free_result();
         }
 
         return $userResults;
@@ -914,25 +998,25 @@ EOD;
     {
         $shares = [];
 
-        $id = $resourceLink->getRecordId();
         $sql = <<< EOD
 SELECT c.consumer_name, r.resource_link_pk, r.title, r.share_approved
 FROM {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)} AS r
   INNER JOIN {$this->dbTableName(static::PLATFORM_TABLE_NAME)} AS c ON (r.consumer_pk = c.consumer_pk)
-WHERE (r.primary_resource_link_pk = ?)
+WHERE (r.primary_resource_link_pk = $1)
 UNION
 SELECT c2.consumer_name, r2.resource_link_pk, r2.title, r2.share_approved
 FROM {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)} AS r2
   INNER JOIN {$this->dbTableName(static::CONTEXT_TABLE_NAME)} AS x ON (r2.context_pk = x.context_pk)
   INNER JOIN {$this->dbTableName(static::PLATFORM_TABLE_NAME)} AS c2 ON (x.consumer_pk = c2.consumer_pk)
-WHERE (r2.primary_resource_link_pk = ?)
+WHERE (r2.primary_resource_link_pk = $1)
 ORDER BY consumer_name, title
 EOD;
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param('ii', $id, $id);
-        if ($this->executeQuery($sql, $stmt)) {
-            $rsShare = $stmt->get_result();
-            while ($row = $rsShare->fetch_object()) {
+        $params = [
+            $resourceLink->getRecordId()
+        ];
+        $rsShare = $this->executeQuery($sql, $params);
+        if ($rsShare) {
+            while ($row = pg_fetch_object($rsShare)) {
                 $share = new LTI\ResourceLinkShare();
                 $share->consumerName = $row->consumer_name;
                 $share->resourceLinkId = intval($row->resource_link_pk);
@@ -940,7 +1024,6 @@ EOD;
                 $share->approved = (intval($row->share_approved) === 1);
                 $shares[] = $share;
             }
-            $rsShare->free_result();
         }
 
         return $shares;
@@ -962,31 +1045,33 @@ EOD;
         if (parent::useMemcache()) {
             $ok = parent::loadPlatformNonce($nonce);
         } else {
+            $ok = false;
+
 // Delete any expired nonce values
             $now = date("{$this->dateFormat} {$this->timeFormat}", time());
             $sql = <<< EOD
 DELETE FROM {$this->dbTableName(static::NONCE_TABLE_NAME)}
-WHERE (expires <= ?)
+WHERE (expires <= $1)
 EOD;
-            $stmt = $this->db->prepare($sql);
-            $stmt->bind_param('s', $now);
-            $this->executeQuery($sql, $stmt);
+            $params = [
+                $now
+            ];
+            $this->executeQuery($sql, $params);
 
 // Load the nonce
-            $id = $nonce->getPlatform()->getRecordId();
-            $value = $nonce->getValue();
             $sql = <<< EOD
 SELECT value AS T
 FROM {$this->dbTableName(static::NONCE_TABLE_NAME)}
-WHERE (consumer_pk = ?) AND (value = ?)
+WHERE (consumer_pk = $1) AND (value = $2)
 EOD;
-            $stmt = $this->db->prepare($sql);
-            $stmt->bind_param('is', $id, $value);
-            $ok = $this->executeQuery($sql, $stmt);
-            if ($ok) {
-                $rsNonce = $stmt->get_result();
-                if (!$rsNonce->fetch_object()) {
-                    $ok = false;
+            $params = [
+                $nonce->getPlatform()->getRecordId(),
+                $nonce->getValue()
+            ];
+            $rsNonce = $this->executeQuery($sql, $params, false);
+            if ($rsNonce) {
+                if (pg_fetch_object($rsNonce)) {
+                    $ok = true;
                 }
             }
         }
@@ -1006,16 +1091,17 @@ EOD;
         if (parent::useMemcache()) {
             $ok = parent::savePlatformNonce($nonce);
         } else {
-            $id = $nonce->getPlatform()->getRecordId();
-            $value = $nonce->getValue();
             $expires = date("{$this->dateFormat} {$this->timeFormat}", $nonce->expires);
             $sql = <<< EOD
 INSERT INTO {$this->dbTableName(static::NONCE_TABLE_NAME)} (consumer_pk, value, expires)
-VALUES (?, ?, ?)
+VALUES ($1, $2, $3)
 EOD;
-            $stmt = $this->db->prepare($sql);
-            $stmt->bind_param('iss', $id, $value, $expires);
-            $ok = $this->executeQuery($sql, $stmt);
+            $params = [
+                $nonce->getPlatform()->getRecordId(),
+                $nonce->getValue(),
+                $expires
+            ];
+            $ok = $this->executeQuery($sql, $params) !== false;
         }
 
         return $ok;
@@ -1035,13 +1121,13 @@ EOD;
         } else {
             $sql = <<< EOD
 DELETE FROM {$this->dbTableName(static::NONCE_TABLE_NAME)}
-WHERE (consumer_pk = ?) AND (value = ?)
+WHERE (consumer_pk = $1) AND (value = $2)
 EOD;
-            $stmt = $this->db->prepare($sql);
-            $id = $nonce->getPlatform()->getRecordId();
-            $value = $nonce->getValue();
-            $stmt->bind_param('is', $id, $value);
-            $ok = $this->executeQuery($sql, $stmt);
+            $params = [
+                $nonce->getPlatform()->getRecordId(),
+                $nonce->getValue()
+            ];
+            $ok = $this->executeQuery($sql, $params) !== false;
         }
 
         return $ok;
@@ -1063,18 +1149,19 @@ EOD;
         if (parent::useMemcache()) {
             $ok = parent::loadAccessToken($accessToken);
         } else {
+            $ok = false;
             $consumer_pk = $accessToken->getPlatform()->getRecordId();
             $sql = <<< EOD
 SELECT scopes, token, expires, created, updated
 FROM {$this->dbTableName(static::ACCESS_TOKEN_TABLE_NAME)}
-WHERE (consumer_pk = ?)
+WHERE (consumer_pk = $1)
 EOD;
-            $stmt = $this->db->prepare($sql);
-            $stmt->bind_param('i', $consumer_pk);
-            $ok = $this->executeQuery($sql, $stmt);
-            if ($ok) {
-                $rsAccessToken = $stmt->get_result();
-                $row = $rsAccessToken->fetch_object();
+            $params = [
+                $consumer_pk
+            ];
+            $rsAccessToken = $this->executeQuery($sql, $params, false);
+            if ($rsAccessToken) {
+                $row = pg_fetch_object($rsAccessToken);
                 if ($row) {
                     $scopes = Util::json_decode($row->scopes, true);
                     if (!is_array($scopes)) {
@@ -1085,8 +1172,7 @@ EOD;
                     $accessToken->expires = strtotime($row->expires);
                     $accessToken->created = strtotime($row->created);
                     $accessToken->updated = strtotime($row->updated);
-                } else {
-                    $ok = false;
+                    $ok = true;
                 }
             }
         }
@@ -1107,29 +1193,36 @@ EOD;
             $ok = parent::saveAccessToken($accessToken);
         } else {
             $consumer_pk = $accessToken->getPlatform()->getRecordId();
-            $scopes = json_encode($accessToken->scopes, JSON_UNESCAPED_SLASHES);
-            $token = $accessToken->token;
             $expires = date("{$this->dateFormat} {$this->timeFormat}", $accessToken->expires);
             $time = time();
             $now = date("{$this->dateFormat} {$this->timeFormat}", $time);
             if (empty($accessToken->created)) {
                 $sql = <<< EOD
-INSERT INTO {$this->dbTableName(static::ACCESS_TOKEN_TABLE_NAME)} (
-  consumer_pk, scopes, token, expires, created, updated)
-VALUES (?, ?, ?, ?, ?, ?)
+INSERT INTO {$this->dbTableName(static::ACCESS_TOKEN_TABLE_NAME)} (consumer_pk, scopes, token, expires, created, updated)
+VALUES ($1, $2, $3, $4, $5, $5)
 EOD;
-                $stmt = $this->db->prepare($sql);
-                $stmt->bind_param('isssss', $consumer_pk, $scopes, $token, $expires, $now, $now);
+                $params = [
+                    $consumer_pk,
+                    json_encode($accessToken->scopes, JSON_UNESCAPED_SLASHES),
+                    $accessToken->token,
+                    $expires,
+                    $now
+                ];
             } else {
                 $sql = <<< EOD
 UPDATE {$this->dbTableName(static::ACCESS_TOKEN_TABLE_NAME)}
-SET scopes = ?, token = ?, expires = ?, updated = ?
-WHERE (consumer_pk = ?)
+SET scopes = $1, token = $2, expires = $3, updated = $4
+WHERE (consumer_pk = $5)
 EOD;
-                $stmt = $this->db->prepare($sql);
-                $stmt->bind_param('ssssi', $scopes, $token, $expires, $now, $consumer_pk);
+                $params = [
+                    json_encode($accessToken->scopes, JSON_UNESCAPED_SLASHES),
+                    $accessToken->token,
+                    $expires,
+                    $now,
+                    $consumer_pk
+                ];
             }
-            $ok = $this->executeQuery($sql, $stmt);
+            $ok = $this->executeQuery($sql, $params) !== false;
         }
 
         return $ok;
@@ -1148,34 +1241,36 @@ EOD;
      */
     public function loadResourceLinkShareKey(ResourceLinkShareKey $shareKey): bool
     {
+        $ok = false;
+
 // Clear expired share keys
         $now = date("{$this->dateFormat} {$this->timeFormat}", time());
         $sql = <<< EOD
 DELETE FROM {$this->dbTableName(static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME)}
-WHERE (expires <= ?)
+WHERE (expires <= $1)
 EOD;
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param('s', $now);
-        $this->executeQuery($sql, $stmt);
+        $params = [
+            $now
+        ];
+        $this->executeQuery($sql, $params);
+
 // Load share key
-        $id = $shareKey->getId();
         $sql = <<< EOD
 SELECT resource_link_pk, auto_approve, expires
 FROM {$this->dbTableName(static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME)}
-WHERE (share_key_id = ?)
+WHERE (share_key_id = $1)
 EOD;
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param('s', $id);
-        $ok = $this->executeQuery($sql, $stmt);
-        if ($ok) {
-            $rsShareKey = $stmt->get_result();
-            $row = $rsShareKey->fetch_object();
+        $params = [
+            $shareKey->getId()
+        ];
+        $rsShareKey = $this->executeQuery($sql, $params);
+        if ($rsShareKey) {
+            $row = pg_fetch_object($rsShareKey);
             if ($row) {
                 $shareKey->resourceLinkId = intval($row->resource_link_pk);
                 $shareKey->autoApprove = (intval($row->auto_approve) === 1);
                 $shareKey->expires = strtotime($row->expires);
-            } else {
-                $ok = false;
+                $ok = true;
             }
         }
 
@@ -1191,21 +1286,19 @@ EOD;
      */
     public function saveResourceLinkShareKey(ResourceLinkShareKey $shareKey): bool
     {
-        $id = $shareKey->getId();
-        if ($shareKey->autoApprove) {
-            $approve = 1;
-        } else {
-            $approve = 0;
-        }
         $expires = date("{$this->dateFormat} {$this->timeFormat}", $shareKey->expires);
         $sql = <<< EOD
-INSERT INTO {$this->dbTableName(static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME)} (
-  share_key_id, resource_link_pk, auto_approve, expires)
-VALUES (?, ?, ?, ?)
+INSERT INTO {$this->dbTableName(static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME)}
+  (share_key_id, resource_link_pk, auto_approve, expires)
+VALUES ($1, $2, $3, $4)
 EOD;
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param('ssis', $id, $shareKey->resourceLinkId, $approve, $expires);
-        $ok = $this->executeQuery($sql, $stmt);
+        $params = [
+            $shareKey->getId(),
+            $shareKey->resourceLinkId,
+            $shareKey->autoApprove ? 't' : 'f',
+            $expires
+        ];
+        $ok = $this->executeQuery($sql, $params) !== false;
 
         return $ok;
     }
@@ -1219,14 +1312,14 @@ EOD;
      */
     public function deleteResourceLinkShareKey(ResourceLinkShareKey $shareKey): bool
     {
-        $id = $shareKey->getId();
         $sql = <<< EOD
 DELETE FROM {$this->dbTableName(static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME)}
-WHERE (share_key_id = ?)
+WHERE (share_key_id = $1)
 EOD;
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param('s', $id);
-        $ok = $this->executeQuery($sql, $stmt);
+        $params = [
+            $shareKey->getId()
+        ];
+        $ok = $this->executeQuery($sql, $params) !== false;
 
         if ($ok) {
             $shareKey->initialize();
@@ -1248,30 +1341,30 @@ EOD;
      */
     public function loadUserResult(UserResult $userResult): bool
     {
-        $id = $userResult->getRecordId();
-        if (!is_null($id)) {
+        $ok = false;
+        if (!is_null($userResult->getRecordId())) {
             $sql = <<< EOD
 SELECT user_result_pk, resource_link_pk, lti_user_id, lti_result_sourcedid, created, updated
 FROM {$this->dbTableName(static::USER_RESULT_TABLE_NAME)}
-WHERE (user_result_pk = ?)
+WHERE (user_result_pk = $1)
 EOD;
-            $stmt = $this->db->prepare($sql);
-            $stmt->bind_param('i', $id);
+            $params = [
+                $userResult->getRecordId()
+            ];
         } else {
-            $rid = $userResult->getResourceLink()->getRecordId();
-            $uid = $userResult->getId(LTI\Enum\IdScope::IdOnly);
             $sql = <<< EOD
 SELECT user_result_pk, resource_link_pk, lti_user_id, lti_result_sourcedid, created, updated
 FROM {$this->dbTableName(static::USER_RESULT_TABLE_NAME)}
-WHERE (resource_link_pk = ?) AND (lti_user_id = ?)
+WHERE (resource_link_pk = $1) AND (lti_user_id = $2)
 EOD;
-            $stmt = $this->db->prepare($sql);
-            $stmt->bind_param('is', $rid, $uid);
+            $params = [
+                $userResult->getResourceLink()->getRecordId(),
+                $userResult->getId(LTI\Enum\IdScope::IdOnly)
+            ];
         }
-        $ok = $this->executeQuery($sql, $stmt);
-        if ($ok) {
-            $rsUserResult = $stmt->get_result();
-            $row = $rsUserResult->fetch_object();
+        $rsUserResult = $this->executeQuery($sql, $params);
+        if ($rsUserResult) {
+            $row = pg_fetch_object($rsUserResult);
             if ($row) {
                 $userResult->setRecordId(intval($row->user_result_pk));
                 $userResult->setResourceLinkId(intval($row->resource_link_pk));
@@ -1279,8 +1372,7 @@ EOD;
                 $userResult->ltiResultSourcedId = $row->lti_result_sourcedid;
                 $userResult->created = strtotime($row->created);
                 $userResult->updated = strtotime($row->updated);
-            } else {
-                $ok = false;
+                $ok = true;
             }
         }
 
@@ -1299,29 +1391,33 @@ EOD;
         $time = time();
         $now = date("{$this->dateFormat} {$this->timeFormat}", $time);
         if (is_null($userResult->created)) {
-            $rid = $userResult->getResourceLink()->getRecordId();
-            $uid = $userResult->getId(LTI\Enum\IdScope::IdOnly);
             $sql = <<< EOD
 INSERT INTO {$this->dbTableName(static::USER_RESULT_TABLE_NAME)} (
   resource_link_pk, lti_user_id, lti_result_sourcedid, created, updated)
-VALUES (?, ?, ?, ?, ?)
+VALUES($1, $2, $3, $4, $4)
 EOD;
-            $stmt = $this->db->prepare($sql);
-            $stmt->bind_param('issss', $rid, $uid, $userResult->ltiResultSourcedId, $now, $now);
+            $params = [
+                $userResult->getResourceLink()->getRecordId(),
+                $userResult->getId(LTI\Enum\IdScope::IdOnly),
+                $userResult->ltiResultSourcedId,
+                $now
+            ];
         } else {
-            $id = $userResult->getRecordId();
             $sql = <<< EOD
 UPDATE {$this->dbTableName(static::USER_RESULT_TABLE_NAME)}
-SET lti_result_sourcedid = ?, updated = ?
-WHERE (user_result_pk = ?)
+SET lti_result_sourcedid = $1, updated = $2
+WHERE (user_result_pk = $3)
 EOD;
-            $stmt = $this->db->prepare($sql);
-            $stmt->bind_param('ssi', $userResult->ltiResultSourcedId, $now, $id);
+            $params = [
+                $userResult->ltiResultSourcedId,
+                $now,
+                $userResult->getRecordId()
+            ];
         }
-        $ok = $this->executeQuery($sql, $stmt);
+        $ok = $this->executeQuery($sql, $params) !== false;
         if ($ok) {
             if (is_null($userResult->created)) {
-                $userResult->setRecordId(mysqli_insert_id($this->db));
+                $userResult->setRecordId($this->insert_id());
                 $userResult->created = $time;
             }
             $userResult->updated = $time;
@@ -1339,14 +1435,14 @@ EOD;
      */
     public function deleteUserResult(UserResult $userResult): bool
     {
-        $id = $userResult->getRecordId();
         $sql = <<< EOD
 DELETE FROM {$this->dbTableName(static::USER_RESULT_TABLE_NAME)}
-WHERE (user_result_pk = ?)
+WHERE (user_result_pk = $1)
 EOD;
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param('i', $id);
-        $ok = $this->executeQuery($sql, $stmt);
+        $params = [
+            $userResult->getRecordId()
+        ];
+        $ok = $this->executeQuery($sql, $params) !== false;
 
         if ($ok) {
             $userResult->initialize();
@@ -1368,40 +1464,41 @@ EOD;
      */
     public function loadTool(Tool $tool): bool
     {
-        $id = $tool->getRecordId();
-        if (!is_null($id)) {
+        $ok = false;
+        if (!is_null($tool->getRecordId())) {
             $sql = <<< EOD
 SELECT tool_pk, name, consumer_key, secret, message_url, initiate_login_url, redirection_uris, public_key,
   lti_version, signature_method, settings, enabled, enable_from, enable_until, last_access, created, updated
 FROM {$this->dbTableName(static::TOOL_TABLE_NAME)}
-WHERE (tool_pk = ?)
+WHERE (tool_pk = $1)
 EOD;
-            $stmt = $this->db->prepare($sql);
-            $stmt->bind_param('i', $id);
+            $params = [
+                $tool->getRecordId()
+            ];
         } elseif (!empty($tool->initiateLoginUrl)) {
             $sql = <<< EOD
 SELECT tool_pk, name, consumer_key, secret, message_url, initiate_login_url, redirection_uris, public_key,
   lti_version, signature_method, settings, enabled, enable_from, enable_until, last_access, created, updated
 FROM {$this->dbTableName(static::TOOL_TABLE_NAME)}
-WHERE (initiate_login_url = ?)
+WHERE (initiate_login_url = $1)
 EOD;
-            $stmt = $this->db->prepare($sql);
-            $stmt->bind_param('s', $tool->initiateLoginUrl);
+            $params = [
+                $tool->initiateLoginUrl
+            ];
         } else {
-            $key = $tool->getKey();
             $sql = <<< EOD
 SELECT tool_pk, name, consumer_key, secret, message_url, initiate_login_url, redirection_uris, public_key,
   lti_version, signature_method, settings, enabled, enable_from, enable_until, last_access, created, updated
 FROM {$this->dbTableName(static::TOOL_TABLE_NAME)}
-WHERE (consumer_key = ?)
+WHERE (consumer_key = $1)
 EOD;
-            $stmt = $this->db->prepare($sql);
-            $stmt->bind_param('s', $key);
+            $params = [
+                $tool->getKey()
+            ];
         }
-        $ok = $this->executeQuery($sql, $stmt);
-        if ($ok) {
-            $rsTool = $stmt->get_result();
-            $row = $rsTool->fetch_object();
+        $rsTool = $this->executeQuery($sql, $params);
+        if ($rsTool) {
+            $row = pg_fetch_object($rsTool);
             if ($row) {
                 $tool->setRecordId(intval($row->tool_pk));
                 $tool->name = $row->name;
@@ -1421,7 +1518,7 @@ EOD;
                     $settings = [];
                 }
                 $tool->setSettings($settings);
-                $tool->enabled = (intval($row->enabled) === 1);
+                $tool->enabled = ($row->enabled === 't');
                 $tool->enableFrom = null;
                 if (!is_null($row->enable_from)) {
                     $tool->enableFrom = strtotime($row->enable_from);
@@ -1437,8 +1534,7 @@ EOD;
                 $tool->created = strtotime($row->created);
                 $tool->updated = strtotime($row->updated);
                 $this->fixToolSettings($tool, false);
-            } else {
-                $ok = false;
+                $ok = true;
             }
         }
 
@@ -1455,10 +1551,7 @@ EOD;
     public function saveTool(Tool $tool): bool
     {
         $id = $tool->getRecordId();
-        $enabled = ($tool->enabled) ? 1 : 0;
-        $redirectionUrisValue = json_encode($tool->redirectionUris);
         $this->fixToolSettings($tool, true);
-        $settingsValue = json_encode($tool->getSettings());
         $this->fixToolSettings($tool, false);
         $time = time();
         $now = date("{$this->dateFormat} {$this->timeFormat}", $time);
@@ -1474,34 +1567,60 @@ EOD;
         if (!is_null($tool->lastAccess)) {
             $last = date($this->dateFormat, $tool->lastAccess);
         }
-        $key = $tool->getKey();
         if (empty($id)) {
             $sql = <<< EOD
 INSERT INTO {$this->dbTableName(static::TOOL_TABLE_NAME)} (
   name, consumer_key, secret, message_url, initiate_login_url, redirection_uris, public_key,
   lti_version, signature_method, settings, enabled, enable_from, enable_until, last_access, created, updated)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $15)
 EOD;
-            $stmt = $this->db->prepare($sql);
-            $stmt->bind_param('ssssssssssisssss', $tool->name, $key, $tool->secret, $tool->messageUrl, $tool->initiateLoginUrl,
-                $redirectionUrisValue, $tool->rsaKey, $tool->ltiVersion, $tool->signatureMethod, $settingsValue, $enabled, $from,
-                $until, $last, $now, $now);
+            $params = [
+                $tool->name,
+                $tool->getKey(),
+                $tool->secret,
+                $tool->messageUrl,
+                $tool->initiateLoginUrl,
+                json_encode($tool->redirectionUris),
+                $tool->rsaKey,
+                $tool->ltiVersion,
+                $tool->signatureMethod,
+                json_encode($tool->getSettings()),
+                $tool->enabled ? 't' : 'f',
+                $from,
+                $until,
+                $last,
+                $now
+            ];
         } else {
             $sql = <<< EOD
-UPDATE {$this->dbTableName(static::TOOL_TABLE_NAME)} SET
-  name = ?, consumer_key = ?, secret= ?, message_url = ?, initiate_login_url = ?, redirection_uris = ?, public_key = ?,
-  lti_version = ?, signature_method = ?, settings = ?, enabled = ?, enable_from = ?, enable_until = ?, last_access = ?, updated = ?
-WHERE (tool_pk = ?)
+UPDATE {$this->dbTableName(static::TOOL_TABLE_NAME)}
+SET name = $1, consumer_key = $2, secret = $3, message_url = $4, initiate_login_url = $5, redirection_uris = $6, public_key = $7,
+  lti_version = $8, signature_method = $9, settings = $10, enabled = $11, enable_from = $12, enable_until = $13, last_access = $14, updated = $15
+WHERE (tool_pk = $16)
 EOD;
-            $stmt = $this->db->prepare($sql);
-            $stmt->bind_param('ssssssssssissssi', $tool->name, $key, $tool->secret, $tool->messageUrl, $tool->initiateLoginUrl,
-                $redirectionUrisValue, $tool->rsaKey, $tool->ltiVersion, $tool->signatureMethod, $settingsValue, $enabled, $from,
-                $until, $last, $now, $id);
+            $params = [
+                $tool->name,
+                $tool->getKey(),
+                $tool->secret,
+                $tool->messageUrl,
+                $tool->initiateLoginUrl,
+                json_encode($tool->redirectionUris),
+                $tool->rsaKey,
+                $tool->ltiVersion,
+                $tool->signatureMethod,
+                json_encode($tool->getSettings()),
+                $tool->enabled ? 't' : 'f',
+                $from,
+                $until,
+                $last,
+                $now,
+                $tool->getRecordId()
+            ];
         }
-        $ok = $this->executeQuery($sql, $stmt);
+        $ok = $this->executeQuery($sql, $params) !== false;
         if ($ok) {
             if (empty($id)) {
-                $tool->setRecordId($this->db->insert_id);
+                $tool->setRecordId($this->insert_id());
                 $tool->created = $time;
             }
             $tool->updated = $time;
@@ -1519,15 +1638,14 @@ EOD;
      */
     public function deleteTool(Tool $tool): bool
     {
-        $id = $tool->getRecordId();
         $sql = <<< EOD
-DELETE t
-FROM {$this->dbTableName(static::TOOL_TABLE_NAME)} t
-WHERE (t.tool_pk = ?)
+DELETE FROM {$this->dbTableName(static::TOOL_TABLE_NAME)}
+WHERE (tool_pk = $1)
 EOD;
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param('i', $id);
-        $ok = $this->executeQuery($sql, $stmt);
+        $params = [
+            $tool->getRecordId()
+        ];
+        $ok = $this->executeQuery($sql, $params) !== false;
 
         if ($ok) {
             $tool->initialize();
@@ -1551,10 +1669,9 @@ SELECT tool_pk, name, consumer_key, secret, message_url, initiate_login_url, red
 FROM {$this->dbTableName(static::TOOL_TABLE_NAME)}
 ORDER BY name
 EOD;
-        $stmt = $this->db->prepare($sql);
-        if ($this->executeQuery($sql, $stmt)) {
-            $rsTools = $stmt->get_result();
-            while ($row = $rsTools->fetch_object()) {
+        $rsTools = $this->executeQuery($sql);
+        if ($rsTools) {
+            while ($row = pg_fetch_object($rsTools)) {
                 $tool = new Tool($this);
                 $tool->setRecordId(intval($row->tool_pk));
                 $tool->name = $row->name;
@@ -1592,7 +1709,7 @@ EOD;
                 $this->fixToolSettings($tool, false);
                 $tools[] = $tool;
             }
-            $rsTools->free_result();
+            pg_free_result($rsTools);
         }
 
         return $tools;
@@ -1603,59 +1720,38 @@ EOD;
 ###
 
     /**
+     * Get the ID for the last record inserted into a table.
+     *
+     * @return int  Id of last inserted record
+     */
+    private function insert_id(): int
+    {
+        $rsId = $this->executeQuery('SELECT lastval();');
+        $row = pg_fetch_row($rsId);
+        return intval($row[0]);
+    }
+
+    /**
      * Execute a database query.
      *
      * Info and debug messages are generated.
      *
      * @param string $sql          SQL statement
-     * @param object $stmt         MySQLi statement
+     * @param array  $params       Array of SQL parameter values
      * @param bool   $reportError  True if errors are to be reported
      *
-     * @return bool  True if the query was successful.
+     * @return mixed  The result resource, or false on error.
      */
-    private function executeQuery(string $sql, object $stmt, bool $reportError = true): bool
+    private function executeQuery(string $sql, array $params = [], bool $reportError = true): mixed
     {
-        try {
-            $ok = $stmt->execute();
-        } catch (\mysqli_sql_exception $e) {
-            $ok = false;
-        }
-        $info = $this->db->info;
-        if (!empty($info)) {
-            $info = PHP_EOL . $info;
-        }
-        if (!$ok && $reportError) {
-            Util::logError($sql . $info . $this->errorListToString($stmt->error_list));
+        $res = @pg_query_params($this->db, $sql, $params);
+        if (($res === false) && $reportError) {
+            Util::logError($sql . PHP_EOL . 'Error: ' . pg_last_error($this->db));
         } else {
-            Util::logDebug($sql . $info);
+            Util::logDebug($sql);
         }
 
-        return $ok;
-    }
-
-    /**
-     * Extract error information into a string.
-     *
-     * @param array $errorList  Array of error information
-     *
-     * @return string  Error message.
-     */
-    private function errorListToString(array $errorList): string
-    {
-        $errors = '';
-        if (is_array($errorList) && !empty($errorList)) {
-            if (count($errorList) <= 1) {
-                $sep = 'Error ';
-            } else {
-                $sep = 'Errors:' . PHP_EOL . '  ';
-            }
-            foreach ($errorList as $error) {
-                $errors .= PHP_EOL . "{$sep}{$error['errno']}/{$error['sqlstate']}: {$error['error']}";
-                $sep = '  ';
-            }
-        }
-
-        return $errors;
+        return $res;
     }
 
 }

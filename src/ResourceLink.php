@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI;
 
@@ -6,8 +7,11 @@ use ceLTIc\LTI\DataConnector\DataConnector;
 use ceLTIc\LTI\Service;
 use ceLTIc\LTI\Http\HttpMessage;
 use ceLTIc\LTI\ApiHook\ApiHook;
+use ceLTIc\LTI\Enum\ServiceAction;
+use ceLTIc\LTI\Enum\IdScope;
+use ceLTIc\LTI\Enum\OutcomeType;
+use ceLTIc\LTI\Enum\ToolSettingsMode;
 use DOMDocument;
-use DOMElement;
 
 /**
  * Class to represent a platform resource link
@@ -21,78 +25,18 @@ class ResourceLink
     use ApiHook;
 
     /**
-     * Read action.
-     */
-    const EXT_READ = 1;
-
-    /**
-     * Write (create/update) action.
-     */
-    const EXT_WRITE = 2;
-
-    /**
-     * Delete action.
-     */
-    const EXT_DELETE = 3;
-
-    /**
-     * Create action.
-     */
-    const EXT_CREATE = 4;
-
-    /**
-     * Update action.
-     */
-    const EXT_UPDATE = 5;
-
-    /**
-     * Decimal outcome type.
-     */
-    const EXT_TYPE_DECIMAL = 'decimal';
-
-    /**
-     * Percentage outcome type.
-     */
-    const EXT_TYPE_PERCENTAGE = 'percentage';
-
-    /**
-     * Ratio outcome type.
-     */
-    const EXT_TYPE_RATIO = 'ratio';
-
-    /**
-     * Letter (A-F) outcome type.
-     */
-    const EXT_TYPE_LETTER_AF = 'letteraf';
-
-    /**
-     * Letter (A-F) with optional +/- outcome type.
-     */
-    const EXT_TYPE_LETTER_AF_PLUS = 'letterafplus';
-
-    /**
-     * Pass/fail outcome type.
-     */
-    const EXT_TYPE_PASS_FAIL = 'passfail';
-
-    /**
-     * Free text outcome type.
-     */
-    const EXT_TYPE_TEXT = 'freetext';
-
-    /**
      * Context title.
      *
      * @var string|null $title
      */
-    public $title = null;
+    public ?string $title = null;
 
     /**
      * Resource link ID as supplied in the last connection request.
      *
      * @var string|null $ltiResourceLinkId
      */
-    public $ltiResourceLinkId = null;
+    public ?string $ltiResourceLinkId = null;
 
     /**
      * User group sets (null if the platform does not support the groups enhancement)
@@ -107,7 +51,7 @@ class ResourceLink
      *
      * @var array|null $groupSets
      */
-    public $groupSets = null;
+    public ?array $groupSets = null;
 
     /**
      * User groups (null if the platform does not support the groups enhancement)
@@ -119,14 +63,14 @@ class ResourceLink
      *
      * @var array|null $groups
      */
-    public $groups = null;
+    public ?array $groups = null;
 
     /**
      * HttpMessage object for last service request.
      *
      * @var HttpMessage|null $lastServiceRequest
      */
-    public $lastServiceRequest = null;
+    public ?HttpMessage $lastServiceRequest = null;
 
     /**
      * Request for last service request.
@@ -140,70 +84,70 @@ class ResourceLink
      *
      * @var array|null $extRequestHeaders
      */
-    public $extRequestHeaders = null;
+    public ?array $extRequestHeaders = null;
 
     /**
      * Response from last service request.
      *
      * @var string|null $extResponse
      */
-    public $extResponse = null;
+    public ?string $extResponse = null;
 
     /**
      * Response header from last service request.
      *
      * @var array|null $extResponseHeaders
      */
-    public $extResponseHeaders = null;
+    public ?array $extResponseHeaders = null;
 
     /**
      * Primary key value for resource link being shared (if any).
      *
      * @var string|null $primaryResourceLinkId
      */
-    public $primaryResourceLinkId = null;
+    public ?string $primaryResourceLinkId = null;
 
     /**
      * Whether the sharing request has been approved by the primary resource link.
      *
      * @var bool|null $shareApproved
      */
-    public $shareApproved = null;
+    public ?bool $shareApproved = null;
 
     /**
      * Timestamp for when the object was created.
      *
      * @var int|null $created
      */
-    public $created = null;
+    public ?int $created = null;
 
     /**
      * Timestamp for when the object was last updated.
      *
      * @var int|null $updated
      */
-    public $updated = null;
+    public ?int $updated = null;
 
     /**
      * Record ID for this resource link.
      *
      * @var int|null $id
      */
-    private $id = null;
+    private ?int $id = null;
 
     /**
      * Platform for this resource link.
      *
      * @var Platform|null $platform
      */
-    private $platform = null;
+    private ?Platform $platform = null;
 
     /**
      * Platform ID for this resource link.
      *
      * @var int|null $platformId
      */
-    private $platformId = null;
+    private ?int $platformId = null;
 
     /**
      * Context for this resource link.
@@ -224,35 +168,35 @@ class ResourceLink
      *
      * @var array|null $settings
      */
-    private $settings = null;
+    private ?array $settings = null;
 
     /**
      * Whether the settings value have changed since last saved.
      *
      * @var bool $settingsChanged
      */
-    private $settingsChanged = false;
+    private bool $settingsChanged = false;
 
     /**
      * XML document for the last extension service request.
      *
-     * @var string|null $extDoc
+     * @var DOMDocument|null $extDoc
      */
-    private $extDoc = null;
+    private ?DOMDocument $extDoc = null;
 
     /**
      * XML node array for the last extension service request.
      *
-     * @var object|null $extNodes
+     * @var array|null $extNodes
      */
-    private $extNodes = null;
+    private ?array $extNodes = null;
 
     /**
      * Data connector object or string.
      *
      * @var DataConnector|null $dataConnector
      */
-    private $dataConnector = null;
+    private ?DataConnector $dataConnector = null;
 
     /**
      * Class constructor.
@@ -264,11 +208,13 @@ class ResourceLink
 
     /**
      * Initialise the resource link.
+     *
+     * @return void
      */
-    public function initialize()
+    public function initialize(): void
     {
         $this->title = '';
-        $this->settings = array();
+        $this->settings = [];
         $this->groupSets = null;
         $this->groups = null;
         $this->primaryResourceLinkId = null;
@@ -281,8 +227,10 @@ class ResourceLink
      * Initialise the resource link.
      *
      * Synonym for initialize().
+     *
+     * @return void
      */
-    public function initialise()
+    public function initialise(): void
     {
         $this->initialize();
     }
@@ -290,9 +238,9 @@ class ResourceLink
     /**
      * Save the resource link to the database.
      *
-     * @return bool    True if the resource link was successfully saved.
+     * @return bool  True if the resource link was successfully saved.
      */
-    public function save()
+    public function save(): bool
     {
         $ok = $this->getDataConnector()->saveResourceLink($this);
         if ($ok) {
@@ -305,56 +253,11 @@ class ResourceLink
     /**
      * Delete the resource link from the database.
      *
-     * @return bool    True if the resource link was successfully deleted.
+     * @return bool  True if the resource link was successfully deleted.
      */
-    public function delete()
+    public function delete(): bool
     {
         return $this->getDataConnector()->deleteResourceLink($this);
-    }
-
-    /**
-     * Get tool consumer.
-     *
-     * @deprecated Use getPlatform() instead
-     * @see Context::getPlatform()
-     *
-     * @return ToolConsumer Tool consumer object for this resource link.
-     */
-    public function getConsumer()
-    {
-        Util::logDebug('Method ceLTIc\LTI\ResourceLink::getConsumer() has been deprecated; please use ceLTIc\LTI\ResourceLink::getPlatform() instead.',
-            true);
-        return $this->getPlatform();
-    }
-
-    /**
-     * Get tool consumer ID.
-     *
-     * @deprecated Use getPlatformId() instead
-     * @see Context::getPlatformId()
-     *
-     * @return int|null Tool Consumer ID for this resource link.
-     */
-    public function getConsumerId()
-    {
-        Util::logDebug('Method ceLTIc\LTI\ResourceLink::getConsumerId() has been deprecated; please use ceLTIc\LTI\ResourceLink::getPlatformId() instead.',
-            true);
-        return $this->getPlatformId();
-    }
-
-    /**
-     * Set tool consumer ID.
-     *
-     * @deprecated Use setPlatformId() instead
-     * @see Context::setPlatformId()
-     *
-     * @param int $consumerId   Tool Consumer ID for this resource link.
-     */
-    public function setConsumerId($consumerId)
-    {
-        Util::logDebug('Method ceLTIc\LTI\ResourceLink::setConsumerId() has been deprecated; please use ceLTIc\LTI\ResourceLink::setPlatformId() instead.',
-            true);
-        $this->setPlatformId($consumerId);
     }
 
     /**
@@ -362,7 +265,7 @@ class ResourceLink
      *
      * @return Platform  Platform object for this resource link.
      */
-    public function getPlatform()
+    public function getPlatform(): Platform
     {
         if (is_null($this->platform)) {
             if (!is_null($this->context) || !is_null($this->contextId)) {
@@ -380,7 +283,7 @@ class ResourceLink
      *
      * @return int|null  Platform ID for this resource link.
      */
-    public function getPlatformId()
+    public function getPlatformId(): ?int
     {
         return $this->platformId;
     }
@@ -389,8 +292,10 @@ class ResourceLink
      * Set platform ID.
      *
      * @param int $platformId  Platform ID for this resource link.
+     *
+     * @return void
      */
-    public function setPlatformId($platformId)
+    public function setPlatformId(?int $platformId): void
     {
         $this->platform = null;
         $this->platformId = $platformId;
@@ -399,9 +304,9 @@ class ResourceLink
     /**
      * Get context.
      *
-     * @return Context|null LTIContext object for this resource link.
+     * @return Context|null  LTIContext object for this resource link.
      */
-    public function getContext()
+    public function getContext(): ?Context
     {
         if (is_null($this->context) && !is_null($this->contextId)) {
             $this->context = Context::fromRecordId($this->contextId, $this->getDataConnector());
@@ -413,9 +318,9 @@ class ResourceLink
     /**
      * Get context record ID.
      *
-     * @return int|null Context record ID for this resource link.
+     * @return int|null  Context record ID for this resource link.
      */
-    public function getContextId()
+    public function getContextId(): ?int
     {
         if (is_null($this->contextId) && !is_null($this->context)) {
             $this->contextId = $this->context->getRecordId();
@@ -427,9 +332,11 @@ class ResourceLink
     /**
      * Set context.
      *
-     * @param Context $context   Context for this resource link.
+     * @param Context $context  Context for this resource link.
+     *
+     * @return void
      */
-    public function setContext($context)
+    public function setContext(Context $context): void
     {
         $this->context = $context;
         $this->contextId = $context->getRecordId();
@@ -438,9 +345,11 @@ class ResourceLink
     /**
      * Set context ID.
      *
-     * @param int $contextId   Context ID for this resource link.
+     * @param int $contextId  Context ID for this resource link.
+     *
+     * @return void
      */
-    public function setContextId($contextId)
+    public function setContextId(?int $contextId): void
     {
         if ($this->contextId !== $contextId) {
             $this->context = null;
@@ -451,9 +360,9 @@ class ResourceLink
     /**
      * Get consumer key.
      *
-     * @return string Consumer key value for this resource link.
+     * @return string  Consumer key value for this resource link.
      */
-    public function getKey()
+    public function getKey(): string
     {
         return $this->getPlatform()->getKey();
     }
@@ -461,9 +370,9 @@ class ResourceLink
     /**
      * Get resource link ID.
      *
-     * @return string ID for this resource link.
+     * @return string  ID for this resource link.
      */
-    public function getId()
+    public function getId(): string
     {
         return $this->ltiResourceLinkId;
     }
@@ -471,9 +380,9 @@ class ResourceLink
     /**
      * Get resource link record ID.
      *
-     * @return int|null Record ID for this resource link.
+     * @return int|null  Record ID for this resource link.
      */
-    public function getRecordId()
+    public function getRecordId(): ?int
     {
         return $this->id;
     }
@@ -481,9 +390,9 @@ class ResourceLink
     /**
      * Set resource link record ID.
      *
-     * @param int $id  Record ID for this resource link.
+     * @param int|string $id  Record ID for this resource link.
      */
-    public function setRecordId($id)
+    public function setRecordId(int|string $id)
     {
         $this->id = $id;
     }
@@ -491,9 +400,9 @@ class ResourceLink
     /**
      * Get the data connector.
      *
-     * @return DataConnector|null Data connector object or string
+     * @return DataConnector|null  Data connector object or string
      */
-    public function getDataConnector()
+    public function getDataConnector(): ?DataConnector
     {
         if (empty($this->dataConnector)) {
             $this->getPlatform();
@@ -508,12 +417,12 @@ class ResourceLink
     /**
      * Get a setting value.
      *
-     * @param string $name    Name of setting
-     * @param string $default Value to return if the setting does not exist (optional, default is an empty string)
+     * @param string $name     Name of setting
+     * @param string $default  Value to return if the setting does not exist (optional, default is an empty string)
      *
      * @return string Setting value
      */
-    public function getSetting($name, $default = '')
+    public function getSetting(string $name, string $default = ''): string
     {
         if (array_key_exists($name, $this->settings)) {
             $value = $this->settings[$name];
@@ -527,10 +436,12 @@ class ResourceLink
     /**
      * Set a setting value.
      *
-     * @param string $name  Name of setting
-     * @param string $value Value to set, use an empty value to delete a setting (optional, default is null)
+     * @param string $name              Name of setting
+     * @param string|array|null $value  Value to set, use an empty value to delete a setting (optional, default is null)
+     *
+     * @return void
      */
-    public function setSetting($name, $value = null)
+    public function setSetting(string $name, string|array|null $value = null): void
     {
         $old_value = $this->getSetting($name);
         if ($value !== $old_value) {
@@ -546,9 +457,9 @@ class ResourceLink
     /**
      * Get an array of all setting values.
      *
-     * @return array Associative array of setting values
+     * @return array  Associative array of setting values
      */
-    public function getSettings()
+    public function getSettings(): array
     {
         return $this->settings;
     }
@@ -557,8 +468,10 @@ class ResourceLink
      * Set an array of all setting values.
      *
      * @param array $settings  Associative array of setting values
+     *
+     * @return void
      */
-    public function setSettings($settings)
+    public function setSettings(array $settings): void
     {
         $this->settings = $settings;
     }
@@ -566,9 +479,9 @@ class ResourceLink
     /**
      * Save setting values.
      *
-     * @return bool    True if the settings were successfully saved
+     * @return bool  True if the settings were successfully saved
      */
-    public function saveSettings()
+    public function saveSettings(): bool
     {
         if ($this->settingsChanged) {
             $ok = $this->save();
@@ -582,9 +495,9 @@ class ResourceLink
     /**
      * Check if an Outcomes service is available.
      *
-     * @return bool    True if this resource link supports an Outcomes service
+     * @return bool  True if this resource link supports an Outcomes service
      */
-    public function hasOutcomesService()
+    public function hasOutcomesService(): bool
     {
         $has = !empty($this->getSetting('ext_ims_lis_basic_outcome_url')) || !empty($this->getSetting('lis_outcome_service_url'));
         if (!$has && !empty($this->getSetting('custom_lineitem_url')) && !empty($this->getSetting('custom_ags_scopes'))) {
@@ -600,9 +513,9 @@ class ResourceLink
     /**
      * Check if a Memberships service is available.
      *
-     * @return bool    True if this resource link supports a Memberships service
+     * @return bool  True if this resource link supports a Memberships service
      */
-    public function hasMembershipsService()
+    public function hasMembershipsService(): bool
     {
         $has = false;
         if (!empty($this->getContextId())) {
@@ -624,9 +537,9 @@ class ResourceLink
     /**
      * Check if the Setting extension service is available.
      *
-     * @return bool    True if this resource link supports the Setting extension service
+     * @return bool  True if this resource link supports the Setting extension service
      */
-    public function hasSettingService()
+    public function hasSettingService(): bool
     {
         $url = $this->getSetting('ext_ims_lti_tool_setting_url');
 
@@ -634,11 +547,11 @@ class ResourceLink
     }
 
     /**
-     * Check if the Line Item service is available.
+     * Check if the Line-item service is available.
      *
-     * @return bool    True if this resource link supports the Line Item service
+     * @return bool  True if this resource link supports the Line-item service
      */
-    public function hasLineItemService()
+    public function hasLineItemService(): bool
     {
         $has = false;
         if (!empty($this->getSetting('custom_ags_scopes'))) {
@@ -654,9 +567,9 @@ class ResourceLink
     /**
      * Check if the Score service is available.
      *
-     * @return bool    True if this resource link supports the Score service
+     * @return bool  True if this resource link supports the Score service
      */
-    public function hasScoreService()
+    public function hasScoreService(): bool
     {
         $has = false;
         if (!empty($this->getSetting('custom_ags_scopes'))) {
@@ -672,9 +585,9 @@ class ResourceLink
     /**
      * Check if the Result service is available.
      *
-     * @return bool    True if this resource link supports the Result service
+     * @return bool  True if this resource link supports the Result service
      */
-    public function hasResultService()
+    public function hasResultService(): bool
     {
         $has = false;
         if (!empty($this->getSetting('custom_ags_scopes'))) {
@@ -690,9 +603,9 @@ class ResourceLink
     /**
      * Check if the Assessment Control service is available.
      *
-     * @return bool    True if this resource link supports the Assessment Control service
+     * @return bool  True if this resource link supports the Assessment Control service
      */
-    public function hasAssessmentControlService()
+    public function hasAssessmentControlService(): bool
     {
         $url = $this->getSetting('custom_ap_acs_url');
 
@@ -702,13 +615,13 @@ class ResourceLink
     /**
      * Perform an Outcomes service request.
      *
-     * @param int $action The action type constant
-     * @param Outcome $ltiOutcome Outcome object
-     * @param UserResult $userResult UserResult object
+     * @param ServiceAction $action   The action type constant
+     * @param Outcome $ltiOutcome     Outcome object
+     * @param UserResult $userResult  UserResult object
      *
-     * @return bool    True if the request was successfully processed
+     * @return bool  True if the request was successfully processed
      */
-    public function doOutcomesService($action, $ltiOutcome, $userResult)
+    public function doOutcomesService(ServiceAction $action, Outcome $ltiOutcome, UserResult $userResult): bool
     {
         $ok = false;
         $this->extResponse = '';
@@ -722,12 +635,12 @@ class ResourceLink
         $urlExt = $sourceResourceLink->getSetting('ext_ims_lis_basic_outcome_url');
 
         if (!empty($urlAGS)) {
-            if (($action === self::EXT_READ) && ($ltiOutcome->type === self::EXT_TYPE_DECIMAL) && $sourceResourceLink->hasResultService()) {
+            if (($action === ServiceAction::Read) && ($ltiOutcome->type === OutcomeType::Decimal) && $sourceResourceLink->hasResultService()) {
                 $ltiOutcome = $this->doResultService($userResult, $urlAGS);
                 $ok = !empty($ltiOutcome);
-            } elseif ((($action === self::EXT_WRITE) && $this->checkValueType($ltiOutcome, array(self::EXT_TYPE_DECIMAL)) && $sourceResourceLink->hasScoreService()) ||
-                ($action === self::EXT_DELETE)) {
-                if ($action === self::EXT_DELETE) {
+            } elseif ((($action === ServiceAction::Write) && $this->checkValueType($ltiOutcome, array(OutcomeType::Decimal)) && $sourceResourceLink->hasScoreService()) ||
+                ($action === ServiceAction::Delete)) {
+                if ($action === ServiceAction::Delete) {
                     $ltiOutcome->setValue(null);
                     $ltiOutcome->activityProgress = 'Initialized';
                     $ltiOutcome->gradingProgress = 'NotReady';
@@ -741,19 +654,19 @@ class ResourceLink
         if (!$ok && !empty($urlLTI11)) {
             $do = '';
             $outcome = $ltiOutcome->getValue();
-            if (($action === self::EXT_READ) && ($ltiOutcome->type === self::EXT_TYPE_DECIMAL)) {
+            if (($action === ServiceAction::Read) && ($ltiOutcome->type === OutcomeType::Decimal)) {
                 $do = 'readResult';
-            } elseif (($action === self::EXT_WRITE) && $this->checkValueType($ltiOutcome, array(self::EXT_TYPE_DECIMAL))) {
+            } elseif (($action === ServiceAction::Write) && $this->checkValueType($ltiOutcome, array(OutcomeType::Decimal))) {
                 $do = 'replaceResult';
                 if (($ltiOutcome->getPointsPossible() <> 1) && ($ltiOutcome->getPointsPossible() > 0)) {
                     $outcome = $outcome / $ltiOutcome->getPointsPossible();
                 }
-            } elseif ($action === self::EXT_DELETE) {
+            } elseif ($action === ServiceAction::Delete) {
                 $do = 'deleteResult';
             }
             if (!empty($do)) {
                 $xml = '';
-                if ($action === self::EXT_WRITE) {
+                if ($action === ServiceAction::Write) {
                     $comment = (empty($ltiOutcome->comment)) ? '' : trim($ltiOutcome->comment);
                     if (!empty($comment) && !empty($sourceResourceLink->getSetting('ext_outcome_data_values_accepted'))) {
                         $resultDataTypes = explode(',', $sourceResourceLink->getSetting('ext_outcome_data_values_accepted'));
@@ -761,7 +674,7 @@ class ResourceLink
                         if (count($resultDataTypes) === 1) {
                             $resultDataType = $resultDataTypes[0];
                         } elseif (count($resultDataTypes) > 1) {
-                            $isUrl = (strpos($comment, 'http://') === 0) || (strpos($comment, 'https://') === 0);
+                            $isUrl = str_starts_with($comment, 'http://') || str_starts_with($comment, 'https://');
                             if ($isUrl && in_array('ltiLaunchUrl', $resultDataTypes)) {
                                 $resultDataType = 'ltiLaunchUrl';
                             } elseif ($isUrl && in_array('url', $resultDataTypes)) {
@@ -799,14 +712,16 @@ EOF;
 EOF;
                 if ($this->doLTI11Service($do, $urlLTI11, $xml)) {
                     switch ($action) {
-                        case self::EXT_READ:
+                        case ServiceAction::Read:
                             if (!isset($this->extNodes['imsx_POXBody']["{$do}Response"]['result']['resultScore']['textString'])) {
                                 break;
-                            } else {
+                            } elseif (!empty($this->extNodes['imsx_POXBody']["{$do}Response"]['result']['resultScore']['textString'])) {
                                 $ltiOutcome->setValue($this->extNodes['imsx_POXBody']["{$do}Response"]['result']['resultScore']['textString']);
+                            } else {
+                                $ltiOutcome->setValue(null);
                             }
-                        case self::EXT_WRITE:
-                        case self::EXT_DELETE:
+                        case ServiceAction::Write:
+                        case ServiceAction::Delete:
                             $ok = true;
                             break;
                     }
@@ -816,18 +731,18 @@ EOF;
         if (!$ok && !empty($urlExt)) {
             $do = '';
             $outcome = $ltiOutcome->getValue();
-            if (($action === self::EXT_READ) && ($ltiOutcome->type === self::EXT_TYPE_DECIMAL)) {
+            if (($action === ServiceAction::Read) && ($ltiOutcome->type === OutcomeType::Decimal)) {
                 $do = 'basic-lis-readresult';
-            } elseif (($action === self::EXT_WRITE) && $this->checkValueType($ltiOutcome, array(self::EXT_TYPE_DECIMAL))) {
+            } elseif (($action === ServiceAction::Write) && $this->checkValueType($ltiOutcome, array(OutcomeType::Decimal))) {
                 $do = 'basic-lis-updateresult';
                 if (($ltiOutcome->getPointsPossible() <> 1) && ($ltiOutcome->getPointsPossible() > 0)) {
                     $outcome = $outcome / $ltiOutcome->getPointsPossible();
                 }
-            } elseif ($action === self::EXT_DELETE) {
+            } elseif ($action === ServiceAction::Delete) {
                 $do = 'basic-lis-deleteresult';
             }
             if (!empty($do)) {
-                $params = array();
+                $params = [];
                 $params['sourcedid'] = $sourcedId;
                 $params['result_resultscore_textstring'] = $outcome;
                 if (!empty($ltiOutcome->language)) {
@@ -840,19 +755,23 @@ EOF;
                     $params['result_date'] = $ltiOutcome->date;
                 }
                 if (!empty($ltiOutcome->type)) {
-                    $params['result_resultvaluesourcedid'] = $ltiOutcome->type;
+                    $params['result_resultvaluesourcedid'] = $ltiOutcome->type->value;
                 }
                 if (!empty($ltiOutcome->dataSource)) {
                     $params['result_datasource'] = $ltiOutcome->dataSource;
                 }
                 if ($this->doService($do, $urlExt, $params, 'https://purl.imsglobal.org/spec/lti-ext/scope/outcomes')) {
                     switch ($action) {
-                        case self::EXT_READ:
+                        case ServiceAction::Read:
                             if (isset($this->extNodes['result']['resultscore']['textstring'])) {
-                                $ltiOutcome->setValue($this->extNodes['result']['resultscore']['textstring']);
+                                $value = $this->extNodes['result']['resultscore']['textstring'];
+                                if (!is_string($value)) {
+                                    $value = null;
+                                }
+                                $ltiOutcome->setValue($value);
                             }
-                        case self::EXT_WRITE:
-                        case self::EXT_DELETE:
+                        case ServiceAction::Write:
+                        case ServiceAction::Delete:
                             $ok = true;
                             break;
                     }
@@ -865,7 +784,7 @@ EOF;
             $response = $hook->doOutcomesService($action, $ltiOutcome, $userResult);
             if ($response !== false) {
                 $ok = true;
-                if ($action === self::EXT_READ) {
+                if ($action === ServiceAction::Read) {
                     $ltiOutcome->setValue($response);
                 }
             }
@@ -875,51 +794,25 @@ EOF;
     }
 
     /**
-     * Perform a Memberships extension service request.
+     * Perform a Setting service request
      *
-     * The userResult table is updated with any user objects with lis_result_sourcedid values.
+     * @param ServiceAction $action  The action type
+     * @param string $value          The setting value (optional, default is null)
      *
-     * @deprecated Use getMemberships() instead
-     * @see ResourceLink::getMemberships()
-     *
-     * @param bool    $withGroups True is group information is to be requested as well
-     *
-     * @return mixed Array of UserResult objects or False if the request was not successful
+     * @return string|bool  The setting value for a read action, true if a write or delete action was successful, otherwise false
      */
-    public function doMembershipsService($withGroups = false)
-    {
-        Util::logDebug('Method ceLTIc\LTI\ResourceLink::doMembershipsService() has been deprecated; please use ceLTIc\LTI\ResourceLink::getMemberships() instead.',
-            true);
-        return $this->getMemberships($withGroups);
-    }
-
-    /**
-     * Perform a Setting service request.
-     *
-     * @param int    $action The action type constant
-     * @param string $value  The setting value (optional, default is null)
-     *
-     * @return mixed The setting value for a read action, true if a write or delete action was successful, otherwise false
-     */
-    public function doSettingService($action, $value = null)
+    public function doSettingService(ServiceAction $action, ?string $value = null): string|bool
     {
         $response = false;
         $this->extResponse = '';
-        switch ($action) {
-            case self::EXT_READ:
-                $do = 'basic-lti-loadsetting';
-                break;
-            case self::EXT_WRITE:
-                $do = 'basic-lti-savesetting';
-                break;
-            case self::EXT_DELETE:
-                $do = 'basic-lti-deletesetting';
-                break;
-        }
+        $do = match ($action) {
+            ServiceAction::Read => 'basic-lti-loadsetting',
+            ServiceAction::Write => 'basic-lti-savesetting',
+            ServiceAction::Delete => 'basic-lti-deletesetting'
+        };
         if (isset($do)) {
-
             $url = $this->getSetting('ext_ims_lti_tool_setting_url');
-            $params = array();
+            $params = [];
             $params['id'] = $this->getSetting('ext_ims_lti_tool_setting_id');
             if (is_null($value)) {
                 $value = '';
@@ -928,7 +821,7 @@ EOF;
 
             if ($this->doService($do, $url, $params, 'https://purl.imsglobal.org/spec/lti-ext/scope/setting')) {
                 switch ($action) {
-                    case self::EXT_READ:
+                    case ServiceAction::Read:
                         if (isset($this->extNodes['setting']['value'])) {
                             $response = $this->extNodes['setting']['value'];
                             if (is_array($response)) {
@@ -936,12 +829,12 @@ EOF;
                             }
                         }
                         break;
-                    case self::EXT_WRITE:
+                    case ServiceAction::Write:
                         $this->setSetting('ext_ims_lti_tool_setting', $value);
                         $this->saveSettings();
                         $response = true;
                         break;
-                    case self::EXT_DELETE:
+                    case ServiceAction::Delete:
                         $response = true;
                         break;
                 }
@@ -954,9 +847,9 @@ EOF;
     /**
      * Check if the Tool Settings service is available.
      *
-     * @return bool    True if this resource link supports the Tool Settings service
+     * @return bool  True if this resource link supports the Tool Settings service
      */
-    public function hasToolSettingsService()
+    public function hasToolSettingsService(): bool
     {
         $has = !empty($this->getSetting('custom_link_setting_url'));
         if (!$has) {
@@ -968,15 +861,15 @@ EOF;
     /**
      * Get Tool Settings.
      *
-     * @param int      $mode       Mode for request (optional, default is current level only)
-     * @param bool     $simple     True if all the simple media type is to be used (optional, default is true)
+     * @param ToolSettingsMode|null $mode  Mode for request (optional, default is current level only)
+     * @param bool $simple                 True if all the simple media type is to be used (optional, default is true)
      *
-     * @return mixed The array of settings if successful, otherwise false
+     * @return array|bool  The array of settings if successful, otherwise false
      */
-    public function getToolSettings($mode = Service\ToolSettings::MODE_CURRENT_LEVEL, $simple = true)
+    public function getToolSettings(?ToolSettingsMode $mode = null, bool $simple = true): array|bool
     {
         $ok = false;
-        $settings = array();
+        $settings = [];
         if (!empty($this->getSetting('custom_link_setting_url'))) {
             $url = $this->getSetting('custom_link_setting_url');
             $service = new Service\ToolSettings($this, $url, $simple);
@@ -996,11 +889,11 @@ EOF;
     /**
      * Set Tool Settings.
      *
-     * @param array    $settings   An associative array of settings (optional, default is none)
+     * @param array $settings  An associative array of settings (optional, default is none)
      *
-     * @return bool    True if action was successful, otherwise false
+     * @return bool  True if action was successful, otherwise false
      */
-    public function setToolSettings($settings = array())
+    public function setToolSettings(array $settings = []): bool
     {
         $ok = false;
         if (!empty($this->getSetting('custom_link_setting_url'))) {
@@ -1019,46 +912,16 @@ EOF;
     }
 
     /**
-     * Check if the Membership service is supported.
-     *
-     * @deprecated Use hasMembershipsService() instead
-     * @see ResourceLink::hasMembershipsService()
-     *
-     * @return bool    True if this resource link supports the Membership service
-     */
-    public function hasMembershipService()
-    {
-        Util::logDebug('Method ceLTIc\LTI\ResourceLink::hasMembershipService() has been deprecated; please use ceLTIc\LTI\ResourceLink::hasMembershipsService() instead.',
-            true);
-        return $this->hasMembershipsService();
-    }
-
-    /**
-     * Get Membership.
-     *
-     * @deprecated Use getMemberships() instead
-     * @see ResourceLink::getMemberships()
-     *
-     * @return mixed The array of UserResult objects if successful, otherwise false
-     */
-    public function getMembership()
-    {
-        Util::logDebug('Method ceLTIc\LTI\ResourceLink::getMembership() has been deprecated; please use ceLTIc\LTI\ResourceLink::getMemberships() instead.',
-            true);
-        return $this->getMemberships();
-    }
-
-    /**
      * Get Memberships.
      *
-     * @param bool    $withGroups True is group information is to be requested as well
+     * @param bool $withGroups  True if group information is to be requested as well
      *
-     * @return mixed The array of UserResult objects if successful, otherwise false
+     * @return array|bool  The array of UserResult objects if successful, otherwise false
      */
-    public function getMemberships($withGroups = false)
+    public function getMemberships(bool $withGroups = false): array|bool
     {
         $ok = false;
-        $userResults = array();
+        $userResults = [];
         $hasLtiLinkService = !empty($this->getSetting('custom_link_memberships_url'));
         $hasLtiContextService = !empty($this->getContextId()) &&
             (!empty($this->getContext()->getSetting('custom_context_memberships_url')) || !empty($this->getContext()->getSetting('custom_context_memberships_v2_url')));
@@ -1099,7 +962,7 @@ EOF;
         if (!$ok && $hasExtService) {
             $this->extResponse = '';
             $url = $this->getSetting('ext_ims_lis_memberships_url');
-            $params = array();
+            $params = [];
             $params['id'] = $this->getSetting('ext_ims_lis_memberships_id');
             if ($withGroups) {
                 $ok = $this->doService('basic-lis-readmembershipsforcontextwithgroups', $url, $params,
@@ -1110,8 +973,8 @@ EOF;
                     'https://purl.imsglobal.org/spec/lti-ext/scope/memberships');
             }
             if ($ok) {
-                $this->groupSets = array();
-                $this->groups = array();
+                $this->groupSets = [];
+                $this->groups = [];
                 if (isset($this->extNodes['memberships'])) {
                     $memberships = $this->extNodes['memberships'];
                 } elseif (isset($this->extNodes['members'])) {
@@ -1122,9 +985,9 @@ EOF;
             }
             if ($ok) {
                 if (!isset($memberships['member'])) {
-                    $members = array();
+                    $members = [];
                 } elseif (!isset($memberships['member'][0])) {
-                    $members = array();
+                    $members = [];
                     $members[0] = $memberships['member'];
                 } else {
                     $members = $memberships['member'];
@@ -1132,34 +995,34 @@ EOF;
 
                 for ($i = 0; $i < count($members); $i++) {
 
-                    $userresult = UserResult::fromResourceLink($this, $members[$i]['user_id']);
+                    $userResult = UserResult::fromResourceLink($this, $members[$i]['user_id']);
 
 // Set the user name
-                    $firstname = (isset($members[$i]['person_name_given'])) ? $members[$i]['person_name_given'] : '';
-                    $middlename = (isset($members[$i]['person_name_middle'])) ? $members[$i]['person_name_middle'] : '';
-                    $lastname = (isset($members[$i]['person_name_family'])) ? $members[$i]['person_name_family'] : '';
-                    $fullname = (isset($members[$i]['person_name_full'])) ? $members[$i]['person_name_full'] : '';
-                    $userresult->setNames($firstname, $lastname, $fullname);
+                    $firstname = $members[$i]['person_name_given'] ?? '';
+                    $middlename = $members[$i]['person_name_middle'] ?? '';
+                    $lastname = $members[$i]['person_name_family'] ?? '';
+                    $fullname = $members[$i]['person_name_full'] ?? '';
+                    $userResult->setNames($firstname, $lastname, $fullname);
 
 // Set the sourcedId
                     if (isset($members[$i]['person_sourcedid'])) {
-                        $userresult->sourcedId = $members[$i]['person_sourcedid'];
+                        $userResult->sourcedId = $members[$i]['person_sourcedid'];
                     }
 
 // Set the user email
-                    $email = (isset($members[$i]['person_contact_email_primary'])) ? $members[$i]['person_contact_email_primary'] : '';
-                    $userresult->setEmail($email, $this->getPlatform()->defaultEmail);
+                    $email = $members[$i]['person_contact_email_primary'] ?? '';
+                    $userResult->setEmail($email, $this->getPlatform()->defaultEmail);
 
 // Set the user roles
                     if (isset($members[$i]['roles'])) {
-                        $userresult->roles = Tool::parseRoles($members[$i]['roles']);
+                        $userResult->roles = Tool::parseRoles($members[$i]['roles']);
                     }
 
 // Set the user groups
                     if (!isset($members[$i]['groups']['group'])) {
-                        $groups = array();
+                        $groups = [];
                     } elseif (!isset($members[$i]['groups']['group'][0])) {
-                        $groups = array();
+                        $groups = [];
                         $groups[0] = $members[$i]['groups']['group'];
                     } else {
                         $groups = $members[$i]['groups']['group'];
@@ -1169,29 +1032,39 @@ EOF;
                         if (isset($group['set'])) {
                             $set_id = $group['set']['id'];
                             if (!isset($this->groupSets[$set_id])) {
-                                $this->groupSets[$set_id] = array('title' => $group['set']['title'], 'groups' => array(),
-                                    'num_members' => 0, 'num_staff' => 0, 'num_learners' => 0);
+                                $this->groupSets[$set_id] = [
+                                    'title' => $group['set']['title'],
+                                    'groups' => [],
+                                    'num_members' => 0,
+                                    'num_staff' => 0,
+                                    'num_learners' => 0
+                                ];
                             }
                             $this->groupSets[$set_id]['num_members']++;
-                            if ($userresult->isStaff()) {
+                            if ($userResult->isStaff()) {
                                 $this->groupSets[$set_id]['num_staff']++;
                             }
-                            if ($userresult->isLearner()) {
+                            if ($userResult->isLearner()) {
                                 $this->groupSets[$set_id]['num_learners']++;
                             }
                             if (!in_array($group['id'], $this->groupSets[$set_id]['groups'])) {
                                 $this->groupSets[$set_id]['groups'][] = $group['id'];
                             }
-                            $this->groups[$group['id']] = array('title' => $group['title'], 'set' => $set_id);
+                            $this->groups[$group['id']] = [
+                                'title' => $group['title'],
+                                'set' => $set_id
+                            ];
                         } else {
-                            $this->groups[$group['id']] = array('title' => $group['title']);
+                            $this->groups[$group['id']] = [
+                                'title' => $group['title']
+                            ];
                         }
-                        $userresult->groups[] = $group['id'];
+                        $userResult->groups[] = $group['id'];
                     }
                     if (isset($members[$i]['lis_result_sourcedid'])) {
-                        $userresult->ltiResultSourcedId = $members[$i]['lis_result_sourcedid'];
+                        $userResult->ltiResultSourcedId = $members[$i]['lis_result_sourcedid'];
                     }
-                    $userResults[] = $userresult;
+                    $userResults[] = $userResult;
                 }
             } else {
                 $userResults = false;
@@ -1205,18 +1078,18 @@ EOF;
             $ok = $userResults !== false;
         }
         if ($ok) {
-            $oldUsers = $this->getUserResultSourcedIDs(true, Tool::ID_SCOPE_RESOURCE);
-            foreach ($userResults as $userresult) {
+            $oldUsers = $this->getUserResultSourcedIDs(true, IdScope::Resource);
+            foreach ($userResults as $userResult) {
 // If a result sourcedid is provided save the user
-                if (!empty($userresult->ltiResultSourcedId)) {
-                    $userresult->save();
+                if (!empty($userResult->ltiResultSourcedId)) {
+                    $userResult->save();
                 }
 // Remove old user (if it exists)
-                unset($oldUsers[$userresult->getId(Tool::ID_SCOPE_RESOURCE)]);
+                unset($oldUsers[$userResult->getId(IdScope::Resource)]);
             }
 // Delete any old users which were not in the latest list from the platform
-            foreach ($oldUsers as $id => $userresult) {
-                $userresult->delete();
+            foreach ($oldUsers as $id => $userResult) {
+                $userResult->delete();
             }
         }
 
@@ -1229,12 +1102,12 @@ EOF;
      * The array may include users from other resource links which are sharing this resource link.
      * It may also be optionally indexed by the user ID of a specified scope.
      *
-     * @param bool    $localOnly True if only users from this resource link are to be returned, not users from shared resource links (optional, default is false)
-     * @param int     $idScope     Scope to use for ID values (optional, default is null for platform default)
+     * @param bool $localOnly        True if only users from this resource link are to be returned, not users from shared resource links (optional, default is false)
+     * @param IdScope|null $idScope  Scope to use for ID values (optional, default is null for platform default)
      *
-     * @return UserResult[] Array of UserResult objects
+     * @return UserResult[]  Array of UserResult objects
      */
-    public function getUserResultSourcedIDs($localOnly = false, $idScope = null)
+    public function getUserResultSourcedIDs(bool $localOnly = false, ?IdScope $idScope = null): array
     {
         return $this->getDataConnector()->getUserResultSourcedIDsResourceLink($this, $localOnly, $idScope);
     }
@@ -1242,29 +1115,29 @@ EOF;
     /**
      * Get an array of ResourceLinkShare objects for each resource link which is sharing this context.
      *
-     * @return ResourceLinkShare[] Array of ResourceLinkShare objects
+     * @return ResourceLinkShare[]  Array of ResourceLinkShare objects
      */
-    public function getShares()
+    public function getShares(): array
     {
         return $this->getDataConnector()->getSharesResourceLink($this);
     }
 
     /**
-     * Get line items.
+     * Get line-items.
      *
-     * @param string|null  $resourceId         Tool resource ID
-     * @param string|null  $tag                Tag
-     * @param int|null     $limit              Limit of line items to be returned in each request, null for service default
+     * @param string|null $resourceId  Tool resource ID
+     * @param string|null $tag         Tag
+     * @param int|null $limit          Limit of line-items to be returned in each request, null for service default
      *
      * @return LineItem[]|bool  Array of LineItem objects or false on error
      */
-    public function getLineItems($resourceId = null, $tag = null, $limit = null)
+    public function getLineItems(?string $resourceId = null, ?string $tag = null, ?int $limit = null): array|bool
     {
         $lineItems = false;
         $this->extRequest = '';
-        $this->extRequestHeaders = '';
+        $this->extRequestHeaders = [];
         $this->extResponse = '';
-        $this->extResponseHeaders = '';
+        $this->extResponseHeaders = [];
         $this->lastServiceRequest = null;
         $lineItemService = $this->getLineItemService();
         if (!empty($lineItemService)) {
@@ -1281,13 +1154,13 @@ EOF;
     }
 
     /**
-     * Create a new line item.
+     * Create a new line-item.
      *
-     * @param LineItem  $lineItem         Line item object
+     * @param LineItem $lineItem  Line-item object
      *
      * @return bool  True if successful
      */
-    public function createLineItem($lineItem)
+    public function createLineItem(LineItem $lineItem): bool
     {
         $ok = false;
         $lineItemService = $this->getLineItemService();
@@ -1302,17 +1175,17 @@ EOF;
     /**
      * Get all outcomes.
      *
-     * @param int|null     $limit              Limit of outcomes to be returned in each request, null for service default
+     * @param int|null $limit  Limit of outcomes to be returned in each request, null for service default
      *
      * @return Outcome[]|bool  Array of Outcome objects or false on error
      */
-    public function getOutcomes($limit = null)
+    public function getOutcomes(?int $limit = null): array|bool
     {
         $outcomes = false;
         $this->extRequest = '';
-        $this->extRequestHeaders = '';
+        $this->extRequestHeaders = [];
         $this->extResponse = '';
-        $this->extResponseHeaders = '';
+        $this->extResponseHeaders = [];
         $this->lastServiceRequest = null;
         $url = $this->getSetting('custom_lineitem_url');
         if (!empty($url)) {
@@ -1332,19 +1205,19 @@ EOF;
     /**
      * Perform an Assessment Control action.
      *
-     * @param AssessmentControlAction  $assessmentControlAction   Assessment control object
-     * @param User                     $user                      User object
-     * @param int                      $attemptNumber             Number of attempt
+     * @param AssessmentControlAction $assessmentControlAction  Assessment control object
+     * @param User $user                                        User object
+     * @param int $attemptNumber                                Number of attempt
      *
-     * @return string|bool    The response status or false if the request was not successfully processed
+     * @return string|bool  The response status or false if the request was not successfully processed
      */
-    public function doAssessmentControlAction($assessmentControlAction, $user, $attemptNumber)
+    public function doAssessmentControlAction(AssessmentControlAction $assessmentControlAction, User $user, int $attemptNumber): string|bool
     {
         $status = false;
         $this->extRequest = '';
-        $this->extRequestHeaders = '';
+        $this->extRequestHeaders = [];
         $this->extResponse = '';
-        $this->extResponseHeaders = '';
+        $this->extResponseHeaders = [];
         $this->lastServiceRequest = null;
         $url = $this->getSetting('custom_ap_acs_url');
         if (!empty($url)) {
@@ -1362,34 +1235,15 @@ EOF;
     }
 
     /**
-     * Class constructor from consumer.
-     *
-     * @deprecated Use fromPlatform() instead
-     * @see ResourceLink::fromPlatform()
-     *
-     * @param ToolConsumer $consumer            Consumer object
-     * @param string $ltiResourceLinkId         Resource link ID value
-     * @param string $tempId                    Temporary Resource link ID value (optional, default is null)
-     *
-     * @return ResourceLink
-     */
-    public static function fromConsumer($consumer, $ltiResourceLinkId, $tempId = null)
-    {
-        Util::logDebug('Method ceLTIc\LTI\ResourceLink::fromConsumer() has been deprecated; please use ceLTIc\LTI\ResourceLink::fromPlatform() instead.',
-            true);
-        return self::fromPlatform($consumer, $ltiResourceLinkId, $tempId);
-    }
-
-    /**
      * Class constructor from platform.
      *
-     * @param Platform $platform                Platform object
-     * @param string $ltiResourceLinkId         Resource link ID value
-     * @param string $tempId                    Temporary Resource link ID value (optional, default is null)
+     * @param Platform $platform         Platform object
+     * @param string $ltiResourceLinkId  Resource link ID value
+     * @param string|null $tempId        Temporary Resource link ID value (optional, default is null)
      *
      * @return ResourceLink
      */
-    public static function fromPlatform($platform, $ltiResourceLinkId, $tempId = null)
+    public static function fromPlatform(Platform $platform, string $ltiResourceLinkId, ?string $tempId = null): ResourceLink
     {
         $resourceLink = new ResourceLink();
         $resourceLink->platform = $platform;
@@ -1410,13 +1264,13 @@ EOF;
     /**
      * Class constructor from context.
      *
-     * @param Context   $context                   Context object
-     * @param string    $ltiResourceLinkId         Resource link ID value
-     * @param string    $tempId                    Temporary Resource link ID value (optional, default is null)
+     * @param Context $context           Context object
+     * @param string $ltiResourceLinkId  Resource link ID value
+     * @param string|null $tempId        Temporary Resource link ID value (optional, default is null)
      *
      * @return ResourceLink
      */
-    public static function fromContext($context, $ltiResourceLinkId, $tempId = null)
+    public static function fromContext(Context $context, string $ltiResourceLinkId, ?string $tempId = null)
     {
         $resourceLink = new ResourceLink();
         $resourceLink->setContext($context);
@@ -1438,12 +1292,12 @@ EOF;
     /**
      * Load the resource link from the database.
      *
-     * @param int $id     Record ID of resource link
-     * @param DataConnector   $dataConnector    Database connection object
+     * @param int $id                       Record ID of resource link
+     * @param DataConnector $dataConnector  Database connection object
      *
      * @return ResourceLink  ResourceLink object
      */
-    public static function fromRecordId($id, $dataConnector)
+    public static function fromRecordId(int $id, DataConnector $dataConnector): ResourceLink
     {
         $resourceLink = new ResourceLink();
         $resourceLink->dataConnector = $dataConnector;
@@ -1459,11 +1313,11 @@ EOF;
     /**
      * Load the resource link from the database.
      *
-     * @param int $id     Record ID of resource link (optional, default is null)
+     * @param int $id  Record ID of resource link (optional, default is null)
      *
-     * @return bool    True if resource link was successfully loaded
+     * @return bool  True if resource link was successfully loaded
      */
-    private function load($id = null)
+    private function load(?int $id = null): bool
     {
         $this->initialize();
         $this->id = $id;
@@ -1474,16 +1328,16 @@ EOF;
     /**
      * Convert data type of value to a supported type if possible.
      *
-     * @param Outcome  $ltiOutcome     Outcome object
-     * @param array    $supportedTypes Array of outcome types to be supported (optional, default is null to use supported types reported in the last launch for this resource link)
+     * @param Outcome $ltiOutcome    Outcome object
+     * @param array $supportedTypes  Array of outcome types to be supported (optional, default is null to use supported types reported in the last launch for this resource link)
      *
      * @return bool    True if the type/value are valid and supported
      */
-    private function checkValueType($ltiOutcome, $supportedTypes = null)
+    private function checkValueType(Outcome $ltiOutcome, ?array $supportedTypes = null): bool
     {
         if (empty($supportedTypes)) {
             $supportedTypes = explode(',',
-                str_replace(' ', '', strtolower($this->getSetting('ext_ims_lis_resultvalue_sourcedids', self::EXT_TYPE_DECIMAL))));
+                str_replace(' ', '', strtolower($this->getSetting('ext_ims_lis_resultvalue_sourcedids', OutcomeType::Decimal))));
         }
         $type = $ltiOutcome->type;
         $value = $ltiOutcome->getValue();
@@ -1491,54 +1345,54 @@ EOF;
         $ok = in_array($type, $supportedTypes) || empty($value);
         if (!$ok) {
 // Convert numeric values to decimal
-            if ($type === self::EXT_TYPE_PERCENTAGE) {
+            if ($type === OutcomeType::Percentage) {
                 if (substr($value, -1) === '%') {
                     $value = substr($value, 0, -1);
                 }
                 $ok = is_numeric($value) && ($value >= 0) && ($value <= 100);
                 if ($ok) {
                     $ltiOutcome->setValue($value / 100);
-                    $ltiOutcome->type = self::EXT_TYPE_DECIMAL;
+                    $ltiOutcome->type = OutcomeType::Decimal;
                 }
-            } elseif ($type === self::EXT_TYPE_RATIO) {
+            } elseif ($type === OutcomeType::Ratio) {
                 $parts = explode('/', $value, 2);
                 $ok = (count($parts) === 2) && is_numeric($parts[0]) && is_numeric($parts[1]) && ($parts[0] >= 0) && ($parts[1] > 0);
                 if ($ok) {
                     $ltiOutcome->setValue($parts[0] / $parts[1]);
-                    $ltiOutcome->type = self::EXT_TYPE_DECIMAL;
+                    $ltiOutcome->type = OutcomeType::Decimal;
                 }
 // Convert letter_af to letter_af_plus or text
-            } elseif ($type === self::EXT_TYPE_LETTER_AF) {
-                if (in_array(self::EXT_TYPE_LETTER_AF_PLUS, $supportedTypes)) {
+            } elseif ($type === OutcomeType::LetterAF) {
+                if (in_array(OutcomeType::LetterAFPlus->value, $supportedTypes)) {
                     $ok = true;
-                    $ltiOutcome->type = self::EXT_TYPE_LETTER_AF_PLUS;
-                } elseif (in_array(self::EXT_TYPE_TEXT, $supportedTypes)) {
+                    $ltiOutcome->type = OutcomeType::LetterAFPlus;
+                } elseif (in_array(OutcomeType::Text->value, $supportedTypes)) {
                     $ok = true;
-                    $ltiOutcome->type = self::EXT_TYPE_TEXT;
+                    $ltiOutcome->type = OutcomeType::Text;
                 }
 // Convert letter_af_plus to letter_af or text
-            } elseif ($type === self::EXT_TYPE_LETTER_AF_PLUS) {
-                if (in_array(self::EXT_TYPE_LETTER_AF, $supportedTypes) && (strlen($value) === 1)) {
+            } elseif ($type === OutcomeType::LetterAFPlus) {
+                if (in_array(OutcomeType::LetterAF->value, $supportedTypes) && (strlen($value) === 1)) {
                     $ok = true;
-                    $ltiOutcome->type = self::EXT_TYPE_LETTER_AF;
-                } elseif (in_array(self::EXT_TYPE_TEXT, $supportedTypes)) {
+                    $ltiOutcome->type = OutcomeType::LetterAF;
+                } elseif (in_array(OutcomeType::Text->value, $supportedTypes)) {
                     $ok = true;
-                    $ltiOutcome->type = self::EXT_TYPE_TEXT;
+                    $ltiOutcome->type = OutcomeType::Text;
                 }
 // Convert text to decimal
-            } elseif ($type === self::EXT_TYPE_TEXT) {
+            } elseif ($type === OutcomeType::Text) {
                 $ok = is_numeric($value) && ($value >= 0) && ($value <= 1);
                 if ($ok) {
-                    $ltiOutcome->type = self::EXT_TYPE_DECIMAL;
+                    $ltiOutcome->type = OutcomeType::Decimal;
                 } elseif (substr($value, -1) === '%') {
                     $value = substr($value, 0, -1);
                     $ok = is_numeric($value) && ($value >= 0) && ($value <= 100);
                     if ($ok) {
-                        if (in_array(self::EXT_TYPE_PERCENTAGE, $supportedTypes)) {
-                            $ltiOutcome->type = self::EXT_TYPE_PERCENTAGE;
+                        if (in_array(OutcomeType::Percentage->value, $supportedTypes)) {
+                            $ltiOutcome->type = OutcomeType::Percentage;
                         } else {
                             $ltiOutcome->setValue($value / 100);
-                            $ltiOutcome->type = self::EXT_TYPE_DECIMAL;
+                            $ltiOutcome->type = OutcomeType::Decimal;
                         }
                     }
                 }
@@ -1553,18 +1407,18 @@ EOF;
      *
      * @param string $type   Message type value
      * @param string $url    URL to send request to
-     * @param array  $params Associative array of parameter values to be passed
+     * @param array $params  Associative array of parameter values to be passed
      * @param string $scope  Scope for service
      *
      * @return bool    True if the request successfully obtained a response
      */
-    private function doService($type, $url, $params, $scope)
+    private function doService(string $type, string $url, array $params, string $scope): bool
     {
         $ok = false;
         $this->extRequest = '';
-        $this->extRequestHeaders = '';
+        $this->extRequestHeaders = [];
         $this->extResponse = '';
-        $this->extResponseHeaders = '';
+        $this->extResponseHeaders = [];
         $this->lastServiceRequest = null;
         if (!empty($url)) {
             $params['lti_version'] = $this->getPlatform()->ltiVersion;
@@ -1574,7 +1428,7 @@ EOF;
             if ($this->getPlatform()->useOAuth1()) {
                 $paramstosign = $params;
             } else {
-                $paramstosign = null;
+                $paramstosign = '';
                 $accessToken = $this->platform->getAccessToken();
                 $retry = true;
                 if (empty($accessToken)) {
@@ -1633,18 +1487,18 @@ EOF;
     /**
      * Send a request to the Result service endpoint.
      *
-     * @param UserResult $userResult   UserResult object
-     * @param string $url  URL to send request to
+     * @param UserResult $userResult  UserResult object
+     * @param string $url             URL to send request to
      *
-     * @return Outcome    Outcome object
+     * @return Outcome  Outcome object
      */
-    private function doResultService($userResult, $url)
+    private function doResultService(UserResult $userResult, string $url): Outcome
     {
         $outcome = null;
         $this->extRequest = '';
-        $this->extRequestHeaders = '';
+        $this->extRequestHeaders = [];
         $this->extResponse = '';
-        $this->extResponseHeaders = '';
+        $this->extResponseHeaders = [];
         $this->lastServiceRequest = null;
         if (!empty($url)) {
             $resultService = new Service\Result($this->getPlatform(), $url);
@@ -1663,19 +1517,19 @@ EOF;
     /**
      * Send a service request to the Score service endpoint.
      *
-     * @param Outcome $ltiOutcome   Outcome object
-     * @param UserResult $userResult   UserResult object
-     * @param string $url  URL to send request to
+     * @param Outcome $ltiOutcome     Outcome object
+     * @param UserResult $userResult  UserResult object
+     * @param string $url             URL to send request to
      *
-     * @return bool    True if the request successfully obtained a response
+     * @return bool  True if the request successfully obtained a response
      */
-    private function doScoreService($ltiOutcome, $userResult, $url)
+    private function doScoreService(Outcome $ltiOutcome, UserResult $userResult, string $url)
     {
         $ok = false;
         $this->extRequest = '';
-        $this->extRequestHeaders = '';
+        $this->extRequestHeaders = [];
         $this->extResponse = '';
-        $this->extResponseHeaders = '';
+        $this->extResponseHeaders = [];
         $this->lastServiceRequest = null;
         if (!empty($url)) {
             $scoreService = new Service\Score($this->getPlatform(), $url);
@@ -1695,19 +1549,19 @@ EOF;
     /**
      * Send an LTI 1.1 service request to the platform.
      *
-     * @param string $type Message type value
-     * @param string $url  URL to send request to
-     * @param string $xml  XML of message request
+     * @param string $type  Message type value
+     * @param string $url   URL to send request to
+     * @param string $xml   XML of message request
      *
-     * @return bool    True if the request successfully obtained a response
+     * @return bool  True if the request successfully obtained a response
      */
-    private function doLTI11Service($type, $url, $xml)
+    private function doLTI11Service(string $type, string $url, string $xml): bool
     {
         $ok = false;
         $this->extRequest = '';
-        $this->extRequestHeaders = '';
+        $this->extRequestHeaders = [];
         $this->extResponse = '';
-        $this->extResponseHeaders = '';
+        $this->extResponseHeaders = [];
         $this->lastServiceRequest = null;
         if (!empty($url)) {
             $id = uniqid();
@@ -1785,11 +1639,11 @@ EOD;
     }
 
     /**
-     * Get the Line Item service object.
+     * Get the Line-item service object.
      *
-     * @return Service\\LineItem    Line Item service, or false if not available
+     * @return Service\\LineItem  Line-item service, or false if not available
      */
-    private function getLineItemService()
+    private function getLineItemService(): Service\LineItem
     {
         $url = $this->getSetting('custom_lineitems_url');
         if (!empty($url)) {
@@ -1804,13 +1658,13 @@ EOD;
     /**
      * Convert DOM nodes to array.
      *
-     * @param DOMElement $node XML element
+     * @param DOMNode $node  XML element
      *
-     * @return array|string Array of XML document elements
+     * @return array|string  Array of XML document elements
      */
-    private function domnodeToArray($node)
+    private function domnodeToArray(object $node): array|string
     {
-        $output = array();
+        $output = [];
         switch ($node->nodeType) {
             case XML_CDATA_SECTION_NODE:
             case XML_TEXT_NODE:

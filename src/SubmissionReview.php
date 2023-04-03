@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI;
 
@@ -17,30 +18,30 @@ class SubmissionReview
      *
      * @var string|null $label
      */
-    private $label = null;
+    private ?string $label = null;
 
     /**
      * Endpoint.
      *
      * @var string|null $endpoint
      */
-    private $endpoint = null;
+    private ?string $endpoint = null;
 
     /**
      * Custom parameters.
      *
      * @var array|null $custom
      */
-    private $custom = null;
+    private ?array $custom = null;
 
     /**
      * Class constructor.
      *
-     * @param string   $label                       Label (optional)
-     * @param string   $endpoint                Endpojnt (optional)
-     * @param string   $custom                   Custom parameters (optional)
+     * @param string $label     Label (optional)
+     * @param string $endpoint  Endpoint (optional)
+     * @param string $custom    Custom parameters (optional)
      */
-    public function __construct($label = null, $endpoint = null, $custom = null)
+    public function __construct(?string $label = null, ?string $endpoint = null, ?array $custom = null)
     {
         $this->label = $label;
         $this->endpoint = $endpoint;
@@ -54,7 +55,7 @@ class SubmissionReview
      *
      * @return SubmissionReview  The SubmissionReview object
      */
-    public static function fromJsonObject($json)
+    public static function fromJsonObject(object $json): SubmissionReview
     {
         if (!empty($json->label)) {
             $label = $json->label;
@@ -80,7 +81,7 @@ class SubmissionReview
      *
      * @return object
      */
-    public function toJsonObject()
+    public function toJsonObject(): object
     {
         $obj = new \stdClass();
         if (!empty($this->label)) {

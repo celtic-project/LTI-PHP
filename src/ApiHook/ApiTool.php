@@ -1,6 +1,9 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\ApiHook;
+
+use ceLTIc\LTI\Tool;
 
 /**
  * Class to implement tool specific functions for LTI messages
@@ -15,24 +18,26 @@ class ApiTool
     /**
      * Tool object.
      *
-     * @var \ceLTIc\LTI\Tool|null $tool
+     * @var Tool $tool
      */
-    protected $tool = null;
+    protected ?Tool $tool = null;
 
     /**
      * Class constructor.
      *
-     * @param \ceLTIc\LTI\Tool|null $tool
+     * @param Tool|null $tool
      */
-    public function __construct($tool)
+    public function __construct(?Tool $tool)
     {
         $this->tool = $tool;
     }
 
     /**
      * Check if the API hook has been configured.
+     *
+     * @return bool  True if the API hook has been configured
      */
-    public function isConfigured()
+    public function isConfigured(): bool
     {
         return true;
     }
@@ -40,9 +45,9 @@ class ApiTool
     /**
      * Get the User ID.
      *
-     * @return string User ID value, or empty string if not available.
+     * @return string  User ID value, or empty string if not available.
      */
-    public function getUserId()
+    public function getUserId(): string
     {
         return '';
     }
@@ -50,9 +55,9 @@ class ApiTool
     /**
      * Get the Context ID.
      *
-     * @return string Context ID value, or empty string if not available.
+     * @return string  Context ID value, or empty string if not available.
      */
-    public function getContextId()
+    public function getContextId(): string
     {
         return '';
     }

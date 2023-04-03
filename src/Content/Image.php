@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\Content;
 
@@ -15,32 +16,32 @@ class Image
     /**
      * URL of image.
      *
-     * @var string $url
+     * @var string|null $url
      */
-    private $url = null;
+    private ?string $url = null;
 
     /**
      * Width of image.
      *
      * @var int|null $width
      */
-    private $width = null;
+    private ?int $width = null;
 
     /**
      * Height of image.
      *
      * @var int|null $height
      */
-    private $height = null;
+    private ?int $height = null;
 
     /**
      * Class constructor.
      *
-     * @param string $url     URL of image
-     * @param int    $width   Width of image in pixels (optional)
-     * @param int    $height  Height of image in pixels (optional)
+     * @param string   $url     URL of image
+     * @param int|null $width   Width of image in pixels (optional)
+     * @param int|null $height  Height of image in pixels (optional)
      */
-    function __construct($url, $width = null, $height = null)
+    function __construct(string $url, ?int $width = null, ?int $height = null)
     {
         $this->url = $url;
         $this->height = $height;
@@ -50,9 +51,9 @@ class Image
     /**
      * Generate the JSON-LD object representation of the image.
      *
-     * @return object
+     * @return object  JSON object
      */
-    public function toJsonldObject()
+    public function toJsonldObject(): object
     {
         $image = new \stdClass();
         $image->{'@id'} = $this->url;
@@ -69,9 +70,9 @@ class Image
     /**
      * Generate the JSON object representation of the image.
      *
-     * @return object
+     * @return object  JSON object
      */
-    public function toJsonObject()
+    public function toJsonObject(): object
     {
         $image = new \stdClass();
         $image->url = $this->url;
@@ -92,7 +93,7 @@ class Image
      *
      * @return Image|null  The Image object
      */
-    public static function fromJsonObject($item)
+    public static function fromJsonObject(object $item): ?Image
     {
         $obj = null;
         $width = null;

@@ -1,8 +1,10 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\Service;
 
-use ceLTIc\LTI;
+use ceLTIc\LTI\User;
+use ceLTIc\LTI\AssessmentControlAction;
 
 /**
  * Class to implement the Assessment Control service
@@ -16,23 +18,25 @@ class AssessmentControl extends Service
 
     /**
      * Access scope.
+     *
+     * @var string $SCOPE
      */
-    public static $SCOPE = 'https://purl.imsglobal.org/spec/lti-ap/scope/control.all';
+    public static string $SCOPE = 'https://purl.imsglobal.org/spec/lti-ap/scope/control.all';
 
     /**
      * Resource link for this service request.
      *
-     * @var ResourceLink  $resourceLink
+     * @var ResourceLink $resourceLink
      */
-    private $resourceLink = null;
+    private ?ResourceLink $resourceLink = null;
 
     /**
      * Class constructor.
      *
-     * @param ResourceLink  $resourceLink  Resource link object for this service request
-     * @param string        $endpoint      Service endpoint
+     * @param ResourceLink $resourceLink  Resource link object for this service request
+     * @param string $endpoint            Service endpoint
      */
-    public function __construct($resourceLink, $endpoint)
+    public function __construct(ResourceLink $resourceLink, string $endpoint)
     {
         parent::__construct($resourceLink->getPlatform(), $endpoint);
         $this->resourceLink = $resourceLink;
@@ -43,23 +47,28 @@ class AssessmentControl extends Service
     /**
      * Submit an assessment control action.
      *
-     * @param LTI\AssessmentControlAction     $assessmentControlAction   AssessmentControlAction object
-     * @param LTI\User                        $user                      User object
-     * @param int                             $attemptNumber             Attempt number
+     * @param AssessmentControlAction $assessmentControlAction  AssessmentControlAction object
+     * @param User $user                                        User object
+     * @param int $attemptNumber                                Attempt number
      *
      * @return string|bool  Value of the status response, or false if not successful
      */
-    public function submitAction($assessmentControlAction, $user, $attemptNumber)
+    public function submitAction(AssessmentControlAction $assessmentControlAction, User $user, int $attemptNumber): string|bool
     {
         $status = false;
-        $json = array(
-            'user' => array('iss' => $this->resourceLink->getPlatform()->platformId, 'sub' => $user->ltiUserId),
-            'resource_link' => array('id' => $this->resourceLink->ltiResourceLinkId),
+        $json = [
+            'user' => [
+                'iss' => $this->resourceLink->getPlatform()->platformId,
+                'sub' => $user->ltiUserId
+            ],
+            'resource_link' => [
+                'id' => $this->resourceLink->ltiResourceLinkId
+            ],
             'attempt_number' => $attemptNumber,
             'action' => $assessmentControlAction->getAction(),
             'incident_time' => $assessmentControlAction->getDate()->format('Y-m-d\TH:i:s\Z'),
             'incident_severity' => $assessmentControlAction->getSeverity()
-        );
+        ];
         if (!empty($assessmentControlAction->extraTime)) {
             $json['extra_time'] = $assessmentControlAction->extraTime;
         }

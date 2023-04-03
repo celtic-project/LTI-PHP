@@ -1,10 +1,12 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI;
 
 use ceLTIc\LTI\DataConnector\DataConnector;
 use ceLTIc\LTI\Platform;
 use ceLTIc\LTI\Context;
+use ceLTIc\LTI\Enum\IdScope;
 
 /**
  * Class to represent a platform user
@@ -21,49 +23,49 @@ class UserResult extends User
      *
      * @var string|null $ltiResultSourcedId
      */
-    public $ltiResultSourcedId = null;
+    public ?string $ltiResultSourcedId = null;
 
     /**
      * Date/time the record was created.
      *
-     * @var datetime|null $created
+     * @var int|null $created
      */
-    public $created = null;
+    public ?int $created = null;
 
     /**
      * Date/time the record was last updated.
      *
-     * @var datetime|null $updated
+     * @var int|null $updated
      */
-    public $updated = null;
+    public ?int $updated = null;
 
     /**
      * Resource link object.
      *
      * @var ResourceLink|null $resourceLink
      */
-    private $resourceLink = null;
+    private ?ResourceLink $resourceLink = null;
 
     /**
      * Resource link record ID.
      *
      * @var int|null $resourceLinkId
      */
-    private $resourceLinkId = null;
+    private ?int $resourceLinkId = null;
 
     /**
      * UserResult record ID value.
      *
-     * @var string|null $id
+     * @var int|null $id
      */
-    private $id = null;
+    private ?int $id = null;
 
     /**
      * Data connector object or string.
      *
      * @var DataConnector|null $dataConnector
      */
-    private $dataConnector = null;
+    private ?DataConnector $dataConnector = null;
 
     /**
      * Class constructor.
@@ -75,8 +77,10 @@ class UserResult extends User
 
     /**
      * Initialise the user.
+     *
+     * @return void
      */
-    public function initialize()
+    public function initialize(): void
     {
         parent::initialize();
         $this->ltiResultSourcedId = null;
@@ -87,9 +91,9 @@ class UserResult extends User
     /**
      * Save the user to the database.
      *
-     * @return bool    True if the user object was successfully saved
+     * @return bool  True if the user object was successfully saved
      */
-    public function save()
+    public function save(): bool
     {
         if (!is_null($this->resourceLinkId)) {
             $ok = $this->getDataConnector()->saveUserResult($this);
@@ -103,9 +107,9 @@ class UserResult extends User
     /**
      * Delete the user from the database.
      *
-     * @return bool    True if the user object was successfully deleted
+     * @return bool  True if the user object was successfully deleted
      */
-    public function delete()
+    public function delete(): bool
     {
         $ok = $this->getDataConnector()->deleteUserResult($this);
 
@@ -115,9 +119,9 @@ class UserResult extends User
     /**
      * Get resource link.
      *
-     * @return ResourceLink Resource link object
+     * @return ResourceLink  Resource link object
      */
-    public function getResourceLink()
+    public function getResourceLink(): ResourceLink
     {
         if (is_null($this->resourceLink) && !is_null($this->resourceLinkId)) {
             $this->resourceLink = ResourceLink::fromRecordId($this->resourceLinkId, $this->getDataConnector());
@@ -130,8 +134,10 @@ class UserResult extends User
      * Set resource link.
      *
      * @param ResourceLink $resourceLink  Resource link object
+     *
+     * @return void
      */
-    public function setResourceLink($resourceLink)
+    public function setResourceLink(ResourceLink $resourceLink): void
     {
         $this->resourceLink = $resourceLink;
     }
@@ -139,9 +145,9 @@ class UserResult extends User
     /**
      * Get record ID of user.
      *
-     * @return int Record ID of user
+     * @return int|null  Record ID of user
      */
-    public function getRecordId()
+    public function getRecordId(): ?int
     {
         return $this->id;
     }
@@ -149,9 +155,11 @@ class UserResult extends User
     /**
      * Set record ID of user.
      *
-     * @param int $id  Record ID of user
+     * @param int|null $id  Record ID of user
+     *
+     * @return void
      */
-    public function setRecordId($id)
+    public function setRecordId(?int $id): void
     {
         $this->id = $id;
     }
@@ -159,9 +167,11 @@ class UserResult extends User
     /**
      * Set resource link ID of user.
      *
-     * @param int $resourceLinkId  Resource link ID of user
+     * @param int|null $resourceLinkId  Resource link ID of user
+     *
+     * @return void
      */
-    public function setResourceLinkId($resourceLinkId)
+    public function setResourceLinkId(?int $resourceLinkId): void
     {
         $this->resourceLink = null;
         $this->resourceLinkId = $resourceLinkId;
@@ -170,9 +180,9 @@ class UserResult extends User
     /**
      * Get the data connector.
      *
-     * @return mixed Data connector object or string
+     * @return DataConnector|null  Data connector object
      */
-    public function getDataConnector()
+    public function getDataConnector(): ?DataConnector
     {
         return $this->dataConnector;
     }
@@ -180,9 +190,11 @@ class UserResult extends User
     /**
      * Set the data connector.
      *
-     * @param DataConnector $dataConnector  Data connector object
+     * @param DataConnector|null $dataConnector  Data connector object
+     *
+     * @return void
      */
-    public function setDataConnector($dataConnector)
+    public function setDataConnector(?DataConnector $dataConnector): void
     {
         $this->dataConnector = $dataConnector;
     }
@@ -190,12 +202,12 @@ class UserResult extends User
     /**
      * Get the user ID (which may be a compound of the platform and resource link IDs).
      *
-     * @param int $idScope Scope to use for user ID (optional, default is null for consumer default setting)
-     * @param Context|Platform|null $source   Context or Platform for user (optional)
+     * @param int $idScope                   Scope to use for user ID (optional, default is null for consumer default setting)
+     * @param Context|Platform|null $source  Context or Platform for user (optional)
      *
-     * @return string|null   UserResult ID value, or null on error
+     * @return string|null  UserResult ID value, or null on error
      */
-    public function getId($idScope = null, $source = null)
+    public function getId(?IdScope $idScope = null, Context|Platform|null $source = null): ?string
     {
         $resourceLink = $this->getResourceLink();
         $context = null;
@@ -217,25 +229,25 @@ class UserResult extends User
             }
         }
         if (is_null($idScope)) {
-            $idScope = Tool::ID_SCOPE_ID_ONLY;
+            $idScope = IdScope::IdOnly;
         }
-        $ok = !empty($key) || ($idScope === Tool::ID_SCOPE_ID_ONLY);
+        $ok = !empty($key) || ($idScope === IdScope::IdOnly);
         if ($ok) {
-            $id = $key . Tool::ID_SCOPE_SEPARATOR;
+            $id = $key . IdScope::SEPARATOR;
             switch ($idScope) {
-                case Tool::ID_SCOPE_GLOBAL:
+                case IdScope::Global:
                     $id .= $this->ltiUserId;
                     break;
-                case Tool::ID_SCOPE_CONTEXT:
+                case IdScope::Context:
                     $ok = !is_null($context) && !empty($context->ltiContextId);
                     if ($ok) {
-                        $id .= $context->ltiContextId . Tool::ID_SCOPE_SEPARATOR . $this->ltiUserId;
+                        $id .= $context->ltiContextId . IdScope::SEPARATOR . $this->ltiUserId;
                     }
                     break;
-                case Tool::ID_SCOPE_RESOURCE:
+                case IdScope::Resource:
                     $ok = !is_null($resourceLink) && !empty($resourceLink->ltiResourceLinkId);
                     if ($ok) {
-                        $id .= $resourceLink->ltiResourceLinkId . Tool::ID_SCOPE_SEPARATOR . $this->ltiUserId;
+                        $id .= $resourceLink->ltiResourceLinkId . IdScope::SEPARATOR . $this->ltiUserId;
                     }
                     break;
                 default:
@@ -253,42 +265,42 @@ class UserResult extends User
     /**
      * Load the user from the database.
      *
-     * @param int $id     Record ID of user
-     * @param DataConnector   $dataConnector    Database connection object
+     * @param int $id                       Record ID of user
+     * @param DataConnector $dataConnector  Database connection object
      *
      * @return UserResult  UserResult object
      */
-    public static function fromRecordId($id, $dataConnector)
+    public static function fromRecordId(int $id, DataConnector $dataConnector): UserResult
     {
-        $userresult = new UserResult();
-        $userresult->dataConnector = $dataConnector;
-        $userresult->load($id);
+        $userResult = new UserResult();
+        $userResult->dataConnector = $dataConnector;
+        $userResult->load($id);
 
-        return $userresult;
+        return $userResult;
     }
 
     /**
      * Class constructor from resource link.
      *
-     * @param ResourceLink $resourceLink   ResourceLink object
-     * @param string       $ltiUserId      UserResult ID value
+     * @param ResourceLink|null $resourceLink  ResourceLink object
+     * @param string $ltiUserId                UserResult ID value
      *
      * @return UserResult UserResult object
      */
-    public static function fromResourceLink($resourceLink, $ltiUserId)
+    public static function fromResourceLink(?ResourceLink $resourceLink, string $ltiUserId): UserResult
     {
-        $userresult = new UserResult();
-        $userresult->resourceLink = $resourceLink;
+        $userResult = new UserResult();
+        $userResult->resourceLink = $resourceLink;
         if (!is_null($resourceLink)) {
-            $userresult->resourceLinkId = $resourceLink->getRecordId();
-            $userresult->dataConnector = $resourceLink->getDataConnector();
+            $userResult->resourceLinkId = $resourceLink->getRecordId();
+            $userResult->dataConnector = $resourceLink->getDataConnector();
         }
-        $userresult->ltiUserId = $ltiUserId;
+        $userResult->ltiUserId = $ltiUserId;
         if (!empty($ltiUserId)) {
-            $userresult->load();
+            $userResult->load();
         }
 
-        return $userresult;
+        return $userResult;
     }
 
 ###
@@ -298,11 +310,11 @@ class UserResult extends User
     /**
      * Load the user from the database.
      *
-     * @param int $id     Record ID of user (optional, default is null)
+     * @param int $id  Record ID of user (optional, default is null)
      *
-     * @return bool    True if the user object was successfully loaded
+     * @return bool  True if the user object was successfully loaded
      */
-    private function load($id = null)
+    private function load(?int $id = null): bool
     {
         $this->initialize();
         $this->id = $id;

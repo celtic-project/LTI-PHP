@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\Content;
 
@@ -17,22 +18,22 @@ class TimePeriod
      *
      * @var int|null $startDateTime
      */
-    private $startDateTime = null;
+    private ?int $startDateTime = null;
 
     /**
      * End date/time.
      *
      * @var int|null $endDateTime
      */
-    private $endDateTime = null;
+    private ?int $endDateTime = null;
 
     /**
      * Class constructor.
      *
-     * @param int    $startDateTime  Start date/time
-     * @param int    $endDateTime    End date/time
+     * @param int|null    $startDateTime  Start date/time
+     * @param int|null    $endDateTime    End date/time
      */
-    function __construct($startDateTime, $endDateTime)
+    function __construct(?int $startDateTime, ?int $endDateTime)
     {
         if (is_int($startDateTime)) {
             $this->startDateTime = $startDateTime;
@@ -45,9 +46,9 @@ class TimePeriod
     /**
      * Generate the JSON-LD object representation of the time period.
      *
-     * @return object
+     * @return object  JSON object
      */
-    public function toJsonldObject()
+    public function toJsonldObject(): object
     {
         return $this->toJsonObject();
     }
@@ -55,9 +56,9 @@ class TimePeriod
     /**
      * Generate the JSON object representation of the image.
      *
-     * @return object
+     * @return object  JSON object
      */
-    public function toJsonObject()
+    public function toJsonObject(): object
     {
         $timePeriod = new \stdClass();
         if (!is_null($this->startDateTime)) {
@@ -79,9 +80,9 @@ class TimePeriod
      *
      * @param object $item  A JSON or JSON-LD object representing a content-item
      *
-     * @return TimePeriod|null  The LineItem object
+     * @return TimePeriod|null  The TimePeriod object
      */
-    public static function fromJsonObject($item)
+    public static function fromJsonObject(object $item): ?TimePeriod
     {
         $obj = null;
         $startDateTime = null;

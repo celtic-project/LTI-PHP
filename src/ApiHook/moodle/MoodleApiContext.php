@@ -3,6 +3,7 @@
 namespace ceLTIc\LTI\ApiHook\moodle;
 
 use ceLTIc\LTI\ApiHook\ApiContext;
+use ceLTIc\LTI\Context;
 
 /**
  * Class to implement Context services for a Moodle platform via its web services.
@@ -19,9 +20,9 @@ class MoodleApiContext extends ApiContext
     /**
      * Class constructor.
      *
-     * @param \ceLTIc\LTI\Context $context
+     * @param Context $context
      */
-    public function __construct($context)
+    public function __construct(Context $context)
     {
         parent::__construct($context);
         $this->sourceObject = $context;
@@ -32,7 +33,7 @@ class MoodleApiContext extends ApiContext
      *
      * @return bool  True if the request was successful
      */
-    public function getGroups()
+    public function getGroups(): bool
     {
         $this->courseId = $this->context->ltiContextId;
         $platform = $this->sourceObject->getPlatform();
@@ -57,11 +58,11 @@ class MoodleApiContext extends ApiContext
     /**
      * Get Memberships.
      *
-     * @param bool    $withGroups True is group information is to be requested as well
+     * @param bool $withGroups  True is group information is to be requested as well
      *
-     * @return mixed Array of UserResult objects or False if the request was not successful
+     * @return array|bool  Array of UserResult objects or False if the request was not successful
      */
-    public function getMemberships($withGroups = false)
+    public function getMemberships(bool $withGroups = false): array|bool
     {
         $this->courseId = $this->context->ltiContextId;
 

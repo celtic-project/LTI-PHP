@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\Content;
 
@@ -17,22 +18,22 @@ class FileItem extends Item
      *
      * @var bool|null $copyAdvice
      */
-    private $copyAdvice = null;
+    private ?bool $copyAdvice = null;
 
     /**
      * Expiry date/time for content-item.
      *
      * @var int|null $expiresAt
      */
-    private $expiresAt = null;
+    private ?int $expiresAt = null;
 
     /**
      * Class constructor.
      *
-     * @param Placement[]|Placement $placementAdvices  Array of Placement objects (or single placement object) for item (optional)
-     * @param string $id   URL of content-item (optional)
+     * @param Placement[]|Placement|null $placementAdvices  Array of Placement objects (or single placement object) for item (optional)
+     * @param string|null                $id                URL of content-item (optional)
      */
-    function __construct($placementAdvices = null, $id = null)
+    function __construct(?array $placementAdvices = null, ?string $id = null)
     {
         parent::__construct(Item::TYPE_FILE, $placementAdvices, $id);
     }
@@ -41,8 +42,10 @@ class FileItem extends Item
      * Set copy advice for the content-item.
      *
      * @param bool|null $copyAdvice  Copy advice value
+     *
+     * @return void
      */
-    public function setCopyAdvice($copyAdvice)
+    public function setCopyAdvice(?bool $copyAdvice): void
     {
         $this->copyAdvice = $copyAdvice;
     }
@@ -51,8 +54,10 @@ class FileItem extends Item
      * Set expiry date/time for the content-item.
      *
      * @param int|null $expiresAt  Expiry date/time
+     *
+     * @return void
      */
-    public function setExpiresAt($expiresAt)
+    public function setExpiresAt(?int $expiresAt): void
     {
         $this->expiresAt = $expiresAt;
     }
@@ -60,9 +65,9 @@ class FileItem extends Item
     /**
      * Wrap the content item to form an item complying with the application/vnd.ims.lti.v1.contentitems+json media type.
      *
-     * @return object
+     * @return object  JSON object
      */
-    public function toJsonldObject()
+    public function toJsonldObject(): object
     {
         $item = parent::toJsonldObject();
         if (!is_null($this->copyAdvice)) {
@@ -78,9 +83,9 @@ class FileItem extends Item
     /**
      * Wrap the content items to form a complete value for the https://purl.imsglobal.org/spec/lti-dl/claim/content_items claim.
      *
-     * @return object
+     * @return object  JSON object
      */
-    public function toJsonObject()
+    public function toJsonObject(): object
     {
         $item = parent::toJsonObject();
         if (!empty($this->expiresAt)) {
@@ -94,8 +99,10 @@ class FileItem extends Item
      * Extract content-item details from its JSON representation.
      *
      * @param object $item  A JSON object representing a file content-item
+     *
+     * @return void
      */
-    protected function fromJsonObject($item)
+    protected function fromJsonObject(object $item): void
     {
         parent::fromJsonObject($item);
         foreach (get_object_vars($item) as $name => $value) {

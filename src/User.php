@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI;
 
@@ -15,7 +16,7 @@ class User
     /**
      * List of principal roles for LTI 1.3.
      */
-    const PRINCIPAL_ROLES = array(
+    const PRINCIPAL_ROLES = [
         'http://purl.imsglobal.org/vocab/lis/v2/system/person#Administrator',
         'http://purl.imsglobal.org/vocab/lis/v2/system/person#None',
         'http://purl.imsglobal.org/vocab/lis/v2/system/person#AccountAdmin',
@@ -45,91 +46,91 @@ class User
         'http://purl.imsglobal.org/vocab/lis/v2/membership#Manager',
         'http://purl.imsglobal.org/vocab/lis/v2/membership#Member',
         'http://purl.imsglobal.org/vocab/lis/v2/membership#Officer'
-    );
-
-    /**
-     * User's first name.
-     *
-     * @var string $firstname
-     */
-    public $firstname = '';
-
-    /**
-     * User's middle name.
-     *
-     * @var string $middlename
-     */
-    public $middlename = '';
-
-    /**
-     * User's last name (surname or family name).
-     *
-     * @var string $lastname
-     */
-    public $lastname = '';
-
-    /**
-     * User's fullname.
-     *
-     * @var string $fullname
-     */
-    public $fullname = '';
+    ];
 
     /**
      * Allow user name field to be empty?
      *
      * @var bool $allowEmptyName
      */
-    public static $allowEmptyName = false;
+    public static bool $allowEmptyName = false;
+
+    /**
+     * User's first name.
+     *
+     * @var string $firstname
+     */
+    public string $firstname = '';
+
+    /**
+     * User's middle name.
+     *
+     * @var string $middlename
+     */
+    public string $middlename = '';
+
+    /**
+     * User's last name (surname or family name).
+     *
+     * @var string $lastname
+     */
+    public string $lastname = '';
+
+    /**
+     * User's fullname.
+     *
+     * @var string $fullname
+     */
+    public string $fullname = '';
 
     /**
      * User's sourcedId.
      *
      * @var string $sourcedId
      */
-    public $sourcedId = null;
+    public ?string $sourcedId = null;
 
     /**
      * User's username.
      *
      * @var string $username
      */
-    public $username = null;
+    public ?string $username = null;
 
     /**
      * User's email address.
      *
      * @var string $email
      */
-    public $email = '';
+    public string $email = '';
 
     /**
      * User's image URI.
      *
      * @var string $image
      */
-    public $image = '';
+    public string $image = '';
 
     /**
      * Roles for user.
      *
      * @var array $roles
      */
-    public $roles = array();
+    public array $roles = [];
 
     /**
      * Groups for user.
      *
      * @var array $groups
      */
-    public $groups = array();
+    public array $groups = [];
 
     /**
      * user ID as supplied in the last connection request.
      *
      * @var string|null $ltiUserId
      */
-    public $ltiUserId = null;
+    public ?string $ltiUserId = null;
 
     /**
      * Class constructor.
@@ -141,8 +142,10 @@ class User
 
     /**
      * Initialise the user.
+     *
+     * @return void
      */
-    public function initialize()
+    public function initialize(): void
     {
         $this->firstname = '';
         $this->middlename = '';
@@ -152,16 +155,18 @@ class User
         $this->username = null;
         $this->email = '';
         $this->image = '';
-        $this->roles = array();
-        $this->groups = array();
+        $this->roles = [];
+        $this->groups = [];
     }
 
     /**
      * Initialise the user.
      *
      * Synonym for initialize().
+     *
+     * @return void
      */
-    public function initialise()
+    public function initialise(): void
     {
         $this->initialize();
     }
@@ -169,12 +174,14 @@ class User
     /**
      * Set the user's name.
      *
-     * @param string $firstname User's first name.
-     * @param string $lastname User's last name.
-     * @param string $fullname User's full name.
-     * @param string $middlename User's middle name (optional, default is none).
+     * @param string $firstname   User's first name.
+     * @param string $lastname    User's last name.
+     * @param string $fullname    User's full name.
+     * @param string $middlename  User's middle name (optional, default is none).
+     *
+     * @return void
      */
-    public function setNames($firstname, $lastname, $fullname, $middlename = null)
+    public function setNames(string $firstname, string $lastname, string $fullname, ?string $middlename = null): void
     {
         $names = array(0 => '', 1 => '');
         if (!empty($fullname)) {
@@ -223,10 +230,12 @@ class User
     /**
      * Set the user's email address.
      *
-     * @param string $email        Email address value
-     * @param string $defaultEmail Value to use if no email is provided (optional, default is none)
+     * @param string $email         Email address value
+     * @param string $defaultEmail  Value to use if no email is provided (optional, default is none)
+     *
+     * @return void
      */
-    public function setEmail($email, $defaultEmail = null)
+    public function setEmail(string $email, ?string $defaultEmail = null): void
     {
         if (!empty($email)) {
             $this->email = $email;
@@ -247,9 +256,9 @@ class User
     /**
      * Check if the user is a learner.
      *
-     * @return bool    True if the user has a context role of Learner
+     * @return bool  True if the user has a context role of Learner
      */
-    public function isLearner()
+    public function isLearner(): bool
     {
         return $this->hasRole('Learner');
     }
@@ -257,9 +266,9 @@ class User
     /**
      * Check if the user is an instructor.
      *
-     * @return bool    True if the user has a context role of Instructor
+     * @return bool  True if the user has a context role of Instructor
      */
-    public function isInstructor()
+    public function isInstructor(): bool
     {
         return $this->hasRole('Instructor');
     }
@@ -267,9 +276,9 @@ class User
     /**
      * Check if the user is a content developer.
      *
-     * @return bool    True if the user has a context role of ContentDeveloper
+     * @return bool  True if the user has a context role of ContentDeveloper
      */
-    public function isContentDeveloper()
+    public function isContentDeveloper(): bool
     {
         return $this->hasRole('ContentDeveloper');
     }
@@ -277,9 +286,9 @@ class User
     /**
      * Check if the user is a teaching assistant.
      *
-     * @return bool    True if the user has a context role of TeachingAssistant
+     * @return bool  True if the user has a context role of TeachingAssistant
      */
-    public function isTeachingAssistant()
+    public function isTeachingAssistant(): bool
     {
         return $this->hasRole('TeachingAssistant');
     }
@@ -287,9 +296,9 @@ class User
     /**
      * Check if the user is a manager.
      *
-     * @return bool    True if the user has a context role of Manager
+     * @return bool  True if the user has a context role of Manager
      */
-    public function isManager()
+    public function isManager(): bool
     {
         return $this->hasRole('Manager');
     }
@@ -297,9 +306,9 @@ class User
     /**
      * Check if the user is a member.
      *
-     * @return bool    True if the user has a context role of Member
+     * @return bool  True if the user has a context role of Member
      */
-    public function isMember()
+    public function isMember(): bool
     {
         return $this->hasRole('Member');
     }
@@ -307,9 +316,9 @@ class User
     /**
      * Check if the user is an officer.
      *
-     * @return bool    True if the user has a context role of Officer
+     * @return bool  True if the user has a context role of Officer
      */
-    public function isOfficer()
+    public function isOfficer(): bool
     {
         return $this->hasRole('Officer');  // NB Role not defined for LTI versions prior to 1.3
     }
@@ -317,9 +326,9 @@ class User
     /**
      * Check if the user is staff.
      *
-     * @return bool    True if the user has a context role of Instructor, ContentDeveloper or TeachingAssistant
+     * @return bool  True if the user has a context role of Instructor, ContentDeveloper or TeachingAssistant
      */
-    public function isStaff()
+    public function isStaff(): bool
     {
         return $this->isInstructor() || $this->isContentDeveloper() || $this->isTeachingAssistant();
     }
@@ -327,9 +336,9 @@ class User
     /**
      * Check if the user is a mentor.
      *
-     * @return bool    True if the user has a context role of Mentor
+     * @return bool  True if the user has a context role of Mentor
      */
-    public function isMentor()
+    public function isMentor(): bool
     {
         return $this->hasRole('Mentor');
     }
@@ -337,9 +346,9 @@ class User
     /**
      * Check if the user is an administrator (at any of the system, institution or context levels).
      *
-     * @return bool    True if the user has a role of administrator
+     * @return bool  True if the user has a role of administrator
      */
-    public function isAdmin()
+    public function isAdmin(): bool
     {
         return $this->hasRole('Administrator') || $this->hasRole('urn:lti:sysrole:ims/lis/SysAdmin') ||
             $this->hasRole('urn:lti:sysrole:ims/lis/Administrator') || $this->hasRole('urn:lti:instrole:ims/lis/Administrator');
@@ -354,41 +363,41 @@ class User
      *
      * @param string $role Name of role
      *
-     * @return bool    True if the user has the specified role
+     * @return bool  True if the user has the specified role
      */
-    private function hasRole($role)
+    private function hasRole(string $role): bool
     {
         $ok = in_array($role, $this->roles);
-        if (!$ok && (strpos($role, 'urn:') !== 0) && (strpos($role, 'http://') !== 0) && (strpos($role, 'https://') !== 0)) {
+        if (!$ok && !str_starts_with($role, 'urn:') && !str_starts_with($role, 'http://') && !str_starts_with($role, 'https://')) {
             $role = "urn:lti:role:ims/lis/{$role}";
             $ok = in_array($role, $this->roles);
         }
         if (!$ok) {
             $role2 = null;
             $role3 = null;
-            if (strpos($role, 'urn:') === 0) {
-                if (strpos($role, 'urn:lti:role:ims/lis/') === 0) {
+            if (str_starts_with($role, 'urn:')) {
+                if (str_starts_with($role, 'urn:lti:role:ims/lis/')) {
                     $role2 = 'http://purl.imsglobal.org/vocab/lis/v2/membership#' . substr($role, 21);
                     if (substr($role, 21) === 'TeachingAssistant') {
                         $role3 = 'http://purl.imsglobal.org/vocab/lis/v2/membership/Instructor#TeachingAssistant';
                     }
-                } elseif (strpos($role, 'urn:lti:instrole:ims/lis/') === 0) {
+                } elseif (str_starts_with($role, 'urn:lti:instrole:ims/lis/')) {
                     $role2 = 'http://purl.imsglobal.org/vocab/lis/v2/person#' . substr($role, 25);
                     $role3 = 'http://purl.imsglobal.org/vocab/lis/v2/institution/person#' . substr($role, 25);
-                } elseif (strpos($role, 'urn:lti:sysrole:ims/lis/') === 0) {
+                } elseif (str_starts_with($role, 'urn:lti:sysrole:ims/lis/')) {
                     $role2 = 'http://purl.imsglobal.org/vocab/lis/v2/person#' . substr($role, 24);
                     $role3 = 'http://purl.imsglobal.org/vocab/lis/v2/system/person#' . substr($role, 24);
                 }
-            } elseif (strpos($role, 'http://purl.imsglobal.org/vocab/lis/v2/') === 0) {
-                if (strpos($role, 'http://purl.imsglobal.org/vocab/lis/v2/membership#') === 0) {
+            } elseif (str_starts_with($role, 'http://purl.imsglobal.org/vocab/lis/v2/')) {
+                if (str_starts_with($role, 'http://purl.imsglobal.org/vocab/lis/v2/membership#')) {
                     $role2 = 'urn:lti:role:ims/lis/' . substr($role, 50);
-                } elseif (strpos($role, 'http://purl.imsglobal.org/vocab/lis/v2/person#') === 0) {
+                } elseif (str_starts_with($role, 'http://purl.imsglobal.org/vocab/lis/v2/person#')) {
                     $role2 = 'urn:lti:instrole:ims/lis/' . substr($role, 46);
                     $role3 = 'urn:lti:sysrole:ims/lis/' . substr($role, 46);
-                } elseif (strpos($role, 'http://purl.imsglobal.org/vocab/lis/v2/institution/person#') === 0) {
+                } elseif (str_starts_with($role, 'http://purl.imsglobal.org/vocab/lis/v2/institution/person#')) {
                     $role2 = 'urn:lti:instrole:ims/lis/' . substr($role, 58);
                     $role3 = 'http://purl.imsglobal.org/vocab/lis/v2/person#' . substr($role, 58);
-                } elseif (strpos($role, 'http://purl.imsglobal.org/vocab/lis/v2/system/person#') === 0) {
+                } elseif (str_starts_with($role, 'http://purl.imsglobal.org/vocab/lis/v2/system/person#')) {
                     $role2 = 'urn:lti:sysrole:ims/lis/' . substr($role, 53);
                     $role3 = 'http://purl.imsglobal.org/vocab/lis/v2/person#' . substr($role, 53);
                 }

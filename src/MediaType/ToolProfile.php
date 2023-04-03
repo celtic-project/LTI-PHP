@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\MediaType;
 
@@ -19,14 +20,14 @@ class ToolProfile
      *
      * @var object $product_instance
      */
-    public $product_instance;
+    public object $product_instance;
 
     /**
      * Class constructor.
      *
-     * @param Tool $tool   Tool object
+     * @param Tool $tool  Tool object
      */
-    function __construct($tool)
+    function __construct(Tool $tool)
     {
         $this->lti_version = 'LTI-2p0';
 
@@ -37,15 +38,17 @@ class ToolProfile
             $this->product_instance->guid = $tool->product->id;
         }
         if (!empty($tool->product->name)) {
-            $this->product_instance->product_info = new \stdClass;
-            $this->product_instance->product_info->product_name = new \stdClass;
-            $this->product_instance->product_info->product_name->default_value = $tool->product->name;
-            $this->product_instance->product_info->product_name->key = 'tool.name';
+            $this->product_instance->product_info = (object) [
+                    'product_name' => (object) [
+                        'default_value' => $tool->product->name,
+                        'key' => 'tool.name']
+            ];
         }
         if (!empty($tool->product->description)) {
-            $this->product_instance->product_info->description = new \stdClass;
-            $this->product_instance->product_info->description->default_value = $tool->product->description;
-            $this->product_instance->product_info->description->key = 'tool.description';
+            $this->product_instance->product_info->description = (object) [
+                    'default_value' => $tool->product->description,
+                    'key' => 'tool.description'
+            ];
         }
         if (!empty($tool->product->url)) {
             $this->product_instance->guid = $tool->product->url;
@@ -64,14 +67,16 @@ class ToolProfile
             $this->product_instance->product_info->product_family->vendor->code = $tool->vendor->id;
         }
         if (!empty($tool->vendor->name)) {
-            $this->product_instance->product_info->product_family->vendor->vendor_name = new \stdClass;
-            $this->product_instance->product_info->product_family->vendor->vendor_name->default_value = $tool->vendor->name;
-            $this->product_instance->product_info->product_family->vendor->vendor_name->key = 'tool.vendor.name';
+            $this->product_instance->product_info->product_family->vendor->vendor_name = (object) [
+                    'default_value' => $tool->vendor->name,
+                    'key' => 'tool.vendor.name'
+            ];
         }
         if (!empty($tool->vendor->description)) {
-            $this->product_instance->product_info->product_family->vendor->description = new \stdClass;
-            $this->product_instance->product_info->product_family->vendor->description->default_value = $tool->vendor->description;
-            $this->product_instance->product_info->product_family->vendor->description->key = 'tool.vendor.description';
+            $this->product_instance->product_info->product_family->vendor->description = (object) [
+                    'default_value' => $tool->vendor->description,
+                    'key' => 'tool.vendor.description'
+            ];
         }
         if (!empty($tool->vendor->url)) {
             $this->product_instance->product_info->product_family->vendor->website = $tool->vendor->url;
@@ -81,14 +86,13 @@ class ToolProfile
                 $tool->vendor->timestamp);
         }
 
-        $this->resource_handler = array();
+        $this->resource_handler = [];
         foreach ($tool->resourceHandlers as $resourceHandler) {
             $this->resource_handler[] = new ResourceHandler($tool, $resourceHandler);
         }
         if (!empty($tool->baseUrl)) {
-            $this->base_url_choice = array();
-            $this->base_url_choice[] = new \stdClass;
-            $this->base_url_choice[0]->default_base_url = $tool->baseUrl;
+            $this->base_url_choice = [];
+            $this->base_url_choice[] = (object) ['default_base_url' => $tool->baseUrl];
         }
     }
 

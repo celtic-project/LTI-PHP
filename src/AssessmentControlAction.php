@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI;
 
@@ -42,42 +43,42 @@ class AssessmentControlAction
      *
      * @var int|null $extraTime
      */
-    public $extraTime = null;
+    public ?int $extraTime = null;
 
     /**
      * Reason code.
      *
      * @var string|null $code
      */
-    public $code = null;
+    public ?string $code = null;
 
     /**
      * Reason message.
      *
      * @var string|null $message
      */
-    public $message = null;
+    public ?string $message = null;
 
     /**
      * Action.
      *
      * @var string|null $action
      */
-    private $action = null;
+    private ?string $action = null;
 
     /**
      * Incident date value.
      *
      * @var DateTime|null $date
      */
-    private $date = null;
+    private ?DateTime $date = null;
 
     /**
      * Severity.
      *
      * @var float|null $severity
      */
-    private $severity = null;
+    private ?float $severity = null;
 
     /**
      * Class constructor.
@@ -86,7 +87,7 @@ class AssessmentControlAction
      * @param DateTime  $date               Date/time of incident
      * @param float     $severity           Severity of incident
      */
-    public function __construct($action, $date, $severity)
+    public function __construct(string $action, DateTime $date, float $severity)
     {
         $this->action = $action;
         $this->date = $date;
@@ -98,7 +99,7 @@ class AssessmentControlAction
      *
      * @return string Action value
      */
-    public function getAction()
+    public function getAction(): string
     {
         return $this->action;
     }
@@ -108,7 +109,7 @@ class AssessmentControlAction
      *
      * @return DateTime Incident date value
      */
-    public function getDate()
+    public function getDate(): DateTime
     {
         return $this->date;
     }
@@ -118,7 +119,7 @@ class AssessmentControlAction
      *
      * @return float Severity value
      */
-    public function getSeverity()
+    public function getSeverity(): float
     {
         return $this->severity;
     }

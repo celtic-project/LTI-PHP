@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\Jwt;
 
@@ -21,20 +22,49 @@ class FirebaseClient implements ClientInterface
     /**
      * Supported signature algorithms.
      */
-    const SUPPORTED_ALGORITHMS = array('RS256', 'RS384', 'RS512');
+    const SUPPORTED_ALGORITHMS = ['RS256', 'RS384', 'RS512'];
 
-    private $jwtString = null;
-    private $jwtHeaders = null;
-    private $jwtPayload = null;
-    private static $lastHeaders = null;
-    private static $lastPayload = null;
+    /**
+     * JSON web token string.
+     *
+     * @var string $jwtString
+     */
+    private ?string $jwtString = null;
+
+    /**
+     * Headers from JSON web token.
+     *
+     * @var object $jwtHeaders
+     */
+    private ?object $jwtHeaders = null;
+
+    /**
+     * Payload from JSON web token.
+     *
+     * @var object $jwtHeaders
+     */
+    private ?object $jwtPayload = null;
+
+    /**
+     * Headers from last JSON web token.
+     *
+     * @var object $lastHeaders
+     */
+    private static ?object $lastHeaders = null;
+
+    /**
+     * Payload from last JSON web token.
+     *
+     * @var object $lastPayload
+     */
+    private static ?object $lastPayload = null;
 
     /**
      * Return an array of supported signature algorithms.
      *
      * @return string[]  Array of algorithm names
      */
-    public static function getSupportedAlgorithms()
+    public static function getSupportedAlgorithms(): array
     {
         return self::SUPPORTED_ALGORITHMS;
     }
@@ -42,9 +72,9 @@ class FirebaseClient implements ClientInterface
     /**
      * Check if a JWT is defined.
      *
-     * @return bool True if a JWT is defined
+     * @return bool  True if a JWT is defined
      */
-    public function hasJwt()
+    public function hasJwt(): bool
     {
         return !empty($this->jwtString);
     }
@@ -52,9 +82,9 @@ class FirebaseClient implements ClientInterface
     /**
      * Check if a JWT's content is encrypted.
      *
-     * @return bool True if a JWT is encrypted
+     * @return bool  True if a JWT is encrypted
      */
-    public function isEncrypted()
+    public function isEncrypted(): bool
     {
         return false;  // Not supported by this client
     }
@@ -62,18 +92,18 @@ class FirebaseClient implements ClientInterface
     /**
      * Load a JWT from a string.
      *
-     * @param string $jwtString  JWT string
-     * @param string $privateKey Private key in PEM format for decrypting encrypted tokens (optional)
+     * @param string $jwtString   JWT string
+     * @param string $privateKey  Private key in PEM format for decrypting encrypted tokens (optional)
      *
-     * @return bool True if the JWT was successfully loaded
+     * @return bool  True if the JWT was successfully loaded
      */
-    public function load($jwtString, $privateKey = null)
+    public function load(string $jwtString, ?string $privateKey = null): bool
     {
         $sections = explode('.', $jwtString);
         $ok = count($sections) === 3;
         if ($ok) {
-            $headers = json_decode(JWT::urlsafeB64Decode($sections[0]));
-            $payload = json_decode(JWT::urlsafeB64Decode($sections[1]));
+            $headers = Util::json_decode(JWT::urlsafeB64Decode($sections[0]));
+            $payload = Util::json_decode(JWT::urlsafeB64Decode($sections[1]));
             $ok = !is_null($headers) && !is_null($payload);
         }
         if ($ok) {
@@ -92,11 +122,11 @@ class FirebaseClient implements ClientInterface
     /**
      * Get the value of the JWE headers.
      *
-     * @return array The value of the JWE headers
+     * @return array  The value of the JWE headers
      */
-    public function getJweHeaders()
+    public function getJweHeaders(): array
     {
-        return array();  // Encryption not supported by this client
+        return [];  // Encryption not supported by this client
     }
 
     /**
@@ -104,9 +134,9 @@ class FirebaseClient implements ClientInterface
      *
      * @param string $name  Header name
      *
-     * @return bool True if the JWT has a header of the specified name
+     * @return bool  True if the JWT has a header of the specified name
      */
-    public function hasHeader($name)
+    public function hasHeader(string $name): bool
     {
         return !empty($this->jwtHeaders) && isset($this->jwtHeaders->{$name});
     }
@@ -114,12 +144,12 @@ class FirebaseClient implements ClientInterface
     /**
      * Get the value of the header with the specified name.
      *
-     * @param string $name  Header name
+     * @param string $name          Header name
      * @param string $defaultValue  Default value
      *
-     * @return string The value of the header with the specified name, or the default value if it does not exist
+     * @return string  The value of the header with the specified name, or the default value if it does not exist
      */
-    public function getHeader($name, $defaultValue = null)
+    public function getHeader(string $name, ?string $defaultValue = null): ?string
     {
         if ($this->hasHeader($name)) {
             $value = $this->jwtHeaders->{$name};
@@ -133,9 +163,9 @@ class FirebaseClient implements ClientInterface
     /**
      * Get the value of the headers.
      *
-     * @return array The value of the headers
+     * @return array  The value of the headers
      */
-    public function getHeaders()
+    public function getHeaders(): array|object
     {
         return $this->jwtHeaders;
     }
@@ -143,9 +173,9 @@ class FirebaseClient implements ClientInterface
     /**
      * Get the value of the headers for the last signed JWT (before any encryption).
      *
-     * @return array The value of the headers
+     * @return array  The value of the headers
      */
-    public static function getLastHeaders()
+    public static function getLastHeaders(): array
     {
         return self::$lastHeaders;
     }
@@ -155,9 +185,9 @@ class FirebaseClient implements ClientInterface
      *
      * @param string $name  Claim name
      *
-     * @return bool True if the JWT has a claim of the specified name
+     * @return bool  True if the JWT has a claim of the specified name
      */
-    public function hasClaim($name)
+    public function hasClaim(string $name): bool
     {
         return !empty($this->jwtPayload) && isset($this->jwtPayload->{$name});
     }
@@ -165,12 +195,12 @@ class FirebaseClient implements ClientInterface
     /**
      * Get the value of the claim with the specified name.
      *
-     * @param string $name  Claim name
-     * @param string $defaultValue  Default value
+     * @param string $name                                     Claim name
+     * @param int|string|bool|array|object|null $defaultValue  Default value
      *
-     * @return string|array|object The value of the claim with the specified name, or the default value if it does not exist
+     * @return int|string|bool|array|object|null  The value of the claim with the specified name, or the default value if it does not exist
      */
-    public function getClaim($name, $defaultValue = null)
+    public function getClaim(string $name, int|string|bool|array|object|null $defaultValue = null): int|string|bool|array|object|null
     {
         if ($this->hasClaim($name)) {
             $value = $this->jwtPayload->{$name};
@@ -184,9 +214,9 @@ class FirebaseClient implements ClientInterface
     /**
      * Get the value of the payload.
      *
-     * @return array The value of the payload
+     * @return array  The value of the payload
      */
-    public function getPayload()
+    public function getPayload(): array|object
     {
         return $this->jwtPayload;
     }
@@ -194,9 +224,9 @@ class FirebaseClient implements ClientInterface
     /**
      * Get the value of the payload for the last signed JWT (before any encryption).
      *
-     * @return array The value of the payload
+     * @return array  The value of the payload
      */
-    public static function getLastPayload()
+    public static function getLastPayload(): array
     {
         return self::$lastPayload;
     }
@@ -204,21 +234,23 @@ class FirebaseClient implements ClientInterface
     /**
      * Verify the signature of the JWT.
      *
-     * @param string $publicKey  Public key of issuer
-     * @param string $jku        JSON Web Key URL of issuer (optional)
+     * @param string|null $publicKey  Public key of issuer
+     * @param string|null $jku        JSON Web Key URL of issuer (optional)
      *
-     * @return bool True if the JWT has a valid signature
+     * @return bool  True if the JWT has a valid signature
      */
-    public function verify($publicKey, $jku = null)
+    public function verify(?string $publicKey, ?string $jku = null): bool
     {
         $ok = false;
         $hasPublicKey = !empty($publicKey);
         if ($hasPublicKey) {
             if (is_string($publicKey)) {
-                $json = json_decode($publicKey, true);
+                $json = Util::json_decode($publicKey, true);
                 if (!is_null($json)) {
                     try {
-                        $jwks = array('keys' => array($json));
+                        $jwks = [
+                            'keys' => [$json]
+                        ];
                         $publicKey = static::parseKeySet($jwks);
                     } catch (\Exception $e) {
 
@@ -257,18 +289,19 @@ class FirebaseClient implements ClientInterface
     /**
      * Sign the JWT.
      *
-     * @param  array $payload          Payload
-     * @param string $signatureMethod  Signature method
-     * @param string $privateKey       Private key in PEM format
-     * @param string $kid              Key ID (optional)
-     * @param string $jku              JSON Web Key URL (optional)
-     * @param string $encryptionMethod Encryption method (optional)
-     * @param string $publicKey        Public key of recipient for content encryption (optional)
+     * @param array $payload            Payload
+     * @param string $signatureMethod   Signature method
+     * @param string $privateKey        Private key in PEM format
+     * @param string $kid               Key ID (optional)
+     * @param string $jku               JSON Web Key URL (optional)
+     * @param string $encryptionMethod  Encryption method (optional)
+     * @param string $publicKey         Public key of recipient for content encryption (optional)
      *
-     * @return string Signed JWT
+     * @return string  Signed JWT
+     * @throws Exception
      */
-    public static function sign($payload, $signatureMethod, $privateKey, $kid = null, $jku = null, $encryptionMethod = null,
-        $publicKey = null)
+    public static function sign(array $payload, string $signatureMethod, string $privateKey, ?string $kid = null,
+        ?string $jku = null, ?string $encryptionMethod = null, ?string $publicKey = null): string
     {
         if (!empty($encryptionMethod)) {
             $errorMessage = 'Encrypted tokens not supported by the Firebase JWT client';
@@ -277,8 +310,8 @@ class FirebaseClient implements ClientInterface
         }
         $jwtString = JWT::encode($payload, $privateKey, $signatureMethod, $kid);
         $sections = explode('.', $jwtString);
-        self::$lastHeaders = json_decode(JWT::urlsafeB64Decode($sections[0]));
-        self::$lastPayload = json_decode(JWT::urlsafeB64Decode($sections[1]));
+        self::$lastHeaders = Util::json_decode(JWT::urlsafeB64Decode($sections[0]));
+        self::$lastPayload = Util::json_decode(JWT::urlsafeB64Decode($sections[1]));
 
         return $jwtString;
     }
@@ -290,24 +323,18 @@ class FirebaseClient implements ClientInterface
      *
      * @return string|null  Key in PEM format
      */
-    public static function generateKey($signatureMethod = 'RS256')
+    public static function generateKey(string $signatureMethod = 'RS256'): ?string
     {
         $privateKey = null;
-        switch ($signatureMethod) {
-            case 'RS512':
-                $size = 4096;
-                break;
-            case 'RS384':
-                $size = 3072;
-                break;
-            default:
-                $size = 2048;
-                break;
-        }
-        $config = array(
+        $size = match ($signatureMethod) {
+            'RS512' => 4096,
+            'RS384' => 3072,
+            default => 2048
+        };
+        $config = [
             "private_key_bits" => $size,
             "private_key_type" => OPENSSL_KEYTYPE_RSA
-        );
+        ];
         $res = openssl_pkey_new($config);
         if ($res !== false) {
             if (openssl_pkey_export($res, $privateKey)) {
@@ -322,11 +349,11 @@ class FirebaseClient implements ClientInterface
     /**
      * Get the public key for a private key.
      *
-     * @param string $privateKey       Private key in PEM format
+     * @param string $privateKey  Private key in PEM format
      *
-     * @return string Public key in PEM format
+     * @return string|null  Public key in PEM format
      */
-    public static function getPublicKey($privateKey)
+    public static function getPublicKey(string $privateKey): ?string
     {
         $publicKey = null;
         $res = openssl_pkey_get_private($privateKey);
@@ -347,9 +374,9 @@ class FirebaseClient implements ClientInterface
      *
      * @return array  JWKS keys
      */
-    public static function getJWKS($pemKey, $signatureMethod, $kid = null)
+    public static function getJWKS(string $pemKey, string $signatureMethod, ?string $kid = null): array
     {
-        $keys['keys'] = array();
+        $keys['keys'] = [];
         $res = openssl_pkey_get_private($pemKey);
         if ($res === false) {
             $res = openssl_pkey_get_public($pemKey);
@@ -379,16 +406,16 @@ class FirebaseClient implements ClientInterface
     /**
      * Fetch the public keys from a URL.
      *
-     * @param string $jku     Endpoint for retrieving JSON web keys
+     * @param string $jku  Endpoint for retrieving JSON web keys
      *
-     * @return array    Array of keys
+     * @return array  Array of keys
      */
-    private function fetchPublicKey($jku)
+    private function fetchPublicKey(string $jku): array
     {
-        $publicKey = array();
+        $publicKey = [];
         $http = new HttpMessage($jku);
         if ($http->send()) {
-            $keys = json_decode($http->response, true);
+            $keys = Util::json_decode($http->response, true);
             $publicKey = static::parseKeySet($keys);
         }
 
@@ -401,17 +428,17 @@ class FirebaseClient implements ClientInterface
      * This function is based on Firebase\JWT\JWK::parseKeySet but returns an array containing Key objects rather than an OpenSSL key
      * resource so that the algorithm associated with each key can be identified.
      *
-     * @param array $jwks The JSON Web Key Set as an associative array
+     * @param array $jwks  The JSON Web Key Set as an associative array
      *
-     * @return array An associative array of Key objects
+     * @return array  An associative array of Key objects
      *
-     * @throws InvalidArgumentException     Provided JWK Set is empty
-     * @throws UnexpectedValueException     Provided JWK Set was invalid
-     * @throws DomainException              OpenSSL failure
+     * @throws InvalidArgumentException  Provided JWK Set is empty
+     * @throws UnexpectedValueException  Provided JWK Set was invalid
+     * @throws DomainException           OpenSSL failure
      */
-    private static function parseKeySet($jwks)
+    private static function parseKeySet(array $jwks): array
     {
-        $keys = array();
+        $keys = [];
 
         if (!isset($jwks['keys'])) {
             throw new \UnexpectedValueException('"keys" member must exist in the JWK Set');
@@ -422,7 +449,7 @@ class FirebaseClient implements ClientInterface
 
         foreach ($jwks['keys'] as $k => $v) {
             if (!empty($v['alg'])) {
-                $kid = isset($v['kid']) ? $v['kid'] : $k;
+                $kid = $v['kid'] ?? $k;
                 if ($key = JWK::parseKey($v)) {
                     if (!$key instanceof Key) {
                         $key = new Key($key, $v['alg']);

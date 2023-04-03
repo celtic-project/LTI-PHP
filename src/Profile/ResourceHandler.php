@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\Profile;
 
@@ -17,38 +18,38 @@ class ResourceHandler
      *
      * @var Item|null $item
      */
-    public $item = null;
+    public ?Item $item = null;
 
     /**
      * URL of icon.
      *
      * @var string|null $icon
      */
-    public $icon = null;
+    public ?string $icon = null;
 
     /**
      * Required Message objects for resource handler.
      *
      * @var array|null $requiredMessages
      */
-    public $requiredMessages = null;
+    public ?array $requiredMessages = null;
 
     /**
      * Optional Message objects for resource handler.
      *
      * @var array|null $optionalMessages
      */
-    public $optionalMessages = null;
+    public ?array $optionalMessages = null;
 
     /**
      * Class constructor.
      *
-     * @param Item      $item      General details of resource handler
-     * @param string    $icon      URL of icon
-     * @param array     $requiredMessages  Array of required Message objects for resource handler
-     * @param array     $optionalMessages  Array of optional Message objects for resource handler
+     * @param Item $item               General details of resource handler
+     * @param string $icon             URL of icon
+     * @param array $requiredMessages  Array of required Message objects for resource handler
+     * @param array $optionalMessages  Array of optional Message objects for resource handler
      */
-    function __construct($item, $icon, $requiredMessages, $optionalMessages)
+    function __construct(Item $item, string $icon, array $requiredMessages, array $optionalMessages)
     {
         $this->item = $item;
         $this->icon = $icon;

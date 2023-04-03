@@ -1,6 +1,9 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI;
+
+use ceLTIc\LTI\Enum\OutcomeType;
 
 /**
  * Class to represent an outcome
@@ -15,38 +18,38 @@ class Outcome
     /**
      * Allowed values for Activity Progress.
      */
-    const ALLOWED_ACTIVITY_PROGRESS = array(
+    const ALLOWED_ACTIVITY_PROGRESS = [
         'Initialized',
         'Started',
         'InProgress',
         'Submitted',
         'Completed'
-    );
+    ];
 
     /**
      * Allowed values for Grading Progress.
      */
-    const ALLOWED_GRADING_PROGRESS = array(
+    const ALLOWED_GRADING_PROGRESS = [
         'FullyGraded',
         'Pending',
         'PendingManual',
         'Failed',
         'NotReady'
-    );
+    ];
 
     /**
      * Language value.
      *
      * @var string|null $language
      */
-    public $language = null;
+    public ?string $language = null;
 
     /**
      * Outcome status value.
      *
      * @var string|null $status
      */
-    public $status = null;
+    public ?string $status = null;
 
     /**
      * Outcome date value.
@@ -58,16 +61,16 @@ class Outcome
     /**
      * Outcome type value.
      *
-     * @var string|null $type
+     * @var int|string|null $type
      */
-    public $type = null;
+    public OutcomeType|null $type = null;
 
     /**
      * Activity progress.
      *
      * @var string|null $activityProgress
      */
-    public $activityProgress = null;
+    public ?string $activityProgress = null;
 
     /**
      * Grading progress.
@@ -81,45 +84,45 @@ class Outcome
      *
      * @var string|null $comment
      */
-    public $comment = null;
+    public ?string $comment = null;
 
     /**
      * Outcome data source value.
      *
      * @var string|null $dataSource
      */
-    public $dataSource = null;
+    public ?string $dataSource = null;
 
     /**
      * Outcome value.
      *
-     * @var string|null $value
+     * @var int|float|string|null $value
      */
-    private $value = null;
+    private int|float|string|null $value = null;
 
     /**
      * Points possible value.
      *
      * @var int $pointsPossible
      */
-    private $pointsPossible = 1;
+    private int $pointsPossible = 1;
 
     /**
      * Class constructor.
      *
-     * @param mixed  $value             Outcome value (optional, default is none)
-     * @param int    $pointsPossible    Points possible value (optional, default is none)
+     * @param int|float|string $value   Outcome value (optional, default is none)
+     * @param int $pointsPossible       Points possible value (optional, default is none)
      * @param string $activityProgress  Activity progress (optional, default is 'Completed')
-     * @param string $gradingProgress  Grading progress (optional, default is 'FullyGraded')
+     * @param string $gradingProgress   Grading progress (optional, default is 'FullyGraded')
      */
-    public function __construct($value = null, $pointsPossible = 1, $activityProgress = 'Completed',
-        $gradingProgress = 'FullyGraded')
+    public function __construct(int|float|string|null $value = null, int $pointsPossible = 1,
+        string $activityProgress = 'Completed', string $gradingProgress = 'FullyGraded')
     {
         $this->value = $value;
         $this->pointsPossible = $pointsPossible;
         $this->language = 'en-US';
         $this->date = gmdate('Y-m-d\TH:i:s\Z', time());
-        $this->type = 'decimal';
+        $this->type = OutcomeType::Decimal;
         if (in_array($activityProgress, self::ALLOWED_ACTIVITY_PROGRESS)) {
             $this->activityProgress = $activityProgress;
         } else {
@@ -136,9 +139,9 @@ class Outcome
     /**
      * Get the outcome value.
      *
-     * @return string Outcome value
+     * @return int|float|string|null  Outcome value
      */
-    public function getValue()
+    public function getValue(): int|float|string|null
     {
         return $this->value;
     }
@@ -146,9 +149,11 @@ class Outcome
     /**
      * Set the outcome value.
      *
-     * @param string $value  Outcome value
+     * @param int|float|string|null $value  Outcome value
+     *
+     * @return void
      */
-    public function setValue($value)
+    public function setValue(int|float|string|null $value): void
     {
         $this->value = $value;
     }
@@ -156,9 +161,9 @@ class Outcome
     /**
      * Get the points possible value.
      *
-     * @return int|null Points possible value
+     * @return int|null  Points possible value
      */
-    public function getPointsPossible()
+    public function getPointsPossible(): ?int
     {
         return $this->pointsPossible;
     }
@@ -167,8 +172,10 @@ class Outcome
      * Set the points possible value.
      *
      * @param int|null $pointsPossible  Points possible value
+     *
+     * @return void
      */
-    public function setPointsPossible($pointsPossible)
+    public function setPointsPossible(?int $pointsPossible): void
     {
         $this->pointsPossible = $pointsPossible;
     }

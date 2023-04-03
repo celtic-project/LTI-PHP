@@ -1,8 +1,10 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\Service;
 
 use ceLTIc\LTI\Context;
+use ceLTIc\LTI\User;
 
 /**
  * Class to implement the Course Groups service
@@ -26,34 +28,38 @@ class Groups extends Service
 
     /**
      * Access scope.
+     *
+     * @var string $SCOPE
      */
-    public static $SCOPE = 'https://purl.imsglobal.org/spec/lti-gs/scope/contextgroup.readonly';
+    public static string $SCOPE = 'https://purl.imsglobal.org/spec/lti-gs/scope/contextgroup.readonly';
 
     /**
      * Default limit on size of container to be returned from requests.
+     *
+     * @var int|null $defaultLimit
      */
-    public static $defaultLimit = null;
+    public static ?int $defaultLimit = null;
 
     /**
      * The context to which the course groups apply.
      *
-     * @var Context $context
+     * @var Context|null $context
      */
-    private $context = null;
+    private ?Context $context = null;
 
     /**
      * The endpoint for course group requests.
      *
-     * @var string $groupsEndpoint
+     * @var string|null $groupsEndpoint
      */
-    private $groupsEndpoint = null;
+    private ?string $groupsEndpoint = null;
 
     /**
      * The endpoint for course groupset requests.
      *
-     * @var string $groupSetsEndpoint
+     * @var string|null $groupSetsEndpoint
      */
-    private $groupSetsEndpoint = null;
+    private ?string $groupSetsEndpoint = null;
 
     /**
      * Limit on size of container to be returned from requests.
@@ -62,27 +68,28 @@ class Groups extends Service
      *
      * @var int|null  $limit
      */
-    private $limit;
+    private ?int $limit;
 
     /**
      * Whether requests should be made one page at a time when a limit is set.
      *
      * When false, all objects will be requested, even if this requires several requests based on the limit set.
      *
-     * @var boolean  $pagingMode
+     * @var bool  $pagingMode
      */
-    private $pagingMode;
+    private bool $pagingMode;
 
     /**
      * Class constructor.
      *
-     * @param object       $context             The context to which the course groups apply
-     * @param string       $groupsEndpoint      Service endpoint for course groups
-     * @param string       $groupSetsEndpoint   Service endpoint for course group sets (optional)
-     * @param int|null     $limit               Limit of objects to be returned in each request, null for all
-     * @param boolean      $pagingMode        True if only a single page should be requested when a limit is set
+     * @param object $context            The context to which the course groups apply
+     * @param string $groupsEndpoint     Service endpoint for course groups
+     * @param string $groupSetsEndpoint  Service endpoint for course group sets (optional)
+     * @param int|null $limit            Limit of objects to be returned in each request, null for all
+     * @param bool $pagingMode           True if only a single page should be requested when a limit is set
      */
-    public function __construct($context, $groupsEndpoint, $groupSetsEndpoint = null, $limit = null, $pagingMode = false)
+    public function __construct(Context $context, ?string $groupsEndpoint, ?string $groupSetsEndpoint = null, ?int $limit = null,
+        bool $pagingMode = false)
     {
         $platform = $context->getPlatform();
         parent::__construct($platform, $groupsEndpoint);
@@ -98,13 +105,13 @@ class Groups extends Service
     /**
      * Get the course group sets and groups.
      *
-     * @param bool      $allowNonSets  Include groups which are not part of a set (optional)
-     * @param User|null $user          Limit response to groups for specified user (optional)
-     * @param int|null  $limit         Limit on the number of objects to be returned in each request, null for service default (optional)
+     * @param bool $allowNonSets  Include groups which are not part of a set (optional)
+     * @param User|null $user     Limit response to groups for specified user (optional)
+     * @param int|null $limit     Limit on the number of objects to be returned in each request, null for service default (optional)
      *
-     * @return bool     True if the operation was successful
+     * @return bool  True if the operation was successful
      */
-    public function get($allowNonSets = false, $user = null, $limit = null)
+    public function get(bool $allowNonSets = false, ?User $user = null, ?int $limit = null): bool
     {
         $ok = $this->getGroupSets($limit);
         if ($ok) {
@@ -121,17 +128,17 @@ class Groups extends Service
     /**
      * Get the course group sets.
      *
-     * @param int|null  $limit  Limit on the number of course group sets to be returned in each request, null for service default (optional)
+     * @param int|null $limit  Limit on the number of course group sets to be returned in each request, null for service default (optional)
      *
-     * @return bool     True if the operation was successful
+     * @return bool  True if the operation was successful
      */
-    public function getGroupSets($limit = null)
+    public function getGroupSets(?int $limit = null): bool
     {
         $this->endpoint = $this->groupSetsEndpoint;
         $ok = !empty($this->endpoint);
         if ($ok) {
             $this->mediaType = self::MEDIA_TYPE_COURSE_GROUP_SETS;
-            $parameters = array();
+            $parameters = [];
             if (is_null($limit)) {
                 $limit = $this->limit;
             }
@@ -141,8 +148,8 @@ class Groups extends Service
             if (!empty($limit)) {
                 $parameters['limit'] = strval($limit);
             }
-            $this->context->groupSets = array();
-            $groupSets = array();
+            $this->context->groupSets = [];
+            $groupSets = [];
             $endpoint = $this->endpoint;
             do {
                 $http = $this->send('GET', $parameters);
@@ -151,14 +158,19 @@ class Groups extends Service
                 if ($ok) {
                     if (isset($http->responseJson->sets)) {
                         foreach ($http->responseJson->sets as $set) {
-                            $groupSets[$set->id] = array('title' => $set->name, 'groups' => array(),
-                                'num_members' => 0, 'num_staff' => 0, 'num_learners' => 0);
+                            $groupSets[$set->id] = [
+                                'title' => $set->name,
+                                'groups' => [],
+                                'num_members' => 0,
+                                'num_staff' => 0,
+                                'num_learners' => 0
+                            ];
                         }
                     }
                     if (!$this->pagingMode && $http->hasRelativeLink('next')) {
                         $url = $http->getRelativeLink('next');
                         $this->endpoint = $url;
-                        $parameters = array();
+                        $parameters = [];
                     }
                 }
             } while ($url);
@@ -174,19 +186,19 @@ class Groups extends Service
     /**
      * Get the course groups.
      *
-     * @param bool      $allowNonSets  Include groups which are not part of a set (optional)
-     * @param User|null $user          Limit response to groups for specified user (optional)
-     * @param int|null  $limit         Limit on the number of course groups to be returned in each request, null for service default (optional)
+     * @param bool $allowNonSets  Include groups which are not part of a set (optional)
+     * @param User|null $user     Limit response to groups for specified user (optional)
+     * @param int|null $limit     Limit on the number of course groups to be returned in each request, null for service default (optional)
      *
-     * @return bool     True if the operation was successful
+     * @return bool  True if the operation was successful
      */
-    public function getGroups($allowNonSets = false, $user = null, $limit = null)
+    public function getGroups(bool $allowNonSets = false, ?User $user = null, ?int $limit = null): bool
     {
         $this->endpoint = $this->groupsEndpoint;
         $ok = !empty($this->endpoint);
         if ($ok) {
             $this->mediaType = self::MEDIA_TYPE_COURSE_GROUPS;
-            $parameters = array();
+            $parameters = [];
             $ltiUserId = null;
             if (!empty($user) && !empty($user->ltiUserId)) {
                 $ltiUserId = $user->ltiUserId;
@@ -204,11 +216,11 @@ class Groups extends Service
                 $parameters['limit'] = strval($limit);
             }
             if (is_null($this->context->groupSets)) {
-                $groupSets = array();
+                $groupSets = [];
             } else {
                 $groupSets = $this->context->groupSets;
             }
-            $groups = array();
+            $groups = [];
             $endpoint = $this->endpoint;
             do {
                 $http = $this->send('GET', $parameters);
@@ -220,11 +232,18 @@ class Groups extends Service
                             if (!$allowNonSets && empty($agroup->set_id)) {
                                 continue;
                             }
-                            $group = array('title' => $agroup->name);
+                            $group = [
+                                'title' => $agroup->name
+                            ];
                             if (!empty($agroup->set_id)) {
                                 if (!array_key_exists($agroup->set_id, $groupSets)) {
-                                    $groupSets[$agroup->set_id] = array('title' => "Set {$agroup->set_id}", 'groups' => array(),
-                                        'num_members' => 0, 'num_staff' => 0, 'num_learners' => 0);
+                                    $groupSets[$agroup->set_id] = [
+                                        'title' => "Set {$agroup->set_id}",
+                                        'groups' => [],
+                                        'num_members' => 0,
+                                        'num_staff' => 0,
+                                        'num_learners' => 0
+                                    ];
                                 }
                                 $groupSets[$agroup->set_id]['groups'][] = $agroup->id;
                                 $group['set'] = $agroup->set_id;
@@ -238,7 +257,7 @@ class Groups extends Service
                     if (!$this->pagingMode && $http->hasRelativeLink('next')) {
                         $url = $http->getRelativeLink('next');
                         $this->endpoint = $url;
-                        $parameters = array();
+                        $parameters = [];
                     }
                 }
             } while ($url);

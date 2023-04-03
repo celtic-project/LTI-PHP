@@ -1,9 +1,13 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\ApiHook\canvas;
 
+use ceLTIc\LTI\Context;
+use ceLTIc\LTI\ResourceLink;
 use ceLTIc\LTI\UserResult;
 use ceLTIc\LTI\Http\HttpMessage;
+use ceLTIc\LTI\Util;
 
 /**
  * Class to handle Canvas web service requests.
@@ -19,34 +23,34 @@ trait CanvasApi
     /**
      * Default items per page.
      */
-    private static $DEFAULT_PER_PAGE = 50;
+    private static int $DEFAULT_PER_PAGE = 50;
 
     /**
      * The Canvas domain
      */
-    private $domain = null;
+    private ?string $domain = null;
 
     /**
      * The Canvas API token
      */
-    private $token = null;
+    private ?string $token = null;
 
     /**
      * Course ID
      */
-    private $courseId = null;
+    private ?string $courseId = null;
 
     /**
      * Resource link or context source object
      */
-    private $sourceObject = null;
+    private ResourceLink|Context|null $sourceObject = null;
 
     /**
      * Check if the API hook has been configured.
      *
      * @return bool  True if the API hook has been configured
      */
-    public function isConfigured()
+    public function isConfigured(): bool
     {
         $platform = $this->sourceObject->getPlatform();
 
@@ -56,11 +60,11 @@ trait CanvasApi
     /**
      * Get memberships.
      *
-     * @param bool    $withGroups True is group information is to be requested as well
+     * @param bool $withGroups  True is group information is to be requested as well
      *
-     * @return mixed Array of UserResult objects or False if the request was not successful
+     * @return array|bool  Array of UserResult objects or False if the request was not successful
      */
-    private function get($withGroups)
+    private function get(bool $withGroups): array|bool
     {
         $platform = $this->sourceObject->getPlatform();
         $this->domain = $platform->getSetting('canvas.domain');
@@ -90,11 +94,13 @@ trait CanvasApi
      * Set group sets for resource link.
      *
      * @param string $perPage  Maximum number of records per request
-     * @param string $prefix  Group set name prefix
+     * @param string $prefix   Group set name prefix
+     *
+     * @return bool  True if the request was successful
      */
-    private function setGroupSets($perPage, $prefix)
+    private function setGroupSets(string $perPage, string $prefix): bool
     {
-        $this->sourceObject->groupSets = array();
+        $this->sourceObject->groupSets = [];
         $url = "https://{$this->domain}/api/v1/courses/{$this->courseId}/group_categories";
         if ($perPage > 0) {
             $url .= "?per_page={$perPage}";
@@ -103,15 +109,20 @@ trait CanvasApi
             $http = new HttpMessage($url, 'GET', null, "Authorization: Bearer {$this->token}");
             $http->send();
             if ($http->ok) {
-                $allCategories = json_decode($http->response);
+                $allCategories = Util::json_decode($http->response);
                 $http->ok = !is_null($allCategories) && is_array($allCategories);
             }
             $url = '';
             if ($http->ok) {
                 foreach ($allCategories as $category) {
-                    if (empty($prefix) || (strpos($category->name, $prefix) === 0)) {
-                        $this->sourceObject->groupSets[strval($category->id)] = array('title' => $category->name, 'groups' => array(),
-                            'num_members' => 0, 'num_staff' => 0, 'num_learners' => 0);
+                    if (empty($prefix) || str_starts_with($category->name, $prefix)) {
+                        $this->sourceObject->groupSets[strval($category->id)] = [
+                            'title' => $category->name,
+                            'groups' => [],
+                            'num_members' => 0,
+                            'num_staff' => 0,
+                            'num_learners' => 0
+                        ];
                     }
                 }
                 if (preg_match('/\<([^\>]+)\>; *rel=\"next\"/', $http->responseHeaders, $matches)) {
@@ -128,11 +139,11 @@ trait CanvasApi
      *
      * @param string $perPage  Maximum number of records per request
      *
-     * @return mixed Array of UserResult objects or False if the request was not successful
+     * @return array|bool  Array of UserResult objects or false if the request was not successful
      */
-    private function getRoles($perPage)
+    private function getRoles(string $perPage): array|bool
     {
-        $roles = array();
+        $roles = [];
 
         $url = "https://{$this->domain}/api/v1/courses/{$this->courseId}/enrollments?state[]=invited&state[]=active&state[]=completed";
         if ($perPage > 0) {
@@ -142,7 +153,7 @@ trait CanvasApi
             $http = new HttpMessage($url, 'GET', null, "Authorization: Bearer {$this->token}");
             $http->send();
             if ($http->ok) {
-                $enrolments = json_decode($http->response);
+                $enrolments = Util::json_decode($http->response);
                 $http->ok = !is_null($enrolments) && is_array($enrolments);
             }
             $url = '';
@@ -164,15 +175,14 @@ trait CanvasApi
     /**
      * Get users enrolled in course.
      *
-     * @param string $perPage  Maximum number of records per request
-     * @param bool $withGroups True is group information is to be requested as well
+     * @param string $perPage   Maximum number of records per request
+     * @param bool $withGroups  True is group information is to be requested as well
      *
-     * @return mixed Array of UserResult objects or False if the request was not successful
+     * @return array|bool  Array of UserResult objects or False if the request was not successful
      */
-    private function getUsers($perPage, $withGroups)
+    private function getUsers(string $perPage, bool $withGroups): array|bool
     {
-        $users = array();
-
+        $users = [];
         $url = "https://{$this->domain}/api/v1/courses/{$this->courseId}/users?state[]=invited&state[]=active&state[]=completed";
         if ($perPage > 0) {
             $url .= "&per_page={$perPage}";
@@ -185,7 +195,7 @@ trait CanvasApi
             $http = new HttpMessage($url, 'GET', null, "Authorization: Bearer {$this->token}");
             $http->send();
             if ($http->ok) {
-                $enrolments = json_decode($http->response);
+                $enrolments = Util::json_decode($http->response);
                 $http->ok = !is_null($enrolments) && is_array($enrolments);
             }
             $url = '';
@@ -248,11 +258,13 @@ trait CanvasApi
      * Set groups for users.
      *
      * @param string $perPage  Maximum number of records per request
-     * @param array $users  Array of UserResult objects
+     * @param array $users     Array of UserResult objects
+     *
+     * @return bool  True if the request was successful
      */
-    private function setGroups($perPage, $users)
+    private function setGroups(string $perPage, array $users): bool
     {
-        $this->sourceObject->groups = array();
+        $this->sourceObject->groups = [];
         $url = "https://{$this->domain}/api/v1/courses/{$this->courseId}/groups";
         if ($perPage > 0) {
             $url .= "?per_page={$perPage}";
@@ -261,7 +273,7 @@ trait CanvasApi
             $http = new HttpMessage($url, 'GET', null, "Authorization: Bearer {$this->token}");
             $http->send();
             if ($http->ok) {
-                $allGroups = json_decode($http->response);
+                $allGroups = Util::json_decode($http->response);
                 $http->ok = !is_null($allGroups) && is_array($allGroups);
             }
             $url = '';
@@ -270,7 +282,10 @@ trait CanvasApi
                     $setId = strval($group->group_category_id);
                     if (array_key_exists($setId, $this->sourceObject->groupSets)) {
                         $groupId = strval($group->id);
-                        $this->sourceObject->groups[$groupId] = array('title' => $group->name, 'set' => $setId);
+                        $this->sourceObject->groups[$groupId] = [
+                            'title' => $group->name,
+                            'set' => $setId
+                        ];
                         foreach ($users as $user) {
                             if (in_array($groupId, $user->groups)) {
                                 $this->sourceObject->groupSets[$setId]['num_members']++;

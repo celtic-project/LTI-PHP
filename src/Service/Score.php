@@ -1,8 +1,11 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\Service;
 
-use ceLTIc\LTI;
+use ceLTIc\LTI\Platform;
+use ceLTIc\LTI\User;
+use ceLTIc\LTI\Outcome;
 
 /**
  * Class to implement the Score service
@@ -16,16 +19,18 @@ class Score extends AssignmentGrade
 
     /**
      * Access scope.
+     *
+     * @var string $SCOPE
      */
-    public static $SCOPE = 'https://purl.imsglobal.org/spec/lti-ags/scope/score';
+    public static string $SCOPE = 'https://purl.imsglobal.org/spec/lti-ags/scope/score';
 
     /**
      * Class constructor.
      *
-     * @param Platform     $platform   Platform object for this service request
-     * @param string       $endpoint   Service endpoint
+     * @param Platform $platform  Platform object for this service request
+     * @param string $endpoint    Service endpoint
      */
-    public function __construct($platform, $endpoint)
+    public function __construct(Platform $platform, string $endpoint)
     {
         parent::__construct($platform, $endpoint, '/scores');
         $this->scope = self::$SCOPE;
@@ -35,27 +40,27 @@ class Score extends AssignmentGrade
     /**
      * Submit an outcome for a user.
      *
-     * @param LTI\Outcome     $ltiOutcome   Outcome object
-     * @param LTI\User        $user         User object
+     * @param Outcome $ltiOutcome  Outcome object
+     * @param User $user           User object
      *
      * @return bool  True if successful, otherwise false
      */
-    public function submit($ltiOutcome, $user)
+    public function submit(Outcome $ltiOutcome, User $user): bool
     {
         $score = $ltiOutcome->getValue();
-        if (!is_null($score)) {
-            $json = array(
+        if (is_null($score)) {
+            $json = [
+                'activityProgress' => 'Initialized',
+                'gradingProgress' => 'NotReady'
+            ];
+        } else {
+            $json = [
                 'scoreGiven' => $score,
                 'scoreMaximum' => $ltiOutcome->getPointsPossible(),
                 'comment' => $ltiOutcome->comment,
                 'activityProgress' => $ltiOutcome->activityProgress,
                 'gradingProgress' => $ltiOutcome->gradingProgress
-            );
-        } else {
-            $json = array(
-                'activityProgress' => 'Initialized',
-                'gradingProgress' => 'NotReady'
-            );
+            ];
         }
         $json['userId'] = $user->ltiUserId;
         $date = new \DateTime();

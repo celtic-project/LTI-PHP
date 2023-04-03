@@ -1,9 +1,10 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\MediaType;
 
 use ceLTIc\LTI\Tool;
-use ceLTIc\LTI\Profile;
+use ceLTIc\LTI\Profile\ResourceHandler;
 
 /**
  * Class to represent an LTI Resource Handler
@@ -18,26 +19,27 @@ class ResourceHandler
     /**
      * Class constructor.
      *
-     * @param Tool                    $tool   Tool object
-     * @param Profile\ResourceHandler $resourceHandler   Profile resource handler object
+     * @param Tool $tool                        Tool object
+     * @param ResourceHandler $resourceHandler  Profile resource handler object
      */
-    function __construct($tool, $resourceHandler)
+    function __construct(Tool $tool, ResourceHandler $resourceHandler)
     {
-        $this->resource_type = new \stdClass;
-        $this->resource_type->code = $resourceHandler->item->id;
-        $this->resource_name = new \stdClass;
-        $this->resource_name->default_value = $resourceHandler->item->name;
-        $this->resource_name->key = "{$resourceHandler->item->id}.resource.name";
-        $this->description = new \stdClass;
-        $this->description->default_value = $resourceHandler->item->description;
-        $this->description->key = "{$resourceHandler->item->id}.resource.description";
-        $icon_info = new \stdClass;
-        $icon_info->default_location = new \stdClass;
-        $icon_info->default_location->path = $resourceHandler->icon;
-        $icon_info->key = "{$resourceHandler->item->id}.icon.path";
-        $this->icon_info = array();
-        $this->icon_info[] = $icon_info;
-        $this->message = array();
+        $this->resource_type = (object) ['code' => $resourceHandler->item->id];
+        $this->resource_name = (object) [
+                'default_value' => $resourceHandler->item->name,
+                'key' => "{$resourceHandler->item->id}.resource.name"
+        ];
+        $this->description = (object) [
+                'default_value' => $resourceHandler->item->description,
+                'key' => "{$resourceHandler->item->id}.resource.description"
+        ];
+        $this->icon_info = [
+            (object) [
+                'default_location' => (object) ['path' => $resourceHandler->icon],
+                'key' => "{$resourceHandler->item->id}.icon.path"
+            ]
+        ];
+        $this->message = [];
         foreach ($resourceHandler->requiredMessages as $message) {
             $this->message[] = new Message($message, $tool->platform->profile->capability_offered);
         }

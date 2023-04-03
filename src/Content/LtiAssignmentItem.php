@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\Content;
 
@@ -15,10 +16,10 @@ class LtiAssignmentItem extends LtiLinkItem
     /**
      * Class constructor.
      *
-     * @param Placement[]|Placement $placementAdvices  Array of Placement objects (or single placement object) for item (optional)
-     * @param string $id   URL of content-item (optional)
+     * @param Placement[]|Placement|null $placementAdvices  Array of Placement objects (or single placement object) for item (optional)
+     * @param string|null                $id                URL of content-item (optional)
      */
-    function __construct($placementAdvices = null, $id = null)
+    function __construct(array|Placement|null $placementAdvices = null, ?string $id = null)
     {
         Item::__construct(Item::TYPE_LTI_ASSIGNMENT, $placementAdvices, $id);
         $this->setMediaType(Item::LTI_ASSIGNMENT_MEDIA_TYPE);

@@ -1,6 +1,9 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\ApiHook\canvas;
+
+use ceLTIc\LTI\ApiHook\ApiTool;
 
 /**
  * Class to implement canvas-specific functions for LTI messages
@@ -9,10 +12,15 @@ namespace ceLTIc\LTI\ApiHook\canvas;
  * @copyright  SPV Software Products
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3
  */
-class CanvasApiTool extends \ceLTIc\LTI\ApiHook\ApiTool
+class CanvasApiTool extends ApiTool
 {
 
-    public function getUserId()
+    /**
+     * Get the User ID.
+     *
+     * @return string  User ID value, or empty string if not available.
+     */
+    public function getUserId(): string
     {
         $userId = '';
         $messageParameters = $this->tool->getMessageParameters(true, true, false);

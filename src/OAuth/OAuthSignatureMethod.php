@@ -1,11 +1,12 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\OAuth;
 
 /**
- * Class to represent an %OAuth Signature Method
+ * Class to represent an OAuth signature method
  *
- * @copyright  Andy Smith
+ * @copyright  Andy Smith (http://oauth.googlecode.com/svn/code/php/)
  * @version  2008-08-04
  * @license  https://opensource.org/licenses/MIT The MIT License
  */
@@ -18,41 +19,47 @@ abstract class OAuthSignatureMethod
 {
 
     /**
-     * Needs to return the name of the Signature Method (ie HMAC-SHA1)
+     * Needs to return the name of the Signature Method (eg HMAC-SHA1).
+     *
      * @return string
      */
-    abstract public function get_name();
+    abstract public function get_name(): string;
 
     /**
-     * Build up the signature
+     * Build up the signature.
+     *
      * NOTE: The output of this function MUST NOT be urlencoded.
      * the encoding is handled in OAuthRequest when the final
      * request is serialized
-     * @param OAuthRequest $request
-     * @param OAuthConsumer $consumer
-     * @param OAuthToken $token
+     *
+     * @param OAuthRequest $request    Request
+     * @param OAuthConsumer $consumer  Consumer
+     * @param OAuthToken $token        Token
+     *
      * @return string
      */
-    abstract public function build_signature($request, $consumer, $token);
+    abstract public function build_signature(OAuthRequest $request, OAuthConsumer $consumer, ?OAuthToken $token): string;
 
     /**
-     * Verifies that a given signature is correct
+     * Verifies that a given signature is correct.
+     *
      * @param OAuthRequest $request
      * @param OAuthConsumer $consumer
      * @param OAuthToken $token
      * @param string $signature
+     *
      * @return bool
      */
-    public function check_signature($request, $consumer, $token, $signature)
+    public function check_signature(OAuthRequest $request, OAuthConsumer $consumer, ?OAuthToken $token, string $signature): bool
     {
         $built = $this->build_signature($request, $consumer, $token);
 
         // Check for zero length, although unlikely here
-        if (strlen($built) == 0 || strlen($signature) == 0) {
+        if ((strlen($built) === 0) || (strlen($signature) === 0)) {
             return false;
         }
 
-        if (strlen($built) != strlen($signature)) {
+        if (strlen($built) !== strlen($signature)) {
             return false;
         }
 
@@ -62,7 +69,7 @@ abstract class OAuthSignatureMethod
             $result |= ord($built[$i]) ^ ord($signature[$i]);
         }
 
-        return $result == 0;
+        return $result === 0;
     }
 
 }

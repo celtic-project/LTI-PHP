@@ -1,6 +1,9 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\Service;
+
+use ceLTIc\LTI\Platform;
 
 /**
  * Class to implement the Assignment and Grade services
@@ -15,11 +18,11 @@ class AssignmentGrade extends Service
     /**
      * Class constructor.
      *
-     * @param Platform     $platform   Platform object for this service request
-     * @param string       $endpoint   Service endpoint
-     * @param string       $path       Path (optional)
+     * @param Platform $platform  Platform object for this service request
+     * @param string $endpoint    Service endpoint
+     * @param string $path        Path (optional)
      */
-    public function __construct($platform, $endpoint, $path = '')
+    public function __construct(Platform $platform, string $endpoint, string $path = '')
     {
         $endpoint = self::addPath($endpoint, $path);
         parent::__construct($platform, $endpoint);
@@ -28,12 +31,12 @@ class AssignmentGrade extends Service
     /**
      * Add path to a URL.
      *
-     * @param string       $endpoint   Service endpoint
-     * @param string       $path       Path
+     * @param string $endpoint  Service endpoint
+     * @param string $path      Path
      *
      * @return string The endpoint with the path added
      */
-    private static function addPath($endpoint, $path)
+    private static function addPath(string $endpoint, string $path): string
     {
         if (strpos($endpoint, '?') === false) {
             if (substr($endpoint, -strlen($path)) !== $path) {

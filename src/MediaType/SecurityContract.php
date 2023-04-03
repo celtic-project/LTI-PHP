@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\MediaType;
 
@@ -17,12 +18,12 @@ class SecurityContract
     /**
      * Class constructor.
      *
-     * @param Tool    $tool  Tool instance
-     * @param string $secret Shared secret
+     * @param Tool $tool      Tool instance
+     * @param string $secret  Shared secret
      */
-    function __construct($tool, $secret)
+    function __construct(Tool $tool, string $secret)
     {
-        $tcContexts = array();
+        $tcContexts = [];
         foreach ($tool->platform->profile->{'@context'} as $context) {
             if (is_object($context)) {
                 $tcContexts = array_merge(get_object_vars($context), $tcContexts);
@@ -30,7 +31,7 @@ class SecurityContract
         }
 
         $this->shared_secret = $secret;
-        $toolServices = array();
+        $toolServices = [];
         foreach ($tool->requiredServices as $requiredService) {
             foreach ($requiredService->formats as $format) {
                 $service = $tool->findService($format, $requiredService->actions);
@@ -42,11 +43,11 @@ class SecurityContract
                             $id = "{$tcContexts[$parts[0]]}{$parts[1]}";
                         }
                     }
-                    $toolService = new \stdClass;
-                    $toolService->{'@type'} = 'RestServiceProfile';
-                    $toolService->service = $id;
-                    $toolService->action = $requiredService->actions;
-                    $toolServices[$service->{'@id'}] = $toolService;
+                    $toolServices[$service->{'@id'}] = (object) [
+                            '@type' => 'RestServiceProfile',
+                            'service' => $id,
+                            'action' => $requiredService->actions
+                    ];
                 }
             }
         }
@@ -61,11 +62,11 @@ class SecurityContract
                             $id = "{$tcContexts[$parts[0]]}{$parts[1]}";
                         }
                     }
-                    $toolService = new \stdClass;
-                    $toolService->{'@type'} = 'RestServiceProfile';
-                    $toolService->service = $id;
-                    $toolService->action = $optionalService->actions;
-                    $toolServices[$service->{'@id'}] = $toolService;
+                    $toolServices[$service->{'@id'}] = (object) [
+                            '@type' => 'RestServiceProfile',
+                            'service' => $id,
+                            'action' => $optionalService->actions
+                    ];
                 }
             }
         }

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\ApiHook;
 
@@ -15,53 +16,53 @@ trait ApiHook
     /**
      * User Id hook name.
      */
-    public static $USER_ID_HOOK = "UserId";
+    public static string $USER_ID_HOOK = "UserId";
 
     /**
      * Context Id hook name.
      */
-    public static $CONTEXT_ID_HOOK = "ContextId";
+    public static string $CONTEXT_ID_HOOK = "ContextId";
 
     /**
      * Course Groups service hook name.
      */
-    public static $GROUPS_SERVICE_HOOK = "Groups";
+    public static string $GROUPS_SERVICE_HOOK = "Groups";
 
     /**
      * Memberships service hook name.
      */
-    public static $MEMBERSHIPS_SERVICE_HOOK = "Memberships";
+    public static string $MEMBERSHIPS_SERVICE_HOOK = "Memberships";
 
     /**
      * Outcomes service hook name.
      */
-    public static $OUTCOMES_SERVICE_HOOK = "Outcomes";
+    public static string $OUTCOMES_SERVICE_HOOK = "Outcomes";
 
     /**
      * Tool Settings service hook name.
      */
-    public static $TOOL_SETTINGS_SERVICE_HOOK = "ToolSettings";
+    public static string $TOOL_SETTINGS_SERVICE_HOOK = "ToolSettings";
 
     /**
      * Access Token service hook name.
      */
-    public static $ACCESS_TOKEN_SERVICE_HOOK = "AccessToken";
+    public static string $ACCESS_TOKEN_SERVICE_HOOK = "AccessToken";
 
     /**
      * API hook class names.
      */
-    private static $API_HOOKS = array();
+    private static array $API_HOOKS = [];
 
     /**
      * Register the availability of an API hook.
      *
-     * @param string $hookName  Name of hook
+     * @param string $hookName    Name of hook
      * @param string $familyCode  Family code for current platform
-     * @param string $className  Name of implementing class
+     * @param string $className   Name of implementing class
      *
      * @return void
      */
-    public static function registerApiHook($hookName, $familyCode, $className)
+    public static function registerApiHook(string $hookName, string $familyCode, string $className): void
     {
         $objectClass = get_class();
         self::$API_HOOKS["{$objectClass}-{$hookName}-{$familyCode}"] = $className;
@@ -70,10 +71,12 @@ trait ApiHook
     /**
      * Get the class name for an API hook.
      *
-     * @param string $hookName  Name of hook
+     * @param string $hookName    Name of hook
      * @param string $familyCode  Family code for current platform
+     *
+     * @return string  Class name
      */
-    private static function getApiHook($hookName, $familyCode)
+    private static function getApiHook(string $hookName, string $familyCode): ?string
     {
         $class = self::class;
         return self::$API_HOOKS["{$class}-{$hookName}-{$familyCode}"];
@@ -85,9 +88,9 @@ trait ApiHook
      * @param string $hookName    Name of hook
      * @param string $familyCode  Family code for current platform
      *
-     * @return bool    True if the API hook is registered
+     * @return bool  True if the API hook is registered
      */
-    private static function hasApiHook($hookName, $familyCode)
+    private static function hasApiHook(string $hookName, string $familyCode): bool
     {
         $class = self::class;
         return isset(self::$API_HOOKS["{$class}-{$hookName}-{$familyCode}"]);
@@ -96,12 +99,13 @@ trait ApiHook
     /**
      * Check if an API hook is registered and configured.
      *
-     * @param string                         $hookName        Name of hook
-     * @param Platform|Context|ResourceLink  $sourceObject    Source object for which hook is to be used
+     * @param string $hookName                             Name of hook
+     * @param string $familyCode                           Family code for current platform
+     * @param Platform|Context|ResourceLink $sourceObject  Source object for which hook is to be used
      *
-     * @return bool    True if the API hook is registered and configured
+     * @return bool  True if the API hook is registered and configured
      */
-    private static function hasConfiguredApiHook($hookName, $familyCode, $sourceObject)
+    private static function hasConfiguredApiHook(string $hookName, string $familyCode, $sourceObject): bool
     {
         $ok = false;
         $class = self::class;
@@ -115,5 +119,3 @@ trait ApiHook
     }
 
 }
-
-?>

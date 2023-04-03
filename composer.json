@@ -12,8 +12,8 @@
     }
   ],
   "require": {
-    "php": ">=5.6.0",
-    "firebase/php-jwt": ">=5.5.0 <=6.0.0"
+    "php": ">=8.1.0",
+    "firebase/php-jwt": "^6.3"
   },
   "autoload": {
     "psr-4": {

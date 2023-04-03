@@ -1,43 +1,68 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\OAuth;
 
 /**
- * Class to represent an %OAuth Data Store
+ * Class to represent an OAuth Data Store
  *
- * @copyright  Andy Smith
+ * @copyright  Andy Smith (http://oauth.googlecode.com/svn/code/php/)
  * @version  2008-08-04
  * @license  https://opensource.org/licenses/MIT The MIT License
  */
-class OAuthDataStore
+abstract class OAuthDataStore
 {
 
-    function lookup_consumer($consumer_key)
-    {
-        // implement me
-    }
+    /**
+     * Find consumer based on key.
+     *
+     * @param string $consumer_key
+     *
+     * @return OAuthConsumer
+     */
+    abstract function lookup_consumer(string $consumer_key): OAuthConsumer;
 
-    function lookup_token($consumer, $token_type, $token)
-    {
-        // implement me
-    }
+    /**
+     * Find token.
+     *
+     * @param OAuthConsumer $consumer  Consumer
+     * @param string|null $token_type  Token type
+     * @param string|null $token       Token value
+     *
+     * @return OAuthToken
+     */
+    abstract function lookup_token(OAuthConsumer $consumer, ?string $token_type, ?string $token): OAuthToken;
 
-    function lookup_nonce($consumer, $token, $nonce, $timestamp)
-    {
-        // implement me
-    }
+    /**
+     * Check nonce value.
+     *
+     * @param OAuthConsumer $consumer  Consumer
+     * @param OAuthToken $token        Token value
+     * @param string $nonce            Nonce value
+     * @param string $timestamp        Date/time of request
+     *
+     * @return bool
+     */
+    abstract function lookup_nonce(OAuthConsumer $consumer, OAuthToken $token, string $nonce, string $timestamp): bool;
 
-    function new_request_token($consumer, $callback = null)
-    {
-        // return a new token attached to this consumer
-    }
+    /**
+     * Get new request token.
+     *
+     * @param OAuthConsumer $consumer  Consumer
+     * @param string|null $callback    Callback URL
+     *
+     * @return string|null
+     */
+    abstract function new_request_token(OAuthConsumer $consumer, ?string $callback = null): ?string;
 
-    function new_access_token($token, $consumer, $verifier = null)
-    {
-        // return a new access token attached to this consumer
-        // for the user associated with this token if the request token
-        // is authorized
-        // should also invalidate the request token
-    }
-
+    /**
+     * Get new access token.
+     *
+     * @param string $token            Token value
+     * @param OAuthConsumer $consumer  OAuthConsumer object
+     * @param string|null $verifier    Verification code
+     *
+     * @return string|null
+     */
+    abstract function new_access_token(string $token, OAuthConsumer $consumer, ?string $verifier = null): ?string;
 }

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI;
 
@@ -17,28 +18,28 @@ class ResourceLinkShare
      *
      * @var string|null $consumerName
      */
-    public $consumerName = null;
+    public ?string $consumerName = null;
 
     /**
      * Resource link ID value.
      *
-     * @var string|null $resourceLinkId
+     * @var int|null $resourceLinkId
      */
-    public $resourceLinkId = null;
+    public ?int $resourceLinkId = null;
 
     /**
      * Title of sharing context.
      *
      * @var string|null $title
      */
-    public $title = null;
+    public ?string $title = null;
 
     /**
      * Whether sharing request is to be automatically approved on first use.
      *
      * @var bool|null $approved
      */
-    public $approved = null;
+    public ?bool $approved = null;
 
     /**
      * Class constructor.

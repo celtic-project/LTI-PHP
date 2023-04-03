@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI;
 
@@ -39,57 +40,57 @@ class ResourceLinkShareKey
      *
      * @var int|null $resourceLinkId
      */
-    public $resourceLinkId = null;
+    public ?int $resourceLinkId = null;
 
     /**
      * Length of share key.
      *
      * @var int|null $length
      */
-    public $length = null;
+    public ?int $length = null;
 
     /**
      * Life of share key.
      *
      * @var int|null $life
      */
-    public $life = null;  // in hours
+    public ?int $life = null;  // in hours
 
     /**
      * Whether the sharing arrangement should be automatically approved when first used.
      *
      * @var bool    $autoApprove
      */
-    public $autoApprove = false;
+    public bool $autoApprove = false;
 
     /**
      * Timestamp for when the share key expires.
      *
      * @var int|null $expires
      */
-    public $expires = null;
+    public ?int $expires = null;
 
     /**
      * Share key value.
      *
      * @var string|null $id
      */
-    private $id = null;
+    private ?string $id = null;
 
     /**
      * Data connector.
      *
      * @var DataConnector|null $dataConnector
      */
-    private $dataConnector = null;
+    private ?DataConnector $dataConnector = null;
 
     /**
      * Class constructor.
      *
      * @param ResourceLink $resourceLink  ResourceLink object
-     * @param string       $id      Value of share key (optional, default is null)
+     * @param string|null $id             Value of share key (optional, default is null)
      */
-    public function __construct($resourceLink, $id = null)
+    public function __construct(ResourceLink $resourceLink, ?string $id = null)
     {
         $this->initialize();
         $this->dataConnector = $resourceLink->getDataConnector();
@@ -103,8 +104,10 @@ class ResourceLinkShareKey
 
     /**
      * Initialise the resource link share key.
+     *
+     * @return void
      */
-    public function initialize()
+    public function initialize(): void
     {
         $this->length = null;
         $this->life = null;
@@ -116,8 +119,10 @@ class ResourceLinkShareKey
      * Initialise the resource link share key.
      *
      * Synonym for initialize().
+     *
+     * @return void
      */
-    public function initialise()
+    public function initialise(): void
     {
         $this->initialize();
     }
@@ -125,9 +130,9 @@ class ResourceLinkShareKey
     /**
      * Save the resource link share key to the database.
      *
-     * @return bool    True if the share key was successfully saved
+     * @return bool  True if the share key was successfully saved
      */
-    public function save()
+    public function save(): bool
     {
         if (empty($this->life)) {
             $this->life = self::DEFAULT_SHARE_KEY_LIFE;
@@ -150,9 +155,9 @@ class ResourceLinkShareKey
     /**
      * Delete the resource link share key from the database.
      *
-     * @return bool    True if the share key was successfully deleted
+     * @return bool  True if the share key was successfully deleted
      */
-    public function delete()
+    public function delete(): bool
     {
         return $this->dataConnector->deleteResourceLinkShareKey($this);
     }
@@ -160,9 +165,9 @@ class ResourceLinkShareKey
     /**
      * Get share key value.
      *
-     * @return string Share key value
+     * @return string  Share key value
      */
-    public function getId()
+    public function getId(): string
     {
         return $this->id;
     }
@@ -173,8 +178,10 @@ class ResourceLinkShareKey
 
     /**
      * Load the resource link share key from the database.
+     *
+     * @return void
      */
-    private function load()
+    private function load(): void
     {
         $this->initialize();
         $this->dataConnector->loadResourceLinkShareKey($this);

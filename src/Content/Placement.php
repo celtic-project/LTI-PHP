@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\Content;
 
@@ -47,63 +48,63 @@ class Placement
      *
      * @var string|null $documentTarget
      */
-    public $documentTarget = null;
+    public ?string $documentTarget = null;
 
     /**
      * Name of window target.
      *
      * @var string|null $windowTarget
      */
-    private $windowTarget = null;
+    private ?string $windowTarget = null;
 
     /**
      * Comma-separated list of window features.
      *
      * @var string|null $windowFeatures
      */
-    private $windowFeatures = null;
+    private ?string $windowFeatures = null;
 
     /**
      * URL of iframe src.
      *
      * @var string|null $url
      */
-    private $url = null;
+    private ?string $url = null;
 
     /**
      * Width of item location.
      *
      * @var int|null $displayWidth
      */
-    private $displayWidth = null;
+    private ?int $displayWidth = null;
 
     /**
      * Height of item location.
      *
      * @var int|null $displayHeight
      */
-    private $displayHeight = null;
+    private ?int $displayHeight = null;
 
     /**
      * HTML to be embedded.
      *
      * @var string|null $html
      */
-    private $html = null;
+    private ?string $html = null;
 
     /**
      * Class constructor.
      *
      * @param string $documentTarget  Location to open content in
-     * @param int $displayWidth       Width of item location (optional)
-     * @param int $displayHeight      Height of item location (optional)
+     * @param int    $displayWidth    Width of item location (optional)
+     * @param int    $displayHeight   Height of item location (optional)
      * @param string $windowTarget    Name of window target (optional)
      * @param string $windowFeatures  List of window features (optional)
      * @param string $url             URL for iframe src (optional)
      * @param string $html            HTML to be embedded (optional)
      */
-    function __construct($documentTarget, $displayWidth = null, $displayHeight = null, $windowTarget = null, $windowFeatures = null,
-        $url = null, $html = null)
+    function __construct(string $documentTarget, ?int $displayWidth = null, ?int $displayHeight = null,
+        ?string $windowTarget = null, ?string $windowFeatures = null, ?string $url = null, ?string $html = null)
     {
         $this->documentTarget = $documentTarget;
         $this->displayWidth = $displayWidth;
@@ -117,9 +118,9 @@ class Placement
     /**
      * Generate the JSON-LD object representation of the placement.
      *
-     * @return object
+     * @return object|null  JSON object
      */
-    public function toJsonldObject()
+    public function toJsonldObject(): ?object
     {
         if (!empty($this->documentTarget)) {
             $placement = new \stdClass();
@@ -143,9 +144,9 @@ class Placement
     /**
      * Generate the JSON object representation of the placement.
      *
-     * @return object
+     * @return object|null  JSON object
      */
-    public function toJsonObject()
+    public function toJsonObject(): ?object
     {
         if (!empty($this->documentTarget)) {
             $placement = new \stdClass();
@@ -191,12 +192,12 @@ class Placement
     /**
      * Generate the Placement object from an item.
      *
-     * @param object $item  JSON object of item
+     * @param object $item            JSON object of item
      * @param string $documentTarget  Destination of placement to be generated (optional)
      *
-     * @return Placement
+     * @return Placement|null  The Placement object
      */
-    public static function fromJsonObject($item, $documentTarget = null)
+    public static function fromJsonObject(object $item, ?string $documentTarget = null): ?Placement
     {
         $obj = null;
         $displayWidth = null;

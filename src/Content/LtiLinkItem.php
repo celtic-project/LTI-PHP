@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\Content;
 
@@ -17,43 +18,43 @@ class LtiLinkItem extends Item
      *
      * @var array $custom
      */
-    private $custom = array();
+    private array $custom = [];
 
     /**
      * Line-item object for content-item.
      *
      * @var LineItem|null $lineItem
      */
-    private $lineItem = null;
+    private ?LineItem $lineItem = null;
 
     /**
      * Time period for availability.
      *
      * @var string|null $available
      */
-    private $available = null;
+    private ?string $available = null;
 
     /**
      * Time period for submission.
      *
      * @var string|null $submission
      */
-    private $submission = null;
+    private ?string $submission = null;
 
     /**
      * Do not allow the item to be updated?
      *
-     * @var bool $noUpdate
+     * @var bool|null $noUpdate
      */
-    private $noUpdate = null;
+    private ?bool $noUpdate = null;
 
     /**
      * Class constructor.
      *
      * @param Placement[]|Placement $placementAdvices  Array of Placement objects (or single placement object) for item (optional)
-     * @param string $id   URL of content-item (optional)
+     * @param string                $id                URL of content-item (optional)
      */
-    function __construct($placementAdvices = null, $id = null)
+    function __construct(?array $placementAdvices = null, ?string $id = null)
     {
         parent::__construct(Item::TYPE_LTI_LINK, $placementAdvices, $id);
         $this->setMediaType(Item::LTI_LINK_MEDIA_TYPE);
@@ -62,10 +63,12 @@ class LtiLinkItem extends Item
     /**
      * Add a custom parameter for the content-item.
      *
-     * @param string $name   Name of parameter
+     * @param string      $name   Name of parameter
      * @param string|null $value  Value of parameter
+     *
+     * @return void
      */
-    public function addCustom($name, $value = null)
+    public function addCustom(string $name, ?string $value = null): void
     {
         if (!empty($name)) {
             if (!empty($value)) {
@@ -80,8 +83,10 @@ class LtiLinkItem extends Item
      * Set a line-item for the content-item.
      *
      * @param LineItem $lineItem  Line-item
+     *
+     * @return void
      */
-    public function setLineItem($lineItem)
+    public function setLineItem(LineItem $lineItem): void
     {
         $this->lineItem = $lineItem;
     }
@@ -90,8 +95,10 @@ class LtiLinkItem extends Item
      * Set an availability time period for the content-item.
      *
      * @param TimePeriod $available  Time period
+     *
+     * @return void
      */
-    public function setAvailable($available)
+    public function setAvailable(TimePeriod $available): void
     {
         $this->available = $available;
     }
@@ -100,8 +107,10 @@ class LtiLinkItem extends Item
      * Set a submission time period for the content-item.
      *
      * @param TimePeriod $submission  Time period
+     *
+     * @return void
      */
-    public function setSubmission($submission)
+    public function setSubmission(TimePeriod $submission): void
     {
         $this->submission = $submission;
     }
@@ -110,8 +119,10 @@ class LtiLinkItem extends Item
      * Set whether the content-item should not be allowed to be updated.
      *
      * @param bool|null $noUpdate  True if the item should not be updatable
+     *
+     * @return void
      */
-    public function setNoUpdate($noUpdate)
+    public function setNoUpdate(?bool $noUpdate): void
     {
         $this->noUpdate = $noUpdate;
     }
@@ -119,9 +130,9 @@ class LtiLinkItem extends Item
     /**
      * Wrap the content item to form an item complying with the application/vnd.ims.lti.v1.contentitems+json media type.
      *
-     * @return object
+     * @return object  JSON object
      */
-    public function toJsonldObject()
+    public function toJsonldObject(): object
     {
         $item = parent::toJsonldObject();
         if (!empty($this->lineItem)) {
@@ -146,9 +157,9 @@ class LtiLinkItem extends Item
     /**
      * Wrap the content items to form a complete value for the https://purl.imsglobal.org/spec/lti-dl/claim/content_items claim.
      *
-     * @return object
+     * @return object  JSON object
      */
-    public function toJsonObject()
+    public function toJsonObject(): object
     {
         $item = parent::toJsonObject();
         if (!empty($this->lineItem)) {
@@ -174,8 +185,10 @@ class LtiLinkItem extends Item
      * Extract content-item details from its JSON representation.
      *
      * @param object $item  A JSON object representing an LTI link content-item
+     *
+     * @return void
      */
-    protected function fromJsonObject($item)
+    protected function fromJsonObject(object $item): void
     {
         parent::fromJsonObject($item);
         foreach (get_object_vars($item) as $name => $value) {

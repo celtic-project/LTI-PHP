@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\MediaType;
 
@@ -15,32 +16,32 @@ class Message
     /**
      * Class constructor.
      *
-     * @param Message $message               Message object
-     * @param array   $capabilitiesOffered   Capabilities offered
+     * @param Message $message              Message object
+     * @param array   $capabilitiesOffered  Capabilities offered
      */
-    function __construct($message, $capabilitiesOffered)
+    function __construct(Message $message, array $capabilitiesOffered)
     {
         $this->message_type = $message->type;
         $this->path = $message->path;
-        $this->enabled_capability = array();
+        $this->enabled_capability = [];
         foreach ($message->capabilities as $capability) {
             if (in_array($capability, $capabilitiesOffered)) {
                 $this->enabled_capability[] = $capability;
             }
         }
-        $this->parameter = array();
+        $this->parameter = [];
         foreach ($message->constants as $name => $value) {
-            $parameter = new \stdClass;
-            $parameter->name = $name;
-            $parameter->fixed = $value;
-            $this->parameter[] = $parameter;
+            $this->parameter[] = (object) [
+                    'name' => $name,
+                    'fixed' => $value
+            ];
         }
         foreach ($message->variables as $name => $value) {
             if (in_array($value, $capabilitiesOffered)) {
-                $parameter = new \stdClass;
-                $parameter->name = $name;
-                $parameter->variable = $value;
-                $this->parameter[] = $parameter;
+                $this->parameter[] = (object) [
+                        'name' => $name,
+                        'variable' => $value
+                ];
             }
         }
     }

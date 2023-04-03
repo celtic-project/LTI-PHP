@@ -1,7 +1,9 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\Service;
 
+use ceLTIc\LTI\Platform;
 use ceLTIc\LTI\User;
 use ceLTIc\LTI\Outcome;
 
@@ -17,41 +19,45 @@ class Result extends AssignmentGrade
 
     /**
      * Access scope.
+     *
+     * @var string $SCOPE
      */
-    public static $SCOPE = 'https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly';
+    public static string $SCOPE = 'https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly';
 
     /**
      * Default limit on size of container to be returned from requests.
+     *
+     * @var int $defaultLimit
      */
-    public static $defaultLimit = 500;
+    public static int $defaultLimit = 500;
 
     /**
      * Limit on size of container to be returned from requests.
      *
      * A limit of null (or zero) will disable paging of requests
      *
-     * @var int|null  $limit
+     * @var int|null $limit
      */
-    private $limit;
+    private ?int $limit;
 
     /**
      * Whether requests should be made one page at a time when a limit is set.
      *
      * When false, all objects will be requested, even if this requires several requests based on the limit set.
      *
-     * @var boolean  $pagingMode
+     * @var bool $pagingMode
      */
-    private $pagingMode;
+    private bool $pagingMode;
 
     /**
      * Class constructor.
      *
-     * @param Platform     $platform   Platform object for this service request
-     * @param string       $endpoint   Service endpoint
-     * @param int|null     $limit      Limit of results to be returned in each request, null for all
-     * @param boolean      $pagingMode        True if only a single page should be requested when a limit is set
+     * @param Platform $platform  Platform object for this service request
+     * @param string $endpoint    Service endpoint
+     * @param int|null $limit     Limit of results to be returned in each request, null for all
+     * @param bool $pagingMode    True if only a single page should be requested when a limit is set
      */
-    public function __construct($platform, $endpoint, $limit = null, $pagingMode = false)
+    public function __construct(Platform $platform, string $endpoint, ?int $limit = null, bool $pagingMode = false)
     {
         parent::__construct($platform, $endpoint, '/results');
         $this->limit = $limit;
@@ -61,15 +67,15 @@ class Result extends AssignmentGrade
     }
 
     /**
-     * Retrieve all outcomes for a line item.
+     * Retrieve all outcomes for a line-item.
      *
-     * @param int|null     $limit      Limit of results to be returned in each request, null for service default
+     * @param int|null $limit  Limit of results to be returned in each request, null for service default
      *
      * @return Outcome[]|bool  Array of Outcome objects or false on error
      */
-    public function getAll($limit = null)
+    public function getAll(?int $limit = null): array|bool
     {
-        $params = array();
+        $params = [];
         if (is_null($limit)) {
             $limit = $this->limit;
         }
@@ -79,7 +85,7 @@ class Result extends AssignmentGrade
         if (!empty($limit)) {
             $params['limit'] = $limit;
         }
-        $outcomes = array();
+        $outcomes = [];
         $endpoint = $this->endpoint;
         do {
             $http = $this->send('GET', $params);
@@ -93,7 +99,7 @@ class Result extends AssignmentGrade
                 if (!$this->pagingMode && $http->hasRelativeLink('next')) {
                     $url = $http->getRelativeLink('next');
                     $this->endpoint = $url;
-                    $params = array();
+                    $params = [];
                 }
             } else {
                 $outcomes = false;
@@ -107,13 +113,15 @@ class Result extends AssignmentGrade
     /**
      * Retrieve an outcome for a user.
      *
-     * @param User        $user         User object
+     * @param User $user  User object
      *
      * @return Outcome|null|bool  Outcome object, or null if none, or false on error
      */
-    public function get($user)
+    public function get(User $user): Outcome|null|bool
     {
-        $params = array('user_id' => $user->ltiUserId);
+        $params = [
+            'user_id' => $user->ltiUserId
+        ];
         $http = $this->send('GET', $params);
         if ($http->ok) {
             if (!empty($http->responseJson)) {
@@ -131,7 +139,14 @@ class Result extends AssignmentGrade
 ###  PRIVATE METHOD
 ###
 
-    private static function getOutcome($json)
+    /**
+     * Extract an outcome from its JSON representation.
+     *
+     * @param object $json  JSON representation of an outcome
+     *
+     * @return Outcome  Outcome object
+     */
+    private static function getOutcome(object $json): Outcome
     {
         $outcome = new Outcome();
         $outcome->ltiUserId = $json->userId;

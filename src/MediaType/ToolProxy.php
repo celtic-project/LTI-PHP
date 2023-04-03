@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\MediaType;
 
@@ -18,15 +19,15 @@ class ToolProxy
     /**
      * Class constructor.
      *
-     * @param Tool              $tool   Tool  object
+     * @param Tool              $tool              Tool  object
      * @param ServiceDefinition $toolProxyService  Tool Proxy service
-     * @param string            $secret  Shared secret
+     * @param string            $secret            Shared secret
      */
-    function __construct($tool, $toolProxyService, $secret)
+    function __construct(Tool $tool, ServiceDefinition $toolProxyService, string $secret)
     {
-        $contexts = array();
+        $contexts = [];
 
-        $this->{'@context'} = array_merge(array('http://purl.imsglobal.org/ctx/lti/v2/ToolProxy'), $contexts);
+        $this->{'@context'} = array_merge(['http://purl.imsglobal.org/ctx/lti/v2/ToolProxy'], $contexts);
         $this->{'@type'} = 'ToolProxy';
         $this->{'@id'} = "{$toolProxyService->endpoint}";
         $this->lti_version = 'LTI-2p0';

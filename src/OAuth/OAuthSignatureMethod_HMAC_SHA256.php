@@ -1,9 +1,10 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\OAuth;
 
 /**
- * Class to represent an %OAuth HMAC_SHA256 signature method
+ * Class to represent an OAuth HMAC_SHA256 signature method
  *
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
  * @copyright  SPV Software Products
@@ -20,20 +21,38 @@ namespace ceLTIc\LTI\OAuth;
 class OAuthSignatureMethod_HMAC_SHA256 extends OAuthSignatureMethod
 {
 
-    function get_name()
+    /**
+     * Name of the Signature Method.
+     *
+     * @return string
+     */
+    function get_name(): string
     {
-        return "HMAC-SHA256";
+        return 'HMAC-SHA256';
     }
 
-    public function build_signature($request, $consumer, $token)
+    /**
+     * Build up the signature.
+     *
+     * NOTE: The output of this function MUST NOT be urlencoded.
+     * the encoding is handled in OAuthRequest when the final
+     * request is serialized
+     *
+     * @param OAuthRequest $request    Request
+     * @param OAuthConsumer $consumer  Consumer
+     * @param OAuthToken $token        Token
+     *
+     * @return string
+     */
+    public function build_signature(OAuthRequest $request, OAuthConsumer $consumer, ?OAuthToken $token): string
     {
         $base_string = $request->get_signature_base_string();
         $request->base_string = $base_string;
 
-        $key_parts = array(
+        $key_parts = [
             $consumer->secret,
-            ($token) ? $token->secret : ""
-        );
+            ($token) ? $token->secret : ''
+        ];
 
         $key_parts = OAuthUtil::urlencode_rfc3986($key_parts);
         $key = implode('&', $key_parts);

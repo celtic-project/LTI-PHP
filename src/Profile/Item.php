@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\Profile;
 
@@ -17,42 +18,42 @@ class Item
      *
      * @var string|null $id
      */
-    public $id = null;
+    public ?string $id = null;
 
     /**
      * Name of item.
      *
      * @var string|null $name
      */
-    public $name = null;
+    public ?string $name = null;
 
     /**
      * Description of item.
      *
      * @var string|null $description
      */
-    public $description = null;
+    public ?string $description = null;
 
     /**
      * URL of item.
      *
      * @var string|null $url
      */
-    public $url = null;
+    public ?string $url = null;
 
     /**
      * Version of item.
      *
      * @var string|null $version
      */
-    public $version = null;
+    public ?string $version = null;
 
     /**
      * Timestamp of item.
      *
      * @var int|null $timestamp
      */
-    public $timestamp = null;
+    public ?int $timestamp = null;
 
     /**
      * Class constructor.
@@ -62,9 +63,10 @@ class Item
      * @param string $description  Description of item (optional)
      * @param string $url          URL of item (optional)
      * @param string $version      Version of item (optional)
-     * @param int    $timestamp    Timestamp of item (optional)
+     * @param int $timestamp       Timestamp of item (optional)
      */
-    function __construct($id = null, $name = null, $description = null, $url = null, $version = null, $timestamp = null)
+    function __construct(string $id = null, ?string $name = null, ?string $description = null, ?string $url = null,
+        ?string $version = null, ?int $timestamp = null)
     {
         $this->id = $id;
         $this->name = $name;

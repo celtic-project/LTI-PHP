@@ -1,8 +1,13 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\ApiHook;
 
-use ceLTIc\LTI\Service;
+use ceLTIc\LTI\ResourceLink;
+use ceLTIc\LTI\UserResult;
+use ceLTIc\LTI\Outcome;
+use ceLTIc\LTI\Enum\ServiceAction;
+use ceLTIc\LTI\Enum\ToolSettingsMode;
 
 /**
  * Class to implement resource link services for a platform via its proprietary API
@@ -17,24 +22,26 @@ class ApiResourceLink
     /**
      * Resource link object.
      *
-     * @var \ceLTIc\LTI\ResourceLink|null $resourceLink
+     * @var ResourceLink $resourceLink
      */
-    protected $resourceLink = null;
+    protected ResourceLink $resourceLink;
 
     /**
      * Class constructor.
      *
-     * @param \ceLTIc\LTI\ResourceLink $resourceLink
+     * @param ResourceLink $resourceLink
      */
-    public function __construct($resourceLink)
+    public function __construct(ResourceLink $resourceLink)
     {
         $this->resourceLink = $resourceLink;
     }
 
     /**
      * Check if the API hook has been configured.
+     *
+     * @return bool  True if the API hook has been configured
      */
-    public function isConfigured()
+    public function isConfigured(): bool
     {
         return true;
     }
@@ -42,13 +49,13 @@ class ApiResourceLink
     /**
      * Perform an Outcomes service request.
      *
-     * @param int $action The action type constant
-     * @param Outcome $ltiOutcome Outcome object
-     * @param UserResult $userresult UserResult object
+     * @param ServiceAction $action   The action type constant
+     * @param Outcome $ltiOutcome     Outcome object
+     * @param UserResult $userResult  UserResult object
      *
-     * @return string|bool    Outcome value read or true if the request was successfully processed
+     * @return string|bool  Outcome value read or true if the request was successfully processed
      */
-    public function doOutcomesService($action, $ltiOutcome, $userresult)
+    public function doOutcomesService(ServiceAction $action, Outcome $ltiOutcome, UserResult $userResult): bool
     {
         return false;
     }
@@ -56,11 +63,11 @@ class ApiResourceLink
     /**
      * Get memberships.
      *
-     * @param bool    $withGroups True is group information is to be requested as well
+     * @param bool $withGroups  True is group information is to be requested as well
      *
-     * @return mixed Array of UserResult objects or False if the request was not successful
+     * @return array|bool  Array of UserResult objects or False if the request was not successful
      */
-    public function getMemberships($withGroups)
+    public function getMemberships(bool $withGroups): array|bool
     {
         return false;
     }
@@ -68,12 +75,12 @@ class ApiResourceLink
     /**
      * Get Tool Settings.
      *
-     * @param int      $mode       Mode for request (optional, default is current level only)
-     * @param bool     $simple     True if all the simple media type is to be used (optional, default is true)
+     * @param ToolSettingsMode|null $mode  Mode for request (optional, default is current level only)
+     * @param bool $simple                 True if all the simple media type is to be used (optional, default is true)
      *
-     * @return mixed The array of settings if successful, otherwise false
+     * @return array|bool  The array of settings if successful, otherwise false
      */
-    public function getToolSettings($mode = Service\ToolSettings::MODE_CURRENT_LEVEL, $simple = true)
+    public function getToolSettings(?ToolSettingsMode $mode = null, bool $simple = true): array|bool
     {
         return false;
     }
@@ -81,11 +88,11 @@ class ApiResourceLink
     /**
      * Perform a Tool Settings service request.
      *
-     * @param array    $settings   An associative array of settings (optional, default is none)
+     * @param array $settings  An associative array of settings (optional, default is none)
      *
-     * @return bool    True if action was successful, otherwise false
+     * @return bool  True if action was successful, otherwise false
      */
-    public function setToolSettings($settings = array())
+    public function setToolSettings(array $settings = []): bool
     {
         return false;
     }

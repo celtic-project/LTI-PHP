@@ -1,9 +1,11 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI;
 
 use ceLTIc\LTI\Tool;
 use ceLTIc\LTI\Http\HttpMessage;
+use ceLTIc\LTI\Util;
 
 /**
  * Class to represent an HTTP message
@@ -21,52 +23,52 @@ class AccessToken
      *
      * @var string|null $token
      */
-    public $token = null;
+    public ?string $token = null;
 
     /**
      * Timestamp at which the token string expires.
      *
-     * @var datetime|null $expires
+     * @var int|null $expires
      */
-    public $expires = null;
+    public ?int $expires = null;
 
     /**
      * Scope(s) for which the access token is valid.
      *
      * @var array $scopes
      */
-    public $scopes = array();
+    public ?array $scopes = [];
 
     /**
-     * Platform for this context.
+     * Platform for this token.
      *
-     * @var Platform|null $platform
+     * @var Platform $platform
      */
-    private $platform = null;
+    private Platform $platform;
 
     /**
      * Timestamp for when the object was created.
      *
      * @var int|null $created
      */
-    public $created = null;
+    public ?int $created = null;
 
     /**
      * Timestamp for when the object was last updated.
      *
      * @var int|null $updated
      */
-    public $updated = null;
+    public ?int $updated = null;
 
     /**
      * Class constructor.
      *
-     * @param Platform      $platform     Platform
-     * @param array|null    $scopes       Scopes for which the access token is valid
-     * @param string        $token        Access token string
-     * @param datetime      $expires      Time in seconds after which the token string will expire
+     * @param Platform $platform  Platform
+     * @param array|null $scopes  Scopes for which the access token is valid
+     * @param string $token       Access token string
+     * @param int $expires        Time in seconds after which the token string will expire
      */
-    public function __construct($platform, $scopes = null, $token = null, $expires = null)
+    public function __construct(Platform $platform, ?array $scopes = null, ?string $token = null, ?int $expires = null)
     {
         $this->platform = $platform;
         $this->scopes = $scopes;
@@ -88,7 +90,7 @@ class AccessToken
      *
      * @return Platform  Platform object for this resource link.
      */
-    public function getPlatform()
+    public function getPlatform(): Platform
     {
         return $this->platform;
     }
@@ -96,9 +98,9 @@ class AccessToken
     /**
      * Load a nonce value from the database.
      *
-     * @return bool    True if the nonce value was successfully loaded
+     * @return bool  True if the nonce value was successfully loaded
      */
-    public function load()
+    public function load(): bool
     {
         return $this->platform->getDataConnector()->loadAccessToken($this);
     }
@@ -106,9 +108,9 @@ class AccessToken
     /**
      * Save a nonce value in the database.
      *
-     * @return bool    True if the nonce value was successfully saved
+     * @return bool  True if the nonce value was successfully saved
      */
-    public function save()
+    public function save(): bool
     {
         sort($this->scopes);
         return $this->platform->getDataConnector()->saveAccessToken($this);
@@ -117,11 +119,11 @@ class AccessToken
     /**
      * Check if a valid access token exists for a specific scope (or any scope if none specified).
      *
-     * @param string   $scope     Access scope
+     * @param string $scope  Access scope
      *
-     * @return bool    True if there is an unexpired access token for specified scope
+     * @return bool  True if there is an unexpired access token for specified scope
      */
-    public function hasScope($scope = '')
+    public function hasScope(string $scope = ''): bool
     {
         if (substr($scope, -9) === '.readonly') {
             $scope2 = substr($scope, 0, -9);
@@ -135,17 +137,17 @@ class AccessToken
     /**
      * Obtain a valid access token for a scope.
      *
-     * @param string          $scope        Access scope
-     * @param bool            $scopeOnly    If true, a token is requested just for the specified scope
+     * @param string $scope    Access scope
+     * @param bool $scopeOnly  If true, a token is requested just for the specified scope
      *
-     * @return AccessToken    New access token
+     * @return AccessToken  New access token
      */
-    public function get($scope = '', $scopeOnly = false)
+    public function get(string $scope = '', bool $scopeOnly = false): AccessToken
     {
         $url = $this->platform->accessTokenUrl;
         if (!empty($url) && !empty(Tool::$defaultTool) && !empty(Tool::$defaultTool->rsaKey)) {
             if ($scopeOnly) {
-                $scopesRequested = array($scope);
+                $scopesRequested = [$scope];
             } else {
                 $scopesRequested = Tool::$defaultTool->requiredScopes;
                 if (substr($scope, -9) === '.readonly') {
@@ -162,11 +164,11 @@ class AccessToken
                 do {
                     $method = 'POST';
                     $type = 'application/x-www-form-urlencoded';
-                    $body = array(
+                    $body = [
                         'grant_type' => 'client_credentials',
                         'client_assertion_type' => 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
                         'scope' => implode(' ', $scopesRequested)
-                    );
+                    ];
                     if (!empty(Tool::$defaultTool)) {
                         Tool::$defaultTool->platform = $this->platform;
                         $body = Tool::$defaultTool->signServiceRequest($url, $method, $type, $body);
@@ -175,7 +177,7 @@ class AccessToken
                     }
                     $http = new HttpMessage($url, $method, $body, 'Accept: application/json');
                     if ($http->send() && !empty($http->response)) {
-                        $http->responseJson = json_decode($http->response);
+                        $http->responseJson = Util::json_decode($http->response);
                         if (!is_null($http->responseJson) && !empty($http->responseJson->access_token) && !empty($http->responseJson->expires_in)) {
                             if (isset($http->responseJson->scope)) {
                                 $scopesAccepted = explode(' ', $http->responseJson->scope);
@@ -194,7 +196,7 @@ class AccessToken
                         $retry = false;
                     } elseif (!empty($scope) && (count($scopesRequested) > 1)) {  // Just ask for the single scope requested
                         $retry = true;
-                        $scopesRequested = array($scope);
+                        $scopesRequested = [$scope];
                     }
                 } while ($retry);
             }
