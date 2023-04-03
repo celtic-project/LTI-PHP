@@ -219,7 +219,7 @@ class Membership extends Service
 // Set the user roles
                     if (isset($membership->role)) {
                         $roles = $this->parseContextsInArray($http->responseJson->{'@context'}, $membership->role);
-                        $userresult->roles = LTI\Tool::parseRoles($roles, LTI\Util::LTI_VERSION2);
+                        $userresult->roles = LTI\Tool::parseRoles($roles, $this->getPlatform()->ltiVersion);
                     }
 
 // If a result sourcedid is provided save the user
@@ -304,7 +304,7 @@ class Membership extends Service
 
 // Set the user roles
                     if (isset($member->roles)) {
-                        $userresult->roles = LTI\Tool::parseRoles($member->roles, LTI\Util::LTI_VERSION2);
+                        $userresult->roles = LTI\Tool::parseRoles($member->roles, $this->getPlatform()->ltiVersion);
                     }
 
 // If a result sourcedid is provided save the user
