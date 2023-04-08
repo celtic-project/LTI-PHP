@@ -2295,14 +2295,6 @@ EOD;
     }
 
     /**
-     * Set error reason or add warning.
-     *
-     * @param string $reason          Reason to generate when the value is not permitted
-     * @param bool $strictMode        True if full compliance with the LTI specification is required
-     * @param bool $generateWarnings  True if warning messages should be generated
-     */
-
-    /**
      * Get the JavaScript for handling storage postMessages from a tool.
      *
      * @param string $message  Type of postMessage
