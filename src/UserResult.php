@@ -235,7 +235,7 @@ class UserResult extends User
         if ($ok) {
             $id = $key . IdScope::SEPARATOR;
             switch ($idScope) {
-                case IdScope::Global:
+                case IdScope::Platform:
                     $id .= $this->ltiUserId;
                     break;
                 case IdScope::Context:
