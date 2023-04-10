@@ -18,22 +18,22 @@ class ResourceLinkShareKey
     /**
      * Maximum permitted life for a share key value.
      */
-    const MAX_SHARE_KEY_LIFE = 168;  // in hours (1 week)
+    public const MAX_SHARE_KEY_LIFE = 168;  // in hours (1 week)
 
     /**
      * Default life for a share key value.
      */
-    const DEFAULT_SHARE_KEY_LIFE = 24;  // in hours
+    public const DEFAULT_SHARE_KEY_LIFE = 24;  // in hours
 
     /**
      * Minimum length for a share key value.
      */
-    const MIN_SHARE_KEY_LENGTH = 5;
+    public const MIN_SHARE_KEY_LENGTH = 5;
 
     /**
      * Maximum length for a share key value.
      */
-    const MAX_SHARE_KEY_LENGTH = 32;
+    public const MAX_SHARE_KEY_LENGTH = 32;
 
     /**
      * ID for resource link being shared.

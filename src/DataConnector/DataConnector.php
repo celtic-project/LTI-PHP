@@ -31,42 +31,42 @@ class DataConnector
     /**
      * Default name for database table used to store platforms.
      */
-    const PLATFORM_TABLE_NAME = 'lti2_consumer';
+    public const PLATFORM_TABLE_NAME = 'lti2_consumer';
 
     /**
      * Default name for database table used to store contexts.
      */
-    const CONTEXT_TABLE_NAME = 'lti2_context';
+    public const CONTEXT_TABLE_NAME = 'lti2_context';
 
     /**
      * Default name for database table used to store resource links.
      */
-    const RESOURCE_LINK_TABLE_NAME = 'lti2_resource_link';
+    public const RESOURCE_LINK_TABLE_NAME = 'lti2_resource_link';
 
     /**
      * Default name for database table used to store users.
      */
-    const USER_RESULT_TABLE_NAME = 'lti2_user_result';
+    public const USER_RESULT_TABLE_NAME = 'lti2_user_result';
 
     /**
      * Default name for database table used to store resource link share keys.
      */
-    const RESOURCE_LINK_SHARE_KEY_TABLE_NAME = 'lti2_share_key';
+    public const RESOURCE_LINK_SHARE_KEY_TABLE_NAME = 'lti2_share_key';
 
     /**
      * Default name for database table used to store nonce values.
      */
-    const NONCE_TABLE_NAME = 'lti2_nonce';
+    public const NONCE_TABLE_NAME = 'lti2_nonce';
 
     /**
      * Default name for database table used to store access token values.
      */
-    const ACCESS_TOKEN_TABLE_NAME = 'lti2_access_token';
+    public const ACCESS_TOKEN_TABLE_NAME = 'lti2_access_token';
 
     /**
      * Default name for database table used to store tools.
      */
-    const TOOL_TABLE_NAME = 'lti2_tool';
+    public const TOOL_TABLE_NAME = 'lti2_tool';
 
     /**
      * Database connection.

@@ -18,7 +18,7 @@ class Outcome
     /**
      * Allowed values for Activity Progress.
      */
-    const ALLOWED_ACTIVITY_PROGRESS = [
+    public const ALLOWED_ACTIVITY_PROGRESS = [
         'Initialized',
         'Started',
         'InProgress',
@@ -29,7 +29,7 @@ class Outcome
     /**
      * Allowed values for Grading Progress.
      */
-    const ALLOWED_GRADING_PROGRESS = [
+    public const ALLOWED_GRADING_PROGRESS = [
         'FullyGraded',
         'Pending',
         'PendingManual',

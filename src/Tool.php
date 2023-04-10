@@ -30,7 +30,7 @@ class Tool
     /**
      * Default connection error message.
      */
-    const CONNECTION_ERROR_MESSAGE = 'Sorry, there was an error connecting you to the application.';
+    public const CONNECTION_ERROR_MESSAGE = 'Sorry, there was an error connecting you to the application.';
 
     /**
      * List of supported incoming message types.

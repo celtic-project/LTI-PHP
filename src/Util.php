@@ -19,12 +19,12 @@ final class Util
     /**
      * Prefix for standard JWT message claims.
      */
-    const JWT_CLAIM_PREFIX = 'https://purl.imsglobal.org/spec/lti';
+    public const JWT_CLAIM_PREFIX = 'https://purl.imsglobal.org/spec/lti';
 
     /**
      * Mapping for standard message types.
      */
-    const MESSAGE_TYPE_MAPPING = [
+    public const MESSAGE_TYPE_MAPPING = [
         'basic-lti-launch-request' => 'LtiResourceLinkRequest',
         'ContentItemSelectionRequest' => 'LtiDeepLinkingRequest',
         'ContentItemSelection' => 'LtiDeepLinkingResponse',
@@ -34,7 +34,7 @@ final class Util
     /**
      * Mapping for standard message parameters to JWT claim.
      */
-    const JWT_CLAIM_MAPPING = [
+    public const JWT_CLAIM_MAPPING = [
         'accept_types' => ['suffix' => 'dl', 'group' => 'deep_linking_settings', 'claim' => 'accept_types', 'isArray' => true],
         'accept_copy_advice' => ['suffix' => 'dl', 'group' => 'deep_linking_settings', 'claim' => 'copyAdvice', 'isBoolean' => true],
         'accept_media_types' => ['suffix' => 'dl', 'group' => 'deep_linking_settings', 'claim' => 'accept_media_types'],
@@ -128,7 +128,7 @@ final class Util
     /**
      * Name of test cookie.
      */
-    const TEST_COOKIE_NAME = 'celtic_lti_test_cookie';
+    public const TEST_COOKIE_NAME = 'celtic_lti_test_cookie';
 
     /**
      * List of supported message types and associated class methods.

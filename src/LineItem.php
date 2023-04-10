@@ -16,7 +16,7 @@ class LineItem
     /**
      * Label value.
      *
-     * @var string $label
+     * @var string|null $label
      */
     public ?string $label = null;
 
@@ -72,7 +72,7 @@ class LineItem
     /**
      * Submission review.
      *
-     * @var SubmissionReview $submissionReview
+     * @var SubmissionReview|null $submissionReview
      */
     public ?SubmissionReview $submissionReview = null;
 

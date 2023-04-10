@@ -40,6 +40,6 @@ enum IdScope: int
     /**
      * Character used to separate each element of an ID.
      */
-    const SEPARATOR = ':';
+    public const SEPARATOR = ':';
 
 }

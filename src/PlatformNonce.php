@@ -16,7 +16,7 @@ class PlatformNonce
     /**
      * Maximum age nonce values will be retained for (in minutes).
      */
-    const MAX_NONCE_AGE = 30;  // in minutes
+    public const MAX_NONCE_AGE = 30;  // in minutes
 
     /**
      * Maximum length which can be stored.

@@ -16,32 +16,32 @@ class Placement
     /**
      * Embed placement type.
      */
-    const TYPE_EMBED = 'embed';
+    public const TYPE_EMBED = 'embed';
 
     /**
      * iFrame placement type.
      */
-    const TYPE_IFRAME = 'iframe';
+    public const TYPE_IFRAME = 'iframe';
 
     /**
      * Frame placement type.
      */
-    const TYPE_FRAME = 'frame';
+    public const TYPE_FRAME = 'frame';
 
     /**
      * Window placement type.
      */
-    const TYPE_WINDOW = 'window';
+    public const TYPE_WINDOW = 'window';
 
     /**
      * Popup placement type.
      */
-    const TYPE_POPUP = 'popup';
+    public const TYPE_POPUP = 'popup';
 
     /**
      * Overlay placement type.
      */
-    const TYPE_OVERLAY = 'overlay';
+    public const TYPE_OVERLAY = 'overlay';
 
     /**
      * Location to open content in.

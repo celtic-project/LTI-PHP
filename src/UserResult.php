@@ -9,7 +9,7 @@ use ceLTIc\LTI\Context;
 use ceLTIc\LTI\Enum\IdScope;
 
 /**
- * Class to represent a platform user
+ * Class to represent a platform user association with a resource link
  *
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
  * @copyright  SPV Software Products

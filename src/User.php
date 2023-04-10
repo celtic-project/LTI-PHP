@@ -16,7 +16,7 @@ class User
     /**
      * List of principal roles for LTI 1.3.
      */
-    const PRINCIPAL_ROLES = [
+    public const PRINCIPAL_ROLES = [
         'http://purl.imsglobal.org/vocab/lis/v2/system/person#Administrator',
         'http://purl.imsglobal.org/vocab/lis/v2/system/person#None',
         'http://purl.imsglobal.org/vocab/lis/v2/system/person#AccountAdmin',

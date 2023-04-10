@@ -18,42 +18,42 @@ class Item
     /**
      * Type for link content-item.
      */
-    const TYPE_LINK = 'link';
+    public const TYPE_LINK = 'link';
 
     /**
      * Type for LTI link content-item.
      */
-    const TYPE_LTI_LINK = 'ltiResourceLink';
+    public const TYPE_LTI_LINK = 'ltiResourceLink';
 
     /**
      * Type for LTI assignment content-item.
      */
-    const TYPE_LTI_ASSIGNMENT = 'ltiAssignment';
+    public const TYPE_LTI_ASSIGNMENT = 'ltiAssignment';
 
     /**
      * Type for file content-item.
      */
-    const TYPE_FILE = 'file';
+    public const TYPE_FILE = 'file';
 
     /**
      * Type for HTML content-item.
      */
-    const TYPE_HTML = 'html';
+    public const TYPE_HTML = 'html';
 
     /**
      * Type for image content-item.
      */
-    const TYPE_IMAGE = 'image';
+    public const TYPE_IMAGE = 'image';
 
     /**
      * Media type for LTI launch links.
      */
-    const LTI_LINK_MEDIA_TYPE = 'application/vnd.ims.lti.v1.ltilink';
+    public const LTI_LINK_MEDIA_TYPE = 'application/vnd.ims.lti.v1.ltilink';
 
     /**
      * Media type for LTI assignment links.
      */
-    const LTI_ASSIGNMENT_MEDIA_TYPE = 'application/vnd.ims.lti.v1.ltiassignment';
+    public const LTI_ASSIGNMENT_MEDIA_TYPE = 'application/vnd.ims.lti.v1.ltiassignment';
 
     /**
      * Type of content-item.

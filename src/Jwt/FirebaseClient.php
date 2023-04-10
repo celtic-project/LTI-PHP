@@ -22,7 +22,7 @@ class FirebaseClient implements ClientInterface
     /**
      * Supported signature algorithms.
      */
-    const SUPPORTED_ALGORITHMS = ['RS256', 'RS384', 'RS512'];
+    public const SUPPORTED_ALGORITHMS = ['RS256', 'RS384', 'RS512'];
 
     /**
      * JSON web token string.

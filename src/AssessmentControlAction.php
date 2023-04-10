@@ -16,27 +16,27 @@ class AssessmentControlAction
     /**
      * Pause action.
      */
-    const ACTION_PAUSE = 'pause';
+    public const ACTION_PAUSE = 'pause';
 
     /**
      * Pause action.
      */
-    const ACTION_RESUME = 'resume';
+    public const ACTION_RESUME = 'resume';
 
     /**
      * Pause action.
      */
-    const ACTION_TERMINATE = 'terminate';
+    public const ACTION_TERMINATE = 'terminate';
 
     /**
      * Pause action.
      */
-    const ACTION_UPDATE = 'update';
+    public const ACTION_UPDATE = 'update';
 
     /**
      * Pause action.
      */
-    const ACTION_FLAG = 'flag';
+    public const ACTION_FLAG = 'flag';
 
     /**
      * Extra time.
