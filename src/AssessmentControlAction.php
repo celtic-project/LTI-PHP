@@ -69,9 +69,9 @@ class AssessmentControlAction
     /**
      * Incident date value.
      *
-     * @var DateTime|null $date
+     * @var \DateTime|null $date
      */
-    private ?DateTime $date = null;
+    private ?\DateTime $date = null;
 
     /**
      * Severity.
@@ -83,11 +83,11 @@ class AssessmentControlAction
     /**
      * Class constructor.
      *
-     * @param string    $action             Action
-     * @param DateTime  $date               Date/time of incident
-     * @param float     $severity           Severity of incident
+     * @param string $action   Action
+     * @param \DateTime $date  Date/time of incident
+     * @param float $severity  Severity of incident
      */
-    public function __construct(string $action, DateTime $date, float $severity)
+    public function __construct(string $action, \DateTime $date, float $severity)
     {
         $this->action = $action;
         $this->date = $date;
@@ -107,9 +107,9 @@ class AssessmentControlAction
     /**
      * Get the incident date.
      *
-     * @return DateTime Incident date value
+     * @return \DateTime Incident date value
      */
-    public function getDate(): DateTime
+    public function getDate(): \DateTime
     {
         return $this->date;
     }

@@ -14,6 +14,7 @@ use ceLTIc\LTI\ApiHook\ApiHook;
 use ceLTIc\LTI\User;
 use ceLTIc\LTI\Util;
 use ceLTIc\LTI\Enum\LtiVersion;
+use ceLTIc\LTI\Enum\LogLevel;
 
 /**
  * Class to represent an LTI Tool
@@ -187,13 +188,6 @@ class Tool
     public ?string $message = null;
 
     /**
-     * Warnings relating to last request processed.
-     *
-     * @var array $warnings
-     */
-    public array $warnings = [];
-
-    /**
      * Base URL for tool service
      *
      * @var string|null $baseUrl
@@ -347,7 +341,6 @@ class Tool
      */
     public function __construct(?DataConnector $dataConnector = null)
     {
-        $this->consumer = &$this->platform;
         $this->initialize();
         if (empty($dataConnector)) {
             $dataConnector = DataConnector::getDataConnector();
@@ -1248,7 +1241,7 @@ EOD;
                     if (isset($this->messageParameters['data'])) {
                         $formParams['data'] = $this->messageParameters['data'];
                     }
-                    $this->version = $this->messageParameters['lti_version'] ?? LtiVersion::V1->value;
+                    $this->ltiVersion = $this->messageParameters['lti_version'] ?? LtiVersion::V1->value;
                     $page = $this->sendMessage($errorUrl, 'ContentItemSelection', $formParams);
                     echo $page;
                     exit;

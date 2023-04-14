@@ -5,6 +5,7 @@ namespace ceLTIc\LTI\Service;
 
 use ceLTIc\LTI\User;
 use ceLTIc\LTI\AssessmentControlAction;
+use ceLTIc\LTI\ResourceLink;
 
 /**
  * Class to implement the Assessment Control service

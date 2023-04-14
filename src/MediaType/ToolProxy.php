@@ -17,6 +17,34 @@ class ToolProxy
 {
 
     /**
+     * LTI version.
+     *
+     * @var string|null $lti_version
+     */
+    public ?string $lti_version = null;
+
+    /**
+     * Endpoint for tool consumer profile.
+     *
+     * @var string|null $tool_consumer_profile
+     */
+    public ?string $tool_consumer_profile = null;
+
+    /**
+     * Tool profile.
+     *
+     * @var ToolProfile|null $tool_profile
+     */
+    public ?ToolProfile $tool_profile = null;
+
+    /**
+     * Security contract.
+     *
+     * @var SecurityContract|null $security_contract
+     */
+    public ?SecurityContract $security_contract = null;
+
+    /**
      * Class constructor.
      *
      * @param Tool              $tool              Tool  object
@@ -25,9 +53,7 @@ class ToolProxy
      */
     function __construct(Tool $tool, ServiceDefinition $toolProxyService, string $secret)
     {
-        $contexts = [];
-
-        $this->{'@context'} = array_merge(['http://purl.imsglobal.org/ctx/lti/v2/ToolProxy'], $contexts);
+        $this->{'@context'} = ['http://purl.imsglobal.org/ctx/lti/v2/ToolProxy'];
         $this->{'@type'} = 'ToolProxy';
         $this->{'@id'} = "{$toolProxyService->endpoint}";
         $this->lti_version = 'LTI-2p0';

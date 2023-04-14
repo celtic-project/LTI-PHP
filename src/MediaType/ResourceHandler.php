@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace ceLTIc\LTI\MediaType;
 
 use ceLTIc\LTI\Tool;
-use ceLTIc\LTI\Profile\ResourceHandler;
+use ceLTIc\LTI\Profile;
 
 /**
  * Class to represent an LTI Resource Handler
@@ -17,12 +17,47 @@ class ResourceHandler
 {
 
     /**
+     * Resource type.
+     *
+     * @var object|null $resource_type
+     */
+    public ?object $resource_type = null;
+
+    /**
+     * Resource name.
+     *
+     * @var object|null $resource_name
+     */
+    public ?object $resource_name = null;
+
+    /**
+     * Resource description.
+     *
+     * @var object|null $description
+     */
+    public ?object $description = null;
+
+    /**
+     * Resource icon information.
+     *
+     * @var object|null $icon_info
+     */
+    public ?object $icon_info = null;
+
+    /**
+     * Resource messages.
+     *
+     * @var array|null $message
+     */
+    public ?array $message = null;
+
+    /**
      * Class constructor.
      *
-     * @param Tool $tool                        Tool object
-     * @param ResourceHandler $resourceHandler  Profile resource handler object
+     * @param Tool $tool                                Tool object
+     * @param Profile\ResourceHandler $resourceHandler  Profile resource handler object
      */
-    function __construct(Tool $tool, ResourceHandler $resourceHandler)
+    function __construct(Tool $tool, Profile\ResourceHandler $resourceHandler)
     {
         $this->resource_type = (object) ['code' => $resourceHandler->item->id];
         $this->resource_name = (object) [

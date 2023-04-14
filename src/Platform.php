@@ -7,6 +7,8 @@ use ceLTIc\LTI\DataConnector\DataConnector;
 use ceLTIc\LTI\Service;
 use ceLTIc\LTI\Http\HttpMessage;
 use ceLTIc\LTI\Enum\IdScope;
+use ceLTIc\LTI\Enum\LogLevel;
+use ceLTIc\LTI\ApiHook\ApiHook;
 
 /**
  * Class to represent a platform
@@ -18,6 +20,7 @@ use ceLTIc\LTI\Enum\IdScope;
 class Platform
 {
     use System;
+    use ApiHook;
 
     /**
      * List of supported incoming message types.
@@ -35,13 +38,6 @@ class Platform
      * @var string|null $browserStorageFrame
      */
     public static ?string $browserStorageFrame = null;
-
-    /**
-     * Local name of platform.
-     *
-     * @var string|null $name
-     */
-    public ?string $name = null;
 
     /**
      * Platform ID.
@@ -84,13 +80,6 @@ class Platform
      * @var string $accessTokenUrl
      */
     public ?string $accessTokenUrl = null;
-
-    /**
-     * LTI version (as reported by last platform connection).
-     *
-     * @var string|null $ltiVersion
-     */
-    public ?string $ltiVersion = null;
 
     /**
      * Name of platform (as reported by last platform connection).

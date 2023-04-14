@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace ceLTIc\LTI\MediaType;
 
+use ceLTIc\LTI\Profile;
+
 /**
  * Class to represent an LTI Message
  *
@@ -14,12 +16,40 @@ class Message
 {
 
     /**
+     * LTI message type.
+     *
+     * @var string|null $type
+     */
+    public ?string $message_type = null;
+
+    /**
+     * Path to send message request to (used in conjunction with a base URL for the Tool).
+     *
+     * @var string|null $path
+     */
+    public ?string $path = null;
+
+    /**
+     * Enabled capabilities.
+     *
+     * @var array|null $enabled_capability
+     */
+    public ?array $enabled_capability = null;
+
+    /**
+     * Message parameters.
+     *
+     * @var array|null $parameter
+     */
+    public ?array $parameter = null;
+
+    /**
      * Class constructor.
      *
-     * @param Message $message              Message object
+     * @param Profile\Message $message      Message object
      * @param array   $capabilitiesOffered  Capabilities offered
      */
-    function __construct(Message $message, array $capabilitiesOffered)
+    function __construct(Profile\Message $message, array $capabilitiesOffered)
     {
         $this->message_type = $message->type;
         $this->path = $message->path;

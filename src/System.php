@@ -31,6 +31,20 @@ trait System
     public bool $ok = true;
 
     /**
+     * LTI version (as reported by last platform connection).
+     *
+     * @var string|null $ltiVersion
+     */
+    public ?string $ltiVersion = null;
+
+    /**
+     * Local name of platform/tool.
+     *
+     * @var string|null $name
+     */
+    public ?string $name = null;
+
+    /**
      * Shared secret.
      *
      * @var string|null $secret
@@ -102,6 +116,13 @@ trait System
      * @var array $details
      */
     public array $details = [];
+
+    /**
+     * Warnings relating to last request processed.
+     *
+     * @var array $warnings
+     */
+    public array $warnings = [];
 
     /**
      * Whether debug level messages are to be reported.
