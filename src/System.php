@@ -804,7 +804,7 @@ trait System
                             $role = substr($role, 50);
                         }
                     }
-                    if (!empty($role)) {
+                    if (!empty($prefix) && !empty($role)) {
                         $pos = strrpos($role, '/');
                         if ((strpos($role, '#') !== false) || ($pos !== false)) {
                             $prefix .= '/';
