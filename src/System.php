@@ -959,11 +959,11 @@ trait System
      * @param string $url     URL for message request
      * @param string $method  HTTP method
      * @param string $type    Media type
-     * @param string $data    Data being passed in request body (optional)
+     * @param array|string $data    Data being passed in request body (optional)
      *
-     * @return string  Headers to include with service request
+     * @return array|string  Headers to include with service request
      */
-    public function signServiceRequest(string $url, string $method, string $type, ?string $data = null): string
+    public function signServiceRequest(string $url, string $method, string $type, array|string $data): array|string
     {
         $header = '';
         if (!empty($url)) {
