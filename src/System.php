@@ -1020,6 +1020,8 @@ trait System
             $this->reason = 'LTI messages must use HTTP POST';
         } elseif (!empty($this->jwt) && !empty($this->jwt->hasJwt())) {
             $ok = false;
+            $context = $this->jwt->getClaim('https://purl.imsglobal.org/spec/lti/claim/context');
+            $resourceLink = $this->jwt->getClaim('https://purl.imsglobal.org/spec/lti/claim/resource_link');
             if (is_null($this->messageParameters['oauth_consumer_key']) || (strlen($this->messageParameters['oauth_consumer_key']) <= 0)) {
                 $this->reason = 'Missing iss claim';
             } elseif (empty($this->jwt->getClaim('iat', ''))) {
@@ -1030,6 +1032,10 @@ trait System
                 $this->reason = 'iat claim must not have a value greater than exp claim';
             } elseif (empty($this->jwt->getClaim('nonce', ''))) {
                 $this->reason = 'Missing nonce claim';
+            } elseif (!empty($context) && property_exists($context, 'id') && (empty($context->id) || !is_string($context->id))) {
+                $this->reason = 'Invalid value for id property in https://purl.imsglobal.org/spec/lti/claim/context claim';
+            } elseif (!empty($resourceLink) && property_exists($resourceLink, 'id') && (empty($resourceLink->id) || !is_string($resourceLink->id))) {
+                $this->reason = 'Invalid value for id property in https://purl.imsglobal.org/spec/lti/claim/resource_link claim';
             } else {
                 $ok = true;
             }
