@@ -977,14 +977,14 @@ trait System
     /**
      * Generates the headers for an LTI service request.
      *
-     * @param string $url     URL for message request
-     * @param string $method  HTTP method
-     * @param string $type    Media type
-     * @param string $data    Data being passed in request body (optional)
+     * @param string $url              URL for message request
+     * @param string $method           HTTP method
+     * @param string $type             Media type
+     * @param array|string|null $data  Data being passed in request body (optional)
      *
      * @return string  Headers to include with service request
      */
-    public function signServiceRequest(string $url, string $method, string $type, ?string $data = null): string
+    public function signServiceRequest(string $url, string $method, string $type, array|string|null $data = null): string
     {
         $header = '';
         if (!empty($url)) {
@@ -1032,17 +1032,17 @@ trait System
     /**
      * Add the signature to an array of message parameters or to a header string.
      *
-     * @param string $endpoint     URL to which message is being sent
-     * @param array|string $data   Data to be passed
-     * @param string $method       HTTP method
-     * @param string|null $type    Content type of data being passed
-     * @param string|null $nonce   Nonce value for JWT
-     * @param string|null $hash    OAuth body hash value
-     * @param int|null $timestamp  Timestamp
+     * @param string $endpoint         URL to which message is being sent
+     * @param array|string|null $data  Data to be passed
+     * @param string $method           HTTP method
+     * @param string|null $type        Content type of data being passed
+     * @param string|null $nonce       Nonce value for JWT
+     * @param string|null $hash        OAuth body hash value
+     * @param int|null $timestamp      Timestamp
      *
      * @return array|string  Array of signed message parameters or header string
      */
-    public function addSignature(string $endpoint, array|string $data, string $method = 'POST', ?string $type = null,
+    public function addSignature(string $endpoint, array|string|null $data, string $method = 'POST', ?string $type = null,
         ?string $nonce = '', ?string $hash = null, ?int $timestamp = null): array|string
     {
         if ($this->useOAuth1()) {
@@ -1563,16 +1563,16 @@ trait System
     /**
      * Add the OAuth 1 signature to an array of message parameters or to a header string.
      *
-     * @param string $endpoint     URL to which message is being sent
-     * @param array|string $data   Data to be passed
-     * @param string $method       HTTP method
-     * @param string|null $type    Content type of data being passed
-     * @param string|null $hash    OAuth body hash value
-     * @param int|null $timestamp  Timestamp
+     * @param string $endpoint         URL to which message is being sent
+     * @param array|string|null $data  Data to be passed
+     * @param string $method           HTTP method
+     * @param string|null $type        Content type of data being passed
+     * @param string|null $hash        OAuth body hash value
+     * @param int|null $timestamp      Timestamp
      *
      * @return string[]|string  Array of signed message parameters or header string
      */
-    private function addOAuth1Signature(string $endpoint, array|string $data, string $method, ?string $type, ?string $hash,
+    private function addOAuth1Signature(string $endpoint, array|string|null $data, string $method, ?string $type, ?string $hash,
         ?int $timestamp): array|string
     {
         $params = [];
@@ -1669,16 +1669,16 @@ trait System
     /**
      * Add the JWT signature to an array of message parameters or to a header string.
      *
-     * @param string $endpoint     URL to which message is being sent
-     * @param array|string $data   Data to be passed
-     * @param string $method       HTTP method
-     * @param string|null $type    Content type of data being passed
-     * @param string|null $nonce   Nonce value for JWT
-     * @param int|null $timestamp  Timestamp
+     * @param string $endpoint         URL to which message is being sent
+     * @param array|string|null $data  Data to be passed
+     * @param string $method           HTTP method
+     * @param string|null $type        Content type of data being passed
+     * @param string|null $nonce       Nonce value for JWT
+     * @param int|null $timestamp      Timestamp
      *
      * @return string[]|string  Array of signed message parameters or header string
      */
-    private function addJWTSignature(string $endpoint, array|string $data, string $method, ?string $type, ?string $nonce,
+    private function addJWTSignature(string $endpoint, array|string|null $data, string $method, ?string $type, ?string $nonce,
         ?int $timestamp): array|string
     {
         $ok = false;
