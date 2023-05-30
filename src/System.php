@@ -10,6 +10,7 @@ use ceLTIc\LTI\OAuth;
 use ceLTIc\LTI\Jwt\Jwt;
 use ceLTIc\LTI\Jwt\ClientInterface;
 use ceLTIc\LTI\Tool;
+use ceLTIc\LTI\Enum\LtiVersion;
 use ceLTIc\LTI\Enum\IdScope;
 use ceLTIc\LTI\Util;
 
@@ -33,9 +34,9 @@ trait System
     /**
      * LTI version (as reported by last platform connection).
      *
-     * @var string|null $ltiVersion
+     * @var LtiVersion|null $ltiVersion
      */
-    public ?string $ltiVersion = null;
+    public ?LtiVersion $ltiVersion = null;
 
     /**
      * Local name of platform/tool.
@@ -576,14 +577,13 @@ trait System
     /**
      * Parse a set of roles to comply with a specified version of LTI.
      *
-     * @param array|string $roles          Comma-separated list of roles or array of roles
-     * @param Enum\LtiVersion $ltiVersion  LTI version for roles being returned (optional, default is LTI-1p0)
-     * @param bool $addPrincipalRole       Add principal role when true (optional, default is false)
+     * @param array|string $roles     Comma-separated list of roles or array of roles
+     * @param LtiVersion $ltiVersion  LTI version for roles being returned (optional, default is LTI-1p0)
+     * @param bool $addPrincipalRole  Add principal role when true (optional, default is false)
      *
      * @return array  Array of roles
      */
-    public static function parseRoles(array|string $roles, Enum\LtiVersion $ltiVersion = Enum\LtiVersion::V1,
-        bool $addPrincipalRole = false): array
+    public static function parseRoles(array|string $roles, LtiVersion $ltiVersion = LtiVersion::V1, bool $addPrincipalRole = false): array
     {
         if (!is_array($roles)) {
             $roles = array_map('trim', explode(',', $roles));
@@ -595,12 +595,12 @@ trait System
             if ((substr($role, 0, 4) !== 'urn:') &&
                 (substr($role, 0, 7) !== 'http://') && (substr($role, 0, 8) !== 'https://')) {
                 switch ($ltiVersion) {
-                    case Enum\LtiVersion::V1:
+                    case LtiVersion::V1:
                         $role = str_replace('#', '/', $role);
                         $role = "urn:lti:role:ims/lis/{$role}";
                         break;
-                    case Enum\LtiVersion::V2:
-                    case Enum\LtiVersion::V1P3:
+                    case LtiVersion::V2:
+                    case LtiVersion::V1P3:
                         $pos = strrpos($role, '#');
                         if ($pos === false) {
                             $sep = '#';
@@ -637,7 +637,7 @@ trait System
                 'Student'
             ];
             switch ($ltiVersion) {
-                case Enum\LtiVersion::V1:
+                case LtiVersion::V1:
                     if (in_array(substr($role, 0, 53),
                             ['http://purl.imsglobal.org/vocab/lis/v2/system/person#',
                                 'http://purl.imsglobal.org/vocab/lis/v2/system/person/'])) {
@@ -694,7 +694,7 @@ trait System
                     }
                     $role = str_replace('#', '/', $role);
                     break;
-                case Enum\LtiVersion::V2:
+                case LtiVersion::V2:
                     $prefix = '';
                     if (substr($role, 0, 24) === 'urn:lti:sysrole:ims/lis/') {
                         $prefix = 'http://purl.imsglobal.org/vocab/lis/v2/person';
@@ -774,7 +774,7 @@ trait System
                         $role = "{$prefix}{$role}";
                     }
                     break;
-                case Enum\LtiVersion::V1P3:
+                case LtiVersion::V1P3:
                     $prefix = '';
                     if (substr($role, 0, 24) === 'urn:lti:sysrole:ims/lis/') {
                         $prefix = 'http://purl.imsglobal.org/vocab/lis/v2/system/person';
@@ -870,18 +870,18 @@ trait System
     /**
      * Add the signature to an LTI message.
      *
-     * @param string $url      URL for message request
-     * @param string $type     LTI message type
-     * @param string $version  LTI version
-     * @param array $params    Message parameters
+     * @param string $url               URL for message request
+     * @param string $type              LTI message type
+     * @param string $ltiVersionString  LTI version
+     * @param array $params             Message parameters
      *
      * @return array|string  Array of signed message parameters or request headers
      */
-    public function signParameters(string $url, string $type, string $version, array $params): array|string
+    public function signParameters(string $url, string $type, string $ltiVersionString, array $params): array|string
     {
         if (!empty($url)) {
 // Add standard parameters
-            $params['lti_version'] = $version;
+            $params['lti_version'] = $ltiVersionString;
             $params['lti_message_type'] = $type;
 // Add signature
             $params = $this->addSignature($url, $params, 'POST', 'application/x-www-form-urlencoded');
@@ -898,17 +898,17 @@ trait System
      *
      * @param string $url                  URL for message request
      * @param string $type                 LTI message type
-     * @param string $version              LTI version
+     * @param string $ltiVersionString     LTI version
      * @param array $params                Message parameters
      * @param string|null $loginHint       ID of user (optional)
      * @param string|null $ltiMessageHint  LTI message hint (optional, use null for none)
      *
      * @return array|string  Array of signed message parameters or request headers
      */
-    public function signMessage(string &$url, string $type, string $version, array $params, ?string $loginHint = null,
+    public function signMessage(string &$url, string $type, string $ltiVersionString, array $params, ?string $loginHint = null,
         ?string $ltiMessageHint = null): array|string
     {
-        if (($this instanceof Platform) && ($this->ltiVersion === Enum\LtiVersion::V1P3->value)) {
+        if (($this instanceof Platform) && ($this->ltiVersion === LtiVersion::V1P3)) {
             if (!isset($loginHint) || (strlen($loginHint) <= 0)) {
                 if (isset($params['user_id']) && (strlen($params['user_id']) > 0)) {
                     $loginHint = $params['user_id'];
@@ -917,7 +917,7 @@ trait System
                 }
             }
 // Add standard parameters
-            $params['lti_version'] = $version;
+            $params['lti_version'] = $ltiVersionString;
             $params['lti_message_type'] = $type;
             $this->onInitiateLogin($url, $loginHint, $ltiMessageHint, $params);
 
@@ -947,7 +947,7 @@ trait System
                 $url .= "{$sep}lti_storage_target=" . static::$browserStorageFrame;
             }
         } else {
-            $params = $this->signParameters($url, $type, $version, $params);
+            $params = $this->signParameters($url, $type, $ltiVersionString, $params);
         }
 
         return $params;

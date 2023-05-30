@@ -14,6 +14,7 @@ use ceLTIc\LTI\UserResult;
 use ceLTIc\LTI\Tool;
 use ceLTIc\LTI\AccessToken;
 use ceLTIc\LTI\Util;
+use ceLTIc\LTI\Enum\LtiVersion;
 use ceLTIc\LTI\Enum\IdScope;
 
 /**
@@ -119,7 +120,7 @@ EOD;
             $platform->clientId = $row->client_id;
             $platform->deploymentId = $row->deployment_id;
             $platform->rsaKey = $row->public_key;
-            $platform->ltiVersion = $row->lti_version;
+            $platform->ltiVersion = LtiVersion::tryFrom($row->lti_version);
             $platform->signatureMethod = $row->signature_method;
             $platform->consumerName = $row->consumer_name;
             $platform->consumerVersion = $row->consumer_version;
@@ -187,6 +188,7 @@ EOD;
         if (!is_null($platform->lastAccess)) {
             $last = date($this->dateFormat, $platform->lastAccess);
         }
+        $ltiVersion = $platform->ltiVersion ? $platform->ltiVersion->value : '';
         if (empty($id)) {
             $sql = <<< EOD
 INSERT INTO {$this->dbTableName(static::PLATFORM_TABLE_NAME)} (
@@ -198,7 +200,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 EOD;
             $stmt = $this->db->prepare($sql);
             $stmt->bind_param('sssssssssssssssiisssss', $key, $platform->name, $platform->secret, $platform->platformId,
-                $platform->clientId, $platform->deploymentId, $platform->rsaKey, $platform->ltiVersion, $platform->signatureMethod,
+                $platform->clientId, $platform->deploymentId, $platform->rsaKey, $ltiVersion, $platform->signatureMethod,
                 $platform->consumerName, $platform->consumerVersion, $platform->consumerGuid, $profile, $platform->toolProxy,
                 $settingsValue, $protected, $enabled, $from, $until, $last, $now, $now);
         } else {
@@ -212,7 +214,7 @@ WHERE consumer_pk = ?
 EOD;
             $stmt = $this->db->prepare($sql);
             $stmt->bind_param('sssssssssssssssiissssi', $key, $platform->name, $platform->secret, $platform->platformId,
-                $platform->clientId, $platform->deploymentId, $platform->rsaKey, $platform->ltiVersion, $platform->signatureMethod,
+                $platform->clientId, $platform->deploymentId, $platform->rsaKey, $ltiVersion, $platform->signatureMethod,
                 $platform->consumerName, $platform->consumerVersion, $platform->consumerGuid, $profile, $platform->toolProxy,
                 $settingsValue, $protected, $enabled, $from, $until, $last, $now, $id);
         }
@@ -401,7 +403,7 @@ EOD;
                 $platform->clientId = $row->client_id;
                 $platform->deploymentId = $row->deployment_id;
                 $platform->rsaKey = $row->public_key;
-                $platform->ltiVersion = $row->lti_version;
+                $platform->ltiVersion = LtiVersion::tryFrom($row->lti_version);
                 $platform->signatureMethod = $row->signature_method;
                 $platform->consumerName = $row->consumer_name;
                 $platform->consumerVersion = $row->consumer_version;
@@ -1414,7 +1416,7 @@ EOD;
                     $tool->redirectionUris = [];
                 }
                 $tool->rsaKey = $row->public_key;
-                $tool->ltiVersion = $row->lti_version;
+                $tool->ltiVersion = LtiVersion::tryFrom($row->lti_version);
                 $tool->signatureMethod = $row->signature_method;
                 $settings = Util::json_decode($row->settings, true);
                 if (!is_array($settings)) {
@@ -1475,6 +1477,7 @@ EOD;
             $last = date($this->dateFormat, $tool->lastAccess);
         }
         $key = $tool->getKey();
+        $ltiVersion = $tool->ltiVersion ? $tool->ltiVersion->value : '';
         if (empty($id)) {
             $sql = <<< EOD
 INSERT INTO {$this->dbTableName(static::TOOL_TABLE_NAME)} (
@@ -1484,8 +1487,8 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 EOD;
             $stmt = $this->db->prepare($sql);
             $stmt->bind_param('ssssssssssisssss', $tool->name, $key, $tool->secret, $tool->messageUrl, $tool->initiateLoginUrl,
-                $redirectionUrisValue, $tool->rsaKey, $tool->ltiVersion, $tool->signatureMethod, $settingsValue, $enabled, $from,
-                $until, $last, $now, $now);
+                $redirectionUrisValue, $tool->rsaKey, $ltiVersion, $tool->signatureMethod, $settingsValue, $enabled, $from, $until,
+                $last, $now, $now);
         } else {
             $sql = <<< EOD
 UPDATE {$this->dbTableName(static::TOOL_TABLE_NAME)} SET
@@ -1495,8 +1498,8 @@ WHERE (tool_pk = ?)
 EOD;
             $stmt = $this->db->prepare($sql);
             $stmt->bind_param('ssssssssssissssi', $tool->name, $key, $tool->secret, $tool->messageUrl, $tool->initiateLoginUrl,
-                $redirectionUrisValue, $tool->rsaKey, $tool->ltiVersion, $tool->signatureMethod, $settingsValue, $enabled, $from,
-                $until, $last, $now, $id);
+                $redirectionUrisValue, $tool->rsaKey, $ltiVersion, $tool->signatureMethod, $settingsValue, $enabled, $from, $until,
+                $last, $now, $id);
         }
         $ok = $this->executeQuery($sql, $stmt);
         if ($ok) {
@@ -1567,7 +1570,7 @@ EOD;
                     $tool->redirectionUris = [];
                 }
                 $tool->rsaKey = $row->public_key;
-                $tool->ltiVersion = $row->lti_version;
+                $tool->ltiVersion = LtiVersion::tryFrom($row->lti_version);
                 $tool->signatureMethod = $row->signature_method;
                 $settings = Util::json_decode($row->settings, true);
                 if (!is_array($settings)) {

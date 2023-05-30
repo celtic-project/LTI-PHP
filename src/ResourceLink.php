@@ -1421,7 +1421,7 @@ EOF;
         $this->extResponseHeaders = [];
         $this->lastServiceRequest = null;
         if (!empty($url)) {
-            $params['lti_version'] = $this->getPlatform()->ltiVersion;
+            $params['lti_version'] = $this->getPlatform()->ltiVersion ? $this->getPlatform()->ltiVersion->value : '';
             $params['lti_message_type'] = $type;
             $retry = false;
             $newToken = false;

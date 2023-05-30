@@ -14,6 +14,7 @@ use ceLTIc\LTI\UserResult;
 use ceLTIc\LTI\Tool;
 use ceLTIc\LTI\AccessToken;
 use ceLTIc\LTI\Util;
+use ceLTIc\LTI\Enum\LtiVersion;
 use ceLTIc\LTI\Enum\IdScope;
 
 /**
@@ -120,7 +121,7 @@ EOD;
                 $platform->clientId = $row->client_id;
                 $platform->deploymentId = $row->deployment_id;
                 $platform->rsaKey = $row->public_key;
-                $platform->ltiVersion = $row->lti_version;
+                $platform->ltiVersion = LtiVersion::tryFrom($row->lti_version);
                 $platform->signatureMethod = $row->signature_method;
                 $platform->consumerName = $row->consumer_name;
                 $platform->consumerVersion = $row->consumer_version;
@@ -202,7 +203,7 @@ EOD;
                 $platform->clientId,
                 $platform->deploymentId,
                 $platform->rsaKey,
-                $platform->ltiVersion,
+                $platform->ltiVersion ? $platform->ltiVersion->value : '',
                 $platform->signatureMethod,
                 $platform->consumerName,
                 $platform->consumerVersion,
@@ -234,7 +235,7 @@ EOD;
                 $platform->clientId,
                 $platform->deploymentId,
                 $platform->rsaKey,
-                $platform->ltiVersion,
+                $platform->ltiVersion ? $platform->ltiVersion->value : '',
                 $platform->signatureMethod,
                 $platform->consumerName,
                 $platform->consumerVersion,
@@ -449,7 +450,7 @@ EOD;
                 $platform->clientId = $row->client_id;
                 $platform->deploymentId = $row->deployment_id;
                 $platform->rsaKey = $row->public_key;
-                $platform->ltiVersion = $row->lti_version;
+                $platform->ltiVersion = LtiVersion::tryFrom($row->lti_version);
                 $platform->signatureMethod = $row->signature_method;
                 $platform->consumerName = $row->consumer_name;
                 $platform->consumerVersion = $row->consumer_version;
@@ -1507,7 +1508,7 @@ EOD;
                     $tool->redirectionUris = [];
                 }
                 $tool->rsaKey = $row->public_key;
-                $tool->ltiVersion = $row->lti_version;
+                $tool->ltiVersion = LtiVersion::tryFrom($row->lti_version);
                 $tool->signatureMethod = $row->signature_method;
                 $settings = Util::json_decode($row->settings, true);
                 if (!is_array($settings)) {
@@ -1578,7 +1579,7 @@ EOD;
                 $tool->initiateLoginUrl,
                 json_encode($tool->redirectionUris),
                 $tool->rsaKey,
-                $tool->ltiVersion,
+                $tool->ltiVersion ? $tool->ltiVersion->value : '',
                 $tool->signatureMethod,
                 json_encode($tool->getSettings()),
                 $tool->enabled,
@@ -1603,7 +1604,7 @@ EOD;
                 $tool->initiateLoginUrl,
                 json_encode($tool->redirectionUris),
                 $tool->rsaKey,
-                $tool->ltiVersion,
+                $tool->ltiVersion ? $tool->ltiVersion->value : '',
                 $tool->signatureMethod,
                 json_encode($tool->getSettings()),
                 $tool->enabled,
@@ -1682,7 +1683,7 @@ EOD;
                     $tool->redirectionUris = [];
                 }
                 $tool->rsaKey = $row->public_key;
-                $tool->ltiVersion = $row->lti_version;
+                $tool->ltiVersion = LtiVersion::tryFrom($row->lti_version);
                 $tool->signatureMethod = $row->signature_method;
                 $settings = Util::json_decode($row->settings, true);
                 if (!is_array($settings)) {

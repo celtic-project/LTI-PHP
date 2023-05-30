@@ -1018,7 +1018,7 @@ class Tool
         }
         $this->platform = new Platform($this->dataConnector);
         $this->platform->name = $domain;
-        $this->platform->ltiVersion = LtiVersion::V1P3->value;
+        $this->platform->ltiVersion = LtiVersion::V1P3;
         $this->platform->signatureMethod = reset($platformConfig['id_token_signing_alg_values_supported']);
         $this->platform->platformId = $platformConfig['issuer'];
         $this->platform->clientId = $registrationConfig['client_id'];
@@ -1241,7 +1241,7 @@ EOD;
                     if (isset($this->messageParameters['data'])) {
                         $formParams['data'] = $this->messageParameters['data'];
                     }
-                    $this->ltiVersion = $this->messageParameters['lti_version'] ?? LtiVersion::V1->value;
+                    $this->ltiVersion = LtiVersion::tryFrom($this->messageParameters['lti_version']) ?? LtiVersion::V1;
                     $page = $this->sendMessage($errorUrl, 'ContentItemSelection', $formParams);
                     echo $page;
                     exit;
@@ -1670,7 +1670,7 @@ EOD;
                 if ($this->messageParameters['lti_message_type'] === 'ToolProxyRegistrationRequest') {
                     $this->platform->profile = $tcProfile;
                     $this->platform->secret = $this->messageParameters['reg_password'];
-                    $this->platform->ltiVersion = $this->messageParameters['lti_version'];
+                    $this->platform->ltiVersion = LtiVersion::tryFrom($this->messageParameters['lti_version']);
                     $this->platform->name = $tcProfile->product_instance->service_owner->service_owner_name->default_value;
                     $this->platform->consumerName = $this->platform->name;
                     $this->platform->consumerVersion = "{$tcProfile->product_instance->product_info->product_family->code}-{$tcProfile->product_instance->product_info->product_version}";
@@ -1905,8 +1905,8 @@ EOD;
 
 // Initialise the platform and check for changes
                     $this->platform->defaultEmail = $this->defaultEmail;
-                    if ($this->platform->ltiVersion !== $this->messageParameters['lti_version']) {
-                        $this->platform->ltiVersion = $this->messageParameters['lti_version'];
+                    if ($this->platform->ltiVersion !== LtiVersion::tryFrom($this->messageParameters['lti_version'])) {
+                        $this->platform->ltiVersion = LtiVersion::tryFrom($this->messageParameters['lti_version']);
                         $doSavePlatform = true;
                     }
                     if (isset($this->messageParameters['deployment_id'])) {
