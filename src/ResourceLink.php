@@ -208,8 +208,6 @@ class ResourceLink
 
     /**
      * Initialise the resource link.
-     *
-     * @return void
      */
     public function initialize(): void
     {
@@ -227,8 +225,6 @@ class ResourceLink
      * Initialise the resource link.
      *
      * Synonym for initialize().
-     *
-     * @return void
      */
     public function initialise(): void
     {
@@ -292,8 +288,6 @@ class ResourceLink
      * Set platform ID.
      *
      * @param int|null $platformId  Platform ID for this resource link.
-     *
-     * @return void
      */
     public function setPlatformId(?int $platformId): void
     {
@@ -333,8 +327,6 @@ class ResourceLink
      * Set context.
      *
      * @param Context $context  Context for this resource link.
-     *
-     * @return void
      */
     public function setContext(Context $context): void
     {
@@ -346,8 +338,6 @@ class ResourceLink
      * Set context ID.
      *
      * @param int|null $contextId  Context ID for this resource link.
-     *
-     * @return void
      */
     public function setContextId(?int $contextId): void
     {
@@ -438,8 +428,6 @@ class ResourceLink
      *
      * @param string $name              Name of setting
      * @param string|array|null $value  Value to set, use an empty value to delete a setting (optional, default is null)
-     *
-     * @return void
      */
     public function setSetting(string $name, string|array|null $value = null): void
     {
@@ -468,8 +456,6 @@ class ResourceLink
      * Set an array of all setting values.
      *
      * @param array $settings  Associative array of setting values
-     *
-     * @return void
      */
     public function setSettings(array $settings): void
     {

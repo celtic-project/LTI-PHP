@@ -350,8 +350,6 @@ class Tool
 
     /**
      * Initialise the tool.
-     *
-     * @return void
      */
     public function initialize(): void
     {
@@ -442,8 +440,6 @@ class Tool
      * @param bool $strictMode          True if full compliance with the LTI specification is required (optional, default is false)
      * @param bool $disableCookieCheck  True if no cookie check should be made (optional, default is false)
      * @param bool $generateWarnings    True if warning messages should be generated (optional, default is false)
-     *
-     * @return void
      */
     public function handleRequest(bool $strictMode = false, bool $disableCookieCheck = false, bool $generateWarnings = false): void
     {
@@ -499,8 +495,6 @@ class Tool
      * @param bool $required            True if parameter is required (optional, default is true)
      * @param int|null $maxLength       Maximum permitted length of parameter value (optional, default is null)
      * @param array|null $messageTypes  Array of message types to which the constraint applies (optional, default is all)
-     *
-     * @return void
      */
     public function setParameterConstraint(string $name, bool $required = true, ?int $maxLength = null, ?array $messageTypes = null): void
     {
@@ -590,8 +584,6 @@ class Tool
 
     /**
      * Process a valid launch request
-     *
-     * @return void
      */
     protected function onLaunch(): void
     {
@@ -601,8 +593,6 @@ class Tool
 
     /**
      * Process a valid configure request
-     *
-     * @return void
      */
     protected function onConfigure(): void
     {
@@ -612,8 +602,6 @@ class Tool
 
     /**
      * Process a valid dashboard request
-     *
-     * @return void
      */
     protected function onDashboard(): void
     {
@@ -623,8 +611,6 @@ class Tool
 
     /**
      * Process a valid content-item request
-     *
-     * @return void
      */
     protected function onContentItem(): void
     {
@@ -634,8 +620,6 @@ class Tool
 
     /**
      * Process a valid content-item update request
-     *
-     * @return void
      */
     protected function onContentItemUpdate(): void
     {
@@ -645,8 +629,6 @@ class Tool
 
     /**
      * Process a valid submission review request
-     *
-     * @return void
      */
     protected function onSubmissionReview(): void
     {
@@ -656,8 +638,6 @@ class Tool
 
     /**
      * Process a valid tool proxy registration request
-     *
-     * @return void
      */
     protected function onRegister(): void
     {
@@ -667,8 +647,6 @@ class Tool
 
     /**
      * Process a dynamic registration request
-     *
-     * @return void
      */
     protected function onRegistration(): void
     {
@@ -686,8 +664,6 @@ class Tool
 
     /**
      * Process a valid start proctoring request
-     *
-     * @return void
      */
     protected function onLtiStartProctoring(): void
     {
@@ -697,8 +673,6 @@ class Tool
 
     /**
      * Process a valid end assessment request
-     *
-     * @return void
      */
     protected function onLtiEndAssessment(): void
     {
@@ -711,8 +685,6 @@ class Tool
      *
      * @param array $requestParameters  Request parameters
      * @param array $authParameters     Authentication request parameters
-     *
-     * @return void
      */
     protected function onInitiateLogin(array $requestParameters, array &$authParameters): void
     {
@@ -735,8 +707,6 @@ class Tool
      * @param string $state             State value
      * @param string $nonce             Nonce value
      * @param bool $usePlatformStorage  True if platform storage is being used
-     *
-     * @return void
      */
     protected function onAuthenticate(string $state, string $nonce, bool $usePlatformStorage): void
     {
@@ -780,8 +750,6 @@ class Tool
 
     /**
      * Process a change in the session ID
-     *
-     * @return void
      */
     protected function onResetSessionId(): void
     {
@@ -790,8 +758,6 @@ class Tool
 
     /**
      * Process a response to an invalid request
-     *
-     * @return void
      */
     protected function onError(): void
     {
@@ -1040,8 +1006,6 @@ class Tool
      * Prepare the page to complete a registration request
      *
      * @param array $toolConfig  Tool configuration data
-     *
-     * @return void
      */
     protected function getRegistrationResponsePage(array $toolConfig): void
     {
@@ -1213,8 +1177,6 @@ EOD;
 
     /**
      * Perform the result of an action.
-     *
-     * @return void
      */
     private function result(): void
     {
@@ -2274,8 +2236,6 @@ EOD;
      * @param string $reason          Reason to generate when the value is not permitted
      * @param bool $strictMode        True if full compliance with the LTI specification is required
      * @param bool $generateWarnings  True if warning messages should be generated
-     *
-     * @return void
      */
     private function setError(string $reason, bool $strictMode, bool $generateWarnings): void
     {

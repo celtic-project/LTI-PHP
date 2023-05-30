@@ -141,8 +141,6 @@ class Context
 
     /**
      * Initialise the context.
-     *
-     * @return void
      */
     public function initialize(): void
     {
@@ -158,8 +156,6 @@ class Context
      * Initialise the context.
      *
      * Synonym for initialize().
-     *
-     * @return void
      */
     public function initialise(): void
     {
@@ -209,8 +205,6 @@ class Context
      * Set platform ID.
      *
      * @param int|null $platformId  Platform ID for this context.
-     *
-     * @return void
      */
     public function setPlatformId(?int $platformId): void
     {
@@ -252,8 +246,6 @@ class Context
      * Sets the context record ID.
      *
      * @param int|string|null $id  Context record ID value
-     *
-     * @return void
      */
     public function setRecordId(int|string|null $id): void
     {
@@ -294,8 +286,6 @@ class Context
      *
      * @param string $name       Name of setting
      * @param array|null $value  Value to set, use an empty value to delete a setting (optional, default is null)
-     *
-     * @return void
      */
     public function setSetting(string $name, string|array|null $value = null): void
     {
@@ -324,8 +314,6 @@ class Context
      * Set an array of all setting values.
      *
      * @param array $settings  Associative array of setting values
-     *
-     * @return void
      */
     public function setSettings(array $settings): void
     {

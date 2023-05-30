@@ -77,8 +77,6 @@ class UserResult extends User
 
     /**
      * Initialise the user.
-     *
-     * @return void
      */
     public function initialize(): void
     {
@@ -134,8 +132,6 @@ class UserResult extends User
      * Set resource link.
      *
      * @param ResourceLink $resourceLink  Resource link object
-     *
-     * @return void
      */
     public function setResourceLink(ResourceLink $resourceLink): void
     {
@@ -156,8 +152,6 @@ class UserResult extends User
      * Set record ID of user.
      *
      * @param int|null $id  Record ID of user
-     *
-     * @return void
      */
     public function setRecordId(?int $id): void
     {
@@ -168,8 +162,6 @@ class UserResult extends User
      * Set resource link ID of user.
      *
      * @param int|null $resourceLinkId  Resource link ID of user
-     *
-     * @return void
      */
     public function setResourceLinkId(?int $resourceLinkId): void
     {
@@ -191,8 +183,6 @@ class UserResult extends User
      * Set the data connector.
      *
      * @param DataConnector|null $dataConnector  Data connector object
-     *
-     * @return void
      */
     public function setDataConnector(?DataConnector $dataConnector): void
     {

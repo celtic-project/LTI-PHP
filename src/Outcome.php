@@ -150,8 +150,6 @@ class Outcome
      * Set the outcome value.
      *
      * @param int|float|string|null $value  Outcome value
-     *
-     * @return void
      */
     public function setValue(int|float|string|null $value): void
     {
@@ -172,8 +170,6 @@ class Outcome
      * Set the points possible value.
      *
      * @param int|null $pointsPossible  Points possible value
-     *
-     * @return void
      */
     public function setPointsPossible(?int $pointsPossible): void
     {

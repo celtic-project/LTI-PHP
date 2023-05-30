@@ -681,8 +681,6 @@ class DataConnector
      *
      * @param Platform $platform  Platform object
      * @param bool     $isSave    True if the settings are being saved
-     *
-     * @return void
      */
     protected function fixPlatformSettings(Platform $platform, bool $isSave): void
     {
@@ -719,8 +717,6 @@ class DataConnector
      *
      * @param Tool $tool    Tool object
      * @param bool $isSave  True if the settings are being saved
-     *
-     * @return void
      */
     protected function fixToolSettings(Tool $tool, bool $isSave): void
     {

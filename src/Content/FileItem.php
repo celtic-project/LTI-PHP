@@ -42,8 +42,6 @@ class FileItem extends Item
      * Set copy advice for the content-item.
      *
      * @param bool|null $copyAdvice  Copy advice value
-     *
-     * @return void
      */
     public function setCopyAdvice(?bool $copyAdvice): void
     {
@@ -54,8 +52,6 @@ class FileItem extends Item
      * Set expiry date/time for the content-item.
      *
      * @param int|null $expiresAt  Expiry date/time
-     *
-     * @return void
      */
     public function setExpiresAt(?int $expiresAt): void
     {
@@ -99,8 +95,6 @@ class FileItem extends Item
      * Extract content-item details from its JSON representation.
      *
      * @param object $item  A JSON object representing a file content-item
-     *
-     * @return void
      */
     protected function fromJsonObject(object $item): void
     {

@@ -142,8 +142,6 @@ class User
 
     /**
      * Initialise the user.
-     *
-     * @return void
      */
     public function initialize(): void
     {
@@ -163,8 +161,6 @@ class User
      * Initialise the user.
      *
      * Synonym for initialize().
-     *
-     * @return void
      */
     public function initialise(): void
     {
@@ -178,8 +174,6 @@ class User
      * @param string $lastname         User's last name.
      * @param string $fullname         User's full name.
      * @param string|null $middlename  User's middle name (optional, default is none).
-     *
-     * @return void
      */
     public function setNames(string $firstname, string $lastname, string $fullname, ?string $middlename = null): void
     {
@@ -232,8 +226,6 @@ class User
      *
      * @param string $email              Email address value
      * @param string|null $defaultEmail  Value to use if no email is provided (optional, default is none)
-     *
-     * @return void
      */
     public function setEmail(string $email, ?string $defaultEmail = null): void
     {

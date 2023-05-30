@@ -61,8 +61,6 @@ class ServiceDefinition
      * Set ID.
      *
      * @param string $id  ID of service
-     *
-     * @return void
      */
     function setId(string $id): void
     {

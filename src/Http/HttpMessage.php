@@ -142,8 +142,6 @@ class HttpMessage
      * Set the HTTP client to use for sending the message.
      *
      * @param ClientInterface|null $httpClient
-     *
-     * @return void
      */
     public static function setHttpClient(?ClientInterface $httpClient = null): void
     {
@@ -268,8 +266,6 @@ class HttpMessage
 
     /**
      * Parse the response headers for relative links.
-     *
-     * @return void
      */
     private function parseRelativeLinks(): void
     {
