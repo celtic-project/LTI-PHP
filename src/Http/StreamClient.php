@@ -51,7 +51,7 @@ class StreamClient implements ClientInterface
                     if (isset($http_response_header[0])) {
                         $message->responseHeaders = $http_response_header;
                         if (preg_match("/HTTP\/\d.\d\s+(\d+)/", $http_response_header[0], $out)) {
-                            $message->status = $out[1];
+                            $message->status = intval($out[1]);
                         }
                         $message->ok = $message->status < 400;
                         if (!$message->ok) {
