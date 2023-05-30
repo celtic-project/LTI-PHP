@@ -18,7 +18,7 @@ class Message
     /**
      * LTI message type.
      *
-     * @var string|null $type
+     * @var string|null $message_type
      */
     public ?string $message_type = null;
 
