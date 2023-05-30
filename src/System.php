@@ -960,7 +960,8 @@ trait System
     public function sendMessage(string $url, string $type, array $messageParams, string $target = '', ?string $userId = null,
         ?string $hint = null): string
     {
-        $sendParams = $this->signMessage($url, $type, $this->ltiVersion, $messageParams, $userId, $hint);
+        $sendParams = $this->signMessage($url, $type, $this->ltiVersion ? $this->ltiVersion->value : '', $messageParams, $userId,
+            $hint);
         $html = Util::sendForm($url, $sendParams, $target);
 
         return $html;
