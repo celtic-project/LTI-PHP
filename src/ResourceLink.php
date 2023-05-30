@@ -1313,7 +1313,7 @@ EOF;
     /**
      * Load the resource link from the database.
      *
-     * @param int $id|null  Record ID of resource link (optional, default is null)
+     * @param int|null $id  Record ID of resource link (optional, default is null)
      *
      * @return bool  True if resource link was successfully loaded
      */

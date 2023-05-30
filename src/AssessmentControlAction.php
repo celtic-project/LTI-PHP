@@ -107,7 +107,7 @@ class AssessmentControlAction
     /**
      * Get the incident date.
      *
-     * @return \DateTime Incident date value
+     * @return DateTime Incident date value
      */
     public function getDate(): \DateTime
     {
