@@ -232,9 +232,9 @@ trait System
     /**
      * Get the system record ID.
      *
-     * @return int|null  System record ID value
+     * @return int|string|null  System record ID value
      */
-    public function getRecordId(): ?int
+    public function getRecordId(): int|string|null
     {
         return $this->id;
     }
