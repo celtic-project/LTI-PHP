@@ -44,10 +44,10 @@ class ServiceDefinition
     /**
      * Class constructor.
      *
-     * @param array $formats    Array of media types supported by service
-     * @param array $actions    Array of HTTP actions accepted by service
-     * @param string $id        ID of service (optional)
-     * @param string $endpoint  URL for service requests (optional)
+     * @param array $formats         Array of media types supported by service
+     * @param array $actions         Array of HTTP actions accepted by service
+     * @param string|null $id        ID of service (optional)
+     * @param string|null $endpoint  URL for service requests (optional)
      */
     function __construct(array $formats, array $actions, ?string $id = null, ?string $endpoint = null)
     {

@@ -208,7 +208,7 @@ class Context
     /**
      * Set platform ID.
      *
-     * @param int $platformId  Platform ID for this context.
+     * @param int|null $platformId  Platform ID for this context.
      *
      * @return void
      */

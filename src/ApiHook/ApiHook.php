@@ -74,7 +74,7 @@ trait ApiHook
      * @param string $hookName    Name of hook
      * @param string $familyCode  Family code for current platform
      *
-     * @return string  Class name
+     * @return string|null  Class name
      */
     private static function getApiHook(string $hookName, string $familyCode): ?string
     {

@@ -61,7 +61,7 @@ trait System
     /**
      * Algorithm used for encrypting messages.
      *
-     * @var string $encryptionMethod
+     * @var string|null $encryptionMethod
      */
     public ?string $encryptionMethod = '';
 
@@ -190,7 +190,7 @@ trait System
     /**
      * Raw message parameters.
      *
-     * @var array $rawParameters
+     * @var array|null $rawParameters
      */
     protected ?array $rawParameters = null;
 
@@ -218,7 +218,7 @@ trait System
     /**
      * Setting values (LTI parameters, custom parameters and local parameters).
      *
-     * @var array $settings
+     * @var array|null $settings
      */
     private ?array $settings = null;
 
@@ -264,7 +264,7 @@ trait System
     /**
      * Set the consumer key.
      *
-     * @param string $key  Consumer key value
+     * @param string|null $key  Consumer key value
      *
      * @return void
      */
@@ -276,10 +276,10 @@ trait System
     /**
      * Get a setting value.
      *
-     * @param string $name     Name of setting
-     * @param string $default  Value to return if the setting does not exist (optional, default is an empty string)
+     * @param string $name          Name of setting
+     * @param string|null $default  Value to return if the setting does not exist (optional, default is an empty string)
      *
-     * @return string  Setting value
+     * @return string|null  Setting value
      */
     public function getSetting(string $name, ?string $default = ''): ?string
     {
@@ -896,12 +896,12 @@ trait System
      * If the message is being sent from a platform using LTI 1.3, then the parameters and URL will be saved and replaced with an
      * initiate login request.
      *
-     * @param string $url             URL for message request
-     * @param string $type            LTI message type
-     * @param string $version         LTI version
-     * @param array $params           Message parameters
-     * @param string $loginHint       ID of user (optional)
-     * @param string $ltiMessageHint  LTI message hint (optional, use null for none)
+     * @param string $url                  URL for message request
+     * @param string $type                 LTI message type
+     * @param string $version              LTI version
+     * @param array $params                Message parameters
+     * @param string|null $loginHint       ID of user (optional)
+     * @param string|null $ltiMessageHint  LTI message hint (optional, use null for none)
      *
      * @return array|string  Array of signed message parameters or request headers
      */
@@ -960,8 +960,8 @@ trait System
      * @param string $type          LTI message type
      * @param array $messageParams  Array of form parameters
      * @param string $target        Name of target (optional)
-     * @param string $userId        ID of user (optional)
-     * @param string $hint          LTI message hint (optional, use null for none)
+     * @param string|null $userId   ID of user (optional)
+     * @param string|null $hint     LTI message hint (optional, use null for none)
      *
      * @return string
      */

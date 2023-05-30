@@ -16,7 +16,7 @@ class CurlClient implements ClientInterface
     /**
      * The HTTP version to be used.
      *
-     * @var int $httpVersion
+     * @var int|null $httpVersion
      */
     public static ?int $httpVersion = null;
 

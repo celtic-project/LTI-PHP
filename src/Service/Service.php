@@ -63,8 +63,8 @@ class Service
     /**
      * Class constructor.
      *
-     * @param Platform $platform  Platform object for this service request
-     * @param string $endpoint    Service endpoint
+     * @param Platform $platform     Platform object for this service request
+     * @param string|null $endpoint  Service endpoint
      */
     public function __construct(Platform $platform, ?string $endpoint)
     {
@@ -95,9 +95,9 @@ class Service
     /**
      * Send a service request.
      *
-     * @param string $method     The action type constant (optional, default is GET)
-     * @param array $parameters  Query parameters to add to endpoint (optional, default is none)
-     * @param string $body       Body of request (optional, default is null)
+     * @param string $method          The action type constant (optional, default is GET)
+     * @param array|null $parameters  Query parameters to add to endpoint (optional, default is none)
+     * @param string $body            Body of request (optional, default is null)
      *
      * @return HttpMessage HTTP object containing request and response details
      */
@@ -192,7 +192,7 @@ class Service
      *
      * @return array Parsed array
      */
-    protected function parseContextsInArray(?array $contexts, array $arr): array
+    protected function parseContextsInArray(object|array $contexts, array $arr): array
     {
         if (is_array($contexts)) {
             $contextdefs = [];

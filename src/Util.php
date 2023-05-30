@@ -523,7 +523,7 @@ EOD;
     /**
      * Decode a JSON string.
      *
-     * @param string $str        The JSON string to be decoded
+     * @param string|null $str   The JSON string to be decoded
      * @param bool $associative  True to return JSON objects as associative arrays
      *
      * @return string

@@ -65,7 +65,7 @@ class LineItem
     /**
      * Line-item endpoint.
      *
-     * @var string $endpoint
+     * @var string|null $endpoint
      */
     public ?string $endpoint = null;
 

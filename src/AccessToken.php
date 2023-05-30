@@ -37,7 +37,7 @@ class AccessToken
      *
      * @var array $scopes
      */
-    public ?array $scopes = [];
+    public array $scopes = [];
 
     /**
      * Platform for this token.
@@ -65,12 +65,15 @@ class AccessToken
      *
      * @param Platform $platform  Platform
      * @param array|null $scopes  Scopes for which the access token is valid
-     * @param string $token       Access token string
-     * @param int $expires        Time in seconds after which the token string will expire
+     * @param string|null $token  Access token string
+     * @param int|null $expires   Time in seconds after which the token string will expire
      */
-    public function __construct(Platform $platform, ?array $scopes = null, ?string $token = null, ?int $expires = null)
+    public function __construct(Platform $platform, ?array $scopes = [], ?string $token = null, ?int $expires = null)
     {
         $this->platform = $platform;
+        if (is_null($scopes)) {
+            $scopes = [];
+        }
         $this->scopes = $scopes;
         if (!empty($token)) {
             $this->token = $token;
@@ -201,7 +204,7 @@ class AccessToken
                 } while ($retry);
             }
         } else {
-            $this->scopes = null;
+            $this->scopes = [];
             $this->token = null;
             $this->expires = null;
             $this->created = null;

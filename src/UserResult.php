@@ -310,7 +310,7 @@ class UserResult extends User
     /**
      * Load the user from the database.
      *
-     * @param int $id  Record ID of user (optional, default is null)
+     * @param int|null $id  Record ID of user (optional, default is null)
      *
      * @return bool  True if the user object was successfully loaded
      */

@@ -42,42 +42,42 @@ class Platform
     /**
      * Platform ID.
      *
-     * @var string $platformId
+     * @var string|null $platformId
      */
     public ?string $platformId = null;
 
     /**
      * Client ID.
      *
-     * @var string $clientId
+     * @var string|null $clientId
      */
     public ?string $clientId = null;
 
     /**
      * Deployment ID.
      *
-     * @var string $deploymentId
+     * @var string|null $deploymentId
      */
     public ?string $deploymentId = null;
 
     /**
      * Authorization server ID.
      *
-     * @var string $authorizationServerId
+     * @var string|null $authorizationServerId
      */
     public ?string $authorizationServerId = null;
 
     /**
      * Login authentication URL.
      *
-     * @var string $authenticationUrl
+     * @var string|null $authenticationUrl
      */
     public ?string $authenticationUrl = null;
 
     /**
      * Access Token service URL.
      *
-     * @var string $accessTokenUrl
+     * @var string|null $accessTokenUrl
      */
     public ?string $accessTokenUrl = null;
 
@@ -500,8 +500,8 @@ class Platform
      * Load the platform from the database by its platform, client and deployment IDs.
      *
      * @param string $platformId            The platform ID
-     * @param string $clientId              The client ID
-     * @param string $deploymentId          The deployment ID
+     * @param string|null $clientId         The client ID
+     * @param string|null $deploymentId     The deployment ID
      * @param DataConnector $dataConnector  A data connector object
      * @param bool $autoEnable              True if the platform is to be enabled automatically (optional, default is false)
      *
@@ -698,14 +698,14 @@ EOD;
      *
      * Override this method to save the data elsewhere.
      *
-     * @param string $url             The message URL
-     * @param string $loginHint       The ID of the user
-     * @param string $ltiMessageHint  The message hint being sent to the tool
-     * @param array $params           An associative array of message parameters
+     * @param string $url                  The message URL
+     * @param string $loginHint            The ID of the user
+     * @param string|null $ltiMessageHint  The message hint being sent to the tool
+     * @param array $params                An associative array of message parameters
      *
      * @return void
      */
-    protected function onInitiateLogin(string &$url, string &$loginHint, string &$ltiMessageHint, array $params): void
+    protected function onInitiateLogin(string &$url, string &$loginHint, ?string &$ltiMessageHint, array $params): void
     {
         $hasSession = !empty(session_id());
         if (!$hasSession) {

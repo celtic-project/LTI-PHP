@@ -497,7 +497,7 @@ class Tool
      *
      * @param string $name              Name of parameter to be checked
      * @param bool $required            True if parameter is required (optional, default is true)
-     * @param int $maxLength            Maximum permitted length of parameter value (optional, default is null)
+     * @param int|null $maxLength       Maximum permitted length of parameter value (optional, default is null)
      * @param array|null $messageTypes  Array of message types to which the constraint applies (optional, default is all)
      *
      * @return void
@@ -1147,7 +1147,7 @@ EOD;
     /**
      * Load the tool from the database by its consumer key.
      *
-     * @param string $key                   Consumer key
+     * @param string|null $key              Consumer key
      * @param DataConnector $dataConnector  A data connector object
      * @param bool $autoEnable              True if the tool is to be enabled automatically (optional, default is false)
      *

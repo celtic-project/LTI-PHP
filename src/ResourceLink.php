@@ -291,7 +291,7 @@ class ResourceLink
     /**
      * Set platform ID.
      *
-     * @param int $platformId  Platform ID for this resource link.
+     * @param int|null $platformId  Platform ID for this resource link.
      *
      * @return void
      */
@@ -345,7 +345,7 @@ class ResourceLink
     /**
      * Set context ID.
      *
-     * @param int $contextId  Context ID for this resource link.
+     * @param int|null $contextId  Context ID for this resource link.
      *
      * @return void
      */
@@ -797,7 +797,7 @@ EOF;
      * Perform a Setting service request
      *
      * @param ServiceAction $action  The action type
-     * @param string $value          The setting value (optional, default is null)
+     * @param string|null $value     The setting value (optional, default is null)
      *
      * @return string|bool  The setting value for a read action, true if a write or delete action was successful, otherwise false
      */
@@ -1313,7 +1313,7 @@ EOF;
     /**
      * Load the resource link from the database.
      *
-     * @param int $id  Record ID of resource link (optional, default is null)
+     * @param int $id|null  Record ID of resource link (optional, default is null)
      *
      * @return bool  True if resource link was successfully loaded
      */
@@ -1328,8 +1328,8 @@ EOF;
     /**
      * Convert data type of value to a supported type if possible.
      *
-     * @param Outcome $ltiOutcome    Outcome object
-     * @param array $supportedTypes  Array of outcome types to be supported (optional, default is null to use supported types reported in the last launch for this resource link)
+     * @param Outcome $ltiOutcome         Outcome object
+     * @param array|null $supportedTypes  Array of outcome types to be supported (optional, default is null to use supported types reported in the last launch for this resource link)
      *
      * @return bool    True if the type/value are valid and supported
      */

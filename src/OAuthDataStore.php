@@ -67,9 +67,9 @@ class OAuthDataStore extends OAuth\OAuthDataStore
     /**
      * Create an OAuthToken object for the system.
      *
-     * @param string $consumer   OAuthConsumer object
-     * @param string $tokenType  Token type
-     * @param string $token      Token value
+     * @param string $consumer        OAuthConsumer object
+     * @param string|null $tokenType  Token type
+     * @param string|null $token      Token value
      *
      * @return OAuthToken  OAuthToken object
      */
@@ -113,7 +113,7 @@ class OAuthDataStore extends OAuth\OAuthDataStore
      * @param OAuthConsumer $consumer  OAuthConsumer object
      * @param string|null $callback    Callback URL
      *
-     * @return string Null value
+     * @return string|null Null value
      */
     function new_request_token(OAuthConsumer $consumer, ?string $callback = null): ?string
     {
@@ -125,9 +125,9 @@ class OAuthDataStore extends OAuth\OAuthDataStore
      *
      * @param string $token            Token value
      * @param OAuthConsumer $consumer  OAuthConsumer object
-     * @param string $verifier         Verification code
+     * @param string|null $verifier    Verification code
      *
-     * @return string Null value
+     * @return string|null Null value
      */
     function new_access_token(string $token, OAuthConsumer $consumer, ?string $verifier = null): ?string
     {

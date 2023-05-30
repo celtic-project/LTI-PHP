@@ -51,10 +51,10 @@ class LtiLinkItem extends Item
     /**
      * Class constructor.
      *
-     * @param Placement[]|Placement $placementAdvices  Array of Placement objects (or single placement object) for item (optional)
-     * @param string                $id                URL of content-item (optional)
+     * @param Placement[]|Placement|null $placementAdvices  Array of Placement objects (or single placement object) for item (optional)
+     * @param string|null $id                          URL of content-item (optional)
      */
-    function __construct(?array $placementAdvices = null, ?string $id = null)
+    function __construct(array|Placement|null $placementAdvices = null, ?string $id = null)
     {
         parent::__construct(Item::TYPE_LTI_LINK, $placementAdvices, $id);
         $this->setMediaType(Item::LTI_LINK_MEDIA_TYPE);
@@ -63,7 +63,7 @@ class LtiLinkItem extends Item
     /**
      * Add a custom parameter for the content-item.
      *
-     * @param string      $name   Name of parameter
+     * @param string $name        Name of parameter
      * @param string|null $value  Value of parameter
      *
      * @return void

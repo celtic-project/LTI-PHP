@@ -99,7 +99,7 @@ class DataConnector
     /**
      * memcache object.
      *
-     * @var object $memcache
+     * @var object|null $memcache
      */
     private static ?object $memcache = null;
 
@@ -617,7 +617,7 @@ class DataConnector
     }
 
     /**
-     * Load platform objects.
+     * Load tool objects.
      *
      * @return Tool[]  Array of all defined Tool objects
      */

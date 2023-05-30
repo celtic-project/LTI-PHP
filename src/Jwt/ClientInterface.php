@@ -37,8 +37,8 @@ interface ClientInterface
     /**
      * Load a JWT from a string.
      *
-     * @param string $jwtString   JWT string
-     * @param string $privateKey  Private key in PEM format for decrypting encrypted tokens (optional)
+     * @param string $jwtString        JWT string
+     * @param string|null $privateKey  Private key in PEM format for decrypting encrypted tokens (optional)
      *
      * @return bool  True if the JWT was successfully loaded
      */
@@ -63,10 +63,10 @@ interface ClientInterface
     /**
      * Get the value of the header with the specified name.
      *
-     * @param string $name          Header name
-     * @param string $defaultValue  Default value
+     * @param string $name               Header name
+     * @param string|null $defaultValue  Default value
      *
-     * @return string  The value of the header with the specified name, or the default value if it does not exist
+     * @return string|null  The value of the header with the specified name, or the default value if it does not exist
      */
     public function getHeader(string $name, ?string $defaultValue = null): ?string;
 
@@ -130,13 +130,13 @@ interface ClientInterface
     /**
      * Sign the JWT.
      *
-     * @param array $payload            Payload
-     * @param string $signatureMethod   Signature method
-     * @param string $privateKey        Private key in PEM format
-     * @param string $kid               Key ID (optional)
-     * @param string $jku               JSON Web Key URL (optional)
-     * @param string $encryptionMethod  Encryption method (optional)
-     * @param string $publicKey         Public key of recipient for content encryption (optional)
+     * @param array $payload                 Payload
+     * @param string $signatureMethod        Signature method
+     * @param string $privateKey             Private key in PEM format
+     * @param string|null $kid               Key ID (optional)
+     * @param string|null $jku               JSON Web Key URL (optional)
+     * @param string|null $encryptionMethod  Encryption method (optional)
+     * @param string|null $publicKey         Public key of recipient for content encryption (optional)
      *
      * @return string  Signed JWT
      */
@@ -157,7 +157,7 @@ interface ClientInterface
      *
      * @param string $privateKey  Private key in PEM format
      *
-     * @return string  Public key in PEM format
+     * @return string|null  Public key in PEM format
      */
     public static function getPublicKey(string $privateKey): ?string;
 
@@ -166,7 +166,7 @@ interface ClientInterface
      *
      * @param string $pemKey           Private or public key in PEM format
      * @param string $signatureMethod  Signature method
-     * @param string $kid              Key ID (optional)
+     * @param string|null $kid         Key ID (optional)
      *
      * @return array  JWKS keys
      */

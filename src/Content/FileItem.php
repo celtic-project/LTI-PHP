@@ -33,7 +33,7 @@ class FileItem extends Item
      * @param Placement[]|Placement|null $placementAdvices  Array of Placement objects (or single placement object) for item (optional)
      * @param string|null                $id                URL of content-item (optional)
      */
-    function __construct(?array $placementAdvices = null, ?string $id = null)
+    function __construct(array|Placement|null $placementAdvices = null, ?string $id = null)
     {
         parent::__construct(Item::TYPE_FILE, $placementAdvices, $id);
     }

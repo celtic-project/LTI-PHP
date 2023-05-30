@@ -95,13 +95,13 @@ class Placement
     /**
      * Class constructor.
      *
-     * @param string $documentTarget  Location to open content in
-     * @param int    $displayWidth    Width of item location (optional)
-     * @param int    $displayHeight   Height of item location (optional)
-     * @param string $windowTarget    Name of window target (optional)
-     * @param string $windowFeatures  List of window features (optional)
-     * @param string $url             URL for iframe src (optional)
-     * @param string $html            HTML to be embedded (optional)
+     * @param string $documentTarget       Location to open content in
+     * @param int|null $displayWidth       Width of item location (optional)
+     * @param int|null $displayHeight      Height of item location (optional)
+     * @param string|null $windowTarget    Name of window target (optional)
+     * @param string|null $windowFeatures  List of window features (optional)
+     * @param string|null $url             URL for iframe src (optional)
+     * @param string|null $html            HTML to be embedded (optional)
      */
     function __construct(string $documentTarget, ?int $displayWidth = null, ?int $displayHeight = null,
         ?string $windowTarget = null, ?string $windowFeatures = null, ?string $url = null, ?string $html = null)
@@ -192,8 +192,8 @@ class Placement
     /**
      * Generate the Placement object from an item.
      *
-     * @param object $item            JSON object of item
-     * @param string $documentTarget  Destination of placement to be generated (optional)
+     * @param object $item                 JSON object of item
+     * @param string|null $documentTarget  Destination of placement to be generated (optional)
      *
      * @return Placement|null  The Placement object
      */

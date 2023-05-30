@@ -86,14 +86,14 @@ class User
     /**
      * User's sourcedId.
      *
-     * @var string $sourcedId
+     * @var string|null $sourcedId
      */
     public ?string $sourcedId = null;
 
     /**
      * User's username.
      *
-     * @var string $username
+     * @var string|null $username
      */
     public ?string $username = null;
 
@@ -174,10 +174,10 @@ class User
     /**
      * Set the user's name.
      *
-     * @param string $firstname   User's first name.
-     * @param string $lastname    User's last name.
-     * @param string $fullname    User's full name.
-     * @param string $middlename  User's middle name (optional, default is none).
+     * @param string $firstname        User's first name.
+     * @param string $lastname         User's last name.
+     * @param string $fullname         User's full name.
+     * @param string|null $middlename  User's middle name (optional, default is none).
      *
      * @return void
      */
@@ -230,8 +230,8 @@ class User
     /**
      * Set the user's email address.
      *
-     * @param string $email         Email address value
-     * @param string $defaultEmail  Value to use if no email is provided (optional, default is none)
+     * @param string $email              Email address value
+     * @param string|null $defaultEmail  Value to use if no email is provided (optional, default is none)
      *
      * @return void
      */

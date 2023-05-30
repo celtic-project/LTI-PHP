@@ -82,11 +82,11 @@ class Groups extends Service
     /**
      * Class constructor.
      *
-     * @param object $context            The context to which the course groups apply
-     * @param string $groupsEndpoint     Service endpoint for course groups
-     * @param string $groupSetsEndpoint  Service endpoint for course group sets (optional)
-     * @param int|null $limit            Limit of objects to be returned in each request, null for all
-     * @param bool $pagingMode           True if only a single page should be requested when a limit is set
+     * @param object $context                 The context to which the course groups apply
+     * @param string|null $groupsEndpoint     Service endpoint for course groups
+     * @param string|null $groupSetsEndpoint  Service endpoint for course group sets (optional)
+     * @param int|null $limit                 Limit of objects to be returned in each request, null for all
+     * @param bool $pagingMode                True if only a single page should be requested when a limit is set
      */
     public function __construct(Context $context, ?string $groupsEndpoint, ?string $groupSetsEndpoint = null, ?int $limit = null,
         bool $pagingMode = false)
