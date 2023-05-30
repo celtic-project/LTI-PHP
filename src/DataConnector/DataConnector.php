@@ -134,12 +134,15 @@ class DataConnector
                     $useMemcache = false;
                     Util::logError("Memcache extension not installed");
                 } else {
+                    self::$memcache = new \Memcache();
                     if ($port < 0) {
-                        self::$memcache = memcache_connect($host);
+                        $useMemcache = self::$memcache->connect($host);
                     } else {
-                        self::$memcache = memcache_connect($host, $port);
+                        $useMemcache = self::$memcache->connect($host, $port);
                     }
-                    $useMemcache = !empty(self::$memcache);
+                    if (!$useMemcache) {
+                        self::$memcache = null;
+                    }
                     if (!$useMemcache) {
                         if ($port < 0) {
                             Util::logError("Unable to connect to memcache at {$host}");
