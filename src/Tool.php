@@ -1203,7 +1203,9 @@ EOD;
                     if (isset($this->messageParameters['data'])) {
                         $formParams['data'] = $this->messageParameters['data'];
                     }
-                    $this->ltiVersion = LtiVersion::tryFrom($this->messageParameters['lti_version']) ?? LtiVersion::V1;
+                    if (empty($this->ltiVersion)) {
+                        $this->ltiVersion = LtiVersion::V1;
+                    }
                     $page = $this->sendMessage($errorUrl, 'ContentItemSelection', $formParams);
                     echo $page;
                     exit;
@@ -1278,7 +1280,7 @@ EOD;
                     $this->ok = false;
                     $this->reason = 'Missing resource link ID.';
                 }
-                if (!empty($this->messageParameters['lti_version']) && ($this->messageParameters['lti_version'] === LtiVersion::V1P3->value)) {
+                if ($this->ltiVersion === LtiVersion::V1P3) {
                     if (!isset($this->messageParameters['roles'])) {
                         $this->setError('Missing roles parameter.', $strictMode, $generateWarnings);
                     } elseif (!empty($this->messageParameters['roles']) && empty(array_intersect(self::parseRoles($this->messageParameters['roles'],
@@ -1298,11 +1300,11 @@ EOD;
                     $mediaTypes = array_filter($mediaTypes);
                     $mediaTypes = array_unique($mediaTypes);
                 }
-                if ((count($mediaTypes) <= 0) && ($this->messageParameters['lti_version'] !== LtiVersion::V1P3->value)) {
+                if ((count($mediaTypes) <= 0) && ($this->ltiVersion === LtiVersion::V1P3)) {
                     $this->setError('Missing or empty accept_media_types parameter.', $strictMode, $generateWarnings);
                 }
                 if ($isUpdate) {
-                    if ($this->messageParameters['lti_version'] !== LtiVersion::V1P3->value) {
+                    if ($this->ltiVersion === LtiVersion::V1P3) {
                         if (!$this->checkValue($this->messageParameters['accept_media_types'],
                                 array(Item::LTI_LINK_MEDIA_TYPE, Item::LTI_ASSIGNMENT_MEDIA_TYPE),
                                 'Invalid value in accept_media_types parameter: \'%s\'.', $strictMode, $generateWarnings, true)) {
@@ -1379,7 +1381,7 @@ EOD;
                 if (!isset($this->messageParameters['for_user_id']) && (strlen(trim($this->messageParameters['for_user_id'])) > 0)) {
                     $this->setError('Missing ID of \'for user\'', true, $generateWarnings);
                 }
-                if (($this->ok || $generateWarnings) && ($this->messageParameters['lti_version'] === LtiVersion::V1P3->value)) {
+                if (($this->ok || $generateWarnings) && ($this->ltiVersion === LtiVersion::V1P3)) {
                     if (!isset($this->messageParameters['roles'])) {
                         $this->setError('Missing roles parameter.', $strictMode, $generateWarnings);
                     }
@@ -1484,7 +1486,7 @@ EOD;
                     $context_types = explode(',', $this->messageParameters['context_type']);
                     $permitted_types = ['CourseTemplate', 'CourseOffering', 'CourseSection', 'Group',
                         'urn:lti:context-type:ims/lis/CourseTemplate', 'urn:lti:context-type:ims/lis/CourseOffering', 'urn:lti:context-type:ims/lis/CourseSection', 'urn:lti:context-type:ims/lis/Group'];
-                    if ($this->messageParameters['lti_version'] !== LtiVersion::V1->value) {
+                    if ($this->ltiVersion === LtiVersion::V1) {
                         $permitted_types = array_merge($permitted_types,
                             ['http://purl.imsglobal.org/vocab/lis/v2/course#CourseTemplate', 'http://purl.imsglobal.org/vocab/lis/v2/course#CourseOffering', 'http://purl.imsglobal.org/vocab/lis/v2/course#CourseSection', 'http://purl.imsglobal.org/vocab/lis/v2/course#Group']);
                     }
@@ -1561,7 +1563,7 @@ EOD;
         }
 
         if ($this->ok && ($this->messageParameters['lti_message_type'] === 'ToolProxyRegistrationRequest')) {
-            $this->ok = $this->messageParameters['lti_version'] === LtiVersion::V2->value;
+            $this->ok = $this->ltiVersion === LtiVersion::V2;
             if (!$this->ok) {
                 $this->reason = 'Invalid lti_version parameter.';
             }
@@ -1632,7 +1634,7 @@ EOD;
                 if ($this->messageParameters['lti_message_type'] === 'ToolProxyRegistrationRequest') {
                     $this->platform->profile = $tcProfile;
                     $this->platform->secret = $this->messageParameters['reg_password'];
-                    $this->platform->ltiVersion = LtiVersion::tryFrom($this->messageParameters['lti_version']);
+                    $this->platform->ltiVersion = $this->ltiVersion;
                     $this->platform->name = $tcProfile->product_instance->service_owner->service_owner_name->default_value;
                     $this->platform->consumerName = $this->platform->name;
                     $this->platform->consumerVersion = "{$tcProfile->product_instance->product_info->product_family->code}-{$tcProfile->product_instance->product_info->product_version}";
@@ -1649,7 +1651,7 @@ EOD;
             } else {
                 $url .= '&';
             }
-            $url .= 'lti_version=' . $this->messageParameters['lti_version'];
+            $url .= 'lti_version=' . $this->ltiVersion->value;
             $http = new HttpMessage($url, 'GET', null, 'Accept: application/vnd.ims.lti.v2.toolconsumerprofile+json');
             if ($http->send()) {
                 $tcProfile = Util::json_decode($http->response);
@@ -1861,14 +1863,13 @@ EOD;
 
 // Set the user roles
                     if (isset($this->messageParameters['roles'])) {
-                        $this->userResult->roles = self::parseRoles($this->messageParameters['roles'],
-                                LtiVersion::tryFrom($this->messageParameters['lti_version']));
+                        $this->userResult->roles = self::parseRoles($this->messageParameters['roles'], $this->ltiVersion);
                     }
 
 // Initialise the platform and check for changes
                     $this->platform->defaultEmail = $this->defaultEmail;
-                    if ($this->platform->ltiVersion !== LtiVersion::tryFrom($this->messageParameters['lti_version'])) {
-                        $this->platform->ltiVersion = LtiVersion::tryFrom($this->messageParameters['lti_version']);
+                    if ($this->platform->ltiVersion !== $this->ltiVersion) {
+                        $this->platform->ltiVersion = $this->ltiVersion;
                         $doSavePlatform = true;
                     }
                     if (isset($this->messageParameters['deployment_id'])) {

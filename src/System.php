@@ -1092,7 +1092,11 @@ trait System
             }
         }
         if ($ok) {
-            $ok = isset($this->messageParameters['lti_version']) && !empty(Enum\LtiVersion::tryFrom($this->messageParameters['lti_version']));
+            $ok = isset($this->messageParameters['lti_version']);
+            if ($ok) {
+                $this->ltiVersion = LtiVersion::tryFrom($this->messageParameters['lti_version']);
+                $ok = !empty($this->ltiVersion);
+            }
             if (!$ok) {
                 $this->reason = 'Invalid or missing lti_version parameter.';
             }
