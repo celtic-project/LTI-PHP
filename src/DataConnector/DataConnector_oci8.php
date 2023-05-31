@@ -132,7 +132,7 @@ EOD;
             $platform->clientId = $row['client_id'];
             $platform->deploymentId = $row['deployment_id'];
             $platform->rsaKey = $row['public_key'];
-            $platform->ltiVersion = LtiVersion::tryFrom($row['lti_version']);
+            $platform->ltiVersion = LtiVersion::tryFrom($row['lti_version'] ?? '');
             $platform->signatureMethod = $row['signature_method'];
             $platform->consumerName = $row['consumer_name'];
             $platform->consumerVersion = $row['consumer_version'];
@@ -205,6 +205,7 @@ EOD;
         if (!is_null($platform->lastAccess)) {
             $last = date($this->dateFormat, $platform->lastAccess);
         }
+        $ltiVersion = $platform->ltiVersion ? $platform->ltiVersion->value : '';
         if (empty($id)) {
             $pk = null;
             $sql = <<< EOD
@@ -225,7 +226,7 @@ EOD;
             oci_bind_by_name($query, 'client_id', $platform->clientId);
             oci_bind_by_name($query, 'deployment_id', $platform->deploymentId);
             oci_bind_by_name($query, 'public_key', $platform->rsaKey);
-            oci_bind_by_name($query, 'lti_version', $platform->ltiVersion ? $platform->ltiVersion->value : '');
+            oci_bind_by_name($query, 'lti_version', $ltiVersion);
             oci_bind_by_name($query, 'signature_method', $platform->signatureMethod);
             oci_bind_by_name($query, 'consumer_name', $platform->consumerName);
             oci_bind_by_name($query, 'consumer_version', $platform->consumerVersion);
@@ -259,7 +260,7 @@ EOD;
             oci_bind_by_name($query, 'client_id', $platform->clientId);
             oci_bind_by_name($query, 'deployment_id', $platform->deploymentId);
             oci_bind_by_name($query, 'public_key', $platform->rsaKey);
-            oci_bind_by_name($query, 'lti_version', $platform->ltiVersion ? $platform->ltiVersion->value : '');
+            oci_bind_by_name($query, 'lti_version', $ltiVersion);
             oci_bind_by_name($query, 'signature_method', $platform->signatureMethod);
             oci_bind_by_name($query, 'consumer_name', $platform->consumerName);
             oci_bind_by_name($query, 'consumer_version', $platform->consumerVersion);
@@ -481,7 +482,7 @@ EOD;
                 $platform->clientId = $row['client_id'];
                 $platform->deploymentId = $row['deployment_id'];
                 $platform->rsaKey = $row['public_key'];
-                $platform->ltiVersion = LtiVersion::tryFrom($row['lti_version']);
+                $platform->ltiVersion = LtiVersion::tryFrom($row['lti_version'] ?? '');
                 $platform->signatureMethod = $row['signature_method'];
                 $platform->consumerName = $row['consumer_name'];
                 $platform->consumerVersion = $row['consumer_version'];
@@ -1594,7 +1595,7 @@ EOD;
             }
             $tool->redirectionUris = $redirectionUris;
             $tool->rsaKey = $row['public_key'];
-            $tool->ltiVersion = LtiVersion::tryFrom($row['lti_version']);
+            $tool->ltiVersion = LtiVersion::tryFrom($row['lti_version'] ?? '');
             $tool->signatureMethod = $row['signature_method'];
             $settingsValue = $row['settings']->load();
             if (is_string($settingsValue)) {
@@ -1658,6 +1659,7 @@ EOD;
         if (!is_null($tool->lastAccess)) {
             $last = date($this->dateFormat, $tool->lastAccess);
         }
+        $ltiVersion = $tool->ltiVersion ? $tool->ltiVersion->value : '';
         if (empty($id)) {
             $pk = null;
             $sql = <<< EOD
@@ -1676,7 +1678,7 @@ EOD;
             oci_bind_by_name($query, 'initiate_login_url', $tool->initiateLoginUrl);
             oci_bind_by_name($query, 'redirection_uris', $redirectionUrisValue);
             oci_bind_by_name($query, 'public_key', $tool->rsaKey);
-            oci_bind_by_name($query, 'lti_version', $tool->ltiVersion ? $tool->ltiVersion->value : '');
+            oci_bind_by_name($query, 'lti_version', $ltiVersion);
             oci_bind_by_name($query, 'signature_method', $tool->signatureMethod);
             oci_bind_by_name($query, 'settings', $settingsValue);
             oci_bind_by_name($query, 'enabled', $enabled);
@@ -1703,7 +1705,7 @@ EOD;
             oci_bind_by_name($query, 'initiate_login_url', $tool->initiateLoginUrl);
             oci_bind_by_name($query, 'redirection_uris', $redirectionUrisValue);
             oci_bind_by_name($query, 'public_key', $tool->rsaKey);
-            oci_bind_by_name($query, 'lti_version', $tool->ltiVersion ? $tool->ltiVersion->value : '');
+            oci_bind_by_name($query, 'lti_version', $ltiVersion);
             oci_bind_by_name($query, 'signature_method', $tool->signatureMethod);
             oci_bind_by_name($query, 'settings', $settingsValue);
             oci_bind_by_name($query, 'enabled', $enabled);
@@ -1794,7 +1796,7 @@ EOD;
                 }
                 $tool->redirectionUris = $redirectionUris;
                 $tool->rsaKey = $row['public_key'];
-                $tool->ltiVersion = LtiVersion::tryFrom($row['lti_version']);
+                $tool->ltiVersion = LtiVersion::tryFrom($row['lti_version'] ?? '');
                 $tool->signatureMethod = $row['signature_method'];
                 $settingsValue = $row['settings']->load();
                 if (is_string($settingsValue)) {

@@ -121,7 +121,7 @@ EOD;
                 $platform->clientId = $row->client_id;
                 $platform->deploymentId = $row->deployment_id;
                 $platform->rsaKey = $row->public_key;
-                $platform->ltiVersion = LtiVersion::tryFrom($row->lti_version);
+                $platform->ltiVersion = LtiVersion::tryFrom($row->lti_version ?? '');
                 $platform->signatureMethod = $row->signature_method;
                 $platform->consumerName = $row->consumer_name;
                 $platform->consumerVersion = $row->consumer_version;
@@ -450,7 +450,7 @@ EOD;
                 $platform->clientId = $row->client_id;
                 $platform->deploymentId = $row->deployment_id;
                 $platform->rsaKey = $row->public_key;
-                $platform->ltiVersion = LtiVersion::tryFrom($row->lti_version);
+                $platform->ltiVersion = LtiVersion::tryFrom($row->lti_version ?? '');
                 $platform->signatureMethod = $row->signature_method;
                 $platform->consumerName = $row->consumer_name;
                 $platform->consumerVersion = $row->consumer_version;
@@ -1508,7 +1508,7 @@ EOD;
                     $tool->redirectionUris = [];
                 }
                 $tool->rsaKey = $row->public_key;
-                $tool->ltiVersion = LtiVersion::tryFrom($row->lti_version);
+                $tool->ltiVersion = LtiVersion::tryFrom($row->lti_version ?? '');
                 $tool->signatureMethod = $row->signature_method;
                 $settings = Util::json_decode($row->settings, true);
                 if (!is_array($settings)) {
@@ -1683,7 +1683,7 @@ EOD;
                     $tool->redirectionUris = [];
                 }
                 $tool->rsaKey = $row->public_key;
-                $tool->ltiVersion = LtiVersion::tryFrom($row->lti_version);
+                $tool->ltiVersion = LtiVersion::tryFrom($row->lti_version ?? '');
                 $tool->signatureMethod = $row->signature_method;
                 $settings = Util::json_decode($row->settings, true);
                 if (!is_array($settings)) {
