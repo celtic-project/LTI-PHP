@@ -389,7 +389,13 @@ class FirebaseClient implements ClientInterface
         $http = new HttpMessage($jku);
         if ($http->send()) {
             $keys = json_decode($http->response, true);
-            $publicKey = static::parseKeySet($keys);
+            if (is_array($keys)) {
+                try {
+                    $publicKey = static::parseKeySet($keys);
+                } catch (\Exception $e) {
+
+                }
+            }
         }
 
         return $publicKey;
