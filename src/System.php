@@ -977,7 +977,7 @@ trait System
      *
      * @return string  Headers to include with service request
      */
-    public function signServiceRequest(string $url, string $method, string $type, array|string|null $data = null): string
+    public function signServiceRequest(string $url, string $method, string $type, array|string|null $data = null): array|string
     {
         $header = '';
         if (!empty($url)) {
