@@ -975,9 +975,9 @@ trait System
      * @param string $type             Media type
      * @param array|string|null $data  Data being passed in request body (optional)
      *
-     * @return string  Headers to include with service request
+     * @return array|string  Headers to include with service request
      */
-    public function signServiceRequest(string $url, string $method, string $type, array|string|null $data = null): string
+    public function signServiceRequest(string $url, string $method, string $type, array|string|null $data = null): array|string
     {
         $header = '';
         if (!empty($url)) {
