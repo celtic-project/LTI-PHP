@@ -5,6 +5,7 @@ namespace ceLTIc\LTI;
 use ceLTIc\LTI\DataConnector\DataConnector;
 use ceLTIc\LTI\Service;
 use ceLTIc\LTI\Http\HttpMessage;
+use ceLTIc\LTI\ApiHook\ApiHook;
 
 /**
  * Class to represent a platform
@@ -16,6 +17,7 @@ use ceLTIc\LTI\Http\HttpMessage;
 class Platform
 {
     use System;
+    use ApiHook;
 
     /**
      * List of supported incoming message types.
