@@ -15,8 +15,8 @@ class LtiAssignmentItem extends LtiLinkItem
     /**
      * Class constructor.
      *
-     * @param Placement[]|Placement $placementAdvices  Array of Placement objects (or single placement object) for item (optional)
-     * @param string $id   URL of content-item (optional)
+     * @param Placement[]|Placement|null $placementAdvices  Array of Placement objects (or single placement object) for item (optional)
+     * @param string|null $id   URL of content-item (optional)
      */
     function __construct($placementAdvices = null, $id = null)
     {

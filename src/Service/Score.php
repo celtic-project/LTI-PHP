@@ -2,7 +2,9 @@
 
 namespace ceLTIc\LTI\Service;
 
-use ceLTIc\LTI;
+use ceLTIc\LTI\Platform;
+use ceLTIc\LTI\User;
+use ceLTIc\LTI\Outcome;
 
 /**
  * Class to implement the Score service
@@ -16,6 +18,8 @@ class Score extends AssignmentGrade
 
     /**
      * Access scope.
+     *
+     * @var string $SCOPE
      */
     public static $SCOPE = 'https://purl.imsglobal.org/spec/lti-ags/scope/score';
 
@@ -35,8 +39,8 @@ class Score extends AssignmentGrade
     /**
      * Submit an outcome for a user.
      *
-     * @param LTI\Outcome     $ltiOutcome   Outcome object
-     * @param LTI\User        $user         User object
+     * @param Outcome $ltiOutcome  Outcome object
+     * @param User $user           User object
      *
      * @return bool  True if successful, otherwise false
      */

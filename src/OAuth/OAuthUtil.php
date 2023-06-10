@@ -3,15 +3,22 @@
 namespace ceLTIc\LTI\OAuth;
 
 /**
- * Class to provide %OAuth utility methods
+ * Class to provide OAuth utility methods
  *
- * @copyright  Andy Smith
+ * @copyright  Andy Smith (http://oauth.googlecode.com/svn/code/php/)
  * @version  2008-08-04
  * @license  https://opensource.org/licenses/MIT The MIT License
  */
 class OAuthUtil
 {
 
+    /**
+     * URL encode.
+     *
+     * @param mixed $input  Value to be encoded
+     *
+     * @return array|string
+     */
     public static function urlencode_rfc3986($input)
     {
         if (is_array($input)) {
@@ -23,19 +30,35 @@ class OAuthUtil
         }
     }
 
-    // This decode function isn't taking into consideration the above
-    // modifications to the encoding process. However, this method doesn't
-    // seem to be used anywhere so leaving it as is.
+    /**
+     * URL decode.
+     *
+     * This decode function isn't taking into consideration the above
+     * modifications to the encoding process. However, this method doesn't
+     * seem to be used anywhere so leaving it as is.
+     *
+     * @param string $string  String to be decoded
+     *
+     * @return string
+     */
     public static function urldecode_rfc3986($string)
     {
         return urldecode($string);
     }
 
-    // Utility function for turning the Authorization: header into
-    // parameters, has to do some unescaping
-    // Can filter out any non-oauth parameters if needed (default behaviour)
-    // May 28th, 2010 - method updated to tjerk.meesters for a speed improvement.
-    //                  see http://code.google.com/p/oauth/issues/detail?id=163
+    /**
+     * Utility function for turning the Authorization: header into
+     * parameters, has to do some unescaping.
+     *
+     * Can filter out any non-oauth parameters if needed (default behaviour)
+     * May 28th, 2010 - method updated to tjerk.meesters for a speed improvement.
+     *                  see http://code.google.com/p/oauth/issues/detail?id=163
+     *
+     * @param string $header                     Header value
+     * @param bool $only_allow_oauth_parameters  True if only OAuth parameters are allowed
+     *
+     * @return array
+     */
     public static function split_header($header, $only_allow_oauth_parameters = true)
     {
         $params = array();
@@ -52,7 +75,11 @@ class OAuthUtil
         return $params;
     }
 
-    // helper to try to sort out headers for people who aren't running apache
+    /**
+     * Helper to try to sort out headers for people who aren't running apache.
+     *
+     * @return array
+     */
     public static function get_headers()
     {
         if (function_exists('apache_request_headers')) {
@@ -91,9 +118,17 @@ class OAuthUtil
         return $out;
     }
 
-    // This function takes a input like a=b&a=c&d=e and returns the parsed
-    // parameters like this
-    // array('a' => array('b','c'), 'd' => 'e')
+    /**
+     * Parse parameters.
+     *
+     * This function takes a input like a=b&a=c&d=e and returns the parsed
+     * parameters like this
+     * ['a' => ['b','c'], 'd' => 'e']
+     *
+     * @param string|null $input  Parameter string to be parsed
+     *
+     * @return array
+     */
     public static function parse_parameters($input)
     {
         if (!isset($input) || !$input)
@@ -126,6 +161,13 @@ class OAuthUtil
         return $parsed_parameters;
     }
 
+    /**
+     * Build HTTP query string.
+     *
+     * @param array|null $params  Array of parameters
+     *
+     * @return string
+     */
     public static function build_http_query($params)
     {
         if (!$params)

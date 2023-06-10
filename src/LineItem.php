@@ -5,7 +5,7 @@ namespace ceLTIc\LTI;
 use ceLTIc\LTI\Service;
 
 /**
- * Class to represent a line item
+ * Class to represent a line-item
  *
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
  * @copyright  SPV Software Products
@@ -17,7 +17,7 @@ class LineItem
     /**
      * Label value.
      *
-     * @var string $label
+     * @var string|null $label
      */
     public $label = null;
 
@@ -36,7 +36,7 @@ class LineItem
     public $ltiResourceLinkId = null;
 
     /**
-     * Tool resource ID associated with the line item.
+     * Tool resource ID associated with the line-item.
      *
      * @var string|null $resourceId
      */
@@ -64,21 +64,21 @@ class LineItem
     public $submitUntil = null;
 
     /**
-     * Line item endpoint.
+     * Line-item endpoint.
      *
-     * @var string $endpoint
+     * @var string|null $endpoint
      */
     public $endpoint = null;
 
     /**
      * Submission review.
      *
-     * @var SubmissionReview $submissionReview
+     * @var SubmissionReview|null $submissionReview
      */
     public $submissionReview = null;
 
     /**
-     * Platform for this line item.
+     * Platform for this line-item.
      *
      * @var Platform|null $platform
      */
@@ -101,7 +101,7 @@ class LineItem
     /**
      * Get platform.
      *
-     * @return Platform  Platform object for this line item.
+     * @return Platform  Platform object for this line-item.
      */
     public function getPlatform()
     {
@@ -109,7 +109,7 @@ class LineItem
     }
 
     /**
-     * Save the line item to the platform.
+     * Save the line-item to the platform.
      *
      * @return bool  True if successful
      */
@@ -120,7 +120,7 @@ class LineItem
     }
 
     /**
-     * Delete the line item on the platform.
+     * Delete the line-item on the platform.
      *
      * @return bool  True if successful
      */
@@ -185,7 +185,7 @@ class LineItem
     }
 
     /**
-     * Retrieve a line item definition.
+     * Retrieve a line-item definition.
      *
      * @param Platform $platform          Platform object
      * @param string   $endpoint          ID value

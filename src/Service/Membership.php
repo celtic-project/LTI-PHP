@@ -57,7 +57,7 @@ class Membership extends Service
      *
      * When false, all objects will be requested, even if this requires several requests based on the limit set.
      *
-     * @var boolean  $pagingMode
+     * @var bool $pagingMode
      */
     private $pagingMode;
 
@@ -67,8 +67,8 @@ class Membership extends Service
      * @param object       $source     The object to which the memberships apply (ResourceLink or Context)
      * @param string       $endpoint   Service endpoint
      * @param string       $format     Format to request
-     * @param int|null     $limit      Limit of line items to be returned in each request, null for all
-     * @param boolean      $pagingMode        True if only a single page should be requested when a limit is set
+     * @param int|null     $limit      Limit of line-items to be returned in each request, null for all
+     * @param bool         $pagingMode True if only a single page should be requested when a limit is set
      */
     public function __construct($source, $endpoint, $format = self::MEDIA_TYPE_MEMBERSHIPS_V1, $limit = null, $pagingMode = false)
     {
@@ -84,10 +84,10 @@ class Membership extends Service
     /**
      * Get the memberships.
      *
-     * @param string    $role   Role for which memberships are to be requested (optional, default is all roles)
-     * @param int|null  $limit  Limit on the number of memberships to be returned in each request, null for service default (optional)
+     * @param string|null $role   Role for which memberships are to be requested (optional, default is all roles)
+     * @param int|null    $limit  Limit on the number of memberships to be returned in each request, null for service default (optional)
      *
-     * @return mixed The array of UserResult objects if successful, otherwise false
+     * @return array|bool  The array of UserResult objects if successful, otherwise false
      */
     public function get($role = null, $limit = null)
     {
@@ -97,10 +97,10 @@ class Membership extends Service
     /**
      * Get the memberships.
      *
-     * @param string    $role   Role for which memberships are to be requested (optional, default is all roles)
-     * @param int|null  $limit  Limit on the number of memberships to be returned in each request, null for service default (optional)
+     * @param string|null $role   Role for which memberships are to be requested (optional, default is all roles)
+     * @param int|null    $limit  Limit on the number of memberships to be returned in each request, null for service default (optional)
      *
-     * @return mixed The array of UserResult objects if successful, otherwise false
+     * @return array|bool  The array of UserResult objects if successful, otherwise false
      */
     public function getWithGroups($role = null, $limit = null)
     {
@@ -110,11 +110,11 @@ class Membership extends Service
     /**
      * Get the memberships.
      *
-     * @param bool      $withGroups True is group information is to be requested as well
-     * @param string    $role   Role for which memberships are to be requested (optional, default is all roles)
-     * @param int|null  $limit  Limit on the number of memberships to be returned in each request, null for service default (optional)
+     * @param bool        $withGroups True is group information is to be requested as well
+     * @param string|null $role       Role for which memberships are to be requested (optional, default is all roles)
+     * @param int|null    $limit      Limit on the number of memberships to be returned in each request, null for service default (optional)
      *
-     * @return mixed The array of UserResult objects if successful, otherwise false
+     * @return array|bool  The array of UserResult objects if successful, otherwise false
      */
     private function getMembers($withGroups, $role = null, $limit = null)
     {

@@ -3,6 +3,8 @@
 namespace ceLTIc\LTI\DataConnector;
 
 use ceLTIc\LTI;
+use ceLTIc\LTI\ResourceLink;
+use ceLTIc\LTI\ResourceLinkShareKey;
 
 /**
  * Class to represent an LTI Data Connector for PDO variations for PostgreSQL connections
@@ -25,7 +27,7 @@ class DataConnector_pdo_pgsql extends DataConnector_pdo
      *
      * @param ResourceLink $resourceLink      Resource link object
      * @param bool        $localOnly True if only users within the resource link are to be returned (excluding users sharing this resource link)
-     * @param int         $idScope     Scope value to use for user IDs
+     * @param int|null    $idScope     Scope value to use for user IDs
      *
      * @return UserResult[] Array of UserResult objects
      */

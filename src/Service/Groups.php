@@ -3,6 +3,7 @@
 namespace ceLTIc\LTI\Service;
 
 use ceLTIc\LTI\Context;
+use ceLTIc\LTI\User;
 
 /**
  * Class to implement the Course Groups service
@@ -26,32 +27,36 @@ class Groups extends Service
 
     /**
      * Access scope.
+     *
+     * @var string $SCOPE
      */
     public static $SCOPE = 'https://purl.imsglobal.org/spec/lti-gs/scope/contextgroup.readonly';
 
     /**
      * Default limit on size of container to be returned from requests.
+     *
+     * @var int|null $defaultLimit
      */
     public static $defaultLimit = null;
 
     /**
      * The context to which the course groups apply.
      *
-     * @var Context $context
+     * @var Context|null $context
      */
     private $context = null;
 
     /**
      * The endpoint for course group requests.
      *
-     * @var string $groupsEndpoint
+     * @var string|null $groupsEndpoint
      */
     private $groupsEndpoint = null;
 
     /**
      * The endpoint for course groupset requests.
      *
-     * @var string $groupSetsEndpoint
+     * @var string|null $groupSetsEndpoint
      */
     private $groupSetsEndpoint = null;
 
@@ -69,18 +74,18 @@ class Groups extends Service
      *
      * When false, all objects will be requested, even if this requires several requests based on the limit set.
      *
-     * @var boolean  $pagingMode
+     * @var bool  $pagingMode
      */
     private $pagingMode;
 
     /**
      * Class constructor.
      *
-     * @param object       $context             The context to which the course groups apply
-     * @param string       $groupsEndpoint      Service endpoint for course groups
-     * @param string       $groupSetsEndpoint   Service endpoint for course group sets (optional)
-     * @param int|null     $limit               Limit of objects to be returned in each request, null for all
-     * @param boolean      $pagingMode        True if only a single page should be requested when a limit is set
+     * @param object       $context           The context to which the course groups apply
+     * @param string|null $groupsEndpoint     Service endpoint for course groups
+     * @param string|null $groupSetsEndpoint  Service endpoint for course group sets (optional)
+     * @param int|null     $limit             Limit of objects to be returned in each request, null for all
+     * @param bool $pagingMode                True if only a single page should be requested when a limit is set
      */
     public function __construct($context, $groupsEndpoint, $groupSetsEndpoint = null, $limit = null, $pagingMode = false)
     {

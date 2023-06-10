@@ -136,7 +136,7 @@ class Outcome
     /**
      * Get the outcome value.
      *
-     * @return string Outcome value
+     * @return string|null Outcome value
      */
     public function getValue()
     {
@@ -146,7 +146,7 @@ class Outcome
     /**
      * Set the outcome value.
      *
-     * @param string $value  Outcome value
+     * @param string|null $value  Outcome value
      */
     public function setValue($value)
     {

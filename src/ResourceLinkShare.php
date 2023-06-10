@@ -22,7 +22,7 @@ class ResourceLinkShare
     /**
      * Resource link ID value.
      *
-     * @var string|null $resourceLinkId
+     * @var int|null $resourceLinkId
      */
     public $resourceLinkId = null;
 

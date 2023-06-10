@@ -72,11 +72,15 @@ class Tool
 
     /**
      * Names of LTI parameters to be retained in the consumer settings property.
+     *
+     * @var array $LTI_CONSUMER_SETTING_NAMES
      */
     private static $LTI_CONSUMER_SETTING_NAMES = array('custom_tc_profile_url', 'custom_system_setting_url', 'custom_oauth2_access_token_url');
 
     /**
      * Names of LTI parameters to be retained in the context settings property.
+     *
+     * @var array $LTI_CONTEXT_SETTING_NAMES
      */
     private static $LTI_CONTEXT_SETTING_NAMES = array('custom_context_setting_url',
         'ext_ims_lis_memberships_id', 'ext_ims_lis_memberships_url',
@@ -87,6 +91,8 @@ class Tool
 
     /**
      * Names of LTI parameters to be retained in the resource link settings property.
+     *
+     * @var array $LTI_RESOURCE_LINK_SETTING_NAMES
      */
     private static $LTI_RESOURCE_LINK_SETTING_NAMES = array('lis_result_sourcedid', 'lis_outcome_service_url',
         'ext_ims_lis_basic_outcome_url', 'ext_ims_lis_resultvalue_sourcedids', 'ext_outcome_data_values_accepted',
@@ -99,11 +105,15 @@ class Tool
 
     /**
      * Names of LTI parameters to be retained even when not passed.
+     *
+     * @var array $LTI_RETAIN_SETTING_NAMES
      */
     private static $LTI_RETAIN_SETTING_NAMES = array('custom_lineitem_url');
 
     /**
      * Names of LTI custom parameter substitution variables (or capabilities) and their associated default message parameter names.
+     *
+     * @var array $CUSTOM_SUBSTITUTION_VARIABLES
      */
     private static $CUSTOM_SUBSTITUTION_VARIABLES = array('User.id' => 'user_id',
         'User.image' => 'user_image',
@@ -211,7 +221,7 @@ class Tool
     /**
      * Message for last request processed
      *
-     * @var string $message
+     * @var string|null $message
      */
     public $message = null;
 
@@ -232,14 +242,14 @@ class Tool
     /**
      * Vendor details
      *
-     * @var Item|null $vendor
+     * @var Profile\Item|null $vendor
      */
     public $vendor = null;
 
     /**
      * Product details
      *
-     * @var Item|null $product
+     * @var Profile\Item|null $product
      */
     public $product = null;
 
@@ -527,10 +537,10 @@ class Tool
     /**
      * Add a parameter constraint to be checked on launch
      *
-     * @param string $name           Name of parameter to be checked
-     * @param bool    $required      True if parameter is required (optional, default is true)
-     * @param int $maxLength         Maximum permitted length of parameter value (optional, default is null)
-     * @param array $messageTypes    Array of message types to which the constraint applies (optional, default is all)
+     * @param string $name              Name of parameter to be checked
+     * @param bool    $required         True if parameter is required (optional, default is true)
+     * @param int|null $maxLength       Maximum permitted length of parameter value (optional, default is null)
+     * @param array|null $messageTypes  Array of message types to which the constraint applies (optional, default is all)
      */
     public function setParameterConstraint($name, $required = true, $maxLength = null, $messageTypes = null)
     {
@@ -1177,9 +1187,9 @@ EOD;
     /**
      * Load the tool from the database by its consumer key.
      *
-     * @param string          $key             Consumer key
+     * @param string|null     $key             Consumer key
      * @param DataConnector   $dataConnector   A data connector object
-     * @param bool            $autoEnable      true if the tool is to be enabled automatically (optional, default is false)
+     * @param bool            $autoEnable      True if the tool is to be enabled automatically (optional, default is false)
      *
      * @return Tool           The tool object
      */
@@ -1222,7 +1232,7 @@ EOD;
     /**
      * Load the tool from the database by its record ID.
      *
-     * @param string          $id               The tool record ID
+     * @param int             $id               The tool record ID
      * @param DataConnector   $dataConnector    A data connector object
      *
      * @return Tool           The tool object
@@ -1242,10 +1252,6 @@ EOD;
 
     /**
      * Perform the result of an action.
-     *
-     * This function may redirect the user to another URL rather than returning a value.
-     *
-     * @return string Output to be displayed (redirection, or display HTML or message)
      */
     private function result()
     {
@@ -2262,7 +2268,7 @@ EOD;
     /**
      * Validate a parameter value from an array of permitted values.
      *
-     * @param mixed  $value             Value to be checked
+     * @param string $value             Value to be checked
      * @param array  $values            Array of permitted values
      * @param string $reason            Reason to generate when the value is not permitted
      * @param bool   $strictMode        True if full compliance with the LTI specification is required

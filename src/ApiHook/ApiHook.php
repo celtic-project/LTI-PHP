@@ -58,8 +58,6 @@ trait ApiHook
      * @param string $hookName  Name of hook
      * @param string $familyCode  Family code for current platform
      * @param string $className  Name of implementing class
-     *
-     * @return void
      */
     public static function registerApiHook($hookName, $familyCode, $className)
     {
@@ -72,6 +70,8 @@ trait ApiHook
      *
      * @param string $hookName  Name of hook
      * @param string $familyCode  Family code for current platform
+     *
+     * @return string|null  Class name
      */
     private static function getApiHook($hookName, $familyCode)
     {
@@ -97,6 +97,7 @@ trait ApiHook
      * Check if an API hook is registered and configured.
      *
      * @param string                         $hookName        Name of hook
+     * @param string                         $familyCode      Family code for current platform
      * @param Platform|Context|ResourceLink  $sourceObject    Source object for which hook is to be used
      *
      * @return bool    True if the API hook is registered and configured

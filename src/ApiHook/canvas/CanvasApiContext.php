@@ -3,6 +3,7 @@
 namespace ceLTIc\LTI\ApiHook\canvas;
 
 use ceLTIc\LTI\ApiHook\ApiContext;
+use ceLTIc\LTI\Context;
 
 /**
  * Class to implement Resource Link services for a Canvas platform via its proprietary API.
@@ -19,7 +20,7 @@ class CanvasApiContext extends ApiContext
     /**
      * Class constructor.
      *
-     * @param \ceLTIc\LTI\Context $context
+     * @param Context $context
      */
     public function __construct($context)
     {
@@ -58,7 +59,7 @@ class CanvasApiContext extends ApiContext
      *
      * @param bool    $withGroups True is group information is to be requested as well
      *
-     * @return mixed Array of UserResult objects or False if the request was not successful
+     * @return array|bool  Array of UserResult objects or false if the request was not successful
      */
     public function getMemberships($withGroups)
     {

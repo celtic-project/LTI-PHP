@@ -232,7 +232,7 @@ class Context
     /**
      * Set platform ID.
      *
-     * @param int $platformId  Platform ID for this context.
+     * @param int|null $platformId  Platform ID for this context.
      */
     public function setPlatformId($platformId)
     {
@@ -253,7 +253,7 @@ class Context
     /**
      * Get context ID.
      *
-     * @return string ID for this context.
+     * @return string|null  ID for this context.
      */
     public function getId()
     {
@@ -263,7 +263,7 @@ class Context
     /**
      * Get the context record ID.
      *
-     * @return int|null Context record ID value
+     * @return int|string|null  Context record ID value
      */
     public function getRecordId()
     {
@@ -273,7 +273,7 @@ class Context
     /**
      * Sets the context record ID.
      *
-     * @param int $id  Context record ID value
+     * @param int|string|null $id  Context record ID value
      */
     public function setRecordId($id)
     {
@@ -313,7 +313,7 @@ class Context
      * Set a setting value.
      *
      * @param string $name  Name of setting
-     * @param string $value Value to set, use an empty value to delete a setting (optional, default is null)
+     * @param string|array|null $value  Value to set, use an empty value to delete a setting (optional, default is null)
      */
     public function setSetting($name, $value = null)
     {
@@ -384,7 +384,7 @@ class Context
      * @param int      $mode       Mode for request (optional, default is current level only)
      * @param bool     $simple     True if all the simple media type is to be used (optional, default is true)
      *
-     * @return mixed The array of settings if successful, otherwise false
+     * @return array|bool  The array of settings if successful, otherwise false
      */
     public function getToolSettings($mode = Service\ToolSettings::MODE_CURRENT_LEVEL, $simple = true)
     {
@@ -503,7 +503,7 @@ class Context
      * @deprecated Use getMemberships() instead
      * @see Context::getMemberships()
      *
-     * @return mixed The array of UserResult objects if successful, otherwise false
+     * @return array|bool The array of UserResult objects if successful, otherwise false
      */
     public function getMembership()
     {
@@ -517,7 +517,7 @@ class Context
      *
      * @param bool    $withGroups True is group information is to be requested as well
      *
-     * @return mixed The array of UserResult objects if successful, otherwise false
+     * @return array|bool  The array of UserResult objects if successful, otherwise false
      */
     public function getMemberships($withGroups = false)
     {
@@ -557,9 +557,9 @@ class Context
     }
 
     /**
-     * Check if the Line Item service is available.
+     * Check if the Line-item service is available.
      *
-     * @return bool    True if this context supports the Line Item service
+     * @return bool  True if this context supports the Line-item service
      */
     public function hasLineItemService()
     {
@@ -611,11 +611,11 @@ class Context
     }
 
     /**
-     * Get line items.
+     * Get line-items.
      *
      * @param string|null  $resourceId         Tool resource ID
      * @param string|null  $tag                Tag
-     * @param int|null     $limit              Limit of line items to be returned in each request, null for service default
+     * @param int|null     $limit              Limit of line-items to be returned in each request, null for service default
      *
      * @return LineItem[]|bool  Array of LineItem objects or false on error
      */
@@ -634,9 +634,9 @@ class Context
     }
 
     /**
-     * Create a new line item.
+     * Create a new line-item.
      *
-     * @param LineItem  $lineItem         Line item object
+     * @param LineItem  $lineItem         Line-item object
      *
      * @return bool  True if successful
      */
@@ -724,9 +724,9 @@ class Context
     }
 
     /**
-     * Get the Line Item service object.
+     * Get the Line-item service object.
      *
-     * @return Service\\LineItem    Line Item service, or false if not available
+     * @return Service\LineItem|bool  Line-item service, or false if not available
      */
     private function getLineItemService()
     {

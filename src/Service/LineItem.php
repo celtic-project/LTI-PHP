@@ -6,7 +6,7 @@ use ceLTIc\LTI;
 use ceLTIc\LTI\Platform;
 
 /**
- * Class to implement the Line Item service
+ * Class to implement the Line-item service
  *
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
  * @copyright  SPV Software Products
@@ -16,12 +16,12 @@ class LineItem extends AssignmentGrade
 {
 
     /**
-     * Line item media type.
+     * Line-item media type.
      */
     const MEDIA_TYPE_LINE_ITEM = 'application/vnd.ims.lis.v2.lineitem+json';
 
     /**
-     * Line item container media type.
+     * Line-item container media type.
      */
     const MEDIA_TYPE_LINE_ITEMS = 'application/vnd.ims.lis.v2.lineitemcontainer+json';
 
@@ -54,7 +54,7 @@ class LineItem extends AssignmentGrade
      *
      * When false, all objects will be requested, even if this requires several requests based on the limit set.
      *
-     * @var boolean  $pagingMode
+     * @var bool $pagingMode
      */
     private $pagingMode;
 
@@ -63,8 +63,8 @@ class LineItem extends AssignmentGrade
      *
      * @param Platform     $platform   Platform object for this service request
      * @param string       $endpoint   Service endpoint
-     * @param int|null     $limit      Limit of line items to be returned in each request, null for all
-     * @param boolean      $pagingMode        True if only a single page should be requested when a limit is set
+     * @param int|null     $limit      Limit of line-items to be returned in each request, null for all
+     * @param bool         $pagingMode True if only a single page should be requested when a limit is set
      */
     public function __construct($platform, $endpoint, $limit = null, $pagingMode = false)
     {
@@ -75,7 +75,7 @@ class LineItem extends AssignmentGrade
     }
 
     /**
-     * Retrieve all line items.
+     * Retrieve all line-items.
      *
      * The returned items can be filtered by a resource link ID, a resource ID and/or a tag.  Requests can
      * also be limited to a number of items which may mean that multiple requests will be made to retrieve the
@@ -84,9 +84,9 @@ class LineItem extends AssignmentGrade
      * @param string|null  $ltiResourceLinkId  LTI resource link ID (optional)
      * @param string|null  $resourceId         Tool resource ID (optional)
      * @param string|null  $tag                Tag (optional)
-     * @param int|null     $limit              Limit of line items to be returned in each request, null for service default (optional)
+     * @param int|null     $limit              Limit of line-items to be returned in each request, null for service default (optional)
      *
-     * @return LineItem[]|bool  Array of LineItem objects or false on error
+     * @return LTI\\LineItem[]|bool  Array of LineItem objects or false on error
      */
     public function getAll($ltiResourceLinkId = null, $resourceId = null, $tag = null, $limit = null)
     {
@@ -138,9 +138,9 @@ class LineItem extends AssignmentGrade
     }
 
     /**
-     * Create a new line item.
+     * Create a new line-item.
      *
-     * @param LTI\LineItem        $lineItem         Line item object
+     * @param LTI\LineItem $lineItem  Line-item object
      *
      * @return bool  True if successful
      */
@@ -161,9 +161,9 @@ class LineItem extends AssignmentGrade
     }
 
     /**
-     * Save a line item.
+     * Save a line-item.
      *
-     * @param LTI\LineItem        $lineItem         Line item object
+     * @param LTI\LineItem $lineItem  Line-item object
      *
      * @return bool  True if successful
      */
@@ -183,9 +183,9 @@ class LineItem extends AssignmentGrade
     }
 
     /**
-     * Delete a line item.
+     * Delete a line-item.
      *
-     * @param LTI\LineItem        $lineItem         Line item object
+     * @param LTI\LineItem $lineItem  Line-item object
      *
      * @return bool  True if successful
      */
@@ -201,7 +201,7 @@ class LineItem extends AssignmentGrade
      * Retrieve a line item.
      *
      * @param Platform     $platform   Platform object for this service request
-     * @param string       $endpoint   Line item endpoint
+     * @param string $endpoint    Line-item endpoint
      *
      * @return LTI\\LineItem|bool  LineItem object, or false on error
      */
@@ -226,7 +226,7 @@ class LineItem extends AssignmentGrade
 ###
 
     /**
-     * Create a line item from a JSON object.
+     * Create a line-item from a JSON object.
      *
      * @param Platform     $platform   Platform object for this service request
      * @param object       $json       JSON object to convert
@@ -266,11 +266,11 @@ class LineItem extends AssignmentGrade
     }
 
     /**
-     * Create a JSON string from a line item.
+     * Create a JSON string from a line-item.
      *
-     * @param LTI\\LineItem     $lineItem   Line item object
+     * @param LTI\LineItem $lineItem  Line-item object
      *
-     * @return string    JSON representation of line item
+     * @return string  JSON representation of line-item
      */
     private static function toJson($lineItem)
     {

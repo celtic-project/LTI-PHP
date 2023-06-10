@@ -3,6 +3,7 @@
 namespace ceLTIc\LTI\ApiHook;
 
 use ceLTIc\LTI\Util;
+use ceLTIc\LTI\ToolConsumer;
 
 /**
  * Class to implement services for a tool consumer via its proprietary API
@@ -20,7 +21,7 @@ class ApiToolConsumer extends ApiPlatform
     /**
      * Class constructor.
      *
-     * @param \ceLTIc\LTI\ToolConsumer $consumer
+     * @param ToolConsumer $consumer
      */
     public function __construct($consumer)
     {

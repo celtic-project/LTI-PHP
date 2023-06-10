@@ -127,7 +127,7 @@ class Item
     /**
      * Hide the item from learners by default?
      *
-     * @var bool $hideOnCreate
+     * @var bool|null $hideOnCreate
      */
     private $hideOnCreate = null;
 
@@ -135,8 +135,8 @@ class Item
      * Class constructor.
      *
      * @param string $type Class type of content-item
-     * @param Placement[]|Placement $placementAdvices  Array of Placement objects (or single placement object) for item (optional)
-     * @param string $id   URL of content-item (optional)
+     * @param Placement[]|Placement|null $placementAdvices  Array of Placement objects (or single placement object) for item (optional)
+     * @param string|null $id  URL of content-item (optional)
      */
     function __construct($type, $placementAdvices = null, $id = null)
     {
@@ -155,7 +155,7 @@ class Item
     /**
      * Set a URL value for the content-item.
      *
-     * @param string $url  URL value
+     * @param string|null $url  URL value
      */
     public function setUrl($url)
     {
@@ -165,7 +165,7 @@ class Item
     /**
      * Set a media type value for the content-item.
      *
-     * @param string $mediaType  Media type value
+     * @param string|null $mediaType  Media type value
      */
     public function setMediaType($mediaType)
     {
@@ -175,7 +175,7 @@ class Item
     /**
      * Set a title value for the content-item.
      *
-     * @param string $title  Title value
+     * @param string|null $title  Title value
      */
     public function setTitle($title)
     {
@@ -185,7 +185,7 @@ class Item
     /**
      * Set a link text value for the content-item.
      *
-     * @param string $text  Link text value
+     * @param string|null $text  Link text value
      */
     public function setText($text)
     {
@@ -195,7 +195,7 @@ class Item
     /**
      * Set an HTML embed value for the content-item.
      *
-     * @param string $html  HTML text value
+     * @param string|null $html  HTML text value
      */
     public function setHtml($html)
     {
@@ -205,7 +205,7 @@ class Item
     /**
      * Add a placement for the content-item.
      *
-     * @param Placement $placementAdvice  Placement advice object
+     * @param Placement|null $placementAdvice  Placement advice object
      */
     public function addPlacementAdvice($placementAdvice)
     {
@@ -217,7 +217,7 @@ class Item
     /**
      * Set an icon image for the content-item.
      *
-     * @param Image $icon  Icon image object
+     * @param Image|null $icon  Icon image object
      */
     public function setIcon($icon)
     {
@@ -227,7 +227,7 @@ class Item
     /**
      * Set a thumbnail image for the content-item.
      *
-     * @param Image $thumbnail  Thumbnail image object
+     * @param Image|null $thumbnail  Thumbnail image object
      */
     public function setThumbnail($thumbnail)
     {
@@ -247,7 +247,7 @@ class Item
     /**
      * Wrap the content items to form a complete application/vnd.ims.lti.v1.contentitems+json media type instance.
      *
-     * @param mixed $items  An array of content items or a single item
+     * @param Item[]|Item $items  An array of content items or a single item
      * @param string $ltiVersion  LTI version in use
      *
      * @return string
@@ -304,7 +304,7 @@ class Item
     /**
      * Wrap the content item to form an item complying with the application/vnd.ims.lti.v1.contentitems+json media type.
      *
-     * @return object
+     * @return object  JSON object
      */
     protected function toJsonldObject()
     {
@@ -372,7 +372,7 @@ class Item
     /**
      * Wrap the content items to form a complete value for the https://purl.imsglobal.org/spec/lti-dl/claim/content_items claim.
      *
-     * @return object
+     * @return object  JSON object
      */
     protected function toJsonObject()
     {

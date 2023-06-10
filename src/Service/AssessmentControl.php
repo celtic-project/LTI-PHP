@@ -2,7 +2,9 @@
 
 namespace ceLTIc\LTI\Service;
 
-use ceLTIc\LTI;
+use ceLTIc\LTI\User;
+use ceLTIc\LTI\AssessmentControlAction;
+use ceLTIc\LTI\ResourceLink;
 
 /**
  * Class to implement the Assessment Control service
@@ -16,6 +18,8 @@ class AssessmentControl extends Service
 
     /**
      * Access scope.
+     *
+     * @var string $SCOPE
      */
     public static $SCOPE = 'https://purl.imsglobal.org/spec/lti-ap/scope/control.all';
 
@@ -43,8 +47,8 @@ class AssessmentControl extends Service
     /**
      * Submit an assessment control action.
      *
-     * @param LTI\AssessmentControlAction     $assessmentControlAction   AssessmentControlAction object
-     * @param LTI\User                        $user                      User object
+     * @param AssessmentControlAction $assessmentControlAction  AssessmentControlAction object
+     * @param User $user                                        User object
      * @param int                             $attemptNumber             Attempt number
      *
      * @return string|bool  Value of the status response, or false if not successful

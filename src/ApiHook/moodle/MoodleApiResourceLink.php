@@ -3,6 +3,7 @@
 namespace ceLTIc\LTI\ApiHook\moodle;
 
 use ceLTIc\LTI\ApiHook\ApiResourceLink;
+use ceLTIc\LTI\ResourceLink;
 
 /**
  * Class to implement Resource Link services for a Moodle platform via its web services.
@@ -19,7 +20,7 @@ class MoodleApiResourceLink extends ApiResourceLink
     /**
      * Class constructor.
      *
-     * @param \ceLTIc\LTI\ResourceLink $resourceLink
+     * @param ResourceLink $resourceLink
      */
     public function __construct($resourceLink)
     {
@@ -32,7 +33,7 @@ class MoodleApiResourceLink extends ApiResourceLink
      *
      * @param bool    $withGroups True is group information is to be requested as well
      *
-     * @return mixed Array of UserResult objects or False if the request was not successful
+     * @return array|bool  Array of UserResult objects or false if the request was not successful
      */
     public function getMemberships($withGroups)
     {

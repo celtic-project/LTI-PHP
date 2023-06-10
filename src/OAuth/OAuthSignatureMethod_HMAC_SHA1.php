@@ -3,9 +3,9 @@
 namespace ceLTIc\LTI\OAuth;
 
 /**
- * Class to represent an %OAuth HMAC_SHA1 signature method
+ * Class to represent an OAuth HMAC_SHA1 signature method
  *
- * @copyright  Andy Smith
+ * @copyright  Andy Smith (http://oauth.googlecode.com/svn/code/php/)
  * @version  2008-08-04
  * @license  https://opensource.org/licenses/MIT The MIT License
  */
@@ -20,11 +20,29 @@ namespace ceLTIc\LTI\OAuth;
 class OAuthSignatureMethod_HMAC_SHA1 extends OAuthSignatureMethod
 {
 
+    /**
+     * Name of the Signature Method.
+     *
+     * @return string
+     */
     function get_name()
     {
         return "HMAC-SHA1";
     }
 
+    /**
+     * Build up the signature.
+     *
+     * NOTE: The output of this function MUST NOT be urlencoded.
+     * the encoding is handled in OAuthRequest when the final
+     * request is serialized
+     *
+     * @param OAuthRequest $request    Request
+     * @param OAuthConsumer $consumer  Consumer
+     * @param OAuthToken $token        Token
+     *
+     * @return string
+     */
     public function build_signature($request, $consumer, $token)
     {
         $base_string = $request->get_signature_base_string();

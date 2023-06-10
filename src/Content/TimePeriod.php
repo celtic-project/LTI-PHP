@@ -29,8 +29,8 @@ class TimePeriod
     /**
      * Class constructor.
      *
-     * @param int    $startDateTime  Start date/time
-     * @param int    $endDateTime    End date/time
+     * @param int|null    $startDateTime  Start date/time
+     * @param int|null    $endDateTime    End date/time
      */
     function __construct($startDateTime, $endDateTime)
     {
@@ -45,7 +45,7 @@ class TimePeriod
     /**
      * Generate the JSON-LD object representation of the time period.
      *
-     * @return object
+     * @return object  JSON object
      */
     public function toJsonldObject()
     {
@@ -55,7 +55,7 @@ class TimePeriod
     /**
      * Generate the JSON object representation of the image.
      *
-     * @return object
+     * @return object  JSON object
      */
     public function toJsonObject()
     {
@@ -79,7 +79,7 @@ class TimePeriod
      *
      * @param object $item  A JSON or JSON-LD object representing a content-item
      *
-     * @return TimePeriod|null  The LineItem object
+     * @return TimePeriod|null  The TimePeriod object
      */
     public static function fromJsonObject($item)
     {

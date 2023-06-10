@@ -2,6 +2,7 @@
 
 namespace ceLTIc\LTI\Service;
 
+use ceLTIc\LTI\Platform;
 use ceLTIc\LTI\User;
 use ceLTIc\LTI\Outcome;
 
@@ -17,11 +18,15 @@ class Result extends AssignmentGrade
 
     /**
      * Access scope.
+     *
+     * @var string $SCOPE
      */
     public static $SCOPE = 'https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly';
 
     /**
      * Default limit on size of container to be returned from requests.
+     *
+     * @var int $defaultLimit
      */
     public static $defaultLimit = 500;
 
@@ -39,7 +44,7 @@ class Result extends AssignmentGrade
      *
      * When false, all objects will be requested, even if this requires several requests based on the limit set.
      *
-     * @var boolean  $pagingMode
+     * @var bool $pagingMode
      */
     private $pagingMode;
 
@@ -49,7 +54,7 @@ class Result extends AssignmentGrade
      * @param Platform     $platform   Platform object for this service request
      * @param string       $endpoint   Service endpoint
      * @param int|null     $limit      Limit of results to be returned in each request, null for all
-     * @param boolean      $pagingMode        True if only a single page should be requested when a limit is set
+     * @param bool         $pagingMode True if only a single page should be requested when a limit is set
      */
     public function __construct($platform, $endpoint, $limit = null, $pagingMode = false)
     {
@@ -61,7 +66,7 @@ class Result extends AssignmentGrade
     }
 
     /**
-     * Retrieve all outcomes for a line item.
+     * Retrieve all outcomes for a line-item.
      *
      * @param int|null     $limit      Limit of results to be returned in each request, null for service default
      *
@@ -131,6 +136,13 @@ class Result extends AssignmentGrade
 ###  PRIVATE METHOD
 ###
 
+    /**
+     * Extract an outcome from its JSON representation.
+     *
+     * @param object $json  JSON representation of an outcome
+     *
+     * @return Outcome  Outcome object
+     */
     private static function getOutcome($json)
     {
         $outcome = new Outcome();

@@ -36,9 +36,9 @@ class SubmissionReview
     /**
      * Class constructor.
      *
-     * @param string   $label                       Label (optional)
-     * @param string   $endpoint                Endpojnt (optional)
-     * @param string   $custom                   Custom parameters (optional)
+     * @param string|null $label     Label (optional)
+     * @param string|null $endpoint  Endpoint (optional)
+     * @param array|null $custom     Custom parameters (optional)
      */
     public function __construct($label = null, $endpoint = null, $custom = null)
     {

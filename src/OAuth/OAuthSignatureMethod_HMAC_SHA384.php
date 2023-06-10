@@ -3,7 +3,7 @@
 namespace ceLTIc\LTI\OAuth;
 
 /**
- * Class to represent an %OAuth HMAC_SHA384 signature method
+ * Class to represent an OAuth HMAC_SHA384 signature method
  *
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
  * @copyright  SPV Software Products
@@ -20,11 +20,29 @@ namespace ceLTIc\LTI\OAuth;
 class OAuthSignatureMethod_HMAC_SHA384 extends OAuthSignatureMethod
 {
 
+    /**
+     * Name of the Signature Method.
+     *
+     * @return string
+     */
     function get_name()
     {
         return "HMAC-SHA384";
     }
 
+    /**
+     * Build up the signature.
+     *
+     * NOTE: The output of this function MUST NOT be urlencoded.
+     * the encoding is handled in OAuthRequest when the final
+     * request is serialized
+     *
+     * @param OAuthRequest $request    Request
+     * @param OAuthConsumer $consumer  Consumer
+     * @param OAuthToken $token        Token
+     *
+     * @return string
+     */
     public function build_signature($request, $consumer, $token)
     {
         $base_string = $request->get_signature_base_string();

@@ -150,16 +150,16 @@ trait System
     public $updated = null;
 
     /**
-     * JWT object, if any.
+     * JWT ClientInterface object.
      *
-     * @var JWS|null $jwt
+     * @var ClientInterface|null $jwt
      */
     protected $jwt = null;
 
     /**
      * Raw message parameters.
      *
-     * @var array $rawParameters
+     * @var array|null $rawParameters
      */
     protected $rawParameters = null;
 
@@ -173,7 +173,7 @@ trait System
     /**
      * System ID value.
      *
-     * @var int|null $id
+     * @var int|string|null $id
      */
     private $id = null;
 
@@ -187,7 +187,7 @@ trait System
     /**
      * Setting values (LTI parameters, custom parameters and local parameters).
      *
-     * @var array $settings
+     * @var array|null $settings
      */
     private $settings = null;
 
@@ -201,7 +201,7 @@ trait System
     /**
      * Get the system record ID.
      *
-     * @return int|null  System record ID value
+     * @return int|string|null  System record ID value
      */
     public function getRecordId()
     {
@@ -211,7 +211,7 @@ trait System
     /**
      * Sets the system record ID.
      *
-     * @param int $id  System record ID value
+     * @param int|string|null $id  System record ID value
      */
     public function setRecordId($id)
     {
@@ -221,7 +221,7 @@ trait System
     /**
      * Get the consumer key.
      *
-     * @return string  Consumer key value
+     * @return string|null  Consumer key value
      */
     public function getKey()
     {
@@ -231,7 +231,7 @@ trait System
     /**
      * Set the consumer key.
      *
-     * @param string $key  Consumer key value
+     * @param string|null $key  Consumer key value
      */
     public function setKey($key)
     {
@@ -241,10 +241,10 @@ trait System
     /**
      * Get a setting value.
      *
-     * @param string $name    Name of setting
-     * @param string $default Value to return if the setting does not exist (optional, default is an empty string)
+     * @param string      $name    Name of setting
+     * @param string|null $default Value to return if the setting does not exist (optional, default is an empty string)
      *
-     * @return string Setting value
+     * @return string|null Setting value
      */
     public function getSetting($name, $default = '')
     {
@@ -260,8 +260,8 @@ trait System
     /**
      * Set a setting value.
      *
-     * @param string $name  Name of setting
-     * @param string $value Value to set, use an empty value to delete a setting (optional, default is null)
+     * @param string $name             Name of setting
+     * @param string|array|null $value Value to set, use an empty value to delete a setting (optional, default is null)
      */
     public function setSetting($name, $value = null)
     {
@@ -537,9 +537,9 @@ trait System
     /**
      * Parse a set of roles to comply with a specified version of LTI.
      *
-     * @param mixed   $roles             Comma-separated list of roles or array of roles
-     * @param string  $ltiVersion        LTI version for roles being returned (optional, default is LTI-1p0)
-     * @param bool    $addPrincipalRole  Add principal role when true (optional, default is false)
+     * @param array|string  $roles             Comma-separated list of roles or array of roles
+     * @param string        $ltiVersion        LTI version for roles being returned (optional, default is LTI-1p0)
+     * @param bool          $addPrincipalRole  Add principal role when true (optional, default is false)
      *
      * @return array Array of roles
      */
@@ -855,12 +855,12 @@ trait System
      * If the message is being sent from a platform using LTI 1.3, then the parameters and URL will be saved and replaced with an
      * initiate login request.
      *
-     * @param string  $url             URL for message request
-     * @param string  $type            LTI message type
-     * @param string  $version         LTI version
-     * @param array   $params          Message parameters
-     * @param string  $loginHint       ID of user (optional)
-     * @param string  $ltiMessageHint  LTI message hint (optional, use null for none)
+     * @param string       $url             URL for message request
+     * @param string       $type            LTI message type
+     * @param string       $version         LTI version
+     * @param array        $params          Message parameters
+     * @param string|null  $loginHint       ID of user (optional)
+     * @param string|null  $ltiMessageHint  LTI message hint (optional, use null for none)
      *
      * @return array|string  Array of signed message parameters or request headers
      */
@@ -914,12 +914,12 @@ trait System
     /**
      * Generate a web page containing an auto-submitted form of LTI message parameters.
      *
-     * @param string $url              URL to which the form should be submitted
-     * @param string $type             LTI message type
-     * @param array  $messageParams    Array of form parameters
-     * @param string $target           Name of target (optional)
-     * @param string $userId           ID of user (optional)
-     * @param string $hint             LTI message hint (optional, use null for none)
+     * @param string      $url              URL to which the form should be submitted
+     * @param string      $type             LTI message type
+     * @param array       $messageParams    Array of form parameters
+     * @param string      $target           Name of target (optional)
+     * @param string|null $userId           ID of user (optional)
+     * @param string|null $hint             LTI message hint (optional, use null for none)
      *
      * @return string
      */
@@ -934,12 +934,12 @@ trait System
     /**
      * Generates the headers for an LTI service request.
      *
-     * @param string  $url         URL for message request
-     * @param string  $method      HTTP method
-     * @param string  $type        Media type
-     * @param string  $data        Data being passed in request body (optional)
+     * @param string             $url         URL for message request
+     * @param string             $method      HTTP method
+     * @param string             $type        Media type
+     * @param array|string|null  $data        Data being passed in request body (optional)
      *
-     * @return string Headers to include with service request
+     * @return array|string Headers to include with service request
      */
     public function signServiceRequest($url, $method, $type, $data = null)
     {
@@ -954,10 +954,10 @@ trait System
     /**
      * Perform a service request
      *
-     * @param object $service  Service object to be executed
-     * @param string $method   HTTP action
-     * @param string $format   Media type
-     * @param mixed  $data     Array of parameters or body string
+     * @param object        $service  Service object to be executed
+     * @param string        $method   HTTP action
+     * @param string        $format   Media type
+     * @param array|string  $data     Array of parameters or body string
      *
      * @return HttpMessage HTTP object containing request and response details
      */
@@ -990,14 +990,14 @@ trait System
      * Add the signature to an array of message parameters or to a header string.
      *
      * @param string $endpoint          URL to which message is being sent
-     * @param mixed $data               Data to be passed
+     * @param array|string|null $data   Data to be passed
      * @param string $method            HTTP method
      * @param string|null $type         Content type of data being passed
      * @param string|null $nonce        Nonce value for JWT
      * @param string|null $hash         OAuth body hash value
      * @param int|null $timestamp       Timestamp
      *
-     * @return mixed Array of signed message parameters or header string
+     * @return array|string Array of signed message parameters or header string
      */
     public function addSignature($endpoint, $data, $method = 'POST', $type = null, $nonce = '', $hash = null, $timestamp = null)
     {
@@ -1515,7 +1515,7 @@ trait System
      * Add the OAuth 1 signature to an array of message parameters or to a header string.
      *
      * @param string $endpoint          URL to which message is being sent
-     * @param mixed $data               Data to be passed
+     * @param array|string|null $data   Data to be passed
      * @param string $method            HTTP method
      * @param string|null $type         Content type of data being passed
      * @param string|null $hash         OAuth body hash value
@@ -1640,7 +1640,7 @@ trait System
      * Add the JWT signature to an array of message parameters or to a header string.
      *
      * @param string $endpoint          URL to which message is being sent
-     * @param mixed $data               Data to be passed
+     * @param array|string|null $data   Data to be passed
      * @param string $method            HTTP method
      * @param string|null $type         Content type of data being passed
      * @param string|null $nonce        Nonce value for JWT
@@ -1768,9 +1768,9 @@ trait System
      * Expand a claim into an array of individual fully-qualified claims.
      *
      * @param string $claim          Name of claim
-     * @param string $value          Value of claim
+     * @param mixed $value           Value of claim
      *
-     * @return string[] Array of individual claims and values
+     * @return array Array of individual claims and values
      */
     private static function fullyQualifyClaim($claim, $value)
     {

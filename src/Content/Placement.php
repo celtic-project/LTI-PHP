@@ -94,13 +94,13 @@ class Placement
     /**
      * Class constructor.
      *
-     * @param string $documentTarget  Location to open content in
-     * @param int $displayWidth       Width of item location (optional)
-     * @param int $displayHeight      Height of item location (optional)
-     * @param string $windowTarget    Name of window target (optional)
-     * @param string $windowFeatures  List of window features (optional)
-     * @param string $url             URL for iframe src (optional)
-     * @param string $html            HTML to be embedded (optional)
+     * @param string $documentTarget       Location to open content in
+     * @param int|null $displayWidth       Width of item location (optional)
+     * @param int|null $displayHeight      Height of item location (optional)
+     * @param string|null $windowTarget    Name of window target (optional)
+     * @param string|null $windowFeatures  List of window features (optional)
+     * @param string|null $url             URL for iframe src (optional)
+     * @param string|null $html            HTML to be embedded (optional)
      */
     function __construct($documentTarget, $displayWidth = null, $displayHeight = null, $windowTarget = null, $windowFeatures = null,
         $url = null, $html = null)
@@ -117,7 +117,7 @@ class Placement
     /**
      * Generate the JSON-LD object representation of the placement.
      *
-     * @return object
+     * @return object|null  JSON object
      */
     public function toJsonldObject()
     {
@@ -143,7 +143,7 @@ class Placement
     /**
      * Generate the JSON object representation of the placement.
      *
-     * @return object
+     * @return object|null  JSON object
      */
     public function toJsonObject()
     {
@@ -192,9 +192,9 @@ class Placement
      * Generate the Placement object from an item.
      *
      * @param object $item  JSON object of item
-     * @param string $documentTarget  Destination of placement to be generated (optional)
+     * @param string|null $documentTarget  Destination of placement to be generated (optional)
      *
-     * @return Placement
+     * @return Placement|null  The Placement object
      */
     public static function fromJsonObject($item, $documentTarget = null)
     {

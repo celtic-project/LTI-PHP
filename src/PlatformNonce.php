@@ -51,7 +51,7 @@ class PlatformNonce
      * Class constructor.
      *
      * @param Platform      $platform  Platform object
-     * @param string        $value     Nonce value (optional, default is null)
+     * @param string|null   $value     Nonce value (optional, default is null)
      */
     public function __construct($platform, $value = null)
     {
@@ -101,9 +101,9 @@ class PlatformNonce
     }
 
     /**
-     * Get outcome value.
+     * Get nonce value.
      *
-     * @return string Outcome value
+     * @return string|null  Nonce value
      */
     public function getValue()
     {

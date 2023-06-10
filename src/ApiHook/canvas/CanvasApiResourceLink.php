@@ -3,7 +3,7 @@
 namespace ceLTIc\LTI\ApiHook\canvas;
 
 use ceLTIc\LTI\ApiHook\ApiResourceLink;
-use ceLTIc\LTI\UserResult;
+use ceLTIc\LTI\ResourceLink;
 
 /**
  * Class to implement Resource Link services for a Canvas platform via its proprietary API.
@@ -20,7 +20,7 @@ class CanvasApiResourceLink extends ApiResourceLink
     /**
      * Class constructor.
      *
-     * @param \ceLTIc\LTI\ResourceLink $resourceLink
+     * @param ResourceLink $resourceLink
      */
     public function __construct($resourceLink)
     {
@@ -33,7 +33,7 @@ class CanvasApiResourceLink extends ApiResourceLink
      *
      * @param bool    $withGroups True is group information is to be requested as well
      *
-     * @return mixed Array of UserResult objects or False if the request was not successful
+     * @return array|bool  Array of UserResult objects or false if the request was not successful
      */
     public function getMemberships($withGroups)
     {

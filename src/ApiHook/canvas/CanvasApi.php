@@ -58,7 +58,7 @@ trait CanvasApi
      *
      * @param bool    $withGroups True is group information is to be requested as well
      *
-     * @return mixed Array of UserResult objects or False if the request was not successful
+     * @return array|bool  Array of UserResult objects or false if the request was not successful
      */
     private function get($withGroups)
     {
@@ -91,6 +91,8 @@ trait CanvasApi
      *
      * @param string $perPage  Maximum number of records per request
      * @param string $prefix  Group set name prefix
+     *
+     * @return bool  True if the request was successful
      */
     private function setGroupSets($perPage, $prefix)
     {
@@ -128,7 +130,7 @@ trait CanvasApi
      *
      * @param string $perPage  Maximum number of records per request
      *
-     * @return mixed Array of UserResult objects or False if the request was not successful
+     * @return array|bool  Array of UserResult objects or false if the request was not successful
      */
     private function getRoles($perPage)
     {
@@ -167,7 +169,7 @@ trait CanvasApi
      * @param string $perPage  Maximum number of records per request
      * @param bool $withGroups True is group information is to be requested as well
      *
-     * @return mixed Array of UserResult objects or False if the request was not successful
+     * @return array|bool  Array of UserResult objects or false if the request was not successful
      */
     private function getUsers($perPage, $withGroups)
     {
@@ -249,6 +251,8 @@ trait CanvasApi
      *
      * @param string $perPage  Maximum number of records per request
      * @param array $users  Array of UserResult objects
+     *
+     * @return bool  True if the request was successful
      */
     private function setGroups($perPage, $users)
     {

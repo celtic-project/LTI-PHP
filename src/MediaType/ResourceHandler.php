@@ -16,6 +16,41 @@ class ResourceHandler
 {
 
     /**
+     * Resource type.
+     *
+     * @var object|null $resource_type
+     */
+    public $resource_type = null;
+
+    /**
+     * Resource name.
+     *
+     * @var object|null $resource_name
+     */
+    public $resource_name = null;
+
+    /**
+     * Resource description.
+     *
+     * @var object|null $description
+     */
+    public $description = null;
+
+    /**
+     * Resource icon information.
+     *
+     * @var object|null $icon_info
+     */
+    public $icon_info = null;
+
+    /**
+     * Resource messages.
+     *
+     * @var array|null $message
+     */
+    public $message = null;
+
+    /**
      * Class constructor.
      *
      * @param Tool                    $tool   Tool object

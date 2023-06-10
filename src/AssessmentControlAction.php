@@ -2,6 +2,8 @@
 
 namespace ceLTIc\LTI;
 
+use \DateTime;
+
 /**
  * Class to represent an assessment control action
  *
@@ -83,7 +85,7 @@ class AssessmentControlAction
      * Class constructor.
      *
      * @param string    $action             Action
-     * @param DateTime  $date               Date/time of incident
+     * @param DateTime $date               Date/time of incident
      * @param float     $severity           Severity of incident
      */
     public function __construct($action, $date, $severity)

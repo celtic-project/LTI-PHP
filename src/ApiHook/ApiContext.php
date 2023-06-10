@@ -3,6 +3,7 @@
 namespace ceLTIc\LTI\ApiHook;
 
 use ceLTIc\LTI\Service;
+use ceLTIc\LTI\Context;
 
 /**
  * Class to implement context services for a platform via its proprietary API
@@ -17,14 +18,14 @@ class ApiContext
     /**
      * Context object.
      *
-     * @var \ceLTIc\LTI\Context|null $context
+     * @var Context $context
      */
     protected $context = null;
 
     /**
      * Class constructor.
      *
-     * @param \ceLTIc\LTI\Context $context
+     * @param Context $context
      */
     public function __construct($context)
     {
@@ -56,7 +57,7 @@ class ApiContext
      *
      * @param bool    $withGroups True is group information is to be requested as well
      *
-     * @return mixed The array of UserResult objects if successful, otherwise false
+     * @return array|bool  The array of UserResult objects if successful, otherwise false
      */
     public function getMemberships($withGroups)
     {
@@ -66,10 +67,10 @@ class ApiContext
     /**
      * Get Tool Settings.
      *
-     * @param int      $mode       Mode for request (optional, default is current level only)
+     * @param int|null $mode       Mode for request (optional, default is current level only)
      * @param bool     $simple     True if all the simple media type is to be used (optional, default is true)
      *
-     * @return mixed The array of settings if successful, otherwise false
+     * @return array|bool  The array of settings if successful, otherwise false
      */
     public function getToolSettings($mode = Service\ToolSettings::MODE_CURRENT_LEVEL, $simple = true)
     {

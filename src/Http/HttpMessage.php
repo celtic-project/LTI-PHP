@@ -80,7 +80,7 @@ class HttpMessage
     /**
      * Request method.
      *
-     * @var string $method
+     * @var string|null $method
      */
     private $method = null;
 
@@ -96,8 +96,8 @@ class HttpMessage
      *
      * @param string $url     URL to send request to
      * @param string $method  Request method to use (optional, default is GET)
-     * @param mixed  $params  Associative array of parameter values to be passed or message body (optional, default is none)
-     * @param string $header  Values to include in the request header (optional, default is none)
+     * @param array|string|null $params  Associative array of parameter values to be passed or message body (optional, default is none)
+     * @param array|string|null $header  Values to include in the request header (optional, default is none)
      */
     function __construct($url, $method = 'GET', $params = null, $header = null)
     {
@@ -137,8 +137,6 @@ class HttpMessage
      * Set the HTTP client to use for sending the message.
      *
      * @param ClientInterface|null $httpClient
-     *
-     * @return void
      */
     public static function setHttpClient($httpClient = null)
     {

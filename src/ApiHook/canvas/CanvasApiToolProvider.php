@@ -3,6 +3,7 @@
 namespace ceLTIc\LTI\ApiHook\canvas;
 
 use ceLTIc\LTI\Util;
+use ceLTIc\LTI\Tool;
 
 /**
  * Class to implement canvas-specific functions for LTI messages
@@ -20,7 +21,7 @@ class CanvasApiToolProvider extends CanvasApiTool
     /**
      * Class constructor.
      *
-     * @param \ceLTIc\LTI\Tool|null $tool
+     * @param Tool|null $tool
      */
     public function __construct($tool)
     {

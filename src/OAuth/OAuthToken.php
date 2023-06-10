@@ -3,22 +3,35 @@
 namespace ceLTIc\LTI\OAuth;
 
 /**
- * Class to represent an %OAuth Token
+ * Class to represent an OAuth token
  *
- * @copyright  Andy Smith
+ * @copyright  Andy Smith (http://oauth.googlecode.com/svn/code/php/)
  * @version  2008-08-04
  * @license  https://opensource.org/licenses/MIT The MIT License
  */
 class OAuthToken
 {
+    // Access tokens and request tokens
 
-    // access tokens and request tokens
+    /**
+     * Name.
+     *
+     * @var string $key
+     */
     public $key;
+
+    /**
+     * Secret.
+     *
+     * @var string $secret
+     */
     public $secret;
 
     /**
-     * key = the token
-     * secret = the token secret
+     * Class constructor.
+     *
+     * @param string $key     The token
+     * @param string $secret  The token secret
      */
     function __construct($key, $secret)
     {
@@ -27,8 +40,10 @@ class OAuthToken
     }
 
     /**
-     * generates the basic string serialization of a token that a server
-     * would respond to request_token and access_token calls with
+     * Generates the basic string serialization of a token that a server
+     * would respond to request_token and access_token calls with.
+     *
+     * @return string
      */
     function to_string()
     {
@@ -38,6 +53,11 @@ class OAuthToken
             OAuthUtil::urlencode_rfc3986($this->secret);
     }
 
+    /**
+     * Convert object to a string.
+     *
+     * @return string
+     */
     function __toString()
     {
         return $this->to_string();

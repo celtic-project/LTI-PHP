@@ -59,7 +59,7 @@ trait MoodleApi
      *
      * @param bool    $withGroups True is group information is to be requested as well
      *
-     * @return mixed Array of UserResult objects or False if the request was not successful
+     * @return array|bool  Array of UserResult objects or false if the request was not successful
      */
     private function get($withGroups)
     {
@@ -91,8 +91,9 @@ trait MoodleApi
     /**
      * Set groupings for resource link.
      *
-     * @param string $perPage  Maximum number of records per request
      * @param string $prefix  Group set name prefix
+     *
+     * @return bool  True if the request was successful
      */
     private function setGroupings($prefix)
     {
@@ -148,7 +149,7 @@ trait MoodleApi
      * @param string $perPage  Maximum number of records per request
      * @param bool $withGroups True is group information is to be requested as well
      *
-     * @return mixed Array of UserResult objects or False if the request was not successful
+     * @return array|bool  Array of UserResult objects or false if the request was not successful
      */
     private function getUsers($perPage, $withGroups)
     {
@@ -311,7 +312,7 @@ trait MoodleApi
      * Call the specified Moodle API method, passing the parameters provided.
      *
      * @param string $method The API method to call
-     * @param array $params The params to pass
+     * @param array $params The parameters to pass
      *
      * @return array|null The decoded response
      */

@@ -15,6 +15,20 @@ class SecurityContract
 {
 
     /**
+     * Shared secret.
+     *
+     * @var string|null $shared_secret
+     */
+    public $shared_secret = null;
+
+    /**
+     * Services.
+     *
+     * @var array|null $tool_service
+     */
+    public $tool_service = null;
+
+    /**
      * Class constructor.
      *
      * @param Tool    $tool  Tool instance

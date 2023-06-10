@@ -2,6 +2,8 @@
 
 namespace ceLTIc\LTI;
 
+use ceLTIc\LTI\Platform;
+use ceLTIc\LTI\Tool;
 use ceLTIc\LTI\OAuth;
 use ceLTIc\LTI\OAuth\OAuthConsumer;
 use ceLTIc\LTI\OAuth\OAuthToken;
@@ -20,14 +22,14 @@ class OAuthDataStore extends OAuth\OAuthDataStore
     /**
      * System object.
      *
-     * @var Tool|Platform|null $system
+     * @var Platform|Tool|null $system
      */
     private $system = null;
 
     /**
      * Class constructor.
      *
-     * @param Tool|Platform $system System object
+     * @param Platform|Tool $system  System object
      */
     public function __construct($system)
     {
@@ -64,9 +66,9 @@ class OAuthDataStore extends OAuth\OAuthDataStore
     /**
      * Create an OAuthToken object for the system.
      *
-     * @param string $consumer   OAuthConsumer object
-     * @param string $tokenType  Token type
-     * @param string $token      Token value
+     * @param string $consumer        OAuthConsumer object
+     * @param string|null $tokenType  Token type
+     * @param string|null $token      Token value
      *
      * @return OAuthToken OAuthToken object
      */
@@ -79,7 +81,7 @@ class OAuthDataStore extends OAuth\OAuthDataStore
      * Lookup nonce value for the system.
      *
      * @param OAuthConsumer $consumer  OAuthConsumer object
-     * @param string        $token     Token value
+     * @param OAuthToken    $token     Token value
      * @param string        $value     Nonce value
      * @param string        $timestamp Date/time of request
      *
@@ -108,9 +110,9 @@ class OAuthDataStore extends OAuth\OAuthDataStore
      * Get new request token.
      *
      * @param OAuthConsumer $consumer  OAuthConsumer object
-     * @param string        $callback  Callback URL
+     * @param string|null $callback    Callback URL
      *
-     * @return string Null value
+     * @return string|null Null value
      */
     function new_request_token($consumer, $callback = null)
     {
@@ -122,9 +124,9 @@ class OAuthDataStore extends OAuth\OAuthDataStore
      *
      * @param string        $token     Token value
      * @param OAuthConsumer $consumer  OAuthConsumer object
-     * @param string        $verifier  Verification code
+     * @param string|null $verifier    Verification code
      *
-     * @return string Null value
+     * @return string|null Null value
      */
     function new_access_token($token, $consumer, $verifier = null)
     {

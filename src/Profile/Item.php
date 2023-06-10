@@ -57,12 +57,12 @@ class Item
     /**
      * Class constructor.
      *
-     * @param string $id           ID of item (optional)
-     * @param string $name         Name of item (optional)
-     * @param string $description  Description of item (optional)
-     * @param string $url          URL of item (optional)
-     * @param string $version      Version of item (optional)
-     * @param int    $timestamp    Timestamp of item (optional)
+     * @param string $id                ID of item (optional)
+     * @param string|null $name         Name of item (optional)
+     * @param string|null $description  Description of item (optional)
+     * @param string|null $url          URL of item (optional)
+     * @param string|null $version      Version of item (optional)
+     * @param int|null $timestamp       Timestamp of item (optional)
      */
     function __construct($id = null, $name = null, $description = null, $url = null, $version = null, $timestamp = null)
     {

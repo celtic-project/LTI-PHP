@@ -7,7 +7,6 @@ use ceLTIc\LTI\Service;
 use ceLTIc\LTI\Http\HttpMessage;
 use ceLTIc\LTI\ApiHook\ApiHook;
 use DOMDocument;
-use DOMElement;
 
 /**
  * Class to represent a platform resource link
@@ -236,14 +235,14 @@ class ResourceLink
     /**
      * XML document for the last extension service request.
      *
-     * @var string|null $extDoc
+     * @var DOMDocument|null $extDoc
      */
     private $extDoc = null;
 
     /**
      * XML node array for the last extension service request.
      *
-     * @var object|null $extNodes
+     * @var array|null $extNodes
      */
     private $extNodes = null;
 
@@ -388,7 +387,7 @@ class ResourceLink
     /**
      * Set platform ID.
      *
-     * @param int $platformId  Platform ID for this resource link.
+     * @param int|null $platformId  Platform ID for this resource link.
      */
     public function setPlatformId($platformId)
     {
@@ -438,7 +437,7 @@ class ResourceLink
     /**
      * Set context ID.
      *
-     * @param int $contextId   Context ID for this resource link.
+     * @param int|null $contextId  Context ID for this resource link.
      */
     public function setContextId($contextId)
     {
@@ -481,7 +480,7 @@ class ResourceLink
     /**
      * Set resource link record ID.
      *
-     * @param int $id  Record ID for this resource link.
+     * @param int|string $id  Record ID for this resource link.
      */
     public function setRecordId($id)
     {
@@ -527,8 +526,8 @@ class ResourceLink
     /**
      * Set a setting value.
      *
-     * @param string $name  Name of setting
-     * @param string $value Value to set, use an empty value to delete a setting (optional, default is null)
+     * @param string            $name   Name of setting
+     * @param string|array|null $value  Value to set, use an empty value to delete a setting (optional, default is null)
      */
     public function setSetting($name, $value = null)
     {
@@ -634,9 +633,9 @@ class ResourceLink
     }
 
     /**
-     * Check if the Line Item service is available.
+     * Check if the Line-item service is available.
      *
-     * @return bool    True if this resource link supports the Line Item service
+     * @return bool    True if this resource link supports the Line-item service
      */
     public function hasLineItemService()
     {
@@ -884,7 +883,7 @@ EOF;
      *
      * @param bool    $withGroups True is group information is to be requested as well
      *
-     * @return mixed Array of UserResult objects or False if the request was not successful
+     * @return mixed Array of UserResult objects or false if the request was not successful
      */
     public function doMembershipsService($withGroups = false)
     {
@@ -896,10 +895,10 @@ EOF;
     /**
      * Perform a Setting service request.
      *
-     * @param int    $action The action type constant
-     * @param string $value  The setting value (optional, default is null)
+     * @param int         $action The action type constant
+     * @param string|null $value  The setting value (optional, default is null)
      *
-     * @return mixed The setting value for a read action, true if a write or delete action was successful, otherwise false
+     * @return string|bool The setting value for a read action, true if a write or delete action was successful, otherwise false
      */
     public function doSettingService($action, $value = null)
     {
@@ -971,7 +970,7 @@ EOF;
      * @param int      $mode       Mode for request (optional, default is current level only)
      * @param bool     $simple     True if all the simple media type is to be used (optional, default is true)
      *
-     * @return mixed The array of settings if successful, otherwise false
+     * @return array|bool The array of settings if successful, otherwise false
      */
     public function getToolSettings($mode = Service\ToolSettings::MODE_CURRENT_LEVEL, $simple = true)
     {
@@ -1039,7 +1038,7 @@ EOF;
      * @deprecated Use getMemberships() instead
      * @see ResourceLink::getMemberships()
      *
-     * @return mixed The array of UserResult objects if successful, otherwise false
+     * @return array|bool The array of UserResult objects if successful, otherwise false
      */
     public function getMembership()
     {
@@ -1051,9 +1050,9 @@ EOF;
     /**
      * Get Memberships.
      *
-     * @param bool    $withGroups True is group information is to be requested as well
+     * @param bool    $withGroups True if group information is to be requested as well
      *
-     * @return mixed The array of UserResult objects if successful, otherwise false
+     * @return array|bool The array of UserResult objects if successful, otherwise false
      */
     public function getMemberships($withGroups = false)
     {
@@ -1229,8 +1228,8 @@ EOF;
      * The array may include users from other resource links which are sharing this resource link.
      * It may also be optionally indexed by the user ID of a specified scope.
      *
-     * @param bool    $localOnly True if only users from this resource link are to be returned, not users from shared resource links (optional, default is false)
-     * @param int     $idScope     Scope to use for ID values (optional, default is null for platform default)
+     * @param bool     $localOnly True if only users from this resource link are to be returned, not users from shared resource links (optional, default is false)
+     * @param int|null $idScope   Scope to use for ID values (optional, default is null for platform default)
      *
      * @return UserResult[] Array of UserResult objects
      */
@@ -1250,11 +1249,11 @@ EOF;
     }
 
     /**
-     * Get line items.
+     * Get line-items.
      *
      * @param string|null  $resourceId         Tool resource ID
      * @param string|null  $tag                Tag
-     * @param int|null     $limit              Limit of line items to be returned in each request, null for service default
+     * @param int|null     $limit              Limit of line-items to be returned in each request, null for service default
      *
      * @return LineItem[]|bool  Array of LineItem objects or false on error
      */
@@ -1281,9 +1280,9 @@ EOF;
     }
 
     /**
-     * Create a new line item.
+     * Create a new line-item.
      *
-     * @param LineItem  $lineItem         Line item object
+     * @param LineItem  $lineItem         Line-item object
      *
      * @return bool  True if successful
      */
@@ -1369,7 +1368,7 @@ EOF;
      *
      * @param ToolConsumer $consumer            Consumer object
      * @param string $ltiResourceLinkId         Resource link ID value
-     * @param string $tempId                    Temporary Resource link ID value (optional, default is null)
+     * @param string|null $tempId               Temporary Resource link ID value (optional, default is null)
      *
      * @return ResourceLink
      */
@@ -1385,7 +1384,7 @@ EOF;
      *
      * @param Platform $platform                Platform object
      * @param string $ltiResourceLinkId         Resource link ID value
-     * @param string $tempId                    Temporary Resource link ID value (optional, default is null)
+     * @param string|null $tempId               Temporary Resource link ID value (optional, default is null)
      *
      * @return ResourceLink
      */
@@ -1410,9 +1409,9 @@ EOF;
     /**
      * Class constructor from context.
      *
-     * @param Context   $context                   Context object
-     * @param string    $ltiResourceLinkId         Resource link ID value
-     * @param string    $tempId                    Temporary Resource link ID value (optional, default is null)
+     * @param Context     $context                   Context object
+     * @param string      $ltiResourceLinkId         Resource link ID value
+     * @param string|null $tempId                    Temporary Resource link ID value (optional, default is null)
      *
      * @return ResourceLink
      */
@@ -1459,7 +1458,7 @@ EOF;
     /**
      * Load the resource link from the database.
      *
-     * @param int $id     Record ID of resource link (optional, default is null)
+     * @param int|null $id     Record ID of resource link (optional, default is null)
      *
      * @return bool    True if resource link was successfully loaded
      */
@@ -1474,8 +1473,8 @@ EOF;
     /**
      * Convert data type of value to a supported type if possible.
      *
-     * @param Outcome  $ltiOutcome     Outcome object
-     * @param array    $supportedTypes Array of outcome types to be supported (optional, default is null to use supported types reported in the last launch for this resource link)
+     * @param Outcome    $ltiOutcome     Outcome object
+     * @param array|null $supportedTypes Array of outcome types to be supported (optional, default is null to use supported types reported in the last launch for this resource link)
      *
      * @return bool    True if the type/value are valid and supported
      */
@@ -1785,9 +1784,9 @@ EOD;
     }
 
     /**
-     * Get the Line Item service object.
+     * Get the Line-item service object.
      *
-     * @return Service\\LineItem    Line Item service, or false if not available
+     * @return Service\LineItem    Line-item service, or false if not available
      */
     private function getLineItemService()
     {
@@ -1804,7 +1803,7 @@ EOD;
     /**
      * Convert DOM nodes to array.
      *
-     * @param DOMElement $node XML element
+     * @param DOMNode $node XML element
      *
      * @return array|string Array of XML document elements
      */

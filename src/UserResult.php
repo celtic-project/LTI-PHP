@@ -7,7 +7,7 @@ use ceLTIc\LTI\Platform;
 use ceLTIc\LTI\Context;
 
 /**
- * Class to represent a platform user
+ * Class to represent a platform user association with a resource link
  *
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
  * @copyright  SPV Software Products
@@ -26,14 +26,14 @@ class UserResult extends User
     /**
      * Date/time the record was created.
      *
-     * @var datetime|null $created
+     * @var int|null $created
      */
     public $created = null;
 
     /**
      * Date/time the record was last updated.
      *
-     * @var datetime|null $updated
+     * @var int|null $updated
      */
     public $updated = null;
 
@@ -54,7 +54,7 @@ class UserResult extends User
     /**
      * UserResult record ID value.
      *
-     * @var string|null $id
+     * @var int|null $id
      */
     private $id = null;
 
@@ -139,7 +139,7 @@ class UserResult extends User
     /**
      * Get record ID of user.
      *
-     * @return int Record ID of user
+     * @return int|null  Record ID of user
      */
     public function getRecordId()
     {
@@ -149,7 +149,7 @@ class UserResult extends User
     /**
      * Set record ID of user.
      *
-     * @param int $id  Record ID of user
+     * @param int|null $id  Record ID of user
      */
     public function setRecordId($id)
     {
@@ -159,7 +159,7 @@ class UserResult extends User
     /**
      * Set resource link ID of user.
      *
-     * @param int $resourceLinkId  Resource link ID of user
+     * @param int|null $resourceLinkId  Resource link ID of user
      */
     public function setResourceLinkId($resourceLinkId)
     {
@@ -170,7 +170,7 @@ class UserResult extends User
     /**
      * Get the data connector.
      *
-     * @return mixed Data connector object or string
+     * @return DataConnector|null  Data connector object
      */
     public function getDataConnector()
     {
@@ -180,7 +180,7 @@ class UserResult extends User
     /**
      * Set the data connector.
      *
-     * @param DataConnector $dataConnector  Data connector object
+     * @param DataConnector|null $dataConnector  Data connector object
      */
     public function setDataConnector($dataConnector)
     {
@@ -270,8 +270,8 @@ class UserResult extends User
     /**
      * Class constructor from resource link.
      *
-     * @param ResourceLink $resourceLink   ResourceLink object
-     * @param string       $ltiUserId      UserResult ID value
+     * @param ResourceLink|null $resourceLink  ResourceLink object
+     * @param string            $ltiUserId     UserResult ID value
      *
      * @return UserResult UserResult object
      */
@@ -298,7 +298,7 @@ class UserResult extends User
     /**
      * Load the user from the database.
      *
-     * @param int $id     Record ID of user (optional, default is null)
+     * @param int|null $id  Record ID of user (optional, default is null)
      *
      * @return bool    True if the user object was successfully loaded
      */

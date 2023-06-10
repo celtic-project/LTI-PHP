@@ -2,6 +2,8 @@
 
 namespace ceLTIc\LTI\ApiHook;
 
+use ceLTIc\LTI\Platform;
+
 /**
  * Class to implement services for a platform via its proprietary API
  *
@@ -15,14 +17,14 @@ class ApiPlatform
     /**
      * Platform object.
      *
-     * @var \ceLTIc\LTI\Platform|null $platform
+     * @var Platform|null $platform
      */
     protected $platform = null;
 
     /**
      * Class constructor.
      *
-     * @param \ceLTIc\LTI\Platform $platform
+     * @param Platform $platform
      */
     public function __construct($platform)
     {
@@ -31,6 +33,8 @@ class ApiPlatform
 
     /**
      * Check if the API hook has been configured.
+     *
+     * @return bool  True if the API hook has been configured
      */
     public function isConfigured()
     {
@@ -42,7 +46,7 @@ class ApiPlatform
      *
      * @param bool     $simple     True if all the simple media type is to be used (optional, default is true)
      *
-     * @return mixed The array of settings if successful, otherwise false
+     * @return array|bool  The array of settings if successful, otherwise false
      */
     public function getToolSettings($simple = true)
     {

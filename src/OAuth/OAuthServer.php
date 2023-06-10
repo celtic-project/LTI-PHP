@@ -3,25 +3,58 @@
 namespace ceLTIc\LTI\OAuth;
 
 /**
- * Class to represent an %OAuth Server
+ * Class to represent an OAuth server
  *
- * @copyright  Andy Smith
+ * @copyright  Andy Smith (http://oauth.googlecode.com/svn/code/php/)
  * @version  2008-08-04
  * @license  https://opensource.org/licenses/MIT The MIT License
  */
 class OAuthServer
 {
 
+    /**
+     * Timestamp threshhold.
+     *
+     * @var int $timestamp_threshold
+     */
     protected $timestamp_threshold = 300; // in seconds, five minutes
-    protected $version = '1.0';             // hi blaine
+
+    /**
+     * Version string.
+     *
+     * @var string $version
+     */
+    protected $version = '1.0';
+
+    /**
+     * Signature methods.
+     *
+     * @var array $signature_methods
+     */
     protected $signature_methods = array();
+
+    /**
+     * Data store.
+     *
+     * @var OAuthDataStore $data_store
+     */
     protected $data_store;
 
+    /**
+     * Class constructor.
+     *
+     * @param OAuthDataStore $data_store  Data store
+     */
     function __construct($data_store)
     {
         $this->data_store = $data_store;
     }
 
+    /**
+     * Add a signature method.
+     *
+     * @param OAuthSignatureMethod $signature_method  Signature method
+     */
     public function add_signature_method($signature_method)
     {
         $this->signature_methods[$signature_method->get_name()] = $signature_method;
@@ -30,8 +63,13 @@ class OAuthServer
     // high level functions
 
     /**
-     * process a request_token request
-     * returns the request token on success
+     * Process a request_token request
+     *
+     * Returns the request token on success
+     *
+     * @param OAuthRequest $request  Request
+     *
+     * @return OAuthToken|null
      */
     public function fetch_request_token(&$request)
     {
@@ -52,8 +90,13 @@ class OAuthServer
     }
 
     /**
-     * process an access_token request
-     * returns the access token on success
+     * Process an access_token request.
+     *
+     * Returns the access token on success
+     *
+     * @param OAuthRequest $request  Request
+     *
+     * @return OAuthToken|null
      */
     public function fetch_access_token(&$request)
     {
@@ -74,7 +117,11 @@ class OAuthServer
     }
 
     /**
-     * verify an api call, checks all the parameters
+     * Verify an API call, checks all the parameters.
+     *
+     * @param OAuthRequest $request  Request
+     *
+     * @return array
      */
     public function verify_request(&$request)
     {
@@ -89,7 +136,14 @@ class OAuthServer
     // Internals from here
 
     /**
+     * Get version.
+     *
      * version 1
+     *
+     * @param OAuthRequest $request  Request
+     *
+     * @return string
+     * @throws OAuthException
      */
     private function get_version(&$request)
     {
@@ -107,7 +161,12 @@ class OAuthServer
     }
 
     /**
-     * figure out the signature with some defaults
+     * Figure out the signature with some defaults
+     *
+     * @param OAuthRequest $request  Rauest
+     *
+     * return OAuthSignatureMethod
+     * @throws OAuthException
      */
     private function get_signature_method($request)
     {
@@ -121,9 +180,9 @@ class OAuthServer
 
         if (!in_array($signature_method, array_keys($this->signature_methods))) {
             throw new OAuthException(
-                "Signature method '$signature_method' not supported " .
-                'try one of the following: ' .
-                implode(', ', array_keys($this->signature_methods))
+                    "Signature method '$signature_method' not supported " .
+                    'try one of the following: ' .
+                    implode(', ', array_keys($this->signature_methods))
             );
         }
 
@@ -131,7 +190,12 @@ class OAuthServer
     }
 
     /**
-     * try to find the consumer for the provided request's consumer key
+     * Try to find the consumer for the provided request's consumer key.
+     *
+     * @param OAuthRequest $request  Request
+     *
+     * @return OAuthConsumer
+     * @throws OAuthException
      */
     private function get_consumer($request)
     {
@@ -150,7 +214,14 @@ class OAuthServer
     }
 
     /**
-     * try to find the token for the provided request's token key
+     * Try to find the token for the provided request's token key.
+     *
+     * @param OAuthRequest $request    Request
+     * @param OAuthConsumer $consumer  Consumer
+     * @param string $token_type       Token type
+     *
+     * @return OAuthToken
+     * @throws OAuthException
      */
     private function get_token($request, $consumer, $token_type = "access")
     {
@@ -165,8 +236,12 @@ class OAuthServer
     }
 
     /**
-     * all-in-one function to check the signature on a request
-     * should guess the signature method appropriately
+     * All-in-one function to check the signature on a request should guess the signature method appropriately.
+     *
+     * @param OAuthRequest $request    Request
+     * @param OAuthConsumer $consumer  Consumer
+     * @param OAuthToken $token        Token
+     * @throws OAuthException
      */
     private function check_signature($request, $consumer, $token)
     {
@@ -188,7 +263,10 @@ class OAuthServer
     }
 
     /**
-     * check that the timestamp is new enough
+     * Check that the timestamp is new enough.
+     *
+     * @param string|null $timestamp  Timestamp
+     * @throws OAuthException
      */
     private function check_timestamp($timestamp)
     {
@@ -203,7 +281,13 @@ class OAuthServer
     }
 
     /**
-     * check that the nonce is not repeated
+     * Check that the nonce is not repeated.
+     *
+     * @param OAuthConsumer $consumer  Consumer
+     * @param OAuthToken $token        Token
+     * @param string|null $nonce       Nonce value
+     * @param string|null $timestamp   Timestamp
+     * @throws OAuthException
      */
     private function check_nonce($consumer, $token, $nonce, $timestamp)
     {

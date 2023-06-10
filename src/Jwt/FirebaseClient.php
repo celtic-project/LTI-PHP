@@ -23,10 +23,39 @@ class FirebaseClient implements ClientInterface
      */
     const SUPPORTED_ALGORITHMS = array('RS256', 'RS384', 'RS512');
 
+    /**
+     * JSON web token string.
+     *
+     * @var string|null $jwtString
+     */
     private $jwtString = null;
+
+    /**
+     * Headers from JSON web token.
+     *
+     * @var object|null $jwtHeaders
+     */
     private $jwtHeaders = null;
+
+    /**
+     * Payload from JSON web token.
+     *
+     * @var object|null $jwtHeaders
+     */
     private $jwtPayload = null;
+
+    /**
+     * Headers from last JSON web token.
+     *
+     * @var object|null $lastHeaders
+     */
     private static $lastHeaders = null;
+
+    /**
+     * Payload from last JSON web token.
+     *
+     * @var object|null $lastPayload
+     */
     private static $lastPayload = null;
 
     /**
@@ -63,7 +92,7 @@ class FirebaseClient implements ClientInterface
      * Load a JWT from a string.
      *
      * @param string $jwtString  JWT string
-     * @param string $privateKey Private key in PEM format for decrypting encrypted tokens (optional)
+     * @param string|null $privateKey  Private key in PEM format for decrypting encrypted tokens (optional)
      *
      * @return bool True if the JWT was successfully loaded
      */
@@ -115,9 +144,9 @@ class FirebaseClient implements ClientInterface
      * Get the value of the header with the specified name.
      *
      * @param string $name  Header name
-     * @param string $defaultValue  Default value
+     * @param string|null $defaultValue  Default value
      *
-     * @return string The value of the header with the specified name, or the default value if it does not exist
+     * @return string|null  The value of the header with the specified name, or the default value if it does not exist
      */
     public function getHeader($name, $defaultValue = null)
     {
@@ -166,9 +195,9 @@ class FirebaseClient implements ClientInterface
      * Get the value of the claim with the specified name.
      *
      * @param string $name  Claim name
-     * @param string $defaultValue  Default value
+     * @param int|string|bool|array|object|null $defaultValue  Default value
      *
-     * @return string|array|object The value of the claim with the specified name, or the default value if it does not exist
+     * @return int|string|bool|array|object|null  The value of the claim with the specified name, or the default value if it does not exist
      */
     public function getClaim($name, $defaultValue = null)
     {
@@ -204,8 +233,8 @@ class FirebaseClient implements ClientInterface
     /**
      * Verify the signature of the JWT.
      *
-     * @param string $publicKey  Public key of issuer
-     * @param string $jku        JSON Web Key URL of issuer (optional)
+     * @param string|null $publicKey  Public key of issuer
+     * @param string|null $jku        JSON Web Key URL of issuer (optional)
      *
      * @return bool True if the JWT has a valid signature
      */
@@ -260,12 +289,13 @@ class FirebaseClient implements ClientInterface
      * @param  array $payload          Payload
      * @param string $signatureMethod  Signature method
      * @param string $privateKey       Private key in PEM format
-     * @param string $kid              Key ID (optional)
-     * @param string $jku              JSON Web Key URL (optional)
-     * @param string $encryptionMethod Encryption method (optional)
-     * @param string $publicKey        Public key of recipient for content encryption (optional)
+     * @param string|null $kid               Key ID (optional)
+     * @param string|null $jku               JSON Web Key URL (optional)
+     * @param string|null $encryptionMethod  Encryption method (optional)
+     * @param string|null $publicKey         Public key of recipient for content encryption (optional)
      *
      * @return string Signed JWT
+     * @throws Exception
      */
     public static function sign($payload, $signatureMethod, $privateKey, $kid = null, $jku = null, $encryptionMethod = null,
         $publicKey = null)
@@ -324,7 +354,7 @@ class FirebaseClient implements ClientInterface
      *
      * @param string $privateKey       Private key in PEM format
      *
-     * @return string Public key in PEM format
+     * @return string|null  Public key in PEM format
      */
     public static function getPublicKey($privateKey)
     {
@@ -343,7 +373,7 @@ class FirebaseClient implements ClientInterface
      *
      * @param string $pemKey           Private or public key in PEM format
      * @param string $signatureMethod  Signature method
-     * @param string $kid              Key ID (optional)
+     * @param string|null $kid         Key ID (optional)
      *
      * @return array  JWKS keys
      */

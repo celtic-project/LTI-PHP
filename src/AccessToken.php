@@ -26,7 +26,7 @@ class AccessToken
     /**
      * Timestamp at which the token string expires.
      *
-     * @var datetime|null $expires
+     * @var int|null $expires
      */
     public $expires = null;
 
@@ -38,7 +38,7 @@ class AccessToken
     public $scopes = array();
 
     /**
-     * Platform for this context.
+     * Platform for this token.
      *
      * @var Platform|null $platform
      */
@@ -63,8 +63,8 @@ class AccessToken
      *
      * @param Platform      $platform     Platform
      * @param array|null    $scopes       Scopes for which the access token is valid
-     * @param string        $token        Access token string
-     * @param datetime      $expires      Time in seconds after which the token string will expire
+     * @param string|null   $token        Access token string
+     * @param int|null      $expires      Time in seconds after which the token string will expire
      */
     public function __construct($platform, $scopes = null, $token = null, $expires = null)
     {

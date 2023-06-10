@@ -15,7 +15,7 @@ class Image
     /**
      * URL of image.
      *
-     * @var string $url
+     * @var string|null $url
      */
     private $url = null;
 
@@ -36,9 +36,9 @@ class Image
     /**
      * Class constructor.
      *
-     * @param string $url     URL of image
-     * @param int    $width   Width of image in pixels (optional)
-     * @param int    $height  Height of image in pixels (optional)
+     * @param string   $url     URL of image
+     * @param int|null $width   Width of image in pixels (optional)
+     * @param int|null $height  Height of image in pixels (optional)
      */
     function __construct($url, $width = null, $height = null)
     {
@@ -50,7 +50,7 @@ class Image
     /**
      * Generate the JSON-LD object representation of the image.
      *
-     * @return object
+     * @return object  JSON object
      */
     public function toJsonldObject()
     {
@@ -69,7 +69,7 @@ class Image
     /**
      * Generate the JSON object representation of the image.
      *
-     * @return object
+     * @return object  JSON object
      */
     public function toJsonObject()
     {

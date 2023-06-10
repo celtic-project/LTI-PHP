@@ -87,7 +87,7 @@ class ResourceLinkShareKey
      * Class constructor.
      *
      * @param ResourceLink $resourceLink  ResourceLink object
-     * @param string       $id      Value of share key (optional, default is null)
+     * @param string|null  $id      Value of share key (optional, default is null)
      */
     public function __construct($resourceLink, $id = null)
     {

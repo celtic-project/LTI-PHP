@@ -8,6 +8,7 @@ use ceLTIc\LTI\ResourceLink;
 use ceLTIc\LTI\ResourceLinkShare;
 use ceLTIc\LTI\ResourceLinkShareKey;
 use ceLTIc\LTI\Platform;
+use ceLTIc\LTI\AccessToken;
 use ceLTIc\LTI\UserResult;
 use ceLTIc\LTI\Tool;
 use ceLTIc\LTI\Util;
@@ -103,7 +104,7 @@ class DataConnector
     /**
      * memcache object.
      *
-     * @var object $memcache
+     * @var object|null $memcache
      */
     private static $memcache = null;
 
@@ -391,7 +392,7 @@ class DataConnector
      *
      * @param ResourceLink $resourceLink      Resource link object
      * @param bool         $localOnly True if only users within the resource link are to be returned (excluding users sharing this resource link)
-     * @param int          $idScope     Scope value to use for user IDs
+     * @param int|null     $idScope     Scope value to use for user IDs
      *
      * @return UserResult[] Array of UserResult objects
      */
@@ -738,7 +739,7 @@ class DataConnector
     }
 
     /**
-     * Load platform objects.
+     * Load tool objects.
      *
      * @return Tool[] Array of all defined Tool objects
      */

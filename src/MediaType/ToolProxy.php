@@ -16,6 +16,34 @@ class ToolProxy
 {
 
     /**
+     * LTI version.
+     *
+     * @var string|null $lti_version
+     */
+    public $lti_version = null;
+
+    /**
+     * Endpoint for tool consumer profile.
+     *
+     * @var string|null $tool_consumer_profile
+     */
+    public $tool_consumer_profile = null;
+
+    /**
+     * Tool profile.
+     *
+     * @var ToolProfile|null $tool_profile
+     */
+    public $tool_profile = null;
+
+    /**
+     * Security contract.
+     *
+     * @var SecurityContract|null $security_contract
+     */
+    public $security_contract = null;
+
+    /**
      * Class constructor.
      *
      * @param Tool              $tool   Tool  object

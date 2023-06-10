@@ -45,18 +45,18 @@ class LineItem
     /**
      * Submission review.
      *
-     * @var SubmissionReview $submissionReview
+     * @var SubmissionReview|null $submissionReview
      */
     private $submissionReview = null;
 
     /**
      * Class constructor.
      *
-     * @param string  $label          Label
-     * @param int     $scoreMaximum   Maximum score
-     * @param string  $resourceId     Resource ID (optional)
-     * @param string  $tag            Tag (optional)
-     * @param SubmissionReview $submissionReview  Submission Review (optional)
+     * @param string                $label             Label
+     * @param int                   $scoreMaximum      Maximum score
+     * @param string|null           $resourceId        Resource ID (optional)
+     * @param string|null           $tag               Tag (optional)
+     * @param SubmissionReview|null $submissionReview  Submission Review (optional)
      */
     function __construct($label, $scoreMaximum, $resourceId = null, $tag = null, $submissionReview = null)
     {
@@ -70,7 +70,7 @@ class LineItem
     /**
      * Generate the JSON-LD object representation of the line-item.
      *
-     * @return object
+     * @return object  JSON object
      */
     public function toJsonldObject()
     {
@@ -96,7 +96,7 @@ class LineItem
     /**
      * Generate the JSON object representation of the line-item.
      *
-     * @return object
+     * @return object  JSON object
      */
     public function toJsonObject()
     {

@@ -43,15 +43,15 @@ class LtiLinkItem extends Item
     /**
      * Do not allow the item to be updated?
      *
-     * @var bool $noUpdate
+     * @var bool|null $noUpdate
      */
     private $noUpdate = null;
 
     /**
      * Class constructor.
      *
-     * @param Placement[]|Placement $placementAdvices  Array of Placement objects (or single placement object) for item (optional)
-     * @param string $id   URL of content-item (optional)
+     * @param Placement[]|Placement|null $placementAdvices  Array of Placement objects (or single placement object) for item (optional)
+     * @param string|nul $id   URL of content-item (optional)
      */
     function __construct($placementAdvices = null, $id = null)
     {
@@ -119,7 +119,7 @@ class LtiLinkItem extends Item
     /**
      * Wrap the content item to form an item complying with the application/vnd.ims.lti.v1.contentitems+json media type.
      *
-     * @return object
+     * @return object  JSON object
      */
     public function toJsonldObject()
     {
@@ -146,7 +146,7 @@ class LtiLinkItem extends Item
     /**
      * Wrap the content items to form a complete value for the https://purl.imsglobal.org/spec/lti-dl/claim/content_items claim.
      *
-     * @return object
+     * @return object  JSON object
      */
     public function toJsonObject()
     {

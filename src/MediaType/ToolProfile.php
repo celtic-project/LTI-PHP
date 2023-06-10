@@ -15,11 +15,32 @@ class ToolProfile
 {
 
     /**
+     * LTI version.
+     *
+     * @var string $lti_version
+     */
+    public $lti_version;
+
+    /**
      * Product instance object.
      *
      * @var object $product_instance
      */
     public $product_instance;
+
+    /**
+     * Resource handlers.
+     *
+     * @var array $resource_handler
+     */
+    public $resource_handler;
+
+    /**
+     * Base URLs.
+     *
+     * @var array $base_url_choice
+     */
+    public $base_url_choice;
 
     /**
      * Class constructor.

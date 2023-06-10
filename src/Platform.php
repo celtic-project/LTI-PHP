@@ -21,6 +21,8 @@ class Platform
 
     /**
      * List of supported incoming message types.
+     *
+     * @var array $MESSAGE_TYPES
      */
     public static $MESSAGE_TYPES = array(
         'ContentItemSelection',
@@ -44,42 +46,42 @@ class Platform
     /**
      * Platform ID.
      *
-     * @var string $platformId
+     * @var string|null $platformId
      */
     public $platformId = null;
 
     /**
      * Client ID.
      *
-     * @var string $clientId
+     * @var string|null $clientId
      */
     public $clientId = null;
 
     /**
      * Deployment ID.
      *
-     * @var string $deploymentId
+     * @var string|null $deploymentId
      */
     public $deploymentId = null;
 
     /**
      * Authorization server ID.
      *
-     * @var string $authorizationServerId
+     * @var string|null $authorizationServerId
      */
     public $authorizationServerId = null;
 
     /**
      * Login authentication URL.
      *
-     * @var string $authenticationUrl
+     * @var string|null $authenticationUrl
      */
     public $authenticationUrl = null;
 
     /**
      * Access Token service URL.
      *
-     * @var string $accessTokenUrl
+     * @var string|null $accessTokenUrl
      */
     public $accessTokenUrl = null;
 
@@ -170,7 +172,7 @@ class Platform
     /**
      * Class constructor.
      *
-     * @param DataConnector   $dataConnector   A data connector object
+     * @param DataConnector|null $dataConnector  A data connector object
      */
     public function __construct($dataConnector = null)
     {
@@ -251,7 +253,7 @@ class Platform
      *
      * The ID will be the consumer key if one exists, otherwise a concatenation of the platform/client/deployment IDs
      *
-     * @return string  Platform ID value
+     * @return string|null  Platform ID value
      */
     public function getId()
     {
@@ -304,7 +306,7 @@ class Platform
     /**
      * Get the authorization access token
      *
-     * @return AccessToken Access token
+     * @return AccessToken|null  Access token
      */
     public function getAccessToken()
     {
@@ -360,7 +362,7 @@ class Platform
      *
      * @param bool     $simple     True if all the simple media type is to be used (optional, default is true)
      *
-     * @return mixed The array of settings if successful, otherwise false
+     * @return array|bool  The array of settings if successful, otherwise false
      */
     public function getToolSettings($simple = true)
     {
@@ -484,9 +486,9 @@ class Platform
     /**
      * Load the platform from the database by its consumer key.
      *
-     * @param string          $key             Consumer key
+     * @param string|null     $key             Consumer key
      * @param DataConnector   $dataConnector   A data connector object
-     * @param bool            $autoEnable      true if the platform is to be enabled automatically (optional, default is false)
+     * @param bool            $autoEnable      True if the platform is to be enabled automatically (optional, default is false)
      *
      * @return Platform       The platform object
      */
@@ -508,8 +510,8 @@ class Platform
      * Load the platform from the database by its platform, client and deployment IDs.
      *
      * @param string          $platformId       The platform ID
-     * @param string          $clientId         The client ID
-     * @param string          $deploymentId     The deployment ID
+     * @param string|null     $clientId         The client ID
+     * @param string|null     $deploymentId     The deployment ID
      * @param DataConnector   $dataConnector    A data connector object
      * @param bool            $autoEnable       True if the platform is to be enabled automatically (optional, default is false)
      *
@@ -533,7 +535,7 @@ class Platform
     /**
      * Load the platform from the database by its record ID.
      *
-     * @param string          $id               The platform record ID
+     * @param int|string      $id               The platform record ID
      * @param DataConnector   $dataConnector    A data connector object
      *
      * @return Platform       The platform object
@@ -705,10 +707,10 @@ EOD;
      *
      * Override this method to save the data elsewhere.
      *
-     * @param string   $url               The message URL
-     * @param string   $loginHint         The ID of the user
-     * @param string   $ltiMessageHint    The message hint being sent to the tool
-     * @param array    $params            An associative array of message parameters
+     * @param string       $url               The message URL
+     * @param string       $loginHint         The ID of the user
+     * @param string|null  $ltiMessageHint    The message hint being sent to the tool
+     * @param array        $params            An associative array of message parameters
      */
     protected function onInitiateLogin(&$url, &$loginHint, &$ltiMessageHint, $params)
     {

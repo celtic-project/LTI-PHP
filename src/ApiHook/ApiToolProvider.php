@@ -3,6 +3,7 @@
 namespace ceLTIc\LTI\ApiHook;
 
 use ceLTIc\LTI\Util;
+use ceLTIc\LTI\ToolProvider;
 
 /**
  * Class to implement tool provider specific functions for LTI messages
@@ -20,7 +21,7 @@ class ApiToolProvider extends ApiTool
     /**
      * Class constructor.
      *
-     * @param \ceLTIc\LTI\ToolProvider|null $toolProvider
+     * @param ToolProvider|null $toolProvider
      */
     public function __construct($toolProvider)
     {

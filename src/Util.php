@@ -170,6 +170,8 @@ final class Util
 
     /**
      * List of supported message types and associated class methods.
+     *
+     * @var array $METHOD_NAMES
      */
     public static $METHOD_NAMES = array(
         'basic-lti-launch-request' => 'onLaunch',
@@ -187,6 +189,8 @@ final class Util
 
     /**
      * GET and POST request parameters
+     *
+     * @var array|null $requestParameters
      */
     public static $requestParameters = null;
 
@@ -240,8 +244,6 @@ final class Util
      *
      * @param string  $message     Message to be logged
      * @param bool    $showSource  True if the name and line number of the current file are to be included
-     *
-     * @return void
      */
     public static function logError($message, $showSource = true)
     {
@@ -255,8 +257,6 @@ final class Util
      *
      * @param string  $message     Message to be logged
      * @param bool    $showSource  True if the name and line number of the current file are to be included
-     *
-     * @return void
      */
     public static function logInfo($message, $showSource = false)
     {
@@ -270,8 +270,6 @@ final class Util
      *
      * @param string  $message     Message to be logged
      * @param bool    $showSource  True if the name and line number of the current file are to be included
-     *
-     * @return void
      */
     public static function logDebug($message, $showSource = false)
     {
@@ -284,8 +282,6 @@ final class Util
      * Log a request received.
      *
      * @param bool    $debugLevel  True if the request details should be logged at the debug level (optional, default is false for information level)
-     *
-     * @return void
      */
     public static function logRequest($debugLevel = false)
     {
@@ -320,8 +316,6 @@ final class Util
      * @param array  $params      Array of form parameters
      * @param string $method      HTTP Method used to submit form (optional, default is POST)
      * @param bool   $debugLevel  True if the form details should always be logged (optional, default is false to use current log level)
-     *
-     * @return void
      */
     public static function logForm($url, $params, $method = 'POST', $debugLevel = false)
     {
@@ -350,8 +344,6 @@ final class Util
      *
      * @param string  $message     Message to be logged
      * @param bool    $showSource  True if the name and line number of the current file are to be included
-     *
-     * @return void
      */
     public static function log($message, $showSource = false)
     {
@@ -457,7 +449,7 @@ EOD;
      * @param string $url         URL to which the form should be submitted
      * @param array    $params    Array of form parameters
      *
-     * @return void
+     * @return never
      */
     public static function redirect($url, $params)
     {
@@ -492,8 +484,6 @@ EOD;
      * Set or delete a test cookie.
      *
      * @param bool $delete  True if the cookie is to be deleted (optional, default is false)
-     *
-     * @return void
      */
     public static function setTestCookie($delete = false)
     {
