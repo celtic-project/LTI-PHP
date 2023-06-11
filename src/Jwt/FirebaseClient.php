@@ -101,8 +101,8 @@ class FirebaseClient implements ClientInterface
         $sections = explode('.', $jwtString);
         $ok = count($sections) === 3;
         if ($ok) {
-            $headers = json_decode(JWT::urlsafeB64Decode($sections[0]));
-            $payload = json_decode(JWT::urlsafeB64Decode($sections[1]));
+            $headers = Util::jsonDecode(JWT::urlsafeB64Decode($sections[0]));
+            $payload = Util::jsonDecode(JWT::urlsafeB64Decode($sections[1]));
             $ok = !is_null($headers) && !is_null($payload);
         }
         if ($ok) {
@@ -244,7 +244,7 @@ class FirebaseClient implements ClientInterface
         $hasPublicKey = !empty($publicKey);
         if ($hasPublicKey) {
             if (is_string($publicKey)) {
-                $json = json_decode($publicKey, true);
+                $json = Util::jsonDecode($publicKey, true);
                 if (!is_null($json)) {
                     try {
                         $jwks = array('keys' => array($json));
@@ -307,8 +307,8 @@ class FirebaseClient implements ClientInterface
         }
         $jwtString = JWT::encode($payload, $privateKey, $signatureMethod, $kid);
         $sections = explode('.', $jwtString);
-        self::$lastHeaders = json_decode(JWT::urlsafeB64Decode($sections[0]));
-        self::$lastPayload = json_decode(JWT::urlsafeB64Decode($sections[1]));
+        self::$lastHeaders = Util::jsonDecode(JWT::urlsafeB64Decode($sections[0]));
+        self::$lastPayload = Util::jsonDecode(JWT::urlsafeB64Decode($sections[1]));
 
         return $jwtString;
     }
@@ -418,7 +418,7 @@ class FirebaseClient implements ClientInterface
         $publicKey = array();
         $http = new HttpMessage($jku);
         if ($http->send()) {
-            $keys = json_decode($http->response, true);
+            $keys = Util::jsonDecode($http->response, true);
             if (is_array($keys)) {
                 try {
                     $publicKey = static::parseKeySet($keys);

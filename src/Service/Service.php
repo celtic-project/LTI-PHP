@@ -164,7 +164,7 @@ class Service
 // Connect to platform and parse JSON response
             $this->http = new HttpMessage($url, $method, $body, $header);
             if ($this->http->send() && !empty($this->http->response)) {
-                $this->http->responseJson = json_decode($this->http->response);
+                $this->http->responseJson = Util::jsonDecode($this->http->response);
                 $this->http->ok = !is_null($this->http->responseJson);
             }
             $retry = $retry && !$retried && !$this->http->ok;

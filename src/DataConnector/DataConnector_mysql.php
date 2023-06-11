@@ -124,9 +124,9 @@ class DataConnector_mysql extends DataConnector
                 $platform->consumerName = $row->consumer_name;
                 $platform->consumerVersion = $row->consumer_version;
                 $platform->consumerGuid = $row->consumer_guid;
-                $platform->profile = json_decode($row->profile);
+                $platform->profile = Util::jsonDecode($row->profile);
                 $platform->toolProxy = $row->tool_proxy;
-                $settings = json_decode($row->settings, true);
+                $settings = Util::jsonDecode($row->settings, true);
                 if (!is_array($settings)) {
                     $settings = @unserialize($row->settings);  // check for old serialized setting
                 }
@@ -359,9 +359,9 @@ class DataConnector_mysql extends DataConnector
                 $platform->consumerName = $row->consumer_name;
                 $platform->consumerVersion = $row->consumer_version;
                 $platform->consumerGuid = $row->consumer_guid;
-                $platform->profile = json_decode($row->profile);
+                $platform->profile = Util::jsonDecode($row->profile);
                 $platform->toolProxy = $row->tool_proxy;
-                $settings = json_decode($row->settings, true);
+                $settings = Util::jsonDecode($row->settings, true);
                 if (!is_array($settings)) {
                     $settings = @unserialize($row->settings);  // check for old serialized setting
                 }
@@ -427,7 +427,7 @@ class DataConnector_mysql extends DataConnector
                 $context->title = $row->title;
                 $context->ltiContextId = $row->lti_context_id;
                 $context->type = $row->type;
-                $settings = json_decode($row->settings, true);
+                $settings = Util::jsonDecode($row->settings, true);
                 if (!is_array($settings)) {
                     $settings = @unserialize($row->settings);  // check for old serialized setting
                 }
@@ -583,7 +583,7 @@ class DataConnector_mysql extends DataConnector
                 }
                 $resourceLink->title = $row->title;
                 $resourceLink->ltiResourceLinkId = $row->lti_resource_link_id;
-                $settings = json_decode($row->settings, true);
+                $settings = Util::jsonDecode($row->settings, true);
                 if (!is_array($settings)) {
                     $settings = @unserialize($row->settings);  // check for old serialized setting
                 }
@@ -904,7 +904,7 @@ class DataConnector_mysql extends DataConnector
             if ($rsAccessToken) {
                 $row = mysql_fetch_object($rsAccessToken);
                 if ($row) {
-                    $scopes = json_decode($row->scopes, true);
+                    $scopes = Util::jsonDecode($row->scopes, true);
                     if (!is_array($scopes)) {
                         $scopes = array();
                     }
@@ -1179,14 +1179,14 @@ class DataConnector_mysql extends DataConnector
                 $tool->secret = $row->secret;
                 $tool->messageUrl = $row->message_url;
                 $tool->initiateLoginUrl = $row->initiate_login_url;
-                $tool->redirectionUris = json_decode($row->redirection_uris, true);
+                $tool->redirectionUris = Util::jsonDecode($row->redirection_uris, true);
                 if (!is_array($tool->redirectionUris)) {
                     $tool->redirectionUris = array();
                 }
                 $tool->rsaKey = $row->public_key;
                 $tool->ltiVersion = $row->lti_version;
                 $tool->signatureMethod = $row->signature_method;
-                $settings = json_decode($row->settings, true);
+                $settings = Util::jsonDecode($row->settings, true);
                 if (!is_array($settings)) {
                     $settings = array();
                 }
@@ -1323,14 +1323,14 @@ class DataConnector_mysql extends DataConnector
                 $tool->secret = $row->secret;
                 $tool->messageUrl = $row->message_url;
                 $tool->initiateLoginUrl = $row->initiate_login_url;
-                $tool->redirectionUris = json_decode($row->redirection_uris, true);
+                $tool->redirectionUris = Util::jsonDecode($row->redirection_uris, true);
                 if (!is_array($tool->redirectionUris)) {
                     $tool->redirectionUris = array();
                 }
                 $tool->rsaKey = $row->public_key;
                 $tool->ltiVersion = $row->lti_version;
                 $tool->signatureMethod = $row->signature_method;
-                $settings = json_decode($row->settings, true);
+                $settings = Util::jsonDecode($row->settings, true);
                 if (!is_array($settings)) {
                     $settings = array();
                 }

@@ -126,7 +126,7 @@ class SpomkyLabsClient implements ClientInterface
             $this->jwt = $loader->load($jwtString);
             $parts = explode('.', $jwtString);
             if (count($parts) >= 2) {
-                $this->payload = json_decode(Base64Url::decode($parts[1]));
+                $this->payload = Util::jsonDecode(Base64Url::decode($parts[1]));
             }
             $this->decrypt($privateKey);
         } catch (\Exception $e) {
@@ -490,7 +490,7 @@ class SpomkyLabsClient implements ClientInterface
             $this->jwt = $loader->load($jwtString);
             $parts = explode('.', $jwtString);
             if (count($parts) >= 2) {
-                $this->payload = json_decode(Base64Url::decode($parts[1]));
+                $this->payload = Util::jsonDecode(Base64Url::decode($parts[1]));
             }
             $ok = $this->jwt instanceof JWS;
         }
@@ -506,7 +506,7 @@ class SpomkyLabsClient implements ClientInterface
      */
     private static function getJwk($key, $additionalValues)
     {
-        $keyValues = json_decode($key, true);
+        $keyValues = Util::jsonDecode($key, true);
         if (!is_array($keyValues)) {
             $jwk = JWKFactory::createFromKey($key, null, $additionalValues);
         } else {

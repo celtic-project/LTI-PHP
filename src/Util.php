@@ -550,6 +550,25 @@ EOD;
     }
 
     /**
+     * Decode a JSON string.
+     *
+     * @param string|null $str   The JSON string to be decoded
+     * @param bool $associative  True to return JSON objects as associative arrays
+     *
+     * @return mixed
+     */
+    public static function jsonDecode($str, $associative = false)
+    {
+        if (!empty($str)) {
+            $json = \json_decode($str, $associative);
+        } else {
+            $json = null;
+        }
+
+        return $json;
+    }
+
+    /**
      * Clone an object and any objects it contains.
      *
      * @param object $obj   Object to be cloned

@@ -122,7 +122,7 @@ class WebTokenClient implements ClientInterface
             }
         }
         if ($ok) {
-            $this->claims = json_decode($this->jwt->getPayload());
+            $this->claims = Util::jsonDecode($this->jwt->getPayload());
         }
 
         return $ok;
@@ -280,7 +280,7 @@ class WebTokenClient implements ClientInterface
                     new Checker\ExpirationTimeChecker($leeway)
                     ]
                 );
-                $claimCheckerManager->check(json_decode($this->jwt->getPayload(), true));
+                $claimCheckerManager->check(Util::jsonDecode($this->jwt->getPayload(), true));
                 $algorithmManager = new Core\AlgorithmManager([
                     new Signature\Algorithm\RS256(),
                     new Signature\Algorithm\RS384(),
@@ -302,7 +302,7 @@ class WebTokenClient implements ClientInterface
                             $jwks = $this->fetchPublicKey($jwksUrl, $this->getHeader('kid'));
                             $ok = $jwsVerifier->verifyWithKeySet($this->jwt, $jwks, 0);
                         } else {
-                            $json = json_decode($publicKey, true);
+                            $json = Util::jsonDecode($publicKey, true);
                             if (is_null($json)) {
                                 $jwk = self::getJwk($publicKey, ['alg' => $this->getHeader('alg'), 'use' => 'sig']);
                             } else {
@@ -525,7 +525,7 @@ class WebTokenClient implements ClientInterface
      */
     private static function getJwk($key, $additionalValues)
     {
-        $keyValues = json_decode($key, true);
+        $keyValues = Util::jsonDecode($key, true);
         if (!is_array($keyValues)) {
             $jwk = KeyManagement\JWKFactory::createFromKey($key, null, $additionalValues);
         } else {
