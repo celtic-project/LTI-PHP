@@ -1578,7 +1578,7 @@ class DataConnector_pdo extends DataConnector
                 }
                 $tool->lastAccess = null;
                 if (!is_null($row['last_access'])) {
-                    $platform->lastAccess = strtotime($row['last_access']);
+                    $tool->lastAccess = strtotime($row['last_access']);
                 }
                 $tool->created = strtotime($row['created']);
                 $tool->updated = strtotime($row['updated']);
