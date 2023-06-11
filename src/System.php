@@ -29,6 +29,20 @@ trait System
     public $ok = true;
 
     /**
+     * LTI version.
+     *
+     * @var string|null $ltiVersion
+     */
+    public $ltiVersion = null;
+
+    /**
+     * Local name of platform/tool.
+     *
+     * @var string|null $name
+     */
+    public $name = null;
+
+    /**
      * Shared secret.
      *
      * @var string|null $secret
@@ -100,6 +114,13 @@ trait System
      * @var array $details
      */
     public $details = array();
+
+    /**
+     * Warnings relating to last request processed.
+     *
+     * @var array $warnings
+     */
+    public $warnings = array();
 
     /**
      * Whether debug level messages are to be reported.

@@ -86,13 +86,6 @@ class Platform
     public $accessTokenUrl = null;
 
     /**
-     * LTI version (as reported by last platform connection).
-     *
-     * @var string|null $ltiVersion
-     */
-    public $ltiVersion = null;
-
-    /**
      * Name of platform (as reported by last platform connection).
      *
      * @var string|null $consumerName

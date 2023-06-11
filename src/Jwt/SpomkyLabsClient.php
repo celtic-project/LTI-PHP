@@ -473,8 +473,6 @@ class SpomkyLabsClient implements ClientInterface
      * Decrypt the JWT.
      *
      * @param string $privateKey       Private key in PEM format
-     *
-     * @return bool  True if successful
      */
     private function decrypt($privateKey)
     {

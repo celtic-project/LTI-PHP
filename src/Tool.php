@@ -226,13 +226,6 @@ class Tool
     public $message = null;
 
     /**
-     * Warnings relating to last request processed.
-     *
-     * @var array $warnings
-     */
-    public $warnings = array();
-
-    /**
      * Base URL for tool service
      *
      * @var string|null $baseUrl
@@ -651,7 +644,7 @@ class Tool
     {
         Util::logDebug('Method ceLTIc\LTI\Tool::sendForm() has been deprecated; please use ceLTIc\LTI\Util::sendForm() instead.',
             true);
-        Util::sendForm($url, $params, $target);
+        return Util::sendForm($url, $params, $target);
     }
 
 ###
@@ -1278,7 +1271,7 @@ EOD;
                     if (isset($this->messageParameters['data'])) {
                         $formParams['data'] = $this->messageParameters['data'];
                     }
-                    $this->version = (isset($this->messageParameters['lti_version'])) ? $this->messageParameters['lti_version'] : Util::LTI_VERSION1;
+                    $this->ltiVersion = (isset($this->messageParameters['lti_version'])) ? $this->messageParameters['lti_version'] : Util::LTI_VERSION1;
                     $page = $this->sendMessage($errorUrl, 'ContentItemSelection', $formParams);
                     echo $page;
                 } else {
