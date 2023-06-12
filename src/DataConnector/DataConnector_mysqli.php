@@ -1497,7 +1497,11 @@ class DataConnector_mysqli extends DataConnector
      */
     private function executeQuery($sql, $stmt, $reportError = true)
     {
-        $ok = $stmt->execute();
+        try {
+            $ok = $stmt->execute();
+        } catch (\Exception $e) {
+            $ok = false;
+        }
         $info = $this->db->info;
         if (!empty($info)) {
             $info = PHP_EOL . $info;
