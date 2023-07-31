@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\OAuth;
 
@@ -22,7 +23,7 @@ abstract class OAuthSignatureMethod
      *
      * @return string
      */
-    abstract public function get_name();
+    abstract public function get_name(): string;
 
     /**
      * Build up the signature.
@@ -37,7 +38,7 @@ abstract class OAuthSignatureMethod
      *
      * @return string
      */
-    abstract public function build_signature($request, $consumer, $token);
+    abstract public function build_signature(OAuthRequest $request, OAuthConsumer $consumer, ?OAuthToken $token): string;
 
     /**
      * Verifies that a given signature is correct.
@@ -49,16 +50,16 @@ abstract class OAuthSignatureMethod
      *
      * @return bool
      */
-    public function check_signature($request, $consumer, $token, $signature)
+    public function check_signature(OAuthRequest $request, OAuthConsumer $consumer, ?OAuthToken $token, string $signature): bool
     {
         $built = $this->build_signature($request, $consumer, $token);
 
         // Check for zero length, although unlikely here
-        if (strlen($built) == 0 || strlen($signature) == 0) {
+        if ((strlen($built) === 0) || (strlen($signature) === 0)) {
             return false;
         }
 
-        if (strlen($built) != strlen($signature)) {
+        if (strlen($built) !== strlen($signature)) {
             return false;
         }
 
@@ -68,7 +69,7 @@ abstract class OAuthSignatureMethod
             $result |= ord($built[$i]) ^ ord($signature[$i]);
         }
 
-        return $result == 0;
+        return $result === 0;
     }
 
 }

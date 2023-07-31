@@ -22,7 +22,7 @@ class MoodleApiResourceLink extends ApiResourceLink
      *
      * @param ResourceLink $resourceLink
      */
-    public function __construct($resourceLink)
+    public function __construct(ResourceLink $resourceLink)
     {
         parent::__construct($resourceLink);
         $this->sourceObject = $resourceLink;
@@ -31,11 +31,11 @@ class MoodleApiResourceLink extends ApiResourceLink
     /**
      * Get memberships.
      *
-     * @param bool    $withGroups True is group information is to be requested as well
+     * @param bool $withGroups  True is group information is to be requested as well
      *
      * @return array|bool  Array of UserResult objects or false if the request was not successful
      */
-    public function getMemberships($withGroups)
+    public function getMemberships(bool $withGroups): array|bool
     {
         if (!empty($this->resourceLink->getContextId())) {
             $this->courseId = $this->resourceLink->getContext()->ltiContextId;

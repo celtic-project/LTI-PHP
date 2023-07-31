@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\Profile;
 
@@ -18,46 +19,46 @@ class Message
      *
      * @var string|null $type
      */
-    public $type = null;
+    public ?string $type = null;
 
     /**
      * Path to send message request to (used in conjunction with a base URL for the Tool).
      *
      * @var string|null $path
      */
-    public $path = null;
+    public ?string $path = null;
 
     /**
      * Capabilities required by message.
      *
      * @var array|null $capabilities
      */
-    public $capabilities = null;
+    public ?array $capabilities = null;
 
     /**
      * Variable parameters to accompany message request.
      *
      * @var array|null $variables
      */
-    public $variables = null;
+    public ?array $variables = null;
 
     /**
      * Fixed parameters to accompany message request.
      *
      * @var array|null $constants
      */
-    public $constants = null;
+    public ?array $constants = null;
 
     /**
      * Class constructor.
      *
-     * @param string $type          LTI message type
-     * @param string $path          Path to send message request to
-     * @param array  $capabilities  Array of capabilities required by message
-     * @param array  $variables     Array of variable parameters to accompany message request
-     * @param array  $constants     Array of fixed parameters to accompany message request
+     * @param string $type         LTI message type
+     * @param string $path         Path to send message request to
+     * @param array $capabilities  Array of capabilities required by message
+     * @param array $variables     Array of variable parameters to accompany message request
+     * @param array $constants     Array of fixed parameters to accompany message request
      */
-    function __construct($type, $path, $capabilities = array(), $variables = array(), $constants = array())
+    function __construct(string $type, string $path, array $capabilities = [], array $variables = [], array $constants = [])
     {
         $this->type = $type;
         $this->path = $path;

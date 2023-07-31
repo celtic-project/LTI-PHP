@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\Http;
 
@@ -19,7 +20,7 @@ interface ClientInterface
      *
      * @param HttpMessage $message
      *
-     * @return bool True if the request was successful
+     * @return bool  True if the request was successful
      */
-    public function send(HttpMessage $message);
+    public function send(HttpMessage $message): bool;
 }

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\Content;
 
@@ -19,35 +20,35 @@ class LineItem
      *
      * @var string|null $label
      */
-    private $label = null;
+    private ?string $label = null;
 
     /**
      * Maximum score of line-item.
      *
      * @var int|null $scoreMaximum
      */
-    private $scoreMaximum = null;
+    private ?int $scoreMaximum = null;
 
     /**
      * Resource ID associated with line-item.
      *
      * @var string|null $resourceId
      */
-    private $resourceId = null;
+    private ?string $resourceId = null;
 
     /**
      * Tag of line-item.
      *
      * @var string|null $tag
      */
-    private $tag = null;
+    private ?string $tag = null;
 
     /**
      * Submission review.
      *
      * @var SubmissionReview|null $submissionReview
      */
-    private $submissionReview = null;
+    private ?SubmissionReview $submissionReview = null;
 
     /**
      * Class constructor.
@@ -58,7 +59,8 @@ class LineItem
      * @param string|null           $tag               Tag (optional)
      * @param SubmissionReview|null $submissionReview  Submission Review (optional)
      */
-    function __construct($label, $scoreMaximum, $resourceId = null, $tag = null, $submissionReview = null)
+    function __construct(string $label, int $scoreMaximum, ?string $resourceId = null, ?string $tag = null,
+        ?SubmissionReview $submissionReview = null)
     {
         $this->label = $label;
         $this->scoreMaximum = $scoreMaximum;
@@ -72,7 +74,7 @@ class LineItem
      *
      * @return object  JSON object
      */
-    public function toJsonldObject()
+    public function toJsonldObject(): object
     {
         $lineItem = new \stdClass();
 
@@ -80,12 +82,12 @@ class LineItem
         $lineItem->label = $this->label;
         $lineItem->reportingMethod = 'http://purl.imsglobal.org/ctx/lis/v2p1/Result#normalScore';
         if (!empty($this->resourceId)) {
-            $lineItem->assignedActivity = new \stdClass();
-            $lineItem->assignedActivity->activityId = $this->resourceId;
+            $lineItem->assignedActivity = (object) ['activityId' => $this->resourceId];
         }
-        $lineItem->scoreConstraints = new \stdClass();
-        $lineItem->scoreConstraints->{'@type'} = 'NumericLimits';
-        $lineItem->scoreConstraints->normalMaximum = $this->scoreMaximum;
+        $lineItem->scoreConstraints = (object) [
+                '@type' => 'NumericLimits',
+                'normalMaximum' => $this->scoreMaximum
+        ];
         if (!empty($this->submissionReview)) {
             $lineItem->submissionReview = $this->submissionReview->toJsonObject();
         }
@@ -98,7 +100,7 @@ class LineItem
      *
      * @return object  JSON object
      */
-    public function toJsonObject()
+    public function toJsonObject(): object
     {
         $lineItem = new \stdClass();
 
@@ -124,7 +126,7 @@ class LineItem
      *
      * @return LineItem|null  The LineItem object
      */
-    public static function fromJsonObject($item)
+    public static function fromJsonObject(object $item): ?LineItem
     {
         $obj = null;
         $label = null;

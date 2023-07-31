@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI;
 
@@ -22,16 +23,16 @@ class OAuthDataStore extends OAuth\OAuthDataStore
     /**
      * System object.
      *
-     * @var Platform|Tool|null $system
+     * @var Platform|Tool $system
      */
-    private $system = null;
+    private Platform|Tool $system;
 
     /**
      * Class constructor.
      *
      * @param Platform|Tool $system  System object
      */
-    public function __construct($system)
+    public function __construct(Platform|Tool $system)
     {
         $this->system = $system;
     }
@@ -39,11 +40,11 @@ class OAuthDataStore extends OAuth\OAuthDataStore
     /**
      * Create an OAuthConsumer object for the system.
      *
-     * @param string $consumerKey Consumer key value
+     * @param string $consumerKey  Consumer key value
      *
-     * @return OAuthConsumer OAuthConsumer object
+     * @return OAuthConsumer  OAuthConsumer object
      */
-    function lookup_consumer($consumerKey)
+    function lookup_consumer(string $consumerKey): OAuthConsumer
     {
         $key = $this->system->getKey();
         $secret = '';
@@ -70,24 +71,24 @@ class OAuthDataStore extends OAuth\OAuthDataStore
      * @param string|null $tokenType  Token type
      * @param string|null $token      Token value
      *
-     * @return OAuthToken OAuthToken object
+     * @return OAuthToken  OAuthToken object
      */
-    function lookup_token($consumer, $tokenType, $token)
+    function lookup_token(OAuthConsumer $consumer, ?string $tokenType, ?string $token): OAuthToken
     {
-        return new OAuthToken($consumer, '');
+        return new OAuthToken('', '');
     }
 
     /**
      * Lookup nonce value for the system.
      *
      * @param OAuthConsumer $consumer  OAuthConsumer object
-     * @param OAuthToken    $token     Token value
-     * @param string        $value     Nonce value
-     * @param string        $timestamp Date/time of request
+     * @param OAuthToken $token        Token value
+     * @param string $value            Nonce value
+     * @param string $timestamp        Date/time of request
      *
      * @return bool    True if the nonce value already exists
      */
-    function lookup_nonce($consumer, $token, $value, $timestamp)
+    function lookup_nonce(OAuthConsumer $consumer, OAuthToken $token, string $value, string $timestamp): bool
     {
         if ($this->system instanceof Platform) {
             $platform = $this->system;
@@ -114,7 +115,7 @@ class OAuthDataStore extends OAuth\OAuthDataStore
      *
      * @return string|null Null value
      */
-    function new_request_token($consumer, $callback = null)
+    function new_request_token(OAuthConsumer $consumer, ?string $callback = null): ?string
     {
         return null;
     }
@@ -122,13 +123,13 @@ class OAuthDataStore extends OAuth\OAuthDataStore
     /**
      * Get new access token.
      *
-     * @param string        $token     Token value
+     * @param string $token            Token value
      * @param OAuthConsumer $consumer  OAuthConsumer object
      * @param string|null $verifier    Verification code
      *
      * @return string|null Null value
      */
-    function new_access_token($token, $consumer, $verifier = null)
+    function new_access_token(string $token, OAuthConsumer $consumer, ?string $verifier = null): ?string
     {
         return null;
     }

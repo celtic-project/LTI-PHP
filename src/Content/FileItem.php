@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\Content;
 
@@ -17,22 +18,22 @@ class FileItem extends Item
      *
      * @var bool|null $copyAdvice
      */
-    private $copyAdvice = null;
+    private ?bool $copyAdvice = null;
 
     /**
      * Expiry date/time for content-item.
      *
      * @var int|null $expiresAt
      */
-    private $expiresAt = null;
+    private ?int $expiresAt = null;
 
     /**
      * Class constructor.
      *
      * @param Placement[]|Placement|null $placementAdvices  Array of Placement objects (or single placement object) for item (optional)
-     * @param string|null $id   URL of content-item (optional)
+     * @param string|null                $id                URL of content-item (optional)
      */
-    function __construct($placementAdvices = null, $id = null)
+    function __construct(array|Placement|null $placementAdvices = null, ?string $id = null)
     {
         parent::__construct(Item::TYPE_FILE, $placementAdvices, $id);
     }
@@ -42,7 +43,7 @@ class FileItem extends Item
      *
      * @param bool|null $copyAdvice  Copy advice value
      */
-    public function setCopyAdvice($copyAdvice)
+    public function setCopyAdvice(?bool $copyAdvice): void
     {
         $this->copyAdvice = $copyAdvice;
     }
@@ -52,7 +53,7 @@ class FileItem extends Item
      *
      * @param int|null $expiresAt  Expiry date/time
      */
-    public function setExpiresAt($expiresAt)
+    public function setExpiresAt(?int $expiresAt): void
     {
         $this->expiresAt = $expiresAt;
     }
@@ -62,7 +63,7 @@ class FileItem extends Item
      *
      * @return object  JSON object
      */
-    public function toJsonldObject()
+    public function toJsonldObject(): object
     {
         $item = parent::toJsonldObject();
         if (!is_null($this->copyAdvice)) {
@@ -80,7 +81,7 @@ class FileItem extends Item
      *
      * @return object  JSON object
      */
-    public function toJsonObject()
+    public function toJsonObject(): object
     {
         $item = parent::toJsonObject();
         if (!empty($this->expiresAt)) {
@@ -95,7 +96,7 @@ class FileItem extends Item
      *
      * @param object $item  A JSON object representing a file content-item
      */
-    protected function fromJsonObject($item)
+    protected function fromJsonObject(object $item): void
     {
         parent::fromJsonObject($item);
         foreach (get_object_vars($item) as $name => $value) {

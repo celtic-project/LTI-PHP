@@ -1,10 +1,12 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\Service;
 
 use ceLTIc\LTI\Platform;
 use ceLTIc\LTI\Context;
 use ceLTIc\LTI\ResourceLink;
+use ceLTIc\LTI\Enum\ToolSettingsMode;
 use ceLTIc\LTI\Util;
 
 /**
@@ -18,56 +20,45 @@ class ToolSettings extends Service
 {
 
     /**
-     * Settings at current level mode.
-     */
-    const MODE_CURRENT_LEVEL = 1;
-
-    /**
-     * Settings at all levels mode.
-     */
-    const MODE_ALL_LEVELS = 2;
-
-    /**
-     * Settings with distinct names at all levels mode.
-     */
-    const MODE_DISTINCT_NAMES = 3;
-
-    /**
      * Access scope.
+     *
+     * @var string $SCOPE
      */
-    public static $SCOPE = 'https://purl.imsglobal.org/spec/lti-ts/scope/toolsetting';
+    public static string $SCOPE = 'https://purl.imsglobal.org/spec/lti-ts/scope/toolsetting';
 
     /**
      * Names of LTI parameters to be retained in the consumer settings property.
      *
      * @var array $LEVEL_NAMES
      */
-    private static $LEVEL_NAMES = array('ToolProxy' => 'system',
+    private static array $LEVEL_NAMES = [
+        'ToolProxy' => 'system',
         'ToolProxyBinding' => 'context',
-        'LtiLink' => 'link');
+        'LtiLink' => 'link'
+    ];
 
     /**
      * The object to which the settings apply (ResourceLink, Context or Platform).
      *
-     * @var Platform|Context|ResourceLink  $source
+     * @var Platform|Context|ResourceLink $source
      */
-    private $source;
+    private Platform|Context|ResourceLink $source;
 
     /**
      * Whether to use the simple JSON format.
      *
      * @var bool $simple
      */
-    private $simple;
+    private bool $simple;
 
     /**
      * Class constructor.
      *
-     * @param Platform|Context|ResourceLink       $source     The object to which the settings apply (ResourceLink, Context or Platform)
-     * @param string                              $endpoint   Service endpoint
-     * @param bool                                $simple     True if the simple media type is to be used (optional, default is true)
+     * @param Platform|Context|ResourceLink  $source  The object to which the settings apply (ResourceLink, Context or Platform)
+     * @param string $endpoint                        Service endpoint
+     * @param bool $simple                            True if the simple media type is to be used (optional, default is true)
      */
-    public function __construct($source, $endpoint, $simple = true)
+    public function __construct(Platform|Context|ResourceLink $source, string $endpoint, bool $simple = true)
     {
         if (is_a($source, 'ceLTIc\LTI\Platform')) {
             $platform = $source;
@@ -88,17 +79,15 @@ class ToolSettings extends Service
     /**
      * Get the tool settings.
      *
-     * @param int          $mode       Mode for request (optional, default is current level only)
+     * @param ToolSettingsMode|null $mode  Mode for request (optional, default is current level only)
      *
-     * @return mixed The array of settings if successful, otherwise false
+     * @return array|bool  The array of settings if successful, otherwise false
      */
-    public function get($mode = self::MODE_CURRENT_LEVEL)
+    public function get(?ToolSettingsMode $mode = null): array|bool
     {
-        $parameter = array();
-        if ($mode === self::MODE_ALL_LEVELS) {
-            $parameter['bubble'] = 'all';
-        } elseif ($mode === self::MODE_DISTINCT_NAMES) {
-            $parameter['bubble'] = 'distinct';
+        $parameter = [];
+        if (!empty($mode)) {
+            $parameter['bubble'] = $mode->value;
         }
         $http = $this->send('GET', $parameter);
         if (!$http->ok) {
@@ -106,7 +95,7 @@ class ToolSettings extends Service
         } elseif ($this->simple) {
             $response = Util::jsonDecode($http->response, true);
         } elseif (isset($http->responseJson->{'@graph'})) {
-            $response = array();
+            $response = [];
             foreach ($http->responseJson->{'@graph'} as $level) {
                 $settings = Util::jsonDecode(json_encode($level->custom), true);
                 unset($settings['@id']);
@@ -120,11 +109,11 @@ class ToolSettings extends Service
     /**
      * Set the tool settings.
      *
-     * @param array  $settings  An associative array of settings (optional, default is null)
+     * @param array $settings  An associative array of settings (optional, default is null)
      *
-     * @return bool True if request was successful
+     * @return bool  True if request was successful
      */
-    public function set($settings)
+    public function set(array $settings): bool
     {
         if (!$this->simple) {
             if (is_a($this->source, 'Platform')) {
@@ -134,14 +123,15 @@ class ToolSettings extends Service
             } else {
                 $type = 'LtiLink';
             }
-            $obj = new \stdClass();
-            $obj->{'@context'} = 'http://purl.imsglobal.org/ctx/lti/v2/ToolSettings';
-            $obj->{'@graph'} = array();
-            $level = new \stdClass();
-            $level->{'@type'} = $type;
-            $level->{'@id'} = $this->endpoint;
-            $level->{'custom'} = $settings;
-            $obj->{'@graph'}[] = $level;
+            $level = (object) [
+                    '@type' => $type,
+                    '@id' => $this->endpoint,
+                    'custom' => $settings
+            ];
+            $obj = (object) [
+                    '@context' => 'http://purl.imsglobal.org/ctx/lti/v2/ToolSettings',
+                    '@graph' => [$level]
+            ];
             $body = json_encode($obj);
         } else {
             $body = json_encode($settings);

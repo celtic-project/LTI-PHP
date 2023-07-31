@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\ApiHook\canvas;
 
@@ -22,7 +23,7 @@ class CanvasApiResourceLink extends ApiResourceLink
      *
      * @param ResourceLink $resourceLink
      */
-    public function __construct($resourceLink)
+    public function __construct(ResourceLink $resourceLink)
     {
         parent::__construct($resourceLink);
         $this->sourceObject = $resourceLink;
@@ -31,11 +32,11 @@ class CanvasApiResourceLink extends ApiResourceLink
     /**
      * Get memberships.
      *
-     * @param bool    $withGroups True is group information is to be requested as well
+     * @param bool $withGroups  True is group information is to be requested as well
      *
      * @return array|bool  Array of UserResult objects or false if the request was not successful
      */
-    public function getMemberships($withGroups)
+    public function getMemberships(bool $withGroups): array|bool
     {
         $users = $this->get($withGroups);
 

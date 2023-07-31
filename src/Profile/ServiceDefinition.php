@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\Profile;
 
@@ -17,38 +18,38 @@ class ServiceDefinition
      *
      * @var array|null $formats
      */
-    public $formats = null;
+    public ?array $formats = null;
 
     /**
      * HTTP actions accepted by service.
      *
      * @var array|null $actions
      */
-    public $actions = null;
+    public ?array $actions = null;
 
     /**
      * ID of service.
      *
      * @var string|null $id
      */
-    public $id = null;
+    public ?string $id = null;
 
     /**
      * URL for service requests.
      *
      * @var string|null $endpoint
      */
-    public $endpoint = null;
+    public ?string $endpoint = null;
 
     /**
      * Class constructor.
      *
-     * @param array  $formats        Array of media types supported by service
-     * @param array  $actions        Array of HTTP actions accepted by service
+     * @param array $formats         Array of media types supported by service
+     * @param array $actions         Array of HTTP actions accepted by service
      * @param string|null $id        ID of service (optional)
      * @param string|null $endpoint  URL for service requests (optional)
      */
-    function __construct($formats, $actions, $id = null, $endpoint = null)
+    function __construct(array $formats, array $actions, ?string $id = null, ?string $endpoint = null)
     {
         $this->formats = $formats;
         $this->actions = $actions;
@@ -59,9 +60,9 @@ class ServiceDefinition
     /**
      * Set ID.
      *
-     * @param string $id        ID of service
+     * @param string $id  ID of service
      */
-    function setId($id)
+    function setId(string $id): void
     {
         $this->id = $id;
     }

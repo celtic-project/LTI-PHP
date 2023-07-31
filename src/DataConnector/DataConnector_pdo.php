@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\DataConnector;
 
@@ -13,6 +14,8 @@ use ceLTIc\LTI\UserResult;
 use ceLTIc\LTI\Tool;
 use ceLTIc\LTI\AccessToken;
 use ceLTIc\LTI\Util;
+use ceLTIc\LTI\Enum\LtiVersion;
+use ceLTIc\LTI\Enum\IdScope;
 
 /**
  * Class to represent an LTI Data Connector for PDO connections
@@ -30,69 +33,69 @@ class DataConnector_pdo extends DataConnector
     /**
      * Load platform object.
      *
-     * @param Platform $platform Platform object
+     * @param Platform $platform  Platform object
      *
-     * @return bool    True if the platform object was successfully loaded
+     * @return bool  True if the platform object was successfully loaded
      */
-    public function loadPlatform($platform)
+    public function loadPlatform(Platform $platform): bool
     {
         $allowMultiple = false;
         if (!is_null($platform->getRecordId())) {
-            $sql = 'SELECT consumer_pk, name, consumer_key, secret, ' .
-                'platform_id, client_id, deployment_id, public_key, ' .
-                'lti_version, signature_method, consumer_name, consumer_version, consumer_guid, ' .
-                'profile, tool_proxy, settings, protected, enabled, ' .
-                'enable_from, enable_until, last_access, created, updated ' .
-                "FROM {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' ' .
-                'WHERE consumer_pk = :id';
+            $sql = <<< EOD
+SELECT consumer_pk, name, consumer_key, secret, platform_id, client_id, deployment_id, public_key,
+  lti_version, signature_method, consumer_name, consumer_version, consumer_guid, profile, tool_proxy, settings,
+  protected, enabled, enable_from, enable_until, last_access, created, updated
+FROM {$this->dbTableName(static::PLATFORM_TABLE_NAME)}
+WHERE (consumer_pk = :id)
+EOD;
             $query = $this->db->prepare($sql);
             $id = $platform->getRecordId();
             $query->bindValue('id', $id, \PDO::PARAM_INT);
         } elseif (!empty($platform->platformId)) {
             if (empty($platform->clientId)) {
                 $allowMultiple = true;
-                $sql = 'SELECT consumer_pk, name, consumer_key, secret, ' .
-                    'platform_id, client_id, deployment_id, public_key, ' .
-                    'lti_version, signature_method, consumer_name, consumer_version, consumer_guid, ' .
-                    'profile, tool_proxy, settings, protected, enabled, ' .
-                    'enable_from, enable_until, last_access, created, updated ' .
-                    "FROM {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' ' .
-                    'WHERE (platform_id = :platform_id) ';
+                $sql = <<< EOD
+SELECT consumer_pk, name, consumer_key, secret, platform_id, client_id, deployment_id, public_key,
+  lti_version, signature_method, consumer_name, consumer_version, consumer_guid, profile, tool_proxy, settings,
+  protected, enabled, enable_from, enable_until, last_access, created, updated
+FROM {$this->dbTableName(static::PLATFORM_TABLE_NAME)}
+WHERE (platform_id = :platform_id)
+EOD;
                 $query = $this->db->prepare($sql);
                 $query->bindValue('platform_id', $platform->platformId, \PDO::PARAM_STR);
             } elseif (empty($platform->deploymentId)) {
                 $allowMultiple = true;
-                $sql = 'SELECT consumer_pk, name, consumer_key, secret, ' .
-                    'platform_id, client_id, deployment_id, public_key, ' .
-                    'lti_version, signature_method, consumer_name, consumer_version, consumer_guid, ' .
-                    'profile, tool_proxy, settings, protected, enabled, ' .
-                    'enable_from, enable_until, last_access, created, updated ' .
-                    "FROM {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' ' .
-                    'WHERE (platform_id = :platform_id) AND (client_id = :client_id)';
+                $sql = <<< EOD
+SELECT consumer_pk, name, consumer_key, secret, platform_id, client_id, deployment_id, public_key,
+  lti_version, signature_method, consumer_name, consumer_version, consumer_guid, profile, tool_proxy, settings,
+  protected, enabled, enable_from, enable_until, last_access, created, updated
+FROM {$this->dbTableName(static::PLATFORM_TABLE_NAME)}
+WHERE (platform_id = :platform_id) AND (client_id = :client_id)
+EOD;
                 $query = $this->db->prepare($sql);
                 $query->bindValue('platform_id', $platform->platformId, \PDO::PARAM_STR);
                 $query->bindValue('client_id', $platform->clientId, \PDO::PARAM_STR);
             } else {
-                $sql = 'SELECT consumer_pk, name, consumer_key, secret, ' .
-                    'platform_id, client_id, deployment_id, public_key, ' .
-                    'lti_version, signature_method, consumer_name, consumer_version, consumer_guid, ' .
-                    'profile, tool_proxy, settings, protected, enabled, ' .
-                    'enable_from, enable_until, last_access, created, updated ' .
-                    "FROM {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' ' .
-                    'WHERE (platform_id = :platform_id) AND (client_id = :client_id) AND (deployment_id = :deployment_id)';
+                $sql = <<< EOD
+SELECT consumer_pk, name, consumer_key, secret, platform_id, client_id, deployment_id, public_key,
+  lti_version, signature_method, consumer_name, consumer_version, consumer_guid, profile, tool_proxy, settings,
+  protected, enabled, enable_from, enable_until, last_access, created, updated
+FROM {$this->dbTableName(static::PLATFORM_TABLE_NAME)}
+WHERE (platform_id = :platform_id) AND (client_id = :client_id) AND (deployment_id = :deployment_id)
+EOD;
                 $query = $this->db->prepare($sql);
                 $query->bindValue('platform_id', $platform->platformId, \PDO::PARAM_STR);
                 $query->bindValue('client_id', $platform->clientId, \PDO::PARAM_STR);
                 $query->bindValue('deployment_id', $platform->deploymentId, \PDO::PARAM_STR);
             }
         } else {
-            $sql = 'SELECT consumer_pk, name, consumer_key, secret, ' .
-                'platform_id, client_id, deployment_id, public_key, ' .
-                'lti_version, signature_method, consumer_name, consumer_version, consumer_guid, ' .
-                'profile, tool_proxy, settings, protected, enabled, ' .
-                'enable_from, enable_until, last_access, created, updated ' .
-                "FROM {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' ' .
-                'WHERE (consumer_key = :key)';
+            $sql = <<< EOD
+SELECT consumer_pk, name, consumer_key, secret, platform_id, client_id, deployment_id, public_key,
+  lti_version, signature_method, consumer_name, consumer_version, consumer_guid, profile, tool_proxy, settings,
+  protected, enabled, enable_from, enable_until, last_access, created, updated
+FROM {$this->dbTableName(static::PLATFORM_TABLE_NAME)}
+WHERE (consumer_key = :key)
+EOD;
             $query = $this->db->prepare($sql);
             $consumer_key = $platform->getKey();
             $query->bindValue('key', $consumer_key, \PDO::PARAM_STR);
@@ -112,7 +115,7 @@ class DataConnector_pdo extends DataConnector
             $platform->clientId = $row['client_id'];
             $platform->deploymentId = $row['deployment_id'];
             $platform->rsaKey = $row['public_key'];
-            $platform->ltiVersion = $row['lti_version'];
+            $platform->ltiVersion = LtiVersion::tryFrom($row['lti_version'] ?? '');
             $platform->signatureMethod = $row['signature_method'];
             $platform->consumerName = $row['consumer_name'];
             $platform->consumerVersion = $row['consumer_version'];
@@ -124,7 +127,7 @@ class DataConnector_pdo extends DataConnector
                 $settings = @unserialize($row['settings']);  // check for old serialized setting
             }
             if (!is_array($settings)) {
-                $settings = array();
+                $settings = [];
             }
             $platform->setSettings($settings);
             $platform->protected = (intval($row['protected']) === 1);
@@ -152,11 +155,11 @@ class DataConnector_pdo extends DataConnector
     /**
      * Save platform object.
      *
-     * @param Platform $platform Platform object
+     * @param Platform $platform  Platform object
      *
-     * @return bool    True if the platform object was successfully saved
+     * @return bool  True if the platform object was successfully saved
      */
-    public function savePlatform($platform)
+    public function savePlatform(Platform $platform): bool
     {
         $id = $platform->getRecordId();
         $protected = ($platform->protected) ? 1 : 0;
@@ -180,16 +183,15 @@ class DataConnector_pdo extends DataConnector
             $last = date($this->dateFormat, $platform->lastAccess);
         }
         if (empty($id)) {
-            $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' (consumer_key, name, secret, ' .
-                'platform_id, client_id, deployment_id, public_key, ' .
-                'lti_version, signature_method, consumer_name, consumer_version, consumer_guid, ' .
-                'profile, tool_proxy, settings, protected, enabled, ' .
-                'enable_from, enable_until, last_access, created, updated) ' .
-                'VALUES (:key, :name, :secret, ' .
-                ':platform_id, :client_id, :deployment_id, :public_key, ' .
-                ':lti_version, :signature_method, ' .
-                ':consumer_name, :consumer_version, :consumer_guid, :profile, :tool_proxy, :settings, ' .
-                ':protected, :enabled, :enable_from, :enable_until, :last_access, :created, :updated)';
+            $sql = <<< EOD
+INSERT INTO {$this->dbTableName(static::PLATFORM_TABLE_NAME)} (
+  consumer_key, name, secret, platform_id, client_id, deployment_id, public_key,
+  lti_version, signature_method, consumer_name, consumer_version, consumer_guid, profile, tool_proxy, settings,
+  protected, enabled, enable_from, enable_until, last_access, created, updated)
+VALUES (:key, :name, :secret, :platform_id, :client_id, :deployment_id, :public_key,
+  :lti_version, :signature_method, :consumer_name, :consumer_version, :consumer_guid, :profile, :tool_proxy, :settings,
+  :protected, :enabled, :enable_from, :enable_until, :last_access, :created, :updated)
+EOD;
             $query = $this->db->prepare($sql);
             $query->bindValue('key', $platform->getKey(), \PDO::PARAM_STR);
             $query->bindValue('name', $platform->name, \PDO::PARAM_STR);
@@ -198,7 +200,7 @@ class DataConnector_pdo extends DataConnector
             $query->bindValue('client_id', $platform->clientId, \PDO::PARAM_STR);
             $query->bindValue('deployment_id', $platform->deploymentId, \PDO::PARAM_STR);
             $query->bindValue('public_key', $platform->rsaKey, \PDO::PARAM_STR);
-            $query->bindValue('lti_version', $platform->ltiVersion, \PDO::PARAM_STR);
+            $query->bindValue('lti_version', $platform->ltiVersion ? $platform->ltiVersion->value : '', \PDO::PARAM_STR);
             $query->bindValue('signature_method', $platform->signatureMethod, \PDO::PARAM_STR);
             $query->bindValue('consumer_name', $platform->consumerName, \PDO::PARAM_STR);
             $query->bindValue('consumer_version', $platform->consumerVersion, \PDO::PARAM_STR);
@@ -214,15 +216,17 @@ class DataConnector_pdo extends DataConnector
             $query->bindValue('created', $now, \PDO::PARAM_STR);
             $query->bindValue('updated', $now, \PDO::PARAM_STR);
         } else {
-            $sql = 'UPDATE ' . $this->dbTableNamePrefix . static::PLATFORM_TABLE_NAME . ' ' .
-                'SET consumer_key = :key, name = :name, secret = :secret, ' .
-                'platform_id = :platform_id, client_id = :client_id, deployment_id = :deployment_id, ' .
-                'public_key = :public_key, lti_version = :lti_version, signature_method = :signature_method, ' .
-                'consumer_name = :consumer_name, consumer_version = :consumer_version, consumer_guid = :consumer_guid, ' .
-                'profile = :profile, tool_proxy = :tool_proxy, settings = :settings, ' .
-                'protected = :protected, enabled = :enabled, enable_from = :enable_from, enable_until = :enable_until, ' .
-                'last_access = :last_access, updated = :updated ' .
-                'WHERE consumer_pk = :id';
+            $sql = <<< EOD
+UPDATE {$this->dbTableName(static::PLATFORM_TABLE_NAME)}
+SET consumer_key = :key, name = :name, secret = :secret,
+  platform_id = :platform_id, client_id = :client_id, deployment_id = :deployment_id,
+  public_key = :public_key, lti_version = :lti_version, signature_method = :signature_method,
+  consumer_name = :consumer_name, consumer_version = :consumer_version, consumer_guid = :consumer_guid,
+  profile = :profile, tool_proxy = :tool_proxy, settings = :settings,
+  protected = :protected, enabled = :enabled, enable_from = :enable_from, enable_until = :enable_until,
+  last_access = :last_access, updated = :updated
+WHERE consumer_pk = :id
+EOD;
             $query = $this->db->prepare($sql);
             $query->bindValue('key', $platform->getKey(), \PDO::PARAM_STR);
             $query->bindValue('name', $platform->name, \PDO::PARAM_STR);
@@ -231,7 +235,7 @@ class DataConnector_pdo extends DataConnector
             $query->bindValue('client_id', $platform->clientId, \PDO::PARAM_STR);
             $query->bindValue('deployment_id', $platform->deploymentId, \PDO::PARAM_STR);
             $query->bindValue('public_key', $platform->rsaKey, \PDO::PARAM_STR);
-            $query->bindValue('lti_version', $platform->ltiVersion, \PDO::PARAM_STR);
+            $query->bindValue('lti_version', $platform->ltiVersion ? $platform->ltiVersion->value : '', \PDO::PARAM_STR);
             $query->bindValue('signature_method', $platform->signatureMethod, \PDO::PARAM_STR);
             $query->bindValue('consumer_name', $platform->consumerName, \PDO::PARAM_STR);
             $query->bindValue('consumer_version', $platform->consumerVersion, \PDO::PARAM_STR);
@@ -262,104 +266,155 @@ class DataConnector_pdo extends DataConnector
     /**
      * Delete platform object.
      *
-     * @param Platform $platform Platform object
+     * @param Platform $platform  Platform object
      *
-     * @return bool    True if the platform object was successfully deleted
+     * @return bool  True if the platform object was successfully deleted
      */
-    public function deletePlatform($platform)
+    public function deletePlatform(Platform $platform): bool
     {
         $id = $platform->getRecordId();
 
 // Delete any access token for this consumer
-        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::ACCESS_TOKEN_TABLE_NAME . ' WHERE consumer_pk = :id';
+        $sql = <<< EOD
+DELETE FROM {$this->dbTableName(static::ACCESS_TOKEN_TABLE_NAME)}
+WHERE (consumer_pk = :id)
+EOD;
         $query = $this->db->prepare($sql);
         $query->bindValue('id', $id, \PDO::PARAM_INT);
         $this->executeQuery($sql, $query);
 
 // Delete any nonce values for this consumer
-        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' WHERE consumer_pk = :id';
+        $sql = <<< EOD
+DELETE FROM {$this->dbTableName(static::NONCE_TABLE_NAME)}
+WHERE (consumer_pk = :id)
+EOD;
         $query = $this->db->prepare($sql);
         $query->bindValue('id', $id, \PDO::PARAM_INT);
         $this->executeQuery($sql, $query);
 
 // Delete any outstanding share keys for resource links for this consumer
-        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME . ' ' .
-            "WHERE resource_link_pk IN (SELECT resource_link_pk FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
-            'WHERE consumer_pk = :id)';
+        $sql = <<< EOD
+DELETE FROM {$this->dbTableName(static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME)}
+WHERE resource_link_pk IN (
+  SELECT resource_link_pk
+  FROM {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)}
+  WHERE (consumer_pk = :id)
+)
+EOD;
         $query = $this->db->prepare($sql);
         $query->bindValue('id', $id, \PDO::PARAM_INT);
         $this->executeQuery($sql, $query);
 
 // Delete any outstanding share keys for resource links for contexts in this consumer
-        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME . ' ' .
-            "WHERE resource_link_pk IN (SELECT resource_link_pk FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' rl ' .
-            "INNER JOIN {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' c ON rl.context_pk = c.context_pk WHERE c.consumer_pk = :id)';
+        $sql = <<< EOD
+DELETE FROM {$this->dbTableName(static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME)}
+WHERE resource_link_pk IN (
+  SELECT resource_link_pk FROM {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)} rl
+  INNER JOIN {$this->dbTableName(static::CONTEXT_TABLE_NAME)} c ON (rl.context_pk = c.context_pk)
+  WHERE (c.consumer_pk = :id)
+)
+EOD;
         $query = $this->db->prepare($sql);
         $query->bindValue('id', $id, \PDO::PARAM_INT);
         $this->executeQuery($sql, $query);
 
 // Delete any users in resource links for this consumer
-        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' ' .
-            "WHERE resource_link_pk IN (SELECT resource_link_pk FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
-            'WHERE consumer_pk = :id)';
+        $sql = <<< EOD
+DELETE FROM {$this->dbTableName(static::USER_RESULT_TABLE_NAME)}
+WHERE resource_link_pk IN (
+  SELECT resource_link_pk
+  FROM {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)}
+  WHERE (consumer_pk = :id)
+)
+EOD;
         $query = $this->db->prepare($sql);
         $query->bindValue('id', $id, \PDO::PARAM_INT);
         $this->executeQuery($sql, $query);
 
 // Delete any users in resource links for contexts in this consumer
-        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' ' .
-            "WHERE resource_link_pk IN (SELECT resource_link_pk FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' rl ' .
-            "INNER JOIN {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' c ON rl.context_pk = c.context_pk WHERE c.consumer_pk = :id)';
+        $sql = <<< EOD
+DELETE FROM {$this->dbTableName(static::USER_RESULT_TABLE_NAME)}
+WHERE resource_link_pk IN (
+  SELECT resource_link_pk
+  FROM {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)} rl
+  INNER JOIN {$this->dbTableName(static::CONTEXT_TABLE_NAME)} c ON (rl.context_pk = c.context_pk)
+  WHERE (c.consumer_pk = :id)
+)
+EOD;
         $query = $this->db->prepare($sql);
         $query->bindValue('id', $id, \PDO::PARAM_INT);
         $this->executeQuery($sql, $query);
 
 // Update any resource links for which this consumer is acting as a primary resource link
-        $sql = "UPDATE {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
-            'SET primary_resource_link_pk = NULL, share_approved = NULL ' .
-            'WHERE primary_resource_link_pk IN ' .
-            "(SELECT resource_link_pk FROM (SELECT resource_link_pk FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
-            'WHERE consumer_pk = :id) t)';
+        $sql = <<< EOD
+UPDATE {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)}
+SET primary_resource_link_pk = NULL, share_approved = NULL
+WHERE primary_resource_link_pk IN (
+  SELECT resource_link_pk
+  FROM (
+    SELECT resource_link_pk
+    FROM {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)}
+    WHERE (consumer_pk = :id)
+  ) t
+)
+EOD;
         $query = $this->db->prepare($sql);
         $query->bindValue('id', $id, \PDO::PARAM_INT);
         $this->executeQuery($sql, $query);
 
 // Update any resource links for contexts in which this consumer is acting as a primary resource link
-        $sql = "UPDATE {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
-            'SET primary_resource_link_pk = NULL, share_approved = NULL ' .
-            'WHERE primary_resource_link_pk IN ' .
-            "(SELECT resource_link_pk FROM (SELECT rl.resource_link_pk FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' rl ' .
-            "INNER JOIN {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' c ON rl.context_pk = c.context_pk ' .
-            'WHERE c.consumer_pk = :id) t)';
+        $sql = <<< EOD
+UPDATE {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)}
+SET primary_resource_link_pk = NULL, share_approved = NULL
+WHERE primary_resource_link_pk IN (
+  SELECT resource_link_pk FROM (
+    SELECT rl.resource_link_pk
+    FROM {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)} rl
+      INNER JOIN {$this->dbTableName(static::CONTEXT_TABLE_NAME)} c ON (rl.context_pk = c.context_pk)
+    WHERE (c.consumer_pk = :id)
+  ) t
+)
+EOD;
         $query = $this->db->prepare($sql);
         $query->bindValue('id', $id, \PDO::PARAM_INT);
         $this->executeQuery($sql, $query);
 
 // Delete any resource links for this consumer
-        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
-            'WHERE consumer_pk = :id';
+        $sql = <<< EOD
+DELETE FROM {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)}
+WHERE consumer_pk = :id
+EOD;
         $query = $this->db->prepare($sql);
         $query->bindValue('id', $id, \PDO::PARAM_INT);
         $this->executeQuery($sql, $query);
 
 // Delete any resource links for contexts in this consumer
-        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
-            'WHERE context_pk IN (' .
-            "SELECT context_pk FROM {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' ' . 'WHERE consumer_pk = :id)';
+        $sql = <<< EOD
+DELETE FROM {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)}
+WHERE context_pk IN (
+  SELECT context_pk
+  FROM {$this->dbTableName(static::CONTEXT_TABLE_NAME)}
+  WHERE (consumer_pk = :id)
+)
+EOD;
         $query = $this->db->prepare($sql);
         $query->bindValue('id', $id, \PDO::PARAM_INT);
         $this->executeQuery($sql, $query);
 
 // Delete any contexts for this consumer
-        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' ' .
-            'WHERE consumer_pk = :id';
+        $sql = <<< EOD
+DELETE FROM {$this->dbTableName(static::CONTEXT_TABLE_NAME)}
+WHERE (consumer_pk = :id)
+EOD;
         $query = $this->db->prepare($sql);
         $query->bindValue('id', $id, \PDO::PARAM_INT);
         $this->executeQuery($sql, $query);
 
 // Delete consumer
-        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' ' .
-            'WHERE consumer_pk = :id';
+        $sql = <<< EOD
+DELETE FROM {$this->dbTableName(static::PLATFORM_TABLE_NAME)}
+WHERE (consumer_pk = :id)
+EOD;
         $query = $this->db->prepare($sql);
         $query->bindValue('id', $id, \PDO::PARAM_INT);
         $ok = $this->executeQuery($sql, $query);
@@ -374,19 +429,19 @@ class DataConnector_pdo extends DataConnector
     /**
      * Load platform objects.
      *
-     * @return Platform[] Array of all defined Platform objects
+     * @return Platform[]  Array of all defined Platform objects
      */
-    public function getPlatforms()
+    public function getPlatforms(): array
     {
-        $platforms = array();
+        $platforms = [];
 
-        $sql = 'SELECT consumer_pk, name, consumer_key, secret, ' .
-            'platform_id, client_id, deployment_id, public_key, ' .
-            'lti_version, signature_method, consumer_name, consumer_version, consumer_guid, ' .
-            'profile, tool_proxy, settings, protected, enabled, ' .
-            'enable_from, enable_until, last_access, created, updated ' .
-            "FROM {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' ' .
-            'ORDER BY name';
+        $sql = <<< EOD
+SELECT consumer_pk, name, consumer_key, secret, platform_id, client_id, deployment_id, public_key,
+  lti_version, signature_method, consumer_name, consumer_version, consumer_guid, profile, tool_proxy, settings,
+  protected, enabled, enable_from, enable_until, last_access, created, updated
+FROM {$this->dbTableName(static::PLATFORM_TABLE_NAME)}
+ORDER BY name
+EOD;
         $query = $this->db->prepare($sql);
         $ok = ($query !== false);
 
@@ -405,7 +460,7 @@ class DataConnector_pdo extends DataConnector
                 $platform->clientId = $row['client_id'];
                 $platform->deploymentId = $row['deployment_id'];
                 $platform->rsaKey = $row['public_key'];
-                $platform->ltiVersion = $row['lti_version'];
+                $platform->ltiVersion = LtiVersion::tryFrom($row['lti_version'] ?? '');
                 $platform->signatureMethod = $row['signature_method'];
                 $platform->consumerName = $row['consumer_name'];
                 $platform->consumerVersion = $row['consumer_version'];
@@ -417,7 +472,7 @@ class DataConnector_pdo extends DataConnector
                     $settings = @unserialize($row['settings']);  // check for old serialized setting
                 }
                 if (!is_array($settings)) {
-                    $settings = array();
+                    $settings = [];
                 }
                 $platform->setSettings($settings);
                 $platform->protected = (intval($row['protected']) === 1);
@@ -451,23 +506,27 @@ class DataConnector_pdo extends DataConnector
     /**
      * Load context object.
      *
-     * @param Context $context Context object
+     * @param Context $context  Context object
      *
-     * @return bool    True if the context object was successfully loaded
+     * @return bool  True if the context object was successfully loaded
      */
-    public function loadContext($context)
+    public function loadContext(Context $context): bool
     {
         $ok = false;
         if (!is_null($context->getRecordId())) {
-            $sql = 'SELECT context_pk, consumer_pk, title, lti_context_id, type, settings, created, updated ' .
-                "FROM {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' ' .
-                'WHERE (context_pk = :id)';
+            $sql = <<< EOD
+SELECT context_pk, consumer_pk, title, lti_context_id, type, settings, created, updated
+FROM {$this->dbTableName(static::CONTEXT_TABLE_NAME)}
+WHERE (context_pk = :id)
+EOD;
             $query = $this->db->prepare($sql);
             $query->bindValue('id', $context->getRecordId(), \PDO::PARAM_INT);
         } else {
-            $sql = 'SELECT context_pk, consumer_pk, title, lti_context_id, type, settings, created, updated ' .
-                "FROM {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' ' .
-                'WHERE (consumer_pk = :cid) AND (lti_context_id = :ctx)';
+            $sql = <<< EOD
+SELECT context_pk, consumer_pk, title, lti_context_id, type, settings, created, updated
+FROM {$this->dbTableName(static::CONTEXT_TABLE_NAME)}
+WHERE (consumer_pk = :cid) AND (lti_context_id = :ctx)
+EOD;
             $query = $this->db->prepare($sql);
             $query->bindValue('cid', $context->getPlatform()->getRecordId(), \PDO::PARAM_INT);
             $query->bindValue('ctx', $context->ltiContextId, \PDO::PARAM_STR);
@@ -489,7 +548,7 @@ class DataConnector_pdo extends DataConnector
                 $settings = @unserialize($row['settings']);  // check for old serialized setting
             }
             if (!is_array($settings)) {
-                $settings = array();
+                $settings = [];
             }
             $context->setSettings($settings);
             $context->created = strtotime($row['created']);
@@ -502,11 +561,11 @@ class DataConnector_pdo extends DataConnector
     /**
      * Save context object.
      *
-     * @param Context $context Context object
+     * @param Context $context  Context object
      *
-     * @return bool    True if the context object was successfully saved
+     * @return bool  True if the context object was successfully saved
      */
-    public function saveContext($context)
+    public function saveContext(Context $context): bool
     {
         $time = time();
         $now = date("{$this->dateFormat} {$this->timeFormat}", $time);
@@ -514,9 +573,11 @@ class DataConnector_pdo extends DataConnector
         $id = $context->getRecordId();
         $consumer_pk = $context->getPlatform()->getRecordId();
         if (empty($id)) {
-            $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' (consumer_pk, title, ' .
-                'lti_context_id, type, settings, created, updated) ' .
-                'VALUES (:cid, :title, :ctx, :type, :settings, :created, :updated)';
+            $sql = <<< EOD
+INSERT INTO {$this->dbTableName(static::CONTEXT_TABLE_NAME)} (
+  consumer_pk, title, lti_context_id, type, settings, created, updated)
+VALUES (:cid, :title, :ctx, :type, :settings, :created, :updated)
+EOD;
             $query = $this->db->prepare($sql);
             $query->bindValue('cid', $consumer_pk, \PDO::PARAM_INT);
             $query->bindValue('title', $context->title, \PDO::PARAM_STR);
@@ -526,10 +587,11 @@ class DataConnector_pdo extends DataConnector
             $query->bindValue('created', $now, \PDO::PARAM_STR);
             $query->bindValue('updated', $now, \PDO::PARAM_STR);
         } else {
-            $sql = "UPDATE {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' SET ' .
-                'title = :title, lti_context_id = :ctx, type = :type, settings = :settings, ' .
-                'updated = :updated ' .
-                'WHERE (consumer_pk = :cid) AND (context_pk = :ctxid)';
+            $sql = <<< EOD
+UPDATE {$this->dbTableName(static::CONTEXT_TABLE_NAME)}
+SET title = :title, lti_context_id = :ctx, type = :type, settings = :settings, updated = :updated
+WHERE (consumer_pk = :cid) AND (context_pk = :ctxid)
+EOD;
             $query = $this->db->prepare($sql);
             $query->bindValue('title', $context->title, \PDO::PARAM_STR);
             $query->bindValue('ctx', $context->ltiContextId, \PDO::PARAM_STR);
@@ -554,49 +616,71 @@ class DataConnector_pdo extends DataConnector
     /**
      * Delete context object.
      *
-     * @param Context $context Context object
+     * @param Context $context  Context object
      *
-     * @return bool    True if the Context object was successfully deleted
+     * @return bool  True if the Context object was successfully deleted
      */
-    public function deleteContext($context)
+    public function deleteContext(Context $context): bool
     {
         $id = $context->getRecordId();
 
 // Delete any outstanding share keys for resource links for this context
-        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME . ' ' .
-            "WHERE resource_link_pk IN (SELECT resource_link_pk FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
-            'WHERE context_pk = :id)';
+        $sql = <<< EOD
+DELETE FROM {$this->dbTableName(static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME)}
+WHERE resource_link_pk IN (
+  SELECT resource_link_pk
+  FROM {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)}
+  WHERE (context_pk = :id)
+)
+EOD;
         $query = $this->db->prepare($sql);
         $query->bindValue('id', $id, \PDO::PARAM_INT);
         $this->executeQuery($sql, $query);
 
 // Delete any users in resource links for this context
-        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' ' .
-            "WHERE resource_link_pk IN (SELECT resource_link_pk FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
-            'WHERE context_pk = :id)';
+        $sql = <<< EOD
+DELETE FROM {$this->dbTableName(static::USER_RESULT_TABLE_NAME)}
+WHERE resource_link_pk IN (
+  SELECT resource_link_pk
+  FROM {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)}
+  WHERE (context_pk = :id)
+)
+EOD;
         $query = $this->db->prepare($sql);
         $query->bindValue('id', $id, \PDO::PARAM_INT);
         $this->executeQuery($sql, $query);
 
-// Update any resource links for which this consumer is acting as a primary resource link
-        $sql = "UPDATE {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
-            'SET primary_resource_link_pk = null, share_approved = null ' .
-            'WHERE primary_resource_link_pk IN ' .
-            "(SELECT resource_link_pk FROM (SELECT resource_link_pk FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' WHERE context_pk = :id) t)';
+// Update any resource links for which this context is acting as a primary resource link
+        $sql = <<< EOD
+UPDATE {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)}
+SET primary_resource_link_pk = NULL, share_approved = NULL
+WHERE primary_resource_link_pk IN (
+  SELECT resource_link_pk
+  FROM (
+    SELECT resource_link_pk
+    FROM {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)}
+    WHERE (context_pk = :id)
+  ) t
+)
+EOD;
         $query = $this->db->prepare($sql);
         $query->bindValue('id', $id, \PDO::PARAM_INT);
         $this->executeQuery($sql, $query);
 
-// Delete any resource links for this consumer
-        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
-            'WHERE context_pk = :id';
+// Delete any resource links for this context
+        $sql = <<< EOD
+DELETE FROM {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)}
+WHERE (context_pk = :id)
+EOD;
         $query = $this->db->prepare($sql);
         $query->bindValue('id', $id, \PDO::PARAM_INT);
         $this->executeQuery($sql, $query);
 
 // Delete context
-        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' ' .
-            'WHERE context_pk = :id';
+        $sql = <<< EOD
+DELETE FROM {$this->dbTableName(static::CONTEXT_TABLE_NAME)}
+WHERE (context_pk = :id)
+EOD;
         $query = $this->db->prepare($sql);
         $query->bindValue('id', $id, \PDO::PARAM_INT);
         $ok = $this->executeQuery($sql, $query);
@@ -615,35 +699,44 @@ class DataConnector_pdo extends DataConnector
     /**
      * Load resource link object.
      *
-     * @param ResourceLink $resourceLink ResourceLink object
+     * @param ResourceLink $resourceLink  ResourceLink object
      *
-     * @return bool    True if the resource link object was successfully loaded
+     * @return bool  True if the resource link object was successfully loaded
      */
-    public function loadResourceLink($resourceLink)
+    public function loadResourceLink(ResourceLink $resourceLink): bool
     {
         if (!is_null($resourceLink->getRecordId())) {
-            $sql = 'SELECT resource_link_pk, context_pk, consumer_pk, title, lti_resource_link_id, settings, primary_resource_link_pk, share_approved, created, updated ' .
-                "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
-                'WHERE (resource_link_pk = :id)';
+            $sql = <<< EOD
+SELECT resource_link_pk, context_pk, consumer_pk, title, lti_resource_link_id, settings,
+  primary_resource_link_pk,share_approved, created, updated
+FROM {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)}
+WHERE (resource_link_pk = :id)
+EOD;
             $query = $this->db->prepare($sql);
             $query->bindValue('id', $resourceLink->getRecordId(), \PDO::PARAM_INT);
         } elseif (!is_null($resourceLink->getContext())) {
-            $sql = 'SELECT r.resource_link_pk, r.context_pk, r.consumer_pk, r.title, r.lti_resource_link_id, r.settings, r.primary_resource_link_pk, r.share_approved, r.created, r.updated ' .
-                "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' r ' .
-                'WHERE (r.lti_resource_link_id = :rlid) AND ((r.context_pk = :id1) OR (r.consumer_pk IN (' .
-                'SELECT c.consumer_pk ' .
-                "FROM {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' c ' .
-                'WHERE (c.context_pk = :id2)' .
-                ')))';
+            $sql = <<< EOD
+SELECT r.resource_link_pk, r.context_pk, r.consumer_pk, r.title, r.lti_resource_link_id, r.settings,
+  r.primary_resource_link_pk, r.share_approved, r.created, r.updated
+FROM {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)} r
+WHERE (r.lti_resource_link_id = :rlid) AND ((r.context_pk = :id1) OR (r.consumer_pk IN (
+  SELECT c.consumer_pk
+  FROM {$this->dbTableName(static::CONTEXT_TABLE_NAME)} c
+  WHERE (c.context_pk = :id2)
+)))
+EOD;
             $query = $this->db->prepare($sql);
             $query->bindValue('rlid', $resourceLink->getId(), \PDO::PARAM_STR);
             $query->bindValue('id1', $resourceLink->getContext()->getRecordId(), \PDO::PARAM_INT);
             $query->bindValue('id2', $resourceLink->getContext()->getRecordId(), \PDO::PARAM_INT);
         } else {
-            $sql = 'SELECT r.resource_link_pk, r.context_pk, r.consumer_pk, r.title, r.lti_resource_link_id, r.settings, r.primary_resource_link_pk, r.share_approved, r.created, r.updated ' .
-                "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' r LEFT OUTER JOIN ' .
-                $this->dbTableNamePrefix . static::CONTEXT_TABLE_NAME . ' c ON r.context_pk = c.context_pk ' .
-                ' WHERE ((r.consumer_pk = :id1) OR (c.consumer_pk = :id2)) AND (lti_resource_link_id = :rlid)';
+            $sql = <<< EOD
+SELECT r.resource_link_pk, r.context_pk, r.consumer_pk, r.title, r.lti_resource_link_id, r.settings,
+  r.primary_resource_link_pk, r.share_approved, r.created, r.updated
+FROM {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)} r
+  LEFT OUTER JOIN {$this->dbTableName(static::CONTEXT_TABLE_NAME)} c ON (r.context_pk = c.context_pk)
+WHERE ((r.consumer_pk = :id1) OR (c.consumer_pk = :id2)) AND (lti_resource_link_id = :rlid)
+EOD;
             $query = $this->db->prepare($sql);
             $query->bindValue('id1', $resourceLink->getPlatform()->getRecordId(), \PDO::PARAM_INT);
             $query->bindValue('id2', $resourceLink->getPlatform()->getRecordId(), \PDO::PARAM_INT);
@@ -675,7 +768,7 @@ class DataConnector_pdo extends DataConnector
                 $settings = @unserialize($row['settings']);  // check for old serialized setting
             }
             if (!is_array($settings)) {
-                $settings = array();
+                $settings = [];
             }
             $resourceLink->setSettings($settings);
             if (!is_null($row['primary_resource_link_pk'])) {
@@ -694,11 +787,11 @@ class DataConnector_pdo extends DataConnector
     /**
      * Save resource link object.
      *
-     * @param ResourceLink $resourceLink ResourceLink object
+     * @param ResourceLink $resourceLink  ResourceLink object
      *
-     * @return bool    True if the resource link object was successfully saved
+     * @return bool  True if the resource link object was successfully saved
      */
-    public function saveResourceLink($resourceLink)
+    public function saveResourceLink(ResourceLink $resourceLink): bool
     {
         if (is_null($resourceLink->shareApproved)) {
             $approved = null;
@@ -727,9 +820,12 @@ class DataConnector_pdo extends DataConnector
         }
         $id = $resourceLink->getRecordId();
         if (empty($id)) {
-            $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' (consumer_pk, context_pk, ' .
-                'title, lti_resource_link_id, settings, primary_resource_link_pk, share_approved, created, updated) ' .
-                'VALUES (:cid, :ctx, :title, :rlid, :settings, :prlid, :share_approved, :created, :updated)';
+            $sql = <<< EOD
+INSERT INTO {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)} (
+  consumer_pk, context_pk, title, lti_resource_link_id, settings,
+  primary_resource_link_pk, share_approved, created, updated)
+VALUES (:cid, :ctx, :title, :rlid, :settings, :prlid, :share_approved, :created, :updated)
+EOD;
             $query = $this->db->prepare($sql);
             $query->bindValue('cid', $consumerId, \PDO::PARAM_INT);
             $query->bindValue('ctx', $contextId, \PDO::PARAM_INT);
@@ -741,10 +837,12 @@ class DataConnector_pdo extends DataConnector
             $query->bindValue('created', $now, \PDO::PARAM_STR);
             $query->bindValue('updated', $now, \PDO::PARAM_STR);
         } elseif (!is_null($contextId)) {
-            $sql = "UPDATE {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' SET ' .
-                'consumer_pk = NULL, context_pk = :ctx, title = :title, lti_resource_link_id = :rlid, settings = :settings, ' .
-                'primary_resource_link_pk = :prlid, share_approved = :share_approved, updated = :updated ' .
-                'WHERE (resource_link_pk = :id)';
+            $sql = <<< EOD
+UPDATE {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)} SET
+  consumer_pk = NULL, context_pk = :ctx, title = :title, lti_resource_link_id = :rlid, settings = :settings,
+  primary_resource_link_pk = :prlid, share_approved = :share_approved, updated = :updated
+WHERE (resource_link_pk = :id)
+EOD;
             $query = $this->db->prepare($sql);
             $query->bindValue('ctx', $contextId, \PDO::PARAM_INT);
             $query->bindValue('title', $resourceLink->title, \PDO::PARAM_STR);
@@ -755,10 +853,12 @@ class DataConnector_pdo extends DataConnector
             $query->bindValue('updated', $now, \PDO::PARAM_STR);
             $query->bindValue('id', $id, \PDO::PARAM_INT);
         } else {
-            $sql = "UPDATE {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' SET ' .
-                'context_pk = NULL, title = :title, lti_resource_link_id = :rlid, settings = :settings, ' .
-                'primary_resource_link_pk = :prlid, share_approved = :share_approved, updated = :updated ' .
-                'WHERE (consumer_pk = :cid) AND (resource_link_pk = :id)';
+            $sql = <<< EOD
+UPDATE {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)} SET
+  context_pk = NULL, title = :title, lti_resource_link_id = :rlid, settings = :settings,
+  primary_resource_link_pk = :prlid, share_approved = :share_approved, updated = :updated
+WHERE (consumer_pk = :cid) AND (resource_link_pk = :id)
+EOD;
             $query = $this->db->prepare($sql);
             $query->bindValue('title', $resourceLink->title, \PDO::PARAM_STR);
             $query->bindValue('rlid', $resourceLink->getId(), \PDO::PARAM_STR);
@@ -784,25 +884,29 @@ class DataConnector_pdo extends DataConnector
     /**
      * Delete resource link object.
      *
-     * @param ResourceLink $resourceLink ResourceLink object
+     * @param ResourceLink $resourceLink  ResourceLink object
      *
-     * @return bool    True if the resource link object was successfully deleted
+     * @return bool  True if the resource link object was successfully deleted
      */
-    public function deleteResourceLink($resourceLink)
+    public function deleteResourceLink(ResourceLink $resourceLink): bool
     {
         $id = $resourceLink->getRecordId();
 
 // Delete any outstanding share keys for resource links for this consumer
-        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME . ' ' .
-            'WHERE (resource_link_pk = :id)';
+        $sql = <<< EOD
+DELETE FROM {$this->dbTableName(static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME)}
+WHERE (resource_link_pk = :id)
+EOD;
         $query = $this->db->prepare($sql);
         $query->bindValue('id', $id, \PDO::PARAM_INT);
         $ok = $this->executeQuery($sql, $query);
 
 // Delete users
         if ($ok) {
-            $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' ' .
-                'WHERE (resource_link_pk = :id)';
+            $sql = <<< EOD
+DELETE FROM {$this->dbTableName(static::USER_RESULT_TABLE_NAME)}
+WHERE (resource_link_pk = :id)
+EOD;
             $query = $this->db->prepare($sql);
             $query->bindValue('id', $id, \PDO::PARAM_INT);
             $ok = $this->executeQuery($sql, $query);
@@ -810,9 +914,11 @@ class DataConnector_pdo extends DataConnector
 
 // Update any resource links for which this is the primary resource link
         if ($ok) {
-            $sql = "UPDATE {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
-                'SET primary_resource_link_pk = NULL ' .
-                'WHERE (primary_resource_link_pk = :id)';
+            $sql = <<< EOD
+UPDATE {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)}
+SET primary_resource_link_pk = NULL
+WHERE (primary_resource_link_pk = :id)
+EOD;
             $query = $this->db->prepare($sql);
             $query->bindValue('id', $id, \PDO::PARAM_INT);
             $ok = $this->executeQuery($sql, $query);
@@ -820,8 +926,10 @@ class DataConnector_pdo extends DataConnector
 
 // Delete resource link
         if ($ok) {
-            $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' ' .
-                'WHERE (resource_link_pk = :id)';
+            $sql = <<< EOD
+DELETE FROM {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)}
+WHERE (resource_link_pk = :id)
+EOD;
             $query = $this->db->prepare($sql);
             $query->bindValue('id', $id, \PDO::PARAM_INT);
             $ok = $this->executeQuery($sql, $query);
@@ -840,32 +948,34 @@ class DataConnector_pdo extends DataConnector
      * Obtain an array of UserResult objects for users with a result sourcedId.  The array may include users from other
      * resource links which are sharing this resource link.  It may also be optionally indexed by the user ID of a specified scope.
      *
-     * @param ResourceLink $resourceLink      Resource link object
-     * @param bool        $localOnly True if only users within the resource link are to be returned (excluding users sharing this resource link)
-     * @param int|null    $idScope     Scope value to use for user IDs
+     * @param ResourceLink $resourceLink  Resource link object
+     * @param bool         $localOnly     True if only users within the resource link are to be returned (excluding users sharing this resource link)
+     * @param IdScope|null $idScope       Scope value to use for user IDs
      *
      * @return UserResult[] Array of UserResult objects
      */
-    public function getUserResultSourcedIDsResourceLink($resourceLink, $localOnly, $idScope)
+    public function getUserResultSourcedIDsResourceLink(ResourceLink $resourceLink, bool $localOnly, ?IdScope $idScope): array
     {
         $id = $resourceLink->getRecordId();
-        $userResults = array();
+        $userResults = [];
 
         if ($localOnly) {
-            $sql = 'SELECT u.user_result_pk, u.lti_result_sourcedid, u.lti_user_id, u.created, u.updated ' .
-                "FROM {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' u ' .
-                "INNER JOIN {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' rl ' .
-                'ON u.resource_link_pk = rl.resource_link_pk ' .
-                'WHERE (rl.resource_link_pk = :id) AND (rl.primary_resource_link_pk IS NULL)';
+            $sql = <<< EOD
+SELECT u.user_result_pk, u.lti_result_sourcedid, u.lti_user_id, u.created, u.updated
+FROM {$this->dbTableName(static::USER_RESULT_TABLE_NAME)} u
+  INNER JOIN {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)} rl ON (u.resource_link_pk = rl.resource_link_pk)
+WHERE (rl.resource_link_pk = :id) AND (rl.primary_resource_link_pk IS NULL)
+EOD;
             $query = $this->db->prepare($sql);
             $query->bindValue('id', $id, \PDO::PARAM_INT);
         } else {
-            $sql = 'SELECT u.user_result_pk, u.lti_result_sourcedid, u.lti_user_id, u.created, u.updated ' .
-                "FROM {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' u ' .
-                "INNER JOIN {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' rl ' .
-                'ON u.resource_link_pk = rl.resource_link_pk ' .
-                'WHERE ((rl.resource_link_pk = :id) AND (rl.primary_resource_link_pk IS NULL)) OR ' .
-                '((rl.primary_resource_link_pk = :pid) AND (share_approved = 1))';
+            $sql = <<< EOD
+SELECT u.user_result_pk, u.lti_result_sourcedid, u.lti_user_id, u.created, u.updated
+FROM {$this->dbTableName(static::USER_RESULT_TABLE_NAME)} u
+INNER JOIN {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)} rl ON (u.resource_link_pk = rl.resource_link_pk)
+WHERE ((rl.resource_link_pk = :id) AND (rl.primary_resource_link_pk IS NULL)) OR
+  ((rl.primary_resource_link_pk = :pid) AND (share_approved = 1))
+EOD;
             $query = $this->db->prepare($sql);
             $query->bindValue('id', $id, \PDO::PARAM_INT);
             $query->bindValue('pid', $id, \PDO::PARAM_INT);
@@ -873,15 +983,15 @@ class DataConnector_pdo extends DataConnector
         if ($this->executeQuery($sql, $query)) {
             while ($row = $query->fetch(\PDO::FETCH_ASSOC)) {
                 $row = array_change_key_case($row);
-                $userresult = LTI\UserResult::fromRecordId($row['user_result_pk'], $resourceLink->getDataConnector());
-                $userresult->setRecordId(intval($row['user_result_pk']));
-                $userresult->ltiResultSourcedId = $row['lti_result_sourcedid'];
-                $userresult->created = strtotime($row['created']);
-                $userresult->updated = strtotime($row['updated']);
+                $userResult = LTI\UserResult::fromRecordId(intval($row['user_result_pk']), $resourceLink->getDataConnector());
+                $userResult->setRecordId(intval($row['user_result_pk']));
+                $userResult->ltiResultSourcedId = $row['lti_result_sourcedid'];
+                $userResult->created = strtotime($row['created']);
+                $userResult->updated = strtotime($row['updated']);
                 if (is_null($idScope)) {
-                    $userResults[] = $userresult;
+                    $userResults[] = $userResult;
                 } else {
-                    $userResults[$userresult->getId($idScope)] = $userresult;
+                    $userResults[$userResult->getId($idScope)] = $userResult;
                 }
             }
         }
@@ -892,27 +1002,29 @@ class DataConnector_pdo extends DataConnector
     /**
      * Get array of shares defined for this resource link.
      *
-     * @param ResourceLink $resourceLink ResourceLink object
+     * @param ResourceLink $resourceLink  ResourceLink object
      *
-     * @return ResourceLinkShare[] Array of ResourceLinkShare objects
+     * @return ResourceLinkShare[]  Array of ResourceLinkShare objects
      */
-    public function getSharesResourceLink($resourceLink)
+    public function getSharesResourceLink(ResourceLink $resourceLink): array
     {
         $id = $resourceLink->getRecordId();
 
-        $shares = array();
+        $shares = [];
 
-        $sql = 'SELECT c.consumer_name consumer_name, r.resource_link_pk resource_link_pk, r.title title, r.share_approved share_approved ' .
-            "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' r ' .
-            "INNER JOIN {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' c ON r.consumer_pk = c.consumer_pk ' .
-            'WHERE (r.primary_resource_link_pk = :id1) ' .
-            'UNION ' .
-            'SELECT c2.consumer_name consumer_name, r2.resource_link_pk resource_link_pk, r2.title title, r2.share_approved share_approved ' .
-            "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_TABLE_NAME . ' r2 ' .
-            "INNER JOIN {$this->dbTableNamePrefix}" . static::CONTEXT_TABLE_NAME . ' x ON r2.context_pk = x.context_pk ' .
-            "INNER JOIN {$this->dbTableNamePrefix}" . static::PLATFORM_TABLE_NAME . ' c2 ON x.consumer_pk = c2.consumer_pk ' .
-            'WHERE (r2.primary_resource_link_pk = :id2) ' .
-            'ORDER BY consumer_name, title';
+        $sql = <<< EOD
+SELECT c.consumer_name consumer_name, r.resource_link_pk resource_link_pk, r.title title, r.share_approved share_approved
+FROM {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)} r
+  INNER JOIN {$this->dbTableName(static::PLATFORM_TABLE_NAME)} c ON (r.consumer_pk = c.consumer_pk)
+WHERE (r.primary_resource_link_pk = :id1)
+UNION
+SELECT c2.consumer_name consumer_name, r2.resource_link_pk resource_link_pk, r2.title title, r2.share_approved share_approved
+FROM {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)} r2
+  INNER JOIN {$this->dbTableName(static::CONTEXT_TABLE_NAME)} x ON (r2.context_pk = x.context_pk)
+  INNER JOIN {$this->dbTableName(static::PLATFORM_TABLE_NAME)} c2 ON (x.consumer_pk = c2.consumer_pk)
+WHERE (r2.primary_resource_link_pk = :id2)
+ORDER BY consumer_name, title
+EOD;
         $query = $this->db->prepare($sql);
         $query->bindValue('id1', $id, \PDO::PARAM_INT);
         $query->bindValue('id2', $id, \PDO::PARAM_INT);
@@ -938,18 +1050,21 @@ class DataConnector_pdo extends DataConnector
     /**
      * Load nonce object.
      *
-     * @param PlatformNonce $nonce Nonce object
+     * @param PlatformNonce $nonce  Nonce object
      *
-     * @return bool    True if the nonce object was successfully loaded
+     * @return bool  True if the nonce object was successfully loaded
      */
-    public function loadPlatformNonce($nonce)
+    public function loadPlatformNonce(PlatformNonce $nonce): bool
     {
         if (parent::useMemcache()) {
             $ok = parent::loadPlatformNonce($nonce);
         } else {
 // Delete any expired nonce values
             $now = date("{$this->dateFormat} {$this->timeFormat}", time());
-            $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' WHERE expires <= :now';
+            $sql = <<< EOD
+DELETE FROM {$this->dbTableName(static::NONCE_TABLE_NAME)}
+WHERE (expires <= :now)
+EOD;
             $query = $this->db->prepare($sql);
             $query->bindValue('now', $now, \PDO::PARAM_STR);
             $this->executeQuery($sql, $query);
@@ -957,7 +1072,11 @@ class DataConnector_pdo extends DataConnector
 // Load the nonce
             $id = $nonce->getPlatform()->getRecordId();
             $value = $nonce->getValue();
-            $sql = "SELECT value T FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' WHERE (consumer_pk = :id) AND (value = :value)';
+            $sql = <<< EOD
+SELECT value T
+FROM {$this->dbTableName(static::NONCE_TABLE_NAME)}
+WHERE (consumer_pk = :id) AND (value = :value)
+EOD;
             $query = $this->db->prepare($sql);
             $query->bindValue('id', $id, \PDO::PARAM_INT);
             $query->bindValue('value', $value, \PDO::PARAM_STR);
@@ -976,11 +1095,11 @@ class DataConnector_pdo extends DataConnector
     /**
      * Save nonce object.
      *
-     * @param PlatformNonce $nonce Nonce object
+     * @param PlatformNonce $nonce  Nonce object
      *
-     * @return bool    True if the nonce object was successfully saved
+     * @return bool  True if the nonce object was successfully saved
      */
-    public function savePlatformNonce($nonce)
+    public function savePlatformNonce(PlatformNonce $nonce): bool
     {
         if (parent::useMemcache()) {
             $ok = parent::savePlatformNonce($nonce);
@@ -988,7 +1107,10 @@ class DataConnector_pdo extends DataConnector
             $id = $nonce->getPlatform()->getRecordId();
             $value = $nonce->getValue();
             $expires = date("{$this->dateFormat} {$this->timeFormat}", $nonce->expires);
-            $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' (consumer_pk, value, expires) VALUES (:id, :value, :expires)';
+            $sql = <<< EOD
+INSERT INTO {$this->dbTableName(static::NONCE_TABLE_NAME)} (consumer_pk, value, expires)
+VALUES (:id, :value, :expires)
+EOD;
             $query = $this->db->prepare($sql);
             $query->bindValue('id', $id, \PDO::PARAM_INT);
             $query->bindValue('value', $value, \PDO::PARAM_STR);
@@ -1002,17 +1124,19 @@ class DataConnector_pdo extends DataConnector
     /**
      * Delete nonce object.
      *
-     * @param PlatformNonce $nonce Nonce object
+     * @param PlatformNonce $nonce  Nonce object
      *
-     * @return bool    True if the nonce object was successfully deleted
+     * @return bool  True if the nonce object was successfully deleted
      */
-    public function deletePlatformNonce($nonce)
+    public function deletePlatformNonce(PlatformNonce $nonce): bool
     {
         if (parent::useMemcache()) {
             $ok = parent::deletePlatformNonce($nonce);
         } else {
-            $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::NONCE_TABLE_NAME . ' ' .
-                'WHERE (consumer_pk = :id) AND (value = :value)';
+            $sql = <<< EOD
+DELETE FROM {$this->dbTableName(static::NONCE_TABLE_NAME)}
+WHERE (consumer_pk = :id) AND (value = :value)
+EOD;
             $query = $this->db->prepare($sql);
             $id = $nonce->getPlatform()->getRecordId();
             $query->bindValue('id', $id, \PDO::PARAM_STR);
@@ -1033,17 +1157,20 @@ class DataConnector_pdo extends DataConnector
      *
      * @param AccessToken $accessToken  Access token object
      *
-     * @return bool    True if the nonce object was successfully loaded
+     * @return bool  True if the nonce object was successfully loaded
      */
-    public function loadAccessToken($accessToken)
+    public function loadAccessToken(AccessToken $accessToken): bool
     {
         if (parent::useMemcache()) {
             $ok = parent::loadAccessToken($accessToken);
         } else {
             $ok = false;
             $consumer_pk = $accessToken->getPlatform()->getRecordId();
-            $sql = "SELECT scopes, token, expires, created, updated FROM {$this->dbTableNamePrefix}" . static::ACCESS_TOKEN_TABLE_NAME . ' ' .
-                'WHERE (consumer_pk = :consumer_pk)';
+            $sql = <<< EOD
+SELECT scopes, token, expires, created, updated
+FROM {$this->dbTableName(static::ACCESS_TOKEN_TABLE_NAME)}
+WHERE (consumer_pk = :consumer_pk)
+EOD;
             $query = $this->db->prepare($sql);
             $query->bindValue('consumer_pk', $consumer_pk, \PDO::PARAM_INT);
             if ($this->executeQuery($sql, $query, false)) {
@@ -1052,7 +1179,7 @@ class DataConnector_pdo extends DataConnector
                     $row = array_change_key_case($row);
                     $scopes = Util::jsonDecode($row['scopes'], true);
                     if (!is_array($scopes)) {
-                        $scopes = array();
+                        $scopes = [];
                     }
                     $accessToken->scopes = $scopes;
                     $accessToken->token = $row['token'];
@@ -1072,9 +1199,9 @@ class DataConnector_pdo extends DataConnector
      *
      * @param AccessToken $accessToken  Access token object
      *
-     * @return bool    True if the access token object was successfully saved
+     * @return bool  True if the access token object was successfully saved
      */
-    public function saveAccessToken($accessToken)
+    public function saveAccessToken(AccessToken $accessToken): bool
     {
         if (parent::useMemcache()) {
             $ok = parent::saveAccessToken($accessToken);
@@ -1086,9 +1213,10 @@ class DataConnector_pdo extends DataConnector
             $time = time();
             $now = date("{$this->dateFormat} {$this->timeFormat}", $time);
             if (empty($accessToken->created)) {
-                $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::ACCESS_TOKEN_TABLE_NAME . ' ' .
-                    '(consumer_pk, scopes, token, expires, created, updated) ' .
-                    'VALUES (:consumer_pk, :scopes, :token, :expires, :created, :updated)';
+                $sql = <<< EOD
+INSERT INTO {$this->dbTableName(static::ACCESS_TOKEN_TABLE_NAME)} (consumer_pk, scopes, token, expires, created, updated)
+VALUES (:consumer_pk, :scopes, :token, :expires, :created, :updated)
+EOD;
                 $query = $this->db->prepare($sql);
                 $query->bindValue('consumer_pk', $consumer_pk, \PDO::PARAM_INT);
                 $query->bindValue('scopes', $scopes, \PDO::PARAM_STR);
@@ -1097,9 +1225,11 @@ class DataConnector_pdo extends DataConnector
                 $query->bindValue('created', $now, \PDO::PARAM_STR);
                 $query->bindValue('updated', $now, \PDO::PARAM_STR);
             } else {
-                $sql = 'UPDATE ' . $this->dbTableNamePrefix . static::ACCESS_TOKEN_TABLE_NAME . ' ' .
-                    'SET scopes = :scopes, token = :token, expires = :expires, updated = :updated ' .
-                    'WHERE consumer_pk = :consumer_pk';
+                $sql = <<< EOD
+UPDATE {$this->dbTableName(static::ACCESS_TOKEN_TABLE_NAME)}
+SET scopes = :scopes, token = :token, expires = :expires, updated = :updated
+WHERE (consumer_pk = :consumer_pk)
+EOD;
                 $query = $this->db->prepare($sql);
                 $query->bindValue('scopes', $scopes, \PDO::PARAM_STR);
                 $query->bindValue('token', $token, \PDO::PARAM_STR);
@@ -1120,26 +1250,31 @@ class DataConnector_pdo extends DataConnector
     /**
      * Load resource link share key object.
      *
-     * @param ResourceLinkShareKey $shareKey ResourceLink share key object
+     * @param ResourceLinkShareKey $shareKey  ResourceLink share key object
      *
-     * @return bool    True if the resource link share key object was successfully loaded
+     * @return bool  True if the resource link share key object was successfully loaded
      */
-    public function loadResourceLinkShareKey($shareKey)
+    public function loadResourceLinkShareKey(ResourceLinkShareKey $shareKey): bool
     {
         $ok = false;
 
 // Clear expired share keys
         $now = date("{$this->dateFormat} {$this->timeFormat}", time());
-        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME . ' WHERE expires <= :now';
+        $sql = <<< EOD
+DELETE FROM {$this->dbTableName(static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME)}
+WHERE (expires <= :now)
+EOD;
         $query = $this->db->prepare($sql);
         $query->bindValue('now', $now, \PDO::PARAM_STR);
         $this->executeQuery($sql, $query);
 
 // Load share key
         $id = $shareKey->getId();
-        $sql = 'SELECT resource_link_pk, auto_approve, expires ' .
-            "FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME . ' ' .
-            'WHERE share_key_id = :id';
+        $sql = <<< EOD
+SELECT resource_link_pk, auto_approve, expires
+FROM {$this->dbTableName(static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME)}
+WHERE (share_key_id = :id)
+EOD;
         $query = $this->db->prepare($sql);
         $query->bindValue('id', $id, \PDO::PARAM_STR);
         if ($this->executeQuery($sql, $query)) {
@@ -1159,18 +1294,19 @@ class DataConnector_pdo extends DataConnector
     /**
      * Save resource link share key object.
      *
-     * @param ResourceLinkShareKey $shareKey Resource link share key object
+     * @param ResourceLinkShareKey $shareKey  Resource link share key object
      *
-     * @return bool    True if the resource link share key object was successfully saved
+     * @return bool  True if the resource link share key object was successfully saved
      */
-    public function saveResourceLinkShareKey($shareKey)
+    public function saveResourceLinkShareKey(ResourceLinkShareKey $shareKey): bool
     {
         $id = $shareKey->getId();
         $autoApprove = ($shareKey->autoApprove) ? 1 : 0;
         $expires = date("{$this->dateFormat} {$this->timeFormat}", $shareKey->expires);
-        $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME . ' ' .
-            '(share_key_id, resource_link_pk, auto_approve, expires) ' .
-            'VALUES (:id, :prlid, :approve, :expires)';
+        $sql = <<< EOD
+INSERT INTO {$this->dbTableName(static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME)} (share_key_id, resource_link_pk, auto_approve, expires)
+VALUES (:id, :prlid, :approve, :expires)
+EOD;
         $query = $this->db->prepare($sql);
         $query->bindValue('id', $id, \PDO::PARAM_STR);
         $query->bindValue('prlid', $shareKey->resourceLinkId, \PDO::PARAM_INT);
@@ -1184,14 +1320,17 @@ class DataConnector_pdo extends DataConnector
     /**
      * Delete resource link share key object.
      *
-     * @param ResourceLinkShareKey $shareKey Resource link share key object
+     * @param ResourceLinkShareKey $shareKey  Resource link share key object
      *
-     * @return bool    True if the resource link share key object was successfully deleted
+     * @return bool  True if the resource link share key object was successfully deleted
      */
-    public function deleteResourceLinkShareKey($shareKey)
+    public function deleteResourceLinkShareKey(ResourceLinkShareKey $shareKey): bool
     {
         $id = $shareKey->getId();
-        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME . ' WHERE share_key_id = :id';
+        $sql = <<< EOD
+DELETE FROM {$this->dbTableName(static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME)}
+WHERE (share_key_id = :id)
+EOD;
         $query = $this->db->prepare($sql);
         $query->bindValue('id', $id, \PDO::PARAM_STR);
         $ok = $this->executeQuery($sql, $query);
@@ -1210,26 +1349,30 @@ class DataConnector_pdo extends DataConnector
     /**
      * Load user object.
      *
-     * @param UserResult $userresult UserResult object
+     * @param UserResult $userResult  UserResult object
      *
-     * @return bool    True if the user object was successfully loaded
+     * @return bool  True if the user object was successfully loaded
      */
-    public function loadUserResult($userresult)
+    public function loadUserResult(UserResult $userResult): bool
     {
         $ok = false;
-        if (!is_null($userresult->getRecordId())) {
-            $id = $userresult->getRecordId();
-            $sql = 'SELECT user_result_pk, resource_link_pk, lti_user_id, lti_result_sourcedid, created, updated ' .
-                "FROM {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' ' .
-                'WHERE (user_result_pk = :id)';
+        if (!is_null($userResult->getRecordId())) {
+            $id = $userResult->getRecordId();
+            $sql = <<< EOD
+SELECT user_result_pk, resource_link_pk, lti_user_id, lti_result_sourcedid, created, updated
+FROM {$this->dbTableName(static::USER_RESULT_TABLE_NAME)}
+WHERE (user_result_pk = :id)
+EOD;
             $query = $this->db->prepare($sql);
             $query->bindValue('id', $id, \PDO::PARAM_INT);
         } else {
-            $id = $userresult->getResourceLink()->getRecordId();
-            $uid = $userresult->getId(LTI\Tool::ID_SCOPE_ID_ONLY);
-            $sql = 'SELECT user_result_pk, resource_link_pk, lti_user_id, lti_result_sourcedid, created, updated ' .
-                "FROM {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' ' .
-                'WHERE (resource_link_pk = :id) AND (lti_user_id = :u_id)';
+            $id = $userResult->getResourceLink()->getRecordId();
+            $uid = $userResult->getId(LTI\Enum\IdScope::IdOnly);
+            $sql = <<< EOD
+SELECT user_result_pk, resource_link_pk, lti_user_id, lti_result_sourcedid, created, updated
+FROM {$this->dbTableName(static::USER_RESULT_TABLE_NAME)}
+WHERE (resource_link_pk = :id) AND (lti_user_id = :u_id)
+EOD;
             $query = $this->db->prepare($sql);
             $query->bindValue('id', $id, \PDO::PARAM_INT);
             $query->bindValue('u_id', $uid, \PDO::PARAM_STR);
@@ -1238,12 +1381,12 @@ class DataConnector_pdo extends DataConnector
             $row = $query->fetch(\PDO::FETCH_ASSOC);
             if ($row !== false) {
                 $row = array_change_key_case($row);
-                $userresult->setRecordId(intval($row['user_result_pk']));
-                $userresult->setResourceLinkId(intval($row['resource_link_pk']));
-                $userresult->ltiUserId = $row['lti_user_id'];
-                $userresult->ltiResultSourcedId = $row['lti_result_sourcedid'];
-                $userresult->created = strtotime($row['created']);
-                $userresult->updated = strtotime($row['updated']);
+                $userResult->setRecordId(intval($row['user_result_pk']));
+                $userResult->setResourceLinkId(intval($row['resource_link_pk']));
+                $userResult->ltiUserId = $row['lti_user_id'];
+                $userResult->ltiResultSourcedId = $row['lti_result_sourcedid'];
+                $userResult->created = strtotime($row['created']);
+                $userResult->updated = strtotime($row['updated']);
                 $ok = true;
             }
         }
@@ -1254,40 +1397,43 @@ class DataConnector_pdo extends DataConnector
     /**
      * Save user object.
      *
-     * @param UserResult $userresult UserResult object
+     * @param UserResult $userResult  UserResult object
      *
-     * @return bool    True if the user object was successfully saved
+     * @return bool  True if the user object was successfully saved
      */
-    public function saveUserResult($userresult)
+    public function saveUserResult(UserResult $userResult): bool
     {
         $time = time();
         $now = date("{$this->dateFormat} {$this->timeFormat}", $time);
-        if (is_null($userresult->created)) {
-            $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' (resource_link_pk, ' .
-                'lti_user_id, lti_result_sourcedid, created, updated) ' .
-                'VALUES (:rlid, :u_id, :sourcedid, :created, :updated)';
+        if (is_null($userResult->created)) {
+            $sql = <<< EOD
+INSERT INTO {$this->dbTableName(static::USER_RESULT_TABLE_NAME)} (resource_link_pk, lti_user_id, lti_result_sourcedid, created, updated)
+VALUES (:rlid, :u_id, :sourcedid, :created, :updated)
+EOD;
             $query = $this->db->prepare($sql);
-            $query->bindValue('rlid', $userresult->getResourceLink()->getRecordId(), \PDO::PARAM_INT);
-            $query->bindValue('u_id', $userresult->getId(LTI\Tool::ID_SCOPE_ID_ONLY), \PDO::PARAM_STR);
-            $query->bindValue('sourcedid', $userresult->ltiResultSourcedId, \PDO::PARAM_STR);
+            $query->bindValue('rlid', $userResult->getResourceLink()->getRecordId(), \PDO::PARAM_INT);
+            $query->bindValue('u_id', $userResult->getId(LTI\Enum\IdScope::IdOnly), \PDO::PARAM_STR);
+            $query->bindValue('sourcedid', $userResult->ltiResultSourcedId, \PDO::PARAM_STR);
             $query->bindValue('created', $now, \PDO::PARAM_STR);
             $query->bindValue('updated', $now, \PDO::PARAM_STR);
         } else {
-            $sql = "UPDATE {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' ' .
-                'SET lti_result_sourcedid = :sourcedid, updated = :updated ' .
-                'WHERE (user_result_pk = :id)';
+            $sql = <<< EOD
+UPDATE {$this->dbTableName(static::USER_RESULT_TABLE_NAME)}
+SET lti_result_sourcedid = :sourcedid, updated = :updated
+WHERE (user_result_pk = :id)
+EOD;
             $query = $this->db->prepare($sql);
-            $query->bindValue('sourcedid', $userresult->ltiResultSourcedId, \PDO::PARAM_STR);
+            $query->bindValue('sourcedid', $userResult->ltiResultSourcedId, \PDO::PARAM_STR);
             $query->bindValue('updated', $now, \PDO::PARAM_STR);
-            $query->bindValue('id', $userresult->getRecordId(), \PDO::PARAM_INT);
+            $query->bindValue('id', $userResult->getRecordId(), \PDO::PARAM_INT);
         }
         $ok = $this->executeQuery($sql, $query);
         if ($ok) {
-            if (is_null($userresult->created)) {
-                $userresult->setRecordId($this->getLastInsertId(static::USER_RESULT_TABLE_NAME));
-                $userresult->created = $time;
+            if (is_null($userResult->created)) {
+                $userResult->setRecordId($this->getLastInsertId(static::USER_RESULT_TABLE_NAME));
+                $userResult->created = $time;
             }
-            $userresult->updated = $time;
+            $userResult->updated = $time;
         }
 
         return $ok;
@@ -1296,20 +1442,22 @@ class DataConnector_pdo extends DataConnector
     /**
      * Delete user object.
      *
-     * @param UserResult $userresult UserResult object
+     * @param UserResult $userResult  UserResult object
      *
-     * @return bool    True if the user object was successfully deleted
+     * @return bool  True if the user object was successfully deleted
      */
-    public function deleteUserResult($userresult)
+    public function deleteUserResult(UserResult $userResult): bool
     {
-        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::USER_RESULT_TABLE_NAME . ' ' .
-            'WHERE (user_result_pk = :id)';
+        $sql = <<< EOD
+DELETE FROM {$this->dbTableName(static::USER_RESULT_TABLE_NAME)}
+WHERE (user_result_pk = :id)
+EOD;
         $query = $this->db->prepare($sql);
-        $query->bindValue('id', $userresult->getRecordId(), \PDO::PARAM_INT);
+        $query->bindValue('id', $userResult->getRecordId(), \PDO::PARAM_INT);
         $ok = $this->executeQuery($sql, $query);
 
         if ($ok) {
-            $userresult->initialize();
+            $userResult->initialize();
         }
 
         return $ok;
@@ -1324,37 +1472,37 @@ class DataConnector_pdo extends DataConnector
      *
      * @param Tool $tool  Tool object
      *
-     * @return bool    True if the tool object was successfully loaded
+     * @return bool  True if the tool object was successfully loaded
      */
-    public function loadTool($tool)
+    public function loadTool(Tool $tool): bool
     {
         $ok = false;
         if (!is_null($tool->getRecordId())) {
-            $sql = 'SELECT tool_pk, name, consumer_key, secret, ' .
-                'message_url, initiate_login_url, redirection_uris, public_key, ' .
-                'lti_version, signature_method, settings, enabled, ' .
-                'enable_from, enable_until, last_access, created, updated ' .
-                "FROM {$this->dbTableNamePrefix}" . static::TOOL_TABLE_NAME . ' ' .
-                'WHERE tool_pk = :id';
+            $sql = <<< EOD
+SELECT tool_pk, name, consumer_key, secret, message_url, initiate_login_url, redirection_uris, public_key,
+  lti_version, signature_method, settings, enabled, enable_from, enable_until, last_access, created, updated
+FROM {$this->dbTableName(static::TOOL_TABLE_NAME)}
+WHERE (tool_pk = :id)
+EOD;
             $query = $this->db->prepare($sql);
             $id = $tool->getRecordId();
             $query->bindValue('id', $id, \PDO::PARAM_INT);
         } elseif (!empty($tool->initiateLoginUrl)) {
-            $sql = 'SELECT tool_pk, name, consumer_key, secret, ' .
-                'message_url, initiate_login_url, redirection_uris, public_key, ' .
-                'lti_version, signature_method, settings, enabled, ' .
-                'enable_from, enable_until, last_access, created, updated ' .
-                "FROM {$this->dbTableNamePrefix}" . static::TOOL_TABLE_NAME . ' ' .
-                'WHERE initiate_login_url = :initiate_login_url';
+            $sql = <<< EOD
+SELECT tool_pk, name, consumer_key, secret, message_url, initiate_login_url, redirection_uris, public_key,
+  lti_version, signature_method, settings, enabled, enable_from, enable_until, last_access, created, updated
+FROM {$this->dbTableName(static::TOOL_TABLE_NAME)}
+WHERE (initiate_login_url = :initiate_login_url)
+EOD;
             $query = $this->db->prepare($sql);
             $query->bindValue('initiate_login_url', $tool->initiateLoginUrl, \PDO::PARAM_STR);
         } else {
-            $sql = 'SELECT tool_pk, name, consumer_key, secret, ' .
-                'message_url, initiate_login_url, redirection_uris, public_key, ' .
-                'lti_version, signature_method, settings, enabled, ' .
-                'enable_from, enable_until, last_access, created, updated ' .
-                "FROM {$this->dbTableNamePrefix}" . static::TOOL_TABLE_NAME . ' ' .
-                'WHERE consumer_key = :key';
+            $sql = <<< EOD
+SELECT tool_pk, name, consumer_key, secret, message_url, initiate_login_url, redirection_uris, public_key,
+  lti_version, signature_method, settings, enabled, enable_from, enable_until, last_access, created, updated
+FROM {$this->dbTableName(static::TOOL_TABLE_NAME)}
+WHERE (consumer_key = :key)
+EOD;
             $query = $this->db->prepare($sql);
             $consumer_key = $tool->getKey();
             $query->bindValue('key', $consumer_key, \PDO::PARAM_STR);
@@ -1374,14 +1522,14 @@ class DataConnector_pdo extends DataConnector
             $tool->initiateLoginUrl = $row['initiate_login_url'];
             $tool->redirectionUris = Util::jsonDecode($row['redirection_uris'], true);
             if (!is_array($tool->redirectionUris)) {
-                $tool->redirectionUris = array();
+                $tool->redirectionUris = [];
             }
             $tool->rsaKey = $row['public_key'];
-            $tool->ltiVersion = $row['lti_version'];
+            $tool->ltiVersion = LtiVersion::tryFrom($row['lti_version'] ?? '');
             $tool->signatureMethod = $row['signature_method'];
             $settings = Util::jsonDecode($row['settings'], true);
             if (!is_array($settings)) {
-                $settings = array();
+                $settings = [];
             }
             $tool->setSettings($settings);
             $tool->enabled = (intval($row['enabled']) === 1);
@@ -1411,9 +1559,9 @@ class DataConnector_pdo extends DataConnector
      *
      * @param Tool $tool  Tool object
      *
-     * @return bool    True if the tool object was successfully saved
+     * @return bool  True if the tool object was successfully saved
      */
-    public function saveTool($tool)
+    public function saveTool(Tool $tool): bool
     {
         $id = $tool->getRecordId();
         $consumer_key = $tool->getKey();
@@ -1437,14 +1585,13 @@ class DataConnector_pdo extends DataConnector
             $last = date($this->dateFormat, $tool->lastAccess);
         }
         if (empty($id)) {
-            $sql = "INSERT INTO {$this->dbTableNamePrefix}" . static::TOOL_TABLE_NAME . ' (name, consumer_key, secret, ' .
-                'message_url, initiate_login_url, redirection_uris, public_key, ' .
-                'lti_version, signature_method, settings, enabled, enable_from, enable_until, ' .
-                'last_access, created, updated) ' .
-                'VALUES (:name, :key, :secret, ' .
-                ':message_url, :initiate_login_url, :redirection_uris, :public_key, ' .
-                ':lti_version, :signature_method, :settings, :enabled, :enable_from, :enable_until, ' .
-                ':last_access, :created, :updated)';
+            $sql = <<< EOD
+INSERT INTO {$this->dbTableName(static::TOOL_TABLE_NAME)} (
+  name, consumer_key, secret, message_url, initiate_login_url, redirection_uris, public_key,
+  lti_version, signature_method, settings, enabled, enable_from, enable_until, last_access, created, updated)
+VALUES (:name, :key, :secret, :message_url, :initiate_login_url, :redirection_uris, :public_key,
+  :lti_version, :signature_method, :settings, :enabled, :enable_from, :enable_until, :last_access, :created, :updated)
+EOD;
             $query = $this->db->prepare($sql);
             $query->bindValue('name', $tool->name, \PDO::PARAM_STR);
             $query->bindValue('key', $consumer_key, \PDO::PARAM_STR);
@@ -1453,7 +1600,7 @@ class DataConnector_pdo extends DataConnector
             $query->bindValue('initiate_login_url', $tool->initiateLoginUrl, \PDO::PARAM_STR);
             $query->bindValue('redirection_uris', $redirectionUrisValue, \PDO::PARAM_STR);
             $query->bindValue('public_key', $tool->rsaKey, \PDO::PARAM_STR);
-            $query->bindValue('lti_version', $tool->ltiVersion, \PDO::PARAM_STR);
+            $query->bindValue('lti_version', $tool->ltiVersion ? $tool->ltiVersion->value : '', \PDO::PARAM_STR);
             $query->bindValue('signature_method', $tool->signatureMethod, \PDO::PARAM_STR);
             $query->bindValue('settings', $settingsValue, \PDO::PARAM_STR);
             $query->bindValue('enabled', $enabled, \PDO::PARAM_INT);
@@ -1463,12 +1610,14 @@ class DataConnector_pdo extends DataConnector
             $query->bindValue('created', $now, \PDO::PARAM_STR);
             $query->bindValue('updated', $now, \PDO::PARAM_STR);
         } else {
-            $sql = "UPDATE {$this->dbTableNamePrefix}" . static::TOOL_TABLE_NAME . ' SET ' .
-                'name = :name, consumer_key = :key, secret= :secret, ' .
-                'message_url = :message_url, initiate_login_url = :initiate_login_url, redirection_uris = :redirection_uris, public_key = :public_key, ' .
-                'lti_version = :lti_version, signature_method = :signature_method, settings = :settings, enabled = :enabled, enable_from = :enable_from, enable_until = :enable_until, ' .
-                'last_access = :last_access, updated = :updated ' .
-                'WHERE tool_pk = :id';
+            $sql = <<< EOD
+UPDATE {$this->dbTableName(static::TOOL_TABLE_NAME)} SET
+  name = :name, consumer_key = :key, secret= :secret, message_url = :message_url, initiate_login_url = :initiate_login_url,
+  redirection_uris = :redirection_uris, public_key = :public_key,
+  lti_version = :lti_version, signature_method = :signature_method, settings = :settings,
+  enabled = :enabled, enable_from = :enable_from, enable_until = :enable_until, last_access = :last_access, updated = :updated
+WHERE (tool_pk = :id)
+EOD;
             $query = $this->db->prepare($sql);
             $query->bindValue('name', $tool->name, \PDO::PARAM_STR);
             $query->bindValue('key', $consumer_key, \PDO::PARAM_STR);
@@ -1477,7 +1626,7 @@ class DataConnector_pdo extends DataConnector
             $query->bindValue('initiate_login_url', $tool->initiateLoginUrl, \PDO::PARAM_STR);
             $query->bindValue('redirection_uris', $redirectionUrisValue, \PDO::PARAM_STR);
             $query->bindValue('public_key', $tool->rsaKey, \PDO::PARAM_STR);
-            $query->bindValue('lti_version', $tool->ltiVersion, \PDO::PARAM_STR);
+            $query->bindValue('lti_version', $tool->ltiVersion ? $tool->ltiVersion->value : '', \PDO::PARAM_STR);
             $query->bindValue('signature_method', $tool->signatureMethod, \PDO::PARAM_STR);
             $query->bindValue('settings', $settingsValue, \PDO::PARAM_STR);
             $query->bindValue('enabled', $enabled, \PDO::PARAM_INT);
@@ -1504,14 +1653,16 @@ class DataConnector_pdo extends DataConnector
      *
      * @param Tool $tool  Tool object
      *
-     * @return bool    True if the tool object was successfully deleted
+     * @return bool  True if the tool object was successfully deleted
      */
-    public function deleteTool($tool)
+    public function deleteTool(Tool $tool): bool
     {
         $id = $tool->getRecordId();
 
-        $sql = "DELETE FROM {$this->dbTableNamePrefix}" . static::TOOL_TABLE_NAME . ' ' .
-            'WHERE tool_pk = :id';
+        $sql = <<< EOD
+DELETE FROM {$this->dbTableName(static::TOOL_TABLE_NAME)}
+WHERE (tool_pk = :id)
+EOD;
         $query = $this->db->prepare($sql);
         $query->bindValue('id', $id, \PDO::PARAM_INT);
         $ok = $this->executeQuery($sql, $query);
@@ -1526,18 +1677,18 @@ class DataConnector_pdo extends DataConnector
     /**
      * Load tool objects.
      *
-     * @return Tool[] Array of all defined Tool objects
+     * @return Tool[]  Array of all defined Tool objects
      */
-    public function getTools()
+    public function getTools(): array
     {
-        $tools = array();
+        $tools = [];
 
-        $sql = 'SELECT tool_pk, name, consumer_key, secret, ' .
-            'message_url, initiate_login_url, redirection_uris, public_key, ' .
-            'lti_version, signature_method, settings, enabled, ' .
-            'enable_from, enable_until, last_access, created, updated ' .
-            "FROM {$this->dbTableNamePrefix}" . static::TOOL_TABLE_NAME . ' ' .
-            'ORDER BY name';
+        $sql = <<< EOD
+SELECT tool_pk, name, consumer_key, secret, message_url, initiate_login_url, redirection_uris, public_key,
+  lti_version, signature_method, settings, enabled, enable_from, enable_until, last_access, created, updated
+FROM {$this->dbTableName(static::TOOL_TABLE_NAME)}
+ORDER BY name
+EOD;
         $query = $this->db->prepare($sql);
         $ok = ($query !== false);
 
@@ -1557,14 +1708,14 @@ class DataConnector_pdo extends DataConnector
                 $tool->initiateLoginUrl = $row['initiate_login_url'];
                 $tool->redirectionUris = Util::jsonDecode($row['redirection_uris'], true);
                 if (!is_array($tool->redirectionUris)) {
-                    $tool->redirectionUris = array();
+                    $tool->redirectionUris = [];
                 }
                 $tool->rsaKey = $row['public_key'];
-                $tool->ltiVersion = $row['lti_version'];
+                $tool->ltiVersion = LtiVersion::tryFrom($row['lti_version'] ?? '');
                 $tool->signatureMethod = $row['signature_method'];
                 $settings = Util::jsonDecode($row['settings'], true);
                 if (!is_array($settings)) {
-                    $settings = array();
+                    $settings = [];
                 }
                 $tool->setSettings($settings);
                 $tool->enabled = (intval($row['enabled']) === 1);
@@ -1597,11 +1748,11 @@ class DataConnector_pdo extends DataConnector
     /**
      * Get the ID for the last record inserted into a table.
      *
-     * @param string $tableName   Name of database table
+     * @param string $tableName  Name of database table
      *
      * @return int  Id of last inserted record
      */
-    protected function getLastInsertId($tableName)
+    protected function getLastInsertId(string $tableName): int
     {
         return intval($this->db->lastInsertId());
     }
@@ -1612,19 +1763,19 @@ class DataConnector_pdo extends DataConnector
      * Info and debug messages are generated.
      *
      * @param string   $sql          SQL statement
-     * @param resource $query        SQL query
+     * @param mixed    $query        SQL query
      * @param bool     $reportError  True if errors are to be reported (default is true)
      *
      * @return bool  True if the query was successful.
      */
-    protected function executeQuery($sql, $query, $reportError = true)
+    protected function executeQuery(string $sql, mixed $query, bool $reportError = true): bool
     {
         try {
             $ok = $query->execute();
         } catch (\PDOException $e) {
             $ok = false;
         }
-        if ((Util::$logLevel >= Util::LOGLEVEL_DEBUG) || (!$ok && (Util::$logLevel >= Util::LOGLEVEL_ERROR))) {
+        if ((Util::$logLevel->logDebug()) || (!$ok && (Util::$logLevel->logError()))) {
             ob_start();
             $query->debugDumpParams();
             $debug = ob_get_contents();
@@ -1653,11 +1804,11 @@ class DataConnector_pdo extends DataConnector
     /**
      * Extract error information into a string.
      *
-     * @param array    $errorInfo  Array of error information
+     * @param array $errorInfo  Array of error information
      *
      * @return string  Error message.
      */
-    private function errorInfoToString($errorInfo)
+    private function errorInfoToString(array $errorInfo): string
     {
         if (is_array($errorInfo) && (count($errorInfo) === 3)) {
             $errors = PHP_EOL . "Error {$errorInfo[0]}/{$errorInfo[1]}: {$errorInfo[2]}";

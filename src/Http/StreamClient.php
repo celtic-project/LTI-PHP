@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\Http;
 
@@ -19,13 +20,10 @@ class StreamClient implements ClientInterface
      *
      * @param HttpMessage $message
      *
-     * @return bool True if the request was successful
+     * @return bool  True if the request was successful
      */
-    public function send(HttpMessage $message)
+    public function send(HttpMessage $message): bool
     {
-        if (!is_array($message->requestHeaders)) {
-            $message->requestHeaders = array();
-        }
         if (count(preg_grep("/^Accept:/i", $message->requestHeaders)) === 0) {
             $message->requestHeaders[] = 'Accept: */*';
         }
@@ -40,7 +38,7 @@ class StreamClient implements ClientInterface
             'ignore_errors' => true,
         ];
 
-        $message->requestHeaders = "{$message->getMethod()} {$message->getUrl()}\n" . implode("\n", $message->requestHeaders);
+        $message->requestHeaders = array_merge(["{$message->getMethod()} {$message->getUrl()}"], $message->requestHeaders);
         try {
             $ctx = stream_context_create(['http' => $opts]);
             $fp = @fopen($message->getUrl(), 'rb', false, $ctx);
@@ -51,9 +49,9 @@ class StreamClient implements ClientInterface
                     $message->response = $resp;
                     // see http://php.net/manual/en/reserved.variables.httpresponseheader.php
                     if (isset($http_response_header[0])) {
-                        $message->responseHeaders = trim(implode("\n", $http_response_header));
+                        $message->responseHeaders = $http_response_header;
                         if (preg_match("/HTTP\/\d.\d\s+(\d+)/", $http_response_header[0], $out)) {
-                            $message->status = $out[1];
+                            $message->status = intval($out[1]);
                         }
                         $message->ok = $message->status < 400;
                         if (!$message->ok) {

@@ -1,10 +1,12 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\Service;
 
 use ceLTIc\LTI;
 use ceLTIc\LTI\Context;
 use ceLTIc\LTI\ResourceLink;
+use ceLTIc\LTI\Enum\IdScope;
 
 /**
  * Class to implement the Membership service
@@ -19,38 +21,38 @@ class Membership extends Service
     /**
      * Media type for version 1 of Memberships service.
      */
-    const MEDIA_TYPE_MEMBERSHIPS_V1 = 'application/vnd.ims.lis.v2.membershipcontainer+json';
+    public const MEDIA_TYPE_MEMBERSHIPS_V1 = 'application/vnd.ims.lis.v2.membershipcontainer+json';
 
     /**
      * Media type for Names and Role Provisioning service.
      */
-    const MEDIA_TYPE_MEMBERSHIPS_NRPS = 'application/vnd.ims.lti-nrps.v2.membershipcontainer+json';
+    public const MEDIA_TYPE_MEMBERSHIPS_NRPS = 'application/vnd.ims.lti-nrps.v2.membershipcontainer+json';
 
     /**
      * Access scope.
      */
-    public static $SCOPE = 'https://purl.imsglobal.org/spec/lti-nrps/scope/contextmembership.readonly';
+    public static string $SCOPE = 'https://purl.imsglobal.org/spec/lti-nrps/scope/contextmembership.readonly';
 
     /**
      * Default limit on size of container to be returned from requests.
      */
-    public static $defaultLimit = 100;
+    public static int $defaultLimit = 100;
 
     /**
      * The object to which the memberships apply (ResourceLink or Context).
      *
      * @var Context|ResourceLink $source
      */
-    private $source = null;
+    private Context|ResourceLink|null $source = null;
 
     /**
      * Limit on size of container to be returned from requests.
      *
      * A limit of null (or zero) will disable paging of requests
      *
-     * @var int|null  $limit
+     * @var int|null $limit
      */
-    private $limit;
+    private ?int $limit;
 
     /**
      * Whether requests should be made one page at a time when a limit is set.
@@ -59,18 +61,19 @@ class Membership extends Service
      *
      * @var bool $pagingMode
      */
-    private $pagingMode;
+    private bool $pagingMode;
 
     /**
      * Class constructor.
      *
-     * @param object       $source     The object to which the memberships apply (ResourceLink or Context)
-     * @param string       $endpoint   Service endpoint
-     * @param string       $format     Format to request
-     * @param int|null     $limit      Limit of line-items to be returned in each request, null for all
-     * @param bool         $pagingMode True if only a single page should be requested when a limit is set
+     * @param object $source    The object to which the memberships apply (ResourceLink or Context)
+     * @param string $endpoint  Service endpoint
+     * @param string $format    Format to request
+     * @param int|null $limit   Limit of line-items to be returned in each request, null for all
+     * @param bool $pagingMode  True if only a single page should be requested when a limit is set
      */
-    public function __construct($source, $endpoint, $format = self::MEDIA_TYPE_MEMBERSHIPS_V1, $limit = null, $pagingMode = false)
+    public function __construct(ResourceLink|Context $source, string $endpoint, string $format = self::MEDIA_TYPE_MEMBERSHIPS_V1,
+        ?int $limit = null, bool $pagingMode = false)
     {
         $platform = $source->getPlatform();
         parent::__construct($platform, $endpoint);
@@ -84,12 +87,12 @@ class Membership extends Service
     /**
      * Get the memberships.
      *
-     * @param string|null $role   Role for which memberships are to be requested (optional, default is all roles)
-     * @param int|null    $limit  Limit on the number of memberships to be returned in each request, null for service default (optional)
+     * @param string|null $role  Role for which memberships are to be requested (optional, default is all roles)
+     * @param int|null $limit    Limit on the number of memberships to be returned in each request, null for service default (optional)
      *
      * @return array|bool  The array of UserResult objects if successful, otherwise false
      */
-    public function get($role = null, $limit = null)
+    public function get(?string $role = null, ?int $limit = null): array|bool
     {
         return $this->getMembers(false, $role, $limit);
     }
@@ -97,12 +100,12 @@ class Membership extends Service
     /**
      * Get the memberships.
      *
-     * @param string|null $role   Role for which memberships are to be requested (optional, default is all roles)
-     * @param int|null    $limit  Limit on the number of memberships to be returned in each request, null for service default (optional)
+     * @param string|null $role  Role for which memberships are to be requested (optional, default is all roles)
+     * @param int|null $limit    Limit on the number of memberships to be returned in each request, null for service default (optional)
      *
      * @return array|bool  The array of UserResult objects if successful, otherwise false
      */
-    public function getWithGroups($role = null, $limit = null)
+    public function getWithGroups(?string $role = null, ?int $limit = null): array|bool
     {
         return $this->getMembers(true, $role, $limit);
     }
@@ -110,16 +113,16 @@ class Membership extends Service
     /**
      * Get the memberships.
      *
-     * @param bool        $withGroups True is group information is to be requested as well
-     * @param string|null $role       Role for which memberships are to be requested (optional, default is all roles)
-     * @param int|null    $limit      Limit on the number of memberships to be returned in each request, null for service default (optional)
+     * @param bool $withGroups   True is group information is to be requested as well
+     * @param string|null $role  Role for which memberships are to be requested (optional, default is all roles)
+     * @param int|null $limit    Limit on the number of memberships to be returned in each request, null for service default (optional)
      *
      * @return array|bool  The array of UserResult objects if successful, otherwise false
      */
-    private function getMembers($withGroups, $role = null, $limit = null)
+    private function getMembers(bool $withGroups, ?string $role = null, ?int $limit = null): array|bool
     {
         $isLink = is_a($this->source, 'ceLTIc\LTI\ResourceLink');
-        $parameters = array();
+        $parameters = [];
         if (!empty($role)) {
             $parameters['role'] = $role;
         }
@@ -147,8 +150,8 @@ class Membership extends Service
             $this->source->getGroups();
             $parameters['groups'] = 'true';
         }
-        $userResults = array();
-        $memberships = array();
+        $userResults = [];
+        $memberships = [];
         $endpoint = $this->endpoint;
         do {
             $http = $this->send('GET', $parameters);
@@ -168,7 +171,7 @@ class Membership extends Service
                 if (!$this->pagingMode && $http->hasRelativeLink('next')) {
                     $url = $http->getRelativeLink('next');
                     $this->endpoint = $url;
-                    $parameters = array();
+                    $parameters = [];
                 }
             } else {
                 $userResults = false;
@@ -177,49 +180,49 @@ class Membership extends Service
         $this->endpoint = $endpoint;
         if ($userResults !== false) {
             if ($isLink) {
-                $oldUsers = $this->source->getUserResultSourcedIDs(true, LTI\Tool::ID_SCOPE_RESOURCE);
+                $oldUsers = $this->source->getUserResultSourcedIDs(true, IdScope::Resource);
             }
             foreach ($memberships as $membership) {
                 if ($isjsonld) {
                     $member = $membership->member;
                     if ($isLink) {
-                        $userresult = LTI\UserResult::fromResourceLink($this->source, $member->userId);
+                        $userResult = LTI\UserResult::fromResourceLink($this->source, $member->userId);
                     } else {
-                        $userresult = new LTI\UserResult();
-                        $userresult->ltiUserId = $member->userId;
+                        $userResult = new LTI\UserResult();
+                        $userResult->ltiUserId = $member->userId;
                     }
 
 // Set the user name
-                    $firstname = (isset($member->givenName)) ? $member->givenName : '';
-                    $middlename = (isset($member->middleName)) ? $member->middleName : '';
-                    $lastname = (isset($member->familyName)) ? $member->familyName : '';
-                    $fullname = (isset($member->name)) ? $member->name : '';
-                    $userresult->setNames($firstname, $lastname, $fullname);
+                    $firstname = $member->givenName ?? '';
+                    $middlename = $member->middleName ?? '';
+                    $lastname = $member->familyName ?? '';
+                    $fullname = $member->name ?? '';
+                    $userResult->setNames($firstname, $lastname, $fullname);
 
 // Set the sourcedId
                     if (isset($member->sourcedId)) {
-                        $userresult->sourcedId = $member->sourcedId;
+                        $userResult->sourcedId = $member->sourcedId;
                     }
 
 // Set the username
                     if (isset($member->ext_username)) {
-                        $userresult->username = $member->ext_username;
+                        $userResult->username = $member->ext_username;
                     } elseif (isset($member->ext_user_username)) {
-                        $userresult->username = $member->ext_user_username;
+                        $userResult->username = $member->ext_user_username;
                     } elseif (isset($member->custom_username)) {
-                        $userresult->username = $member->custom_username;
+                        $userResult->username = $member->custom_username;
                     } elseif (isset($member->custom_user_username)) {
-                        $userresult->username = $member->custom_user_username;
+                        $userResult->username = $member->custom_user_username;
                     }
 
 // Set the user email
-                    $email = (isset($member->email)) ? $member->email : '';
-                    $userresult->setEmail($email, $this->source->getPlatform()->defaultEmail);
+                    $email = $member->email ?? '';
+                    $userResult->setEmail($email, $this->source->getPlatform()->defaultEmail);
 
 // Set the user roles
                     if (isset($membership->role)) {
                         $roles = $this->parseContextsInArray($http->responseJson->{'@context'}, $membership->role);
-                        $userresult->roles = LTI\Tool::parseRoles($roles, $this->getPlatform()->ltiVersion);
+                        $userResult->roles = LTI\Tool::parseRoles($roles, $this->getPlatform()->ltiVersion);
                     }
 
 // If a result sourcedid is provided save the user
@@ -229,82 +232,82 @@ class Membership extends Service
                             foreach ($membership->message as $message) {
                                 if (isset($message->message_type) && (($message->message_type === 'basic-lti-launch-request') || ($message->message_type) === 'LtiResourceLinkRequest')) {
                                     if (isset($message->lis_result_sourcedid)) {
-                                        if (empty($userresult->ltiResultSourcedId) || ($userresult->ltiResultSourcedId !== $message->lis_result_sourcedid)) {
-                                            $userresult->ltiResultSourcedId = $message->lis_result_sourcedid;
+                                        if (empty($userResult->ltiResultSourcedId) || ($userResult->ltiResultSourcedId !== $message->lis_result_sourcedid)) {
+                                            $userResult->ltiResultSourcedId = $message->lis_result_sourcedid;
                                             $doSave = true;
                                         }
-                                    } elseif ($userresult->isLearner() && empty($userresult->created)) {  // Ensure all learners are recorded in case Assignment and Grade services are used
-                                        $userresult->ltiResultSourcedId = '';
+                                    } elseif ($userResult->isLearner() && empty($userResult->created)) {  // Ensure all learners are recorded in case Assignment and Grade services are used
+                                        $userResult->ltiResultSourcedId = '';
                                         $doSave = true;
                                     }
                                     if (isset($message->ext)) {
-                                        if (empty($userresult->username)) {
+                                        if (empty($userResult->username)) {
                                             if (!empty($message->ext->username)) {
-                                                $userresult->username = $message->ext->username;
+                                                $userResult->username = $message->ext->username;
                                             } elseif (!empty($message->ext->user_username)) {
-                                                $userresult->username = $message->ext->user_username;
+                                                $userResult->username = $message->ext->user_username;
                                             }
                                         }
                                     }
                                     if (isset($message->custom)) {
-                                        if (empty($userresult->username)) {
+                                        if (empty($userResult->username)) {
                                             if (!empty($message->custom->username)) {
-                                                $userresult->username = $message->custom->username;
+                                                $userResult->username = $message->custom->username;
                                             } elseif (!empty($message->custom->user_username)) {
-                                                $userresult->username = $message->custom->user_username;
+                                                $userResult->username = $message->custom->user_username;
                                             }
                                         }
                                     }
                                     break;
                                 }
                             }
-                        } elseif ($userresult->isLearner() && empty($userresult->created)) {  // Ensure all learners are recorded in case Assignment and Grade services are used
-                            $userresult->ltiResultSourcedId = '';
+                        } elseif ($userResult->isLearner() && empty($userResult->created)) {  // Ensure all learners are recorded in case Assignment and Grade services are used
+                            $userResult->ltiResultSourcedId = '';
                             $doSave = true;
                         }
                         if (!$doSave && isset($member->resultSourcedId)) {
-                            $userresult->setResourceLinkId($this->source->getId());
-                            $userresult->ltiResultSourcedId = $member->resultSourcedId;
+                            $userResult->setResourceLinkId($this->source->getId());
+                            $userResult->ltiResultSourcedId = $member->resultSourcedId;
                             $doSave = true;
                         }
                         if ($doSave) {
-                            $userresult->save();
+                            $userResult->save();
                         }
                     }
-                    $userResults[] = $userresult;
+                    $userResults[] = $userResult;
 
 // Remove old user (if it exists)
                     if ($isLink) {
-                        unset($oldUsers[$userresult->getId(LTI\Tool::ID_SCOPE_RESOURCE)]);
+                        unset($oldUsers[$userResult->getId(IdScope::Resource)]);
                     }
                 } else {  // Version 2
                     $member = $membership;
                     if ($isLink) {
-                        $userresult = LTI\UserResult::fromResourceLink($this->source, $member->user_id);
+                        $userResult = LTI\UserResult::fromResourceLink($this->source, $member->user_id);
                     } else {
-                        $userresult = new LTI\UserResult();
-                        $userresult->ltiUserId = $member->user_id;
+                        $userResult = new LTI\UserResult();
+                        $userResult->ltiUserId = $member->user_id;
                     }
 
 // Set the user name
-                    $firstname = (isset($member->given_name)) ? $member->given_name : '';
-                    $middlename = (isset($member->middle_name)) ? $member->middle_name : '';
-                    $lastname = (isset($member->family_name)) ? $member->family_name : '';
-                    $fullname = (isset($member->name)) ? $member->name : '';
-                    $userresult->setNames($firstname, $lastname, $fullname);
+                    $firstname = $member->given_name ?? '';
+                    $middlename = $member->middle_name ?? '';
+                    $lastname = $member->family_name ?? '';
+                    $fullname = $member->name ?? '';
+                    $userResult->setNames($firstname, $lastname, $fullname);
 
 // Set the sourcedId
                     if (isset($member->lis_person_sourcedid)) {
-                        $userresult->sourcedId = $member->lis_person_sourcedid;
+                        $userResult->sourcedId = $member->lis_person_sourcedid;
                     }
 
 // Set the user email
-                    $email = (isset($member->email)) ? $member->email : '';
-                    $userresult->setEmail($email, $this->source->getPlatform()->defaultEmail);
+                    $email = $member->email ?? '';
+                    $userResult->setEmail($email, $this->source->getPlatform()->defaultEmail);
 
 // Set the user roles
                     if (isset($member->roles)) {
-                        $userresult->roles = LTI\Tool::parseRoles($member->roles, $this->getPlatform()->ltiVersion);
+                        $userResult->roles = LTI\Tool::parseRoles($member->roles, $this->getPlatform()->ltiVersion);
                     }
 
 // If a result sourcedid is provided save the user
@@ -313,79 +316,81 @@ class Membership extends Service
                         if (isset($member->message)) {
                             $messages = $member->message;
                             if (!is_array($messages)) {
-                                $messages = array($member->message);
+                                $messages = [$member->message];
                             }
                             foreach ($messages as $message) {
                                 if (isset($message->{'https://purl.imsglobal.org/spec/lti/claim/message_type'}) && (($message->{'https://purl.imsglobal.org/spec/lti/claim/message_type'} === 'basic-lti-launch-request') || ($message->{'https://purl.imsglobal.org/spec/lti/claim/message_type'}) === 'LtiResourceLinkRequest')) {
                                     if (isset($message->{'https://purl.imsglobal.org/spec/lti-bo/claim/basicoutcome'}) &&
                                         isset($message->{'https://purl.imsglobal.org/spec/lti-bo/claim/basicoutcome'}->lis_result_sourcedid)) {
-                                        $userresult->ltiResultSourcedId = $message->{'https://purl.imsglobal.org/spec/lti-bo/claim/basicoutcome'}->lis_result_sourcedid;
+                                        $userResult->ltiResultSourcedId = $message->{'https://purl.imsglobal.org/spec/lti-bo/claim/basicoutcome'}->lis_result_sourcedid;
                                         $doSave = true;
-                                    } elseif ($userresult->isLearner() && empty($userresult->created)) {  // Ensure all learners are recorded in case Assignment and Grade services are used
-                                        $userresult->ltiResultSourcedId = '';
+                                    } elseif ($userResult->isLearner() && empty($userResult->created)) {  // Ensure all learners are recorded in case Assignment and Grade services are used
+                                        $userResult->ltiResultSourcedId = '';
                                         $doSave = true;
                                     }
                                     if (isset($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'})) {
-                                        if (empty($userresult->username)) {
+                                        if (empty($userResult->username)) {
                                             if (!empty($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'}->username)) {
-                                                $userresult->username = $message->{'https://purl.imsglobal.org/spec/lti/claim/ext'}->username;
+                                                $userResult->username = $message->{'https://purl.imsglobal.org/spec/lti/claim/ext'}->username;
                                             } elseif (!empty($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'}->user_username)) {
-                                                $userresult->username = $message->{'https://purl.imsglobal.org/spec/lti/claim/ext'}->user_username;
+                                                $userResult->username = $message->{'https://purl.imsglobal.org/spec/lti/claim/ext'}->user_username;
                                             }
                                         }
                                     }
                                     if (isset($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'})) {
-                                        if (empty($userresult->username)) {
+                                        if (empty($userResult->username)) {
                                             if (!empty($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'}->username)) {
-                                                $userresult->username = $message->{'https://purl.imsglobal.org/spec/lti/claim/custom'}->username;
+                                                $userResult->username = $message->{'https://purl.imsglobal.org/spec/lti/claim/custom'}->username;
                                             } elseif (!empty($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'}->user_username)) {
-                                                $userresult->username = $message->{'https://purl.imsglobal.org/spec/lti/claim/custom'}->user_username;
+                                                $userResult->username = $message->{'https://purl.imsglobal.org/spec/lti/claim/custom'}->user_username;
                                             }
                                         }
                                     }
                                     break;
                                 }
                             }
-                        } elseif ($userresult->isLearner() && empty($userresult->created)) {  // Ensure all learners are recorded in case Assignment and Grade services are used
-                            $userresult->ltiResultSourcedId = '';
+                        } elseif ($userResult->isLearner() && empty($userResult->created)) {  // Ensure all learners are recorded in case Assignment and Grade services are used
+                            $userResult->ltiResultSourcedId = '';
                             $doSave = true;
                         }
                         if ($doSave) {
-                            $userresult->save();
+                            $userResult->save();
                         }
                     }
-                    $userResults[] = $userresult;
+                    $userResults[] = $userResult;
                     if (isset($member->group_enrollments)) {
-                        $userresult->groups = array();
+                        $userResult->groups = [];
                         foreach ($member->group_enrollments as $group) {
                             $groupId = $group->group_id;
                             if (empty($this->source->groups) || !array_key_exists($groupId, $this->source->groups)) {
-                                $this->source->groups[$groupId] = array('title' => "Group {$groupId}");
+                                $this->source->groups[$groupId] = [
+                                    'title' => "Group {$groupId}"
+                                ];
                             }
                             if (!empty($this->source->groups[$groupId]['set'])) {
                                 $this->source->groupSets[$this->source->groups[$groupId]['set']]['num_members']++;
-                                if ($userresult->isStaff()) {
+                                if ($userResult->isStaff()) {
                                     $this->source->groupSets[$this->source->groups[$groupId]['set']]['num_staff']++;
                                 }
-                                if ($userresult->isLearner()) {
+                                if ($userResult->isLearner()) {
                                     $this->source->groupSets[$this->source->groups[$groupId]['set']]['num_learners']++;
                                 }
                             }
-                            $userresult->groups[] = $groupId;
+                            $userResult->groups[] = $groupId;
                         }
                     }
 
 // Remove old user (if it exists)
                     if ($isLink) {
-                        unset($oldUsers[$userresult->getId(LTI\Tool::ID_SCOPE_RESOURCE)]);
+                        unset($oldUsers[$userResult->getId(IdScope::Resource)]);
                     }
                 }
             }
 
 /// Delete any old users which were not in the latest list from the platform if request is not paged
             if ($isLink && !$this->pagingMode) {
-                foreach ($oldUsers as $id => $userresult) {
-                    $userresult->delete();
+                foreach ($oldUsers as $id => $userResult) {
+                    $userResult->delete();
                 }
             }
         }

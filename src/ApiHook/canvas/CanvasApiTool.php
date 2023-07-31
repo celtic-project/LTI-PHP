@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\ApiHook\canvas;
 
@@ -19,7 +20,7 @@ class CanvasApiTool extends ApiTool
      *
      * @return string  User ID value, or empty string if not available.
      */
-    public function getUserId()
+    public function getUserId(): string
     {
         $userId = '';
         $messageParameters = $this->tool->getMessageParameters(true, true, false);

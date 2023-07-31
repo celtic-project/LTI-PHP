@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI;
 
@@ -15,7 +16,7 @@ class PlatformNonce
     /**
      * Maximum age nonce values will be retained for (in minutes).
      */
-    const MAX_NONCE_AGE = 30;  // in minutes
+    public const MAX_NONCE_AGE = 30;  // in minutes
 
     /**
      * Maximum length which can be stored.
@@ -24,36 +25,36 @@ class PlatformNonce
      *
      * @var int $maximumLength
      */
-    public static $maximumLength = 50;
+    public static int $maximumLength = 50;
 
     /**
      * Timestamp for when the nonce value expires.
      *
-     * @var int|null $expires
+     * @var int $expires
      */
-    public $expires = null;
+    public int $expires;
 
     /**
      * Platform to which this nonce applies.
      *
-     * @var Platform|null $platform
+     * @var Platform $platform
      */
-    private $platform = null;
+    private Platform $platform;
 
     /**
      * Nonce value.
      *
      * @var string|null $value
      */
-    private $value = null;
+    private ?string $value = null;
 
     /**
      * Class constructor.
      *
-     * @param Platform      $platform  Platform object
-     * @param string|null   $value     Nonce value (optional, default is null)
+     * @param Platform $platform  Platform object
+     * @param string|null $value  Nonce value (optional, default is null)
      */
-    public function __construct($platform, $value = null)
+    public function __construct(Platform $platform, ?string $value = null)
     {
         $this->platform = $platform;
         $this->value = substr($value, -self::$maximumLength);
@@ -63,9 +64,9 @@ class PlatformNonce
     /**
      * Load a nonce value from the database.
      *
-     * @return bool    True if the nonce value was successfully loaded
+     * @return bool  True if the nonce value was successfully loaded
      */
-    public function load()
+    public function load(): bool
     {
         return $this->platform->getDataConnector()->loadPlatformNonce($this);
     }
@@ -73,9 +74,9 @@ class PlatformNonce
     /**
      * Save a nonce value in the database.
      *
-     * @return bool    True if the nonce value was successfully saved
+     * @return bool  True if the nonce value was successfully saved
      */
-    public function save()
+    public function save(): bool
     {
         return $this->platform->getDataConnector()->savePlatformNonce($this);
     }
@@ -83,9 +84,9 @@ class PlatformNonce
     /**
      * Delete a nonce value in the database.
      *
-     * @return bool    True if the nonce value was successfully deleted
+     * @return bool  True if the nonce value was successfully deleted
      */
-    public function delete()
+    public function delete(): bool
     {
         return $this->platform->getDataConnector()->deletePlatformNonce($this);
     }
@@ -95,7 +96,7 @@ class PlatformNonce
      *
      * @return Platform  Platform for this nonce
      */
-    public function getPlatform()
+    public function getPlatform(): Platform
     {
         return $this->platform;
     }
@@ -105,7 +106,7 @@ class PlatformNonce
      *
      * @return string|null  Nonce value
      */
-    public function getValue()
+    public function getValue(): ?string
     {
         return $this->value;
     }

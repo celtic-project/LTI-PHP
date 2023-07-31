@@ -2,6 +2,8 @@
 
 namespace ceLTIc\LTI\ApiHook\moodle;
 
+use ceLTIc\LTI\Context;
+use ceLTIc\LTI\ResourceLink;
 use ceLTIc\LTI\UserResult;
 use ceLTIc\LTI\Http\HttpMessage;
 use ceLTIc\LTI\Util;
@@ -20,34 +22,34 @@ trait MoodleApi
     /**
      * Default items per page.
      */
-    private static $DEFAULT_PER_PAGE = 50;
+    private static int $DEFAULT_PER_PAGE = 50;
 
     /**
      * The Moodle site URL
      */
-    private $url = null;
+    private ?string $url = null;
 
     /**
      * The Moodle API token
      */
-    private $token = null;
+    private ?string $token = null;
 
     /**
      * Course ID
      */
-    private $courseId = null;
+    private ?string $courseId = null;
 
     /**
      * Resource link or context source object
      */
-    private $sourceObject = null;
+    private ResourceLink|Context|null $sourceObject = null;
 
     /**
      * Check if the API hook has been configured.
      *
      * @return bool  True if the API hook has been configured
      */
-    public function isConfigured()
+    public function isConfigured(): bool
     {
         $platform = $this->sourceObject->getPlatform();
 
@@ -57,11 +59,11 @@ trait MoodleApi
     /**
      * Get memberships.
      *
-     * @param bool    $withGroups True is group information is to be requested as well
+     * @param bool $withGroups  True is group information is to be requested as well
      *
      * @return array|bool  Array of UserResult objects or false if the request was not successful
      */
-    private function get($withGroups)
+    private function get(bool $withGroups): array|bool
     {
         $platform = $this->sourceObject->getPlatform();
         $this->url = $platform->getSetting('moodle.url');
@@ -95,14 +97,14 @@ trait MoodleApi
      *
      * @return bool  True if the request was successful
      */
-    private function setGroupings($prefix)
+    private function setGroupings(string $prefix): bool
     {
         $ok = false;
-        $this->sourceObject->groupSets = array();
-        $this->sourceObject->groups = array();
-        $params = array(
+        $this->sourceObject->groupSets = [];
+        $this->sourceObject->groups = [];
+        $params = [
             'courseid' => $this->courseId
-        );
+        ];
         $courseGroupings = $this->callMoodleApi('core_group_get_course_groupings', $params);
         if (is_array($courseGroupings)) {
             $groupingIds = array_map(function($grouping) {
@@ -111,25 +113,33 @@ trait MoodleApi
             if (empty($groupingIds)) {
                 $ok = true;
             } else {
-                $params = array(
+                $params = [
                     'groupingids' => $groupingIds,
                     'returngroups' => 1
-                );
+                ];
                 $groupings = $this->callMoodleApi('core_group_get_groupings', $params);
                 if (is_array($groupings)) {
                     $ok = true;
                     foreach ($groupings as $grouping) {
-                        if (!empty($grouping->groups) && (empty($prefix) || (strpos($grouping->name, $prefix) === 0))) {
+                        if (!empty($grouping->groups) && (empty($prefix) || str_starts_with($grouping->name, $prefix))) {
                             $groupingId = strval($grouping->id);
-                            $this->sourceObject->groupSets[$groupingId] = array('title' => $grouping->name, 'groups' => array(),
-                                'num_members' => 0, 'num_staff' => 0, 'num_learners' => 0);
+                            $this->sourceObject->groupSets[$groupingId] = [
+                                'title' => $grouping->name,
+                                'groups' => [],
+                                'num_members' => 0,
+                                'num_staff' => 0,
+                                'num_learners' => 0
+                            ];
                             foreach ($grouping->groups as $group) {
                                 $groupId = strval($group->id);
                                 $this->sourceObject->groupSets[$groupingId]['groups'][] = $groupId;
                                 if (!isset($this->sourceObject->groups[$groupId])) {
-                                    $this->sourceObject->groups[$groupId] = array('title' => $group->name, 'set' => $groupingId);
+                                    $this->sourceObject->groups[$groupId] = [
+                                        'title' => $group->name,
+                                        'set' => $groupingId
+                                    ];
                                 } elseif (!is_array($this->sourceObject->groups[$groupId]['set'])) {
-                                    $this->sourceObject->groups[$groupId]['set'] = array($this->sourceObject->groups[$groupId]['set'], $groupingId);
+                                    $this->sourceObject->groups[$groupId]['set'] = [$this->sourceObject->groups[$groupId]['set'], $groupingId];
                                 } else {
                                     $this->sourceObject->groups[$groupId]['set'][] = $groupingId;
                                 }
@@ -146,33 +156,32 @@ trait MoodleApi
     /**
      * Get users enrolled in course.
      *
-     * @param string $perPage  Maximum number of records per request
-     * @param bool $withGroups True is group information is to be requested as well
+     * @param string $perPage   Maximum number of records per request
+     * @param bool $withGroups  True is group information is to be requested as well
      *
      * @return array|bool  Array of UserResult objects or false if the request was not successful
      */
-    private function getUsers($perPage, $withGroups)
+    private function getUsers(string $perPage, bool $withGroups): array|bool
     {
-        $users = array();
-
-        $params = array(
+        $users = [];
+        $params = [
             'courseid' => $this->courseId,
-            'options' => array(
-                array(
+            'options' => [
+                [
                     'name' => 'onlyactive',
                     'value' => 1
-                ),
-                array(
+                ],
+                [
                     'name' => 'userfields',
                     'value' => 'id'
-                ),
-                array(
+                ],
+                [
                     'name' => 'withcapability',
                     'value' => 'mod/lti:manage'
-                )
-            )
-        );
-        $teachers = array();
+                ]
+            ]
+        ];
+        $teachers = [];
         $enrolments = $this->callMoodleApi('core_enrol_get_enrolled_users', $params);
         if (is_array($enrolments)) {
             foreach ($enrolments as $enrolment) {
@@ -183,35 +192,35 @@ trait MoodleApi
         if ($withGroups) {
             $userFields .= ', groups';
         }
-        $params = array(
+        $params = [
             'courseid' => $this->courseId,
-            'options' => array(
-                array(
+            'options' => [
+                [
                     'name' => 'onlyactive',
                     'value' => 1
-                ),
-                array(
+                ],
+                [
                     'name' => 'userfields',
                     'value' => $userFields
-                )
-            )
-        );
+                ]
+            ]
+        ];
         if ($perPage > 0) {
             array_push($params['options'],
-                array(
+                [
                     'name' => 'limitnumber',
                     'value' => $perPage
-                )
+                ]
             );
         }
         $n = 0;
         do {
             if ($perPage > 0) {
                 array_push($params['options'],
-                    array(
+                    [
                         'name' => 'limitfrom',
                         'value' => $n
-                    )
+                    ]
                 );
             }
             $enrolments = $this->callMoodleApi('core_enrol_get_enrolled_users', $params);
@@ -266,15 +275,15 @@ trait MoodleApi
      *
      * @param array $users  Array of UserResult objects
      */
-    private function setGroups($users)
+    private function setGroups(array $users): void
     {
         foreach ($users as $user) {
-            $sets = array();
+            $sets = [];
             foreach ($user->groups as $group) {
                 if (array_key_exists($group, $this->sourceObject->groups) && !empty($this->sourceObject->groups[$group]['set'])) {
                     $setIds = $this->sourceObject->groups[$group]['set'];
                     if (!is_array($setIds)) {
-                        $setIds = array($setIds);
+                        $setIds = [$setIds];
                     }
                     foreach ($setIds as $setId) {
                         // Check that user is not a member of another group in the same grouping
@@ -311,20 +320,20 @@ trait MoodleApi
     /**
      * Call the specified Moodle API method, passing the parameters provided.
      *
-     * @param string $method The API method to call
-     * @param array $params The parameters to pass
+     * @param string $method  The API method to call
+     * @param array $params   The parameters to pass
      *
-     * @return array|null The decoded response
+     * @return array|null  The decoded response
      */
-    private function callMoodleApi($method, $params)
+    private function callMoodleApi(string $method, array $params): ?array
     {
         $json = null;
         $serviceUrl = $this->url . '/webservice/rest/server.php';
-        $params = array_merge(array(
+        $params = array_merge([
             'wstoken' => $this->token,
             'wsfunction' => $method,
             'moodlewsrestformat' => 'json'
-            ), $params);
+            ], $params);
         $http = new HttpMessage($serviceUrl, 'POST', $params);
         $http->send();
         if ($http->ok) {

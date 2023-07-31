@@ -1,9 +1,10 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\ApiHook;
 
-use ceLTIc\LTI\Service;
 use ceLTIc\LTI\Context;
+use ceLTIc\LTI\Enum\ToolSettingsMode;
 
 /**
  * Class to implement context services for a platform via its proprietary API
@@ -20,14 +21,14 @@ class ApiContext
      *
      * @var Context $context
      */
-    protected $context = null;
+    protected Context $context;
 
     /**
      * Class constructor.
      *
      * @param Context $context
      */
-    public function __construct($context)
+    public function __construct(Context $context)
     {
         $this->context = $context;
     }
@@ -37,7 +38,7 @@ class ApiContext
      *
      * @return bool  True if the API hook has been configured
      */
-    public function isConfigured()
+    public function isConfigured(): bool
     {
         return true;
     }
@@ -47,7 +48,7 @@ class ApiContext
      *
      * @return bool  True if the request was successful
      */
-    public function getGroups()
+    public function getGroups(): bool
     {
         return false;
     }
@@ -55,11 +56,11 @@ class ApiContext
     /**
      * Get Memberships.
      *
-     * @param bool    $withGroups True is group information is to be requested as well
+     * @param bool $withGroups  True is group information is to be requested as well
      *
      * @return array|bool  The array of UserResult objects if successful, otherwise false
      */
-    public function getMemberships($withGroups)
+    public function getMemberships(bool $withGroups): array|bool
     {
         return false;
     }
@@ -67,12 +68,12 @@ class ApiContext
     /**
      * Get Tool Settings.
      *
-     * @param int|null $mode       Mode for request (optional, default is current level only)
-     * @param bool     $simple     True if all the simple media type is to be used (optional, default is true)
+     * @param ToolSettingsMode|null $mode  Mode for request (optional, default is current level only)
+     * @param bool $simple                 True if all the simple media type is to be used (optional, default is true)
      *
      * @return array|bool  The array of settings if successful, otherwise false
      */
-    public function getToolSettings($mode = Service\ToolSettings::MODE_CURRENT_LEVEL, $simple = true)
+    public function getToolSettings(?ToolSettingsMode $mode = null, bool $simple = true): array|bool
     {
         return false;
     }
@@ -80,11 +81,11 @@ class ApiContext
     /**
      * Perform a Tool Settings service request.
      *
-     * @param array    $settings   An associative array of settings (optional, default is none)
+     * @param array $settings  An associative array of settings (optional, default is none)
      *
-     * @return bool    True if action was successful, otherwise false
+     * @return bool  True if action was successful, otherwise false
      */
-    public function setToolSettings($settings = array())
+    public function setToolSettings(array $settings = []): bool
     {
         return false;
     }

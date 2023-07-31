@@ -22,7 +22,7 @@ class MoodleApiContext extends ApiContext
      *
      * @param Context $context
      */
-    public function __construct($context)
+    public function __construct(Context $context)
     {
         parent::__construct($context);
         $this->sourceObject = $context;
@@ -33,7 +33,7 @@ class MoodleApiContext extends ApiContext
      *
      * @return bool  True if the request was successful
      */
-    public function getGroups()
+    public function getGroups(): bool
     {
         $this->courseId = $this->context->ltiContextId;
         $platform = $this->sourceObject->getPlatform();
@@ -58,11 +58,11 @@ class MoodleApiContext extends ApiContext
     /**
      * Get Memberships.
      *
-     * @param bool    $withGroups True is group information is to be requested as well
+     * @param bool $withGroups  True is group information is to be requested as well
      *
      * @return array|bool  Array of UserResult objects or false if the request was not successful
      */
-    public function getMemberships($withGroups = false)
+    public function getMemberships(bool $withGroups = false): array|bool
     {
         $this->courseId = $this->context->ltiContextId;
 

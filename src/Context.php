@@ -1,11 +1,13 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI;
 
 use ceLTIc\LTI\Service;
 use ceLTIc\LTI\Http\HttpMessage;
 use ceLTIc\LTI\ApiHook\ApiHook;
-use ceLTIc\LTI\Util;
+use ceLTIc\LTI\DataConnector\DataConnector;
+use ceLTIc\LTI\Enum\ToolSettingsMode;
 
 /**
  * Class to represent a platform context
@@ -23,21 +25,21 @@ class Context
      *
      * @var string|null $ltiContextId
      */
-    public $ltiContextId = null;
+    public ?string $ltiContextId = null;
 
     /**
      * Context title.
      *
      * @var string|null $title
      */
-    public $title = null;
+    public ?string $title = null;
 
     /**
      * Context type.
      *
      * @var string|null $type
      */
-    public $type = null;
+    public ?string $type = null;
 
     /**
      * User group sets (null if the platform does not support the groups enhancement)
@@ -52,7 +54,7 @@ class Context
      *
      * @var array|null $groupSets
      */
-    public $groupSets = null;
+    public ?array $groupSets = null;
 
     /**
      * User groups (null if the platform does not support the groups enhancement)
@@ -64,70 +66,70 @@ class Context
      *
      * @var array|null $groups
      */
-    public $groups = null;
+    public ?array $groups = null;
 
     /**
      * HttpMessage object for last service request.
      *
      * @var HttpMessage|null $lastServiceRequest
      */
-    public $lastServiceRequest = null;
+    public ?HttpMessage $lastServiceRequest = null;
 
     /**
      * Timestamp for when the object was created.
      *
      * @var int|null $created
      */
-    public $created = null;
+    public ?int $created = null;
 
     /**
      * Timestamp for when the object was last updated.
      *
      * @var int|null $updated
      */
-    public $updated = null;
+    public ?int $updated = null;
 
     /**
      * Platform for this context.
      *
      * @var Platform|null $platform
      */
-    private $platform = null;
+    private ?Platform $platform = null;
 
     /**
      * Platform ID for this context.
      *
      * @var int|null $platformId
      */
-    private $platformId = null;
+    private ?int $platformId = null;
 
     /**
      * ID for this context.
      *
      * @var int|null $id
      */
-    private $id = null;
+    private ?int $id = null;
 
     /**
      * Setting values (LTI parameters, custom parameters and local parameters).
      *
      * @var array|null $settings
      */
-    private $settings = null;
+    private ?array $settings = null;
 
     /**
      * Whether the settings value have changed since last saved.
      *
      * @var bool $settingsChanged
      */
-    private $settingsChanged = false;
+    private bool $settingsChanged = false;
 
     /**
      * Data connector object or string.
      *
      * @var DataConnector|null $dataConnector
      */
-    private $dataConnector = null;
+    private ?DataConnector $dataConnector = null;
 
     /**
      * Class constructor.
@@ -140,10 +142,10 @@ class Context
     /**
      * Initialise the context.
      */
-    public function initialize()
+    public function initialize(): void
     {
         $this->title = '';
-        $this->settings = array();
+        $this->settings = [];
         $this->groupSets = null;
         $this->groups = null;
         $this->created = null;
@@ -155,7 +157,7 @@ class Context
      *
      * Synonym for initialize().
      */
-    public function initialise()
+    public function initialise(): void
     {
         $this->initialize();
     }
@@ -163,9 +165,9 @@ class Context
     /**
      * Save the context to the database.
      *
-     * @return bool    True if the context was successfully saved.
+     * @return bool  True if the context was successfully saved.
      */
-    public function save()
+    public function save(): bool
     {
         $ok = $this->getDataConnector()->saveContext($this);
         if ($ok) {
@@ -178,41 +180,11 @@ class Context
     /**
      * Delete the context from the database.
      *
-     * @return bool    True if the context was successfully deleted.
+     * @return bool  True if the context was successfully deleted.
      */
-    public function delete()
+    public function delete(): bool
     {
         return $this->getDataConnector()->deleteContext($this);
-    }
-
-    /**
-     * Get tool consumer.
-     *
-     * @deprecated Use getPlatform() instead
-     * @see Context::getPlatform()
-     *
-     * @return ToolConsumer Tool consumer object for this context.
-     */
-    public function getConsumer()
-    {
-        Util::logDebug('Method ceLTIc\LTI\Context::getConsumer() has been deprecated; please use ceLTIc\LTI\Context::getPlatform() instead.',
-            true);
-        return $this->getPlatform();
-    }
-
-    /**
-     * Set tool consumer ID.
-     *
-     * @deprecated Use setPlatformId() instead
-     * @see Context::setPlatformId()
-     *
-     * @param int $consumerId  Tool Consumer ID for this context.
-     */
-    public function setConsumerId($consumerId)
-    {
-        Util::logDebug('Method ceLTIc\LTI\Context::setConsumerId() has been deprecated; please use ceLTIc\LTI\Context::setPlatformId() instead.',
-            true);
-        $this->setPlatformId($consumerId);
     }
 
     /**
@@ -220,7 +192,7 @@ class Context
      *
      * @return Platform  Platform object for this context.
      */
-    public function getPlatform()
+    public function getPlatform(): Platform
     {
         if (is_null($this->platform)) {
             $this->platform = Platform::fromRecordId($this->platformId, $this->getDataConnector());
@@ -234,7 +206,7 @@ class Context
      *
      * @param int|null $platformId  Platform ID for this context.
      */
-    public function setPlatformId($platformId)
+    public function setPlatformId(?int $platformId): void
     {
         $this->platform = null;
         $this->platformId = $platformId;
@@ -245,7 +217,7 @@ class Context
      *
      * @return string  Consumer key value for this context.
      */
-    public function getKey()
+    public function getKey(): string
     {
         return $this->getPlatform()->getKey();
     }
@@ -255,7 +227,7 @@ class Context
      *
      * @return string|null  ID for this context.
      */
-    public function getId()
+    public function getId(): ?string
     {
         return $this->ltiContextId;
     }
@@ -265,7 +237,7 @@ class Context
      *
      * @return int|string|null  Context record ID value
      */
-    public function getRecordId()
+    public function getRecordId(): int|string|null
     {
         return $this->id;
     }
@@ -275,7 +247,7 @@ class Context
      *
      * @param int|string|null $id  Context record ID value
      */
-    public function setRecordId($id)
+    public function setRecordId(int|string|null $id): void
     {
         $this->id = $id;
     }
@@ -283,9 +255,9 @@ class Context
     /**
      * Get the data connector.
      *
-     * @return mixed Data connector object or string
+     * @return DataConnector|string  Data connector object or string
      */
-    public function getDataConnector()
+    public function getDataConnector(): DataConnector|string
     {
         return $this->dataConnector;
     }
@@ -293,12 +265,12 @@ class Context
     /**
      * Get a setting value.
      *
-     * @param string $name    Name of setting
-     * @param string $default Value to return if the setting does not exist (optional, default is an empty string)
+     * @param string $name     Name of setting
+     * @param string $default  Value to return if the setting does not exist (optional, default is an empty string)
      *
-     * @return string Setting value
+     * @return string  Setting value
      */
-    public function getSetting($name, $default = '')
+    public function getSetting(string $name, string $default = ''): string
     {
         if (array_key_exists($name, $this->settings)) {
             $value = $this->settings[$name];
@@ -312,10 +284,10 @@ class Context
     /**
      * Set a setting value.
      *
-     * @param string $name  Name of setting
+     * @param string $name       Name of setting
      * @param string|array|null $value  Value to set, use an empty value to delete a setting (optional, default is null)
      */
-    public function setSetting($name, $value = null)
+    public function setSetting(string $name, string|array|null $value = null): void
     {
         $old_value = $this->getSetting($name);
         if ($value !== $old_value) {
@@ -331,9 +303,9 @@ class Context
     /**
      * Get an array of all setting values.
      *
-     * @return array Associative array of setting values
+     * @return array  Associative array of setting values
      */
-    public function getSettings()
+    public function getSettings(): array
     {
         return $this->settings;
     }
@@ -341,9 +313,9 @@ class Context
     /**
      * Set an array of all setting values.
      *
-     * @param array $settings Associative array of setting values
+     * @param array $settings  Associative array of setting values
      */
-    public function setSettings($settings)
+    public function setSettings(array $settings): void
     {
         $this->settings = $settings;
     }
@@ -351,9 +323,9 @@ class Context
     /**
      * Save setting values.
      *
-     * @return bool    True if the settings were successfully saved
+     * @return bool  True if the settings were successfully saved
      */
-    public function saveSettings()
+    public function saveSettings(): bool
     {
         if ($this->settingsChanged) {
             $ok = $this->save();
@@ -367,9 +339,9 @@ class Context
     /**
      * Check if the Tool Settings service is available.
      *
-     * @return bool    True if this context supports the Tool Settings service
+     * @return bool  True if this context supports the Tool Settings service
      */
-    public function hasToolSettingsService()
+    public function hasToolSettingsService(): bool
     {
         $has = !empty($this->getSetting('custom_context_setting_url'));
         if (!$has) {
@@ -381,15 +353,15 @@ class Context
     /**
      * Get Tool Settings.
      *
-     * @param int      $mode       Mode for request (optional, default is current level only)
-     * @param bool     $simple     True if all the simple media type is to be used (optional, default is true)
+     * @param ToolSettingsMode|null $mode  Mode for request (optional, default is current level only)
+     * @param bool $simple                 True if all the simple media type is to be used (optional, default is true)
      *
      * @return array|bool  The array of settings if successful, otherwise false
      */
-    public function getToolSettings($mode = Service\ToolSettings::MODE_CURRENT_LEVEL, $simple = true)
+    public function getToolSettings(?ToolSettingsMode $mode = null, bool $simple = true): array|bool
     {
         $ok = false;
-        $settings = array();
+        $settings = [];
         if (!empty($this->getSetting('custom_context_setting_url'))) {
             $url = $this->getSetting('custom_context_setting_url');
             $service = new Service\ToolSettings($this, $url, $simple);
@@ -409,11 +381,11 @@ class Context
     /**
      * Set Tool Settings.
      *
-     * @param array    $settings   An associative array of settings (optional, default is none)
+     * @param array $settings  An associative array of settings (optional, default is none)
      *
-     * @return bool    True if action was successful, otherwise false
+     * @return bool  True if action was successful, otherwise false
      */
-    public function setToolSettings($settings = array())
+    public function setToolSettings(array $settings = []): bool
     {
         $ok = false;
         if (!empty($this->getSetting('custom_context_setting_url'))) {
@@ -434,9 +406,9 @@ class Context
     /**
      * Check if a Course Group service is available.
      *
-     * @return bool    True if this context supports a Course Group service
+     * @return bool  True if this context supports a Course Group service
      */
-    public function hasGroupService()
+    public function hasGroupService(): bool
     {
         $has = !empty($this->getSetting('custom_context_groups_url'));
         if (!$has) {
@@ -450,7 +422,7 @@ class Context
      *
      * @return bool  True if the request was successful
      */
-    public function getGroups()
+    public function getGroups(): bool
     {
         $groupsUrl = $this->getSetting('custom_context_groups_url');
         $groupsetsUrl = $this->getSetting('custom_context_group_sets_url');
@@ -469,26 +441,11 @@ class Context
     }
 
     /**
-     * Check if the Membership service is supported.
-     *
-     * @deprecated Use hasMembershipsService() instead
-     * @see Context::hasMembershipsService()
-     *
-     * @return bool    True if this context supports the Membership service
-     */
-    public function hasMembershipService()
-    {
-        Util::logDebug('Method ceLTIc\LTI\Context::hasMembershipService() has been deprecated; please use ceLTIc\LTI\Context::hasMembershipsService() instead.',
-            true);
-        return $this->hasMembershipsService();
-    }
-
-    /**
      * Check if a Membership service is available.
      *
-     * @return bool    True if this context supports a Memberships service
+     * @return bool  True if this context supports a Memberships service
      */
-    public function hasMembershipsService()
+    public function hasMembershipsService(): bool
     {
         $has = !empty($this->getSetting('custom_context_memberships_url')) || !empty($this->getSetting('custom_context_memberships_v2_url'));
         if (!$has) {
@@ -498,31 +455,16 @@ class Context
     }
 
     /**
-     * Get Membership.
-     *
-     * @deprecated Use getMemberships() instead
-     * @see Context::getMemberships()
-     *
-     * @return array|bool The array of UserResult objects if successful, otherwise false
-     */
-    public function getMembership()
-    {
-        Util::logDebug('Method ceLTIc\LTI\Context::getMembership() has been deprecated; please use ceLTIc\LTI\Context::getMemberships() instead.',
-            true);
-        return $this->getMemberships();
-    }
-
-    /**
      * Get Memberships.
      *
-     * @param bool    $withGroups True is group information is to be requested as well
+     * @param bool $withGroups  True is group information is to be requested as well
      *
      * @return array|bool  The array of UserResult objects if successful, otherwise false
      */
-    public function getMemberships($withGroups = false)
+    public function getMemberships(bool $withGroups = false): array|bool
     {
         $ok = false;
-        $userResults = array();
+        $userResults = [];
         $hasMembershipsService = !empty($this->getSetting('custom_context_memberships_url'));
         $hasNRPService = !empty($this->getSetting('custom_context_memberships_v2_url'));
         $hasGroupsService = !empty($this->getSetting('custom_context_groups_url')) ||
@@ -561,7 +503,7 @@ class Context
      *
      * @return bool  True if this context supports the Line-item service
      */
-    public function hasLineItemService()
+    public function hasLineItemService(): bool
     {
         $has = false;
         if (!empty($this->getSetting('custom_ags_scopes'))) {
@@ -577,9 +519,9 @@ class Context
     /**
      * Check if the Score service is available.
      *
-     * @return bool    True if this context supports the Score service
+     * @return bool  True if this context supports the Score service
      */
-    public function hasScoreService()
+    public function hasScoreService(): bool
     {
         $has = false;
         if (!empty($this->getSetting('custom_ags_scopes'))) {
@@ -595,9 +537,9 @@ class Context
     /**
      * Check if the Result service is available.
      *
-     * @return bool    True if this context supports the Result service
+     * @return bool  True if this context supports the Result service
      */
-    public function hasResultService()
+    public function hasResultService(): bool
     {
         $has = false;
         if (!empty($this->getSetting('custom_ags_scopes'))) {
@@ -613,13 +555,13 @@ class Context
     /**
      * Get line-items.
      *
-     * @param string|null  $resourceId         Tool resource ID
-     * @param string|null  $tag                Tag
-     * @param int|null     $limit              Limit of line-items to be returned in each request, null for service default
+     * @param string|null $resourceId  Tool resource ID
+     * @param string|null $tag         Tag
+     * @param int|null $limit          Limit of line-items to be returned in each request, null for service default
      *
      * @return LineItem[]|bool  Array of LineItem objects or false on error
      */
-    public function getLineItems($resourceId = null, $tag = null, $limit = null)
+    public function getLineItems(?string $resourceId = null, ?string $tag = null, ?int $limit = null): array|bool
     {
         $lineItems = false;
         $this->lastServiceRequest = null;
@@ -636,11 +578,11 @@ class Context
     /**
      * Create a new line-item.
      *
-     * @param LineItem  $lineItem         Line-item object
+     * @param LineItem $lineItem  Line-item object
      *
      * @return bool  True if successful
      */
-    public function createLineItem($lineItem)
+    public function createLineItem(LineItem $lineItem): bool
     {
         $ok = false;
         $lineItemService = $this->getLineItemService();
@@ -654,12 +596,12 @@ class Context
     /**
      * Load the context from the database.
      *
-     * @param int             $id               Record ID of context
-     * @param DataConnector   $dataConnector    Database connection object
+     * @param int $id                       Record ID of context
+     * @param DataConnector $dataConnector  Database connection object
      *
-     * @return Context    Context object
+     * @return Context  Context object
      */
-    public static function fromRecordId($id, $dataConnector)
+    public static function fromRecordId(int $id, DataConnector $dataConnector): Context
     {
         $context = new Context();
         $context->dataConnector = $dataConnector;
@@ -669,30 +611,14 @@ class Context
     }
 
     /**
-     * Class constructor from consumer.
-     *
-     * @deprecated Use fromPlatform() instead
-     * @see Context::fromPlatform()
-     *
-     * @param ToolConsumer    $consumer       Consumer instance
-     * @param string          $ltiContextId   LTI Context ID value
-     *
-     * @return Context
-     */
-    public static function fromConsumer($consumer, $ltiContextId)
-    {
-        return self::fromPlatform($consumer, $ltiContextId);
-    }
-
-    /**
      * Class constructor from platform.
      *
-     * @param Platform        $platform       Platform instance
-     * @param string          $ltiContextId   LTI Context ID value
+     * @param Platform $platform    Platform instance
+     * @param string $ltiContextId  LTI Context ID value
      *
      * @return Context
      */
-    public static function fromPlatform($platform, $ltiContextId)
+    public static function fromPlatform(Platform $platform, string $ltiContextId): Context
     {
         $context = new Context();
         $context->platform = $platform;
@@ -712,11 +638,11 @@ class Context
     /**
      * Load the context from the database.
      *
-     * @param int $id     Record ID of context (optional, default is null)
+     * @param int $id  Record ID of context (optional, default is null)
      *
-     * @return bool    True if context was successfully loaded
+     * @return bool  True if context was successfully loaded
      */
-    private function load($id = null)
+    private function load(int $id = null): bool
     {
         $this->initialize();
         $this->id = $id;
@@ -728,7 +654,7 @@ class Context
      *
      * @return Service\LineItem|bool  Line-item service, or false if not available
      */
-    private function getLineItemService()
+    private function getLineItemService(): Service\LineItem|bool
     {
         $url = $this->getSetting('custom_lineitems_url');
         if (!empty($url)) {

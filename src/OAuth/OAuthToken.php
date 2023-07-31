@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\OAuth;
 
@@ -18,14 +19,14 @@ class OAuthToken
      *
      * @var string $key
      */
-    public $key;
+    public string $key;
 
     /**
      * Secret.
      *
      * @var string $secret
      */
-    public $secret;
+    public string $secret;
 
     /**
      * Class constructor.
@@ -33,7 +34,7 @@ class OAuthToken
      * @param string $key     The token
      * @param string $secret  The token secret
      */
-    function __construct($key, $secret)
+    function __construct(string $key, string $secret)
     {
         $this->key = $key;
         $this->secret = $secret;
@@ -45,7 +46,7 @@ class OAuthToken
      *
      * @return string
      */
-    function to_string()
+    function to_string(): string
     {
         return 'oauth_token=' .
             OAuthUtil::urlencode_rfc3986($this->key) .
@@ -58,7 +59,7 @@ class OAuthToken
      *
      * @return string
      */
-    function __toString()
+    function __toString(): string
     {
         return $this->to_string();
     }

@@ -1,10 +1,10 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\Service;
 
 use ceLTIc\LTI\AccessToken;
 use ceLTIc\LTI\Platform;
-use ceLTIc\LTI\ToolConsumer;
 use ceLTIc\LTI\Http\HttpMessage;
 use ceLTIc\LTI\Util;
 
@@ -23,68 +23,53 @@ class Service
      *
      * @var bool $unsigned
      */
-    public $unsigned = false;
+    public bool $unsigned = false;
 
     /**
      * Service endpoint.
      *
-     * @var string $endpoint
+     * @var string|null $endpoint
      */
-    protected $endpoint = null;
+    protected ?string $endpoint = null;
 
     /**
      * Service access scope.
      *
-     * @var string $scope
+     * @var string|null $scope
      */
-    protected $scope = null;
+    protected ?string $scope = null;
 
     /**
      * Media type of message body.
      *
-     * @var string $mediaType
+     * @var string|null $mediaType
      */
-    protected $mediaType = null;
+    protected ?string $mediaType = null;
 
     /**
      * Platform for this service request.
      *
-     * @var Platform $platform
+     * @var Platform|null $platform
      */
-    private $platform = null;
+        private?Platform $platform = null;
 
     /**
      * HttpMessage object for last service request.
      *
      * @var HttpMessage|null $http
      */
-    private $http = null;
+    private ?HttpMessage $http = null;
 
     /**
      * Class constructor.
      *
-     * @param Platform     $platform   Platform object for this service request
-     * @param string       $endpoint   Service endpoint
+     * @param Platform $platform     Platform object for this service request
+     * @param string|null $endpoint  Service endpoint
      */
-    public function __construct($platform, $endpoint)
+    public function __construct(Platform $platform, ?string $endpoint)
     {
         $this->platform = $platform;
         $this->endpoint = $endpoint;
-    }
-
-    /**
-     * Get tool consumer.
-     *
-     * @deprecated Use getPlatform() instead
-     * @see Service::getPlatform()
-     *
-     * @return ToolConsumer Consumer for this service
-     */
-    public function getConsumer()
-    {
-        Util::logDebug('Method ceLTIc\LTI\Service::getConsumer() has been deprecated; please use ceLTIc\LTI\Service::getPlatform() instead.',
-            true);
-        return $this->getPlatform();
     }
 
     /**
@@ -92,7 +77,7 @@ class Service
      *
      * @return Platform  Platform for this service
      */
-    public function getPlatform()
+    public function getPlatform(): Platform
     {
         return $this->platform;
     }
@@ -100,9 +85,9 @@ class Service
     /**
      * Get access scope.
      *
-     * @return string Access scope
+     * @return string  Access scope
      */
-    public function getScope()
+    public function getScope(): string
     {
         return $this->scope;
     }
@@ -110,13 +95,13 @@ class Service
     /**
      * Send a service request.
      *
-     * @param string  $method      The action type constant (optional, default is GET)
-     * @param array   $parameters  Query parameters to add to endpoint (optional, default is none)
-     * @param string  $body        Body of request (optional, default is null)
+     * @param string $method          The action type constant (optional, default is GET)
+     * @param array|null $parameters  Query parameters to add to endpoint (optional, default is none)
+     * @param string $body            Body of request (optional, default is null)
      *
      * @return HttpMessage HTTP object containing request and response details
      */
-    public function send($method, $parameters = array(), $body = null)
+    public function send(string $method, ?array $parameters = [], string $body = ''): HttpMessage
     {
         $url = $this->endpoint;
         if (!empty($parameters)) {
@@ -188,9 +173,9 @@ class Service
     /**
      * Get HttpMessage object for last request.
      *
-     * @return HttpMessage HTTP object containing request and response details
+     * @return HttpMessage  HTTP object containing request and response details
      */
-    public function getHttpMessage()
+    public function getHttpMessage(): ?HttpMessage
     {
         return $this->http;
     }
@@ -202,21 +187,21 @@ class Service
     /**
      * Parse the JSON for context references.
      *
-     * @param object       $contexts   JSON contexts
-     * @param array        $arr        Array to be parsed
+     * @param object|array $contexts  JSON contexts
+     * @param array $arr              Array to be parsed
      *
      * @return array Parsed array
      */
-    protected function parseContextsInArray($contexts, $arr)
+    protected function parseContextsInArray(object|array $contexts, array $arr): array
     {
         if (is_array($contexts)) {
-            $contextdefs = array();
+            $contextdefs = [];
             foreach ($contexts as $context) {
                 if (is_object($context)) {
                     $contextdefs = array_merge(get_object_vars($context), $contexts);
                 }
             }
-            $parsed = array();
+            $parsed = [];
             foreach ($arr as $key => $value) {
                 $parts = explode(':', $value, 2);
                 if (count($parts) > 1) {

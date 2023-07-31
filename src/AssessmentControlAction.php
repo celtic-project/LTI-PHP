@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI;
 
@@ -17,78 +18,78 @@ class AssessmentControlAction
     /**
      * Pause action.
      */
-    const ACTION_PAUSE = 'pause';
+    public const ACTION_PAUSE = 'pause';
 
     /**
      * Pause action.
      */
-    const ACTION_RESUME = 'resume';
+    public const ACTION_RESUME = 'resume';
 
     /**
      * Pause action.
      */
-    const ACTION_TERMINATE = 'terminate';
+    public const ACTION_TERMINATE = 'terminate';
 
     /**
      * Pause action.
      */
-    const ACTION_UPDATE = 'update';
+    public const ACTION_UPDATE = 'update';
 
     /**
      * Pause action.
      */
-    const ACTION_FLAG = 'flag';
+    public const ACTION_FLAG = 'flag';
 
     /**
      * Extra time.
      *
      * @var int|null $extraTime
      */
-    public $extraTime = null;
+    public ?int $extraTime = null;
 
     /**
      * Reason code.
      *
      * @var string|null $code
      */
-    public $code = null;
+    public ?string $code = null;
 
     /**
      * Reason message.
      *
      * @var string|null $message
      */
-    public $message = null;
+    public ?string $message = null;
 
     /**
      * Action.
      *
      * @var string|null $action
      */
-    private $action = null;
+    private ?string $action = null;
 
     /**
      * Incident date value.
      *
      * @var DateTime|null $date
      */
-    private $date = null;
+    private ?DateTime $date = null;
 
     /**
      * Severity.
      *
      * @var float|null $severity
      */
-    private $severity = null;
+    private ?float $severity = null;
 
     /**
      * Class constructor.
      *
-     * @param string    $action             Action
-     * @param DateTime $date               Date/time of incident
-     * @param float     $severity           Severity of incident
+     * @param string $action   Action
+     * @param DateTime $date  Date/time of incident
+     * @param float $severity  Severity of incident
      */
-    public function __construct($action, $date, $severity)
+    public function __construct(string $action, DateTime $date, float $severity)
     {
         $this->action = $action;
         $this->date = $date;
@@ -100,7 +101,7 @@ class AssessmentControlAction
      *
      * @return string Action value
      */
-    public function getAction()
+    public function getAction(): string
     {
         return $this->action;
     }
@@ -110,7 +111,7 @@ class AssessmentControlAction
      *
      * @return DateTime Incident date value
      */
-    public function getDate()
+    public function getDate(): DateTime
     {
         return $this->date;
     }
@@ -120,7 +121,7 @@ class AssessmentControlAction
      *
      * @return float Severity value
      */
-    public function getSeverity()
+    public function getSeverity(): float
     {
         return $this->severity;
     }

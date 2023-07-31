@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\Content;
 
@@ -17,14 +18,14 @@ class TimePeriod
      *
      * @var int|null $startDateTime
      */
-    private $startDateTime = null;
+    private ?int $startDateTime = null;
 
     /**
      * End date/time.
      *
      * @var int|null $endDateTime
      */
-    private $endDateTime = null;
+    private ?int $endDateTime = null;
 
     /**
      * Class constructor.
@@ -32,7 +33,7 @@ class TimePeriod
      * @param int|null    $startDateTime  Start date/time
      * @param int|null    $endDateTime    End date/time
      */
-    function __construct($startDateTime, $endDateTime)
+    function __construct(?int $startDateTime, ?int $endDateTime)
     {
         if (is_int($startDateTime)) {
             $this->startDateTime = $startDateTime;
@@ -47,7 +48,7 @@ class TimePeriod
      *
      * @return object  JSON object
      */
-    public function toJsonldObject()
+    public function toJsonldObject(): object
     {
         return $this->toJsonObject();
     }
@@ -57,7 +58,7 @@ class TimePeriod
      *
      * @return object  JSON object
      */
-    public function toJsonObject()
+    public function toJsonObject(): object
     {
         $timePeriod = new \stdClass();
         if (!is_null($this->startDateTime)) {
@@ -81,7 +82,7 @@ class TimePeriod
      *
      * @return TimePeriod|null  The TimePeriod object
      */
-    public static function fromJsonObject($item)
+    public static function fromJsonObject(object $item): ?TimePeriod
     {
         $obj = null;
         $startDateTime = null;

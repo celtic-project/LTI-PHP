@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI;
 
@@ -19,79 +20,79 @@ class LineItem
      *
      * @var string|null $label
      */
-    public $label = null;
+    public ?string $label = null;
 
     /**
      * Points possible value.
      *
      * @var int $pointsPossible
      */
-    public $pointsPossible = 1;
+    public int $pointsPossible = 1;
 
     /**
-     * LTI Resource Link ID with which the line item is associated.
+     * LTI Resource Link ID with which the line-item is associated.
      *
      * @var string|null $ltiResourceLinkId
      */
-    public $ltiResourceLinkId = null;
+    public ?string $ltiResourceLinkId = null;
 
     /**
      * Tool resource ID associated with the line-item.
      *
      * @var string|null $resourceId
      */
-    public $resourceId = null;
+    public ?string $resourceId = null;
 
     /**
      * Tag value.
      *
      * @var string|null $tag
      */
-    public $tag = null;
+    public ?string $tag = null;
 
     /**
      * Outcome start submit timestamp.
      *
      * @var int|null $submitFrom
      */
-    public $submitFrom = null;
+    public ?int $submitFrom = null;
 
     /**
      * Outcome end submit timestamp.
      *
      * @var int|null $submitUntil
      */
-    public $submitUntil = null;
+    public ?int $submitUntil = null;
 
     /**
      * Line-item endpoint.
      *
      * @var string|null $endpoint
      */
-    public $endpoint = null;
+    public ?string $endpoint = null;
 
     /**
      * Submission review.
      *
      * @var SubmissionReview|null $submissionReview
      */
-    public $submissionReview = null;
+    public ?SubmissionReview $submissionReview = null;
 
     /**
      * Platform for this line-item.
      *
      * @var Platform|null $platform
      */
-    private $platform = null;
+    private ?Platform $platform = null;
 
     /**
      * Class constructor.
      *
-     * @param Platform $platform          Platform object
-     * @param string   $label             Label
-     * @param int      $pointsPossible    Points possible value
+     * @param Platform $platform            Platform object
+     * @param string $label                 Label
+     * @param int $pointsPossible           Points possible value
      */
-    public function __construct($platform, $label, $pointsPossible)
+    public function __construct(Platform $platform, string $label, int $pointsPossible)
     {
         $this->platform = $platform;
         $this->label = $label;
@@ -103,7 +104,7 @@ class LineItem
      *
      * @return Platform  Platform object for this line-item.
      */
-    public function getPlatform()
+    public function getPlatform(): Platform
     {
         return $this->platform;
     }
@@ -113,7 +114,7 @@ class LineItem
      *
      * @return bool  True if successful
      */
-    public function save()
+    public function save(): bool
     {
         $service = new Service\LineItem($this->platform, $this->endpoint);
         return $service->saveLineItem($this);
@@ -124,7 +125,7 @@ class LineItem
      *
      * @return bool  True if successful
      */
-    public function delete()
+    public function delete(): bool
     {
         $service = new Service\LineItem($this->platform, $this->endpoint);
         return $service->deleteLineItem($this);
@@ -133,11 +134,11 @@ class LineItem
     /**
      * Retrieve all outcomes.
      *
-     * @param int|null     $limit              Limit of outcomes to be returned in each request, null for service default
+     * @param int|null $limit  Limit of outcomes to be returned in each request, null for service default
      *
      * @return Outcome[]|bool  Array of outcome objects, or false on error
      */
-    public function getOutcomes($limit = null)
+    public function getOutcomes(?int $limit = null): array|bool
     {
         $resultService = new Service\Result($this->platform, $this->endpoint);
         return $resultService->getAll();
@@ -146,11 +147,11 @@ class LineItem
     /**
      * Retrieve the outcome for a user.
      *
-     * @param User        $user         User object
+     * @param User $user  User object
      *
      * @return Outcome|null|bool  Outcome object, or null if none, or false on error
      */
-    public function readOutcome($user)
+    public function readOutcome(User $user): Outcome|null|bool
     {
         $resultService = new Service\Result($this->platform, $this->endpoint);
         return $resultService->get($user);
@@ -159,12 +160,12 @@ class LineItem
     /**
      * Submit the outcome for a user.
      *
-     * @param Outcome     $ltiOutcome   Outcome object
-     * @param User        $user         User object
+     * @param Outcome $ltiOutcome  Outcome object
+     * @param User $user           User object
      *
      * @return bool  True if successful
      */
-    public function submitOutcome($ltiOutcome, $user)
+    public function submitOutcome(Outcome $ltiOutcome, User $user): bool
     {
         $scoreService = new Service\Score($this->platform, $this->endpoint);
         return $scoreService->submit($ltiOutcome, $user);
@@ -173,11 +174,11 @@ class LineItem
     /**
      * Delete the outcome for a user.
      *
-     * @param User        $user         User object
+     * @param User $user  User object
      *
      * @return bool  True if successful, otherwise false
      */
-    public function deleteOutcome($user)
+    public function deleteOutcome(User $user): bool
     {
         $ltiOutcome = new Outcome();
         $scoreService = new Service\Score($this->platform, $this->endpoint);
@@ -187,12 +188,12 @@ class LineItem
     /**
      * Retrieve a line-item definition.
      *
-     * @param Platform $platform          Platform object
-     * @param string   $endpoint          ID value
+     * @param Platform $platform  Platform object
+     * @param string $endpoint    ID value
      *
      * @return LineItem|bool  LineItem object or false on error
      */
-    public static function fromEndpoint($platform, $endpoint)
+    public static function fromEndpoint(Platform $platform, string $endpoint): LineItem|bool
     {
         return Service\LineItem::getLineItem($platform, $endpoint);
     }

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\Jwt;
 
@@ -55,7 +56,7 @@ class Jwt
      *
      * @param ClientInterface|null $jwtClient
      */
-    public static function setJwtClient($jwtClient = null)
+    public static function setJwtClient(?ClientInterface $jwtClient = null): void
     {
         self::$jwtClient = $jwtClient;
         Util::logDebug('JwtClient set to \'' . get_class(self::$jwtClient) . '\'');
@@ -66,7 +67,7 @@ class Jwt
      *
      * @return ClientInterface|null  The JWT client
      */
-    public static function getJwtClient()
+    public static function getJwtClient(): ?ClientInterface
     {
         if (!self::$jwtClient) {
             self::$jwtClient = new FirebaseClient();

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\OAuth;
 
@@ -9,7 +10,7 @@ namespace ceLTIc\LTI\OAuth;
  * @version  2008-08-04
  * @license  https://opensource.org/licenses/MIT The MIT License
  */
-class OAuthDataStore
+abstract class OAuthDataStore
 {
 
     /**
@@ -19,10 +20,7 @@ class OAuthDataStore
      *
      * @return OAuthConsumer
      */
-    function lookup_consumer($consumer_key)
-    {
-        // implement me
-    }
+    abstract function lookup_consumer(string $consumer_key): OAuthConsumer;
 
     /**
      * Find token.
@@ -33,10 +31,7 @@ class OAuthDataStore
      *
      * @return OAuthToken
      */
-    function lookup_token($consumer, $token_type, $token)
-    {
-        // implement me
-    }
+    abstract function lookup_token(OAuthConsumer $consumer, ?string $token_type, ?string $token): OAuthToken;
 
     /**
      * Check nonce value.
@@ -48,10 +43,7 @@ class OAuthDataStore
      *
      * @return bool
      */
-    function lookup_nonce($consumer, $token, $nonce, $timestamp)
-    {
-        // implement me
-    }
+    abstract function lookup_nonce(OAuthConsumer $consumer, OAuthToken $token, string $nonce, string $timestamp): bool;
 
     /**
      * Get new request token.
@@ -61,10 +53,7 @@ class OAuthDataStore
      *
      * @return string|null
      */
-    function new_request_token($consumer, $callback = null)
-    {
-        // return a new token attached to this consumer
-    }
+    abstract function new_request_token(OAuthConsumer $consumer, ?string $callback = null): ?string;
 
     /**
      * Get new access token.
@@ -75,12 +64,5 @@ class OAuthDataStore
      *
      * @return string|null
      */
-    function new_access_token($token, $consumer, $verifier = null)
-    {
-        // return a new access token attached to this consumer
-        // for the user associated with this token if the request token
-        // is authorized
-        // should also invalidate the request token
-    }
-
+    abstract function new_access_token(string $token, OAuthConsumer $consumer, ?string $verifier = null): ?string;
 }

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\ApiHook\canvas;
 
@@ -22,7 +23,7 @@ class CanvasApiContext extends ApiContext
      *
      * @param Context $context
      */
-    public function __construct($context)
+    public function __construct(Context $context)
     {
         parent::__construct($context);
         $this->sourceObject = $context;
@@ -33,7 +34,7 @@ class CanvasApiContext extends ApiContext
      *
      * @return bool  True if the request was successful
      */
-    public function getGroups()
+    public function getGroups(): bool
     {
         $ok = false;
         $platform = $this->sourceObject->getPlatform();
@@ -47,7 +48,7 @@ class CanvasApiContext extends ApiContext
         $prefix = $platform->getSetting('canvas.group_set_prefix');
         if ($this->domain && $this->token && $this->courseId) {
             if ($this->setGroupSets($perPage, $prefix)) {
-                $ok = $this->setGroups($perPage, array());
+                $ok = $this->setGroups($perPage, []);
             }
         }
 
@@ -57,11 +58,11 @@ class CanvasApiContext extends ApiContext
     /**
      * Get memberships.
      *
-     * @param bool    $withGroups True is group information is to be requested as well
+     * @param bool $withGroups  True is group information is to be requested as well
      *
      * @return array|bool  Array of UserResult objects or false if the request was not successful
      */
-    public function getMemberships($withGroups)
+    public function getMemberships(bool $withGroups): array|bool
     {
         return $this->get($withGroups);
     }

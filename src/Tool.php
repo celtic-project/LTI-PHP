@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI;
 
@@ -12,6 +13,8 @@ use ceLTIc\LTI\OAuth;
 use ceLTIc\LTI\ApiHook\ApiHook;
 use ceLTIc\LTI\User;
 use ceLTIc\LTI\Util;
+use ceLTIc\LTI\Enum\LtiVersion;
+use ceLTIc\LTI\Enum\LogLevel;
 
 /**
  * Class to represent an LTI Tool
@@ -28,37 +31,12 @@ class Tool
     /**
      * Default connection error message.
      */
-    const CONNECTION_ERROR_MESSAGE = 'Sorry, there was an error connecting you to the application.';
-
-    /**
-     * Use ID value only.
-     */
-    const ID_SCOPE_ID_ONLY = 0;
-
-    /**
-     * Prefix an ID with the consumer key.
-     */
-    const ID_SCOPE_GLOBAL = 1;
-
-    /**
-     * Prefix the ID with the consumer key and context ID.
-     */
-    const ID_SCOPE_CONTEXT = 2;
-
-    /**
-     * Prefix the ID with the consumer key and resource ID.
-     */
-    const ID_SCOPE_RESOURCE = 3;
-
-    /**
-     * Character used to separate each element of an ID.
-     */
-    const ID_SCOPE_SEPARATOR = ':';
+    public const CONNECTION_ERROR_MESSAGE = 'Sorry, there was an error connecting you to the application.';
 
     /**
      * List of supported incoming message types.
      */
-    public static $MESSAGE_TYPES = array(
+    public static array $MESSAGE_TYPES = [
         'basic-lti-launch-request',
         'ConfigureLaunchRequest',
         'DashboardRequest',
@@ -68,54 +46,55 @@ class Tool
         'ToolProxyRegistrationRequest',
         'LtiStartProctoring',
         'LtiEndAssessment'
-    );
+    ];
 
     /**
      * Names of LTI parameters to be retained in the consumer settings property.
      *
      * @var array $LTI_CONSUMER_SETTING_NAMES
      */
-    private static $LTI_CONSUMER_SETTING_NAMES = array('custom_tc_profile_url', 'custom_system_setting_url', 'custom_oauth2_access_token_url');
+    private static array $LTI_CONSUMER_SETTING_NAMES = ['custom_tc_profile_url', 'custom_system_setting_url', 'custom_oauth2_access_token_url'];
 
     /**
      * Names of LTI parameters to be retained in the context settings property.
      *
      * @var array $LTI_CONTEXT_SETTING_NAMES
      */
-    private static $LTI_CONTEXT_SETTING_NAMES = array('custom_context_setting_url',
+    private static array $LTI_CONTEXT_SETTING_NAMES = ['custom_context_setting_url',
         'ext_ims_lis_memberships_id', 'ext_ims_lis_memberships_url',
         'custom_context_memberships_url', 'custom_context_memberships_v2_url',
         'custom_context_group_sets_url', 'custom_context_groups_url',
         'custom_lineitems_url', 'custom_ags_scopes'
-    );
+    ];
 
     /**
      * Names of LTI parameters to be retained in the resource link settings property.
      *
      * @var array $LTI_RESOURCE_LINK_SETTING_NAMES
      */
-    private static $LTI_RESOURCE_LINK_SETTING_NAMES = array('lis_result_sourcedid', 'lis_outcome_service_url',
+    private static array $LTI_RESOURCE_LINK_SETTING_NAMES = ['lis_result_sourcedid', 'lis_outcome_service_url',
         'ext_ims_lis_basic_outcome_url', 'ext_ims_lis_resultvalue_sourcedids', 'ext_outcome_data_values_accepted',
         'ext_ims_lis_memberships_id', 'ext_ims_lis_memberships_url',
         'ext_ims_lti_tool_setting', 'ext_ims_lti_tool_setting_id', 'ext_ims_lti_tool_setting_url',
         'custom_link_setting_url', 'custom_link_memberships_url',
         'custom_lineitems_url', 'custom_lineitem_url', 'custom_ags_scopes',
         'custom_ap_acs_url'
-    );
+    ];
 
     /**
      * Names of LTI parameters to be retained even when not passed.
      *
      * @var array $LTI_RETAIN_SETTING_NAMES
      */
-    private static $LTI_RETAIN_SETTING_NAMES = array('custom_lineitem_url');
+    private static array $LTI_RETAIN_SETTING_NAMES = ['custom_lineitem_url'];
 
     /**
      * Names of LTI custom parameter substitution variables (or capabilities) and their associated default message parameter names.
      *
      * @var array $CUSTOM_SUBSTITUTION_VARIABLES
      */
-    private static $CUSTOM_SUBSTITUTION_VARIABLES = array('User.id' => 'user_id',
+    private static array $CUSTOM_SUBSTITUTION_VARIABLES = [
+        'User.id' => 'user_id',
         'User.image' => 'user_image',
         'User.username' => 'username',
         'User.scope.mentor' => 'role_scope_mentor',
@@ -150,236 +129,218 @@ class Tool
         'ToolProxyBinding.nrps.url' => 'custom_context_memberships_v2_url',
         'LtiLink.memberships.url' => 'custom_link_memberships_url',
         'LtiLink.acs.url' => 'custom_ap_acs_url'
-    );
-
-    /**
-     * Tool consumer object.
-     *
-     * @deprecated Use Tool::$platform instead
-     * @see platform
-     *
-     * @var ToolConsumer|null $consumer
-     */
-    public $consumer = null;
+    ];
 
     /**
      * Platform object.
      *
      * @var Platform|null $platform
      */
-    public $platform = null;
+    public ?Platform $platform = null;
 
     /**
      * Return URL provided by platform.
      *
      * @var string|null $returnUrl
      */
-    public $returnUrl = null;
+    public ?string $returnUrl = null;
 
     /**
      * UserResult object.
      *
      * @var UserResult|null $userResult
      */
-    public $userResult = null;
+    public ?UserResult $userResult = null;
 
     /**
      * Resource link object.
      *
      * @var ResourceLink|null $resourceLink
      */
-    public $resourceLink = null;
+    public ?ResourceLink $resourceLink = null;
 
     /**
      * Context object.
      *
      * @var Context|null $context
      */
-    public $context = null;
+    public ?Context $context = null;
 
     /**
      * Default email domain.
      *
      * @var string $defaultEmail
      */
-    public $defaultEmail = '';
-
-    /**
-     * Scope to use for user IDs.
-     *
-     * @var int $idScope
-     */
-    public $idScope = self::ID_SCOPE_ID_ONLY;
+    public string $defaultEmail = '';
 
     /**
      * Whether shared resource link arrangements are permitted.
      *
      * @var bool $allowSharing
      */
-    public $allowSharing = false;
+    public bool $allowSharing = false;
 
     /**
      * Message for last request processed
      *
      * @var string|null $message
      */
-    public $message = null;
+    public ?string $message = null;
 
     /**
      * Base URL for tool service
      *
      * @var string|null $baseUrl
      */
-    public $baseUrl = null;
+    public ?string $baseUrl = null;
 
     /**
      * Vendor details
      *
      * @var Profile\Item|null $vendor
      */
-    public $vendor = null;
+    public ?Profile\Item $vendor = null;
 
     /**
      * Product details
      *
      * @var Profile\Item|null $product
      */
-    public $product = null;
+    public ?Profile\Item $product = null;
 
     /**
      * Services required by Tool
      *
      * @var array|null $requiredServices
      */
-    public $requiredServices = null;
+    public ?array $requiredServices = null;
 
     /**
      * Optional services used by Tool
      *
      * @var array|null $optionalServices
      */
-    public $optionalServices = null;
+    public ?array $optionalServices = null;
 
     /**
      * Resource handlers for Tool
      *
      * @var array|null $resourceHandlers
      */
-    public $resourceHandlers = null;
+    public ?array $resourceHandlers = null;
 
     /**
      * Message URL for Tool
      *
      * @var string|null $messageUrl
      */
-    public $messageUrl = null;
+    public ?string $messageUrl = null;
 
     /**
      * Initiate Login request URL for Tool
      *
      * @var string|null $initiateLoginUrl
      */
-    public $initiateLoginUrl = null;
+    public ?string $initiateLoginUrl = null;
 
     /**
      * Redirection URIs for Tool
      *
      * @var array|null $redirectionUris
      */
-    public $redirectionUris = null;
+    public ?array $redirectionUris = null;
 
     /**
      * Default tool for use with service requests
      *
      * @var Tool|null $defaultTool
      */
-    public static $defaultTool = null;
+    public static ?Tool $defaultTool = null;
 
     /**
      * Use GET method for authentication request messages when true
      *
      * @var bool $authenticateUsingGet
      */
-    public static $authenticateUsingGet = false;
+    public static bool $authenticateUsingGet = false;
 
     /**
      * Life in seconds for the state value issued during the OIDC login process
      *
      * @var int $stateLife
      */
-    public static $stateLife = 10;
+    public static int $stateLife = 10;
 
     /**
      * Period in milliseconds to wait for a response to a postMessage
      *
      * @var int $postMessageTimeoutDelay
      */
-    public static $postMessageTimeoutDelay = 20;
+    public static int $postMessageTimeoutDelay = 20;
 
     /**
      * URL to redirect user to on successful completion of the request.
      *
      * @var string|null $redirectUrl
      */
-    protected $redirectUrl = null;
+    protected ?string $redirectUrl = null;
 
     /**
      * Media types accepted by the platform.
      *
      * @var array|null $mediaTypes
      */
-    protected $mediaTypes = null;
+    protected ?array $mediaTypes = null;
 
     /**
      * Content item types accepted by the platform.
      *
      * @var array|null $contentTypes
      */
-    protected $contentTypes = null;
+    protected ?array $contentTypes = null;
 
     /**
      * File types accepted by the platform.
      *
      * @var array|null $fileTypes
      */
-    protected $fileTypes = null;
+    protected ?array $fileTypes = null;
 
     /**
      * Document targets accepted by the platform.
      *
      * @var array|null $documentTargets
      */
-    protected $documentTargets = null;
+    protected ?array $documentTargets = null;
 
     /**
      * Default HTML to be displayed on a successful completion of the request.
      *
      * @var string|null $output
      */
-    protected $output = null;
+    protected ?string $output = null;
 
     /**
      * HTML to be displayed on an unsuccessful completion of the request and no return URL is available.
      *
      * @var string|null $errorOutput
      */
-    protected $errorOutput = null;
+    protected ?string $errorOutput = null;
 
     /**
      * LTI parameter constraints for auto validation checks.
      *
      * @var array|null $constraints
      */
-    private $constraints = null;
+    private ?array $constraints = null;
 
     /**
      * Class constructor
      *
-     * @param DataConnector     $dataConnector    Object containing a database connection object
+     * @param DataConnector $dataConnector  Object containing a database connection object
      */
-    public function __construct($dataConnector = null)
+    public function __construct(?DataConnector $dataConnector = null)
     {
-        $this->consumer = &$this->platform;
         $this->initialize();
         if (empty($dataConnector)) {
             $dataConnector = DataConnector::getDataConnector();
@@ -390,7 +351,7 @@ class Tool
     /**
      * Initialise the tool.
      */
-    public function initialize()
+    public function initialize(): void
     {
         $this->id = null;
         $this->key = null;
@@ -403,27 +364,27 @@ class Tool
         $this->signatureMethod = 'HMAC-SHA1';
         $this->encryptionMethod = null;
         $this->ltiVersion = null;
-        $this->settings = array();
+        $this->settings = [];
         $this->enabled = false;
         $this->enableFrom = null;
         $this->enableUntil = null;
         $this->lastAccess = null;
         $this->created = null;
         $this->updated = null;
-        $this->constraints = array();
+        $this->constraints = [];
         $this->vendor = new Profile\Item();
         $this->product = new Profile\Item();
-        $this->requiredServices = array();
-        $this->optionalServices = array();
-        $this->resourceHandlers = array();
+        $this->requiredServices = [];
+        $this->optionalServices = [];
+        $this->resourceHandlers = [];
     }
 
     /**
      * Save the tool to the database.
      *
-     * @return bool    True if the object was successfully saved
+     * @return bool  True if the object was successfully saved
      */
-    public function save()
+    public function save(): bool
     {
         return $this->dataConnector->saveTool($this);
     }
@@ -431,9 +392,9 @@ class Tool
     /**
      * Delete the tool from the database.
      *
-     * @return bool    True if the object was successfully deleted
+     * @return bool  True if the object was successfully deleted
      */
-    public function delete()
+    public function delete(): bool
     {
         return $this->dataConnector->deleteTool($this);
     }
@@ -441,22 +402,22 @@ class Tool
     /**
      * Get the message parameters.
      *
-     * @param bool    $strictMode          True if full compliance with the LTI specification is required (optional, default is false)
-     * @param bool    $disableCookieCheck  True if no cookie check should be made (optional, default is false)
-     * @param bool    $generateWarnings    True if warning messages should be generated (optional, default is false)
+     * @param bool $strictMode          True if full compliance with the LTI specification is required (optional, default is false)
+     * @param bool $disableCookieCheck  True if no cookie check should be made (optional, default is false)
+     * @param bool $generateWarnings    True if warning messages should be generated (optional, default is false)
      *
-     * @return array The message parameter array
+     * @return array  The message parameter array
      */
-    public function getMessageParameters($strictMode = false, $disableCookieCheck = false, $generateWarnings = false)
+    public function getMessageParameters(bool $strictMode = false, bool $disableCookieCheck = false, bool $generateWarnings = false): array
     {
         if (is_null($this->messageParameters)) {
             $this->parseMessage($strictMode, $disableCookieCheck, $generateWarnings);
 // Set debug mode
-            if (Util::$logLevel < Util::LOGLEVEL_DEBUG) {
+            if (!Util::$logLevel->logDebug()) {
                 $this->debugMode = (isset($this->messageParameters['custom_debug']) &&
                     (strtolower($this->messageParameters['custom_debug']) === 'true'));
                 if ($this->debugMode) {
-                    Util::$logLevel = Util::LOGLEVEL_DEBUG;
+                    Util::$logLevel = LogLevel::Debug;
                 }
             }
 // Set return URL if available
@@ -476,15 +437,15 @@ class Tool
     /**
      * Process an incoming request
      *
-     * @param bool    $strictMode          True if full compliance with the LTI specification is required (optional, default is false)
-     * @param bool    $disableCookieCheck  True if no cookie check should be made (optional, default is false)
-     * @param bool    $generateWarnings    True if warning messages should be generated (optional, default is false)
+     * @param bool $strictMode          True if full compliance with the LTI specification is required (optional, default is false)
+     * @param bool $disableCookieCheck  True if no cookie check should be made (optional, default is false)
+     * @param bool $generateWarnings    True if warning messages should be generated (optional, default is false)
      */
-    public function handleRequest($strictMode = false, $disableCookieCheck = false, $generateWarnings = false)
+    public function handleRequest(bool $strictMode = false, bool $disableCookieCheck = false, bool $generateWarnings = false): void
     {
         $parameters = Util::getRequestParameters();
         if ($this->debugMode) {
-            Util::$logLevel = Util::LOGLEVEL_DEBUG;
+            Util::$logLevel = LogLevel::Debug;
         }
         if ($_SERVER['REQUEST_METHOD'] === 'HEAD') {  // Ignore HEAD requests
             Util::logRequest(true);
@@ -531,39 +492,28 @@ class Tool
      * Add a parameter constraint to be checked on launch
      *
      * @param string $name              Name of parameter to be checked
-     * @param bool    $required         True if parameter is required (optional, default is true)
+     * @param bool $required            True if parameter is required (optional, default is true)
      * @param int|null $maxLength       Maximum permitted length of parameter value (optional, default is null)
      * @param array|null $messageTypes  Array of message types to which the constraint applies (optional, default is all)
      */
-    public function setParameterConstraint($name, $required = true, $maxLength = null, $messageTypes = null)
+    public function setParameterConstraint(string $name, bool $required = true, ?int $maxLength = null, ?array $messageTypes = null): void
     {
         $name = trim($name);
         if (!empty($name)) {
-            $this->constraints[$name] = array('required' => $required, 'max_length' => $maxLength, 'messages' => $messageTypes);
+            $this->constraints[$name] = [
+                'required' => $required,
+                'max_length' => $maxLength,
+                'messages' => $messageTypes
+            ];
         }
-    }
-
-    /**
-     * Get an array of defined tool consumers
-     *
-     * @deprecated Use getPlatforms() instead
-     * @see Tool::getPlatforms()
-     *
-     * @return array Array of ToolConsumer objects
-     */
-    public function getConsumers()
-    {
-        Util::logDebug('Method ceLTIc\LTI\Tool::getConsumers() has been deprecated; please use ceLTIc\LTI\Tool::getPlatforms() instead.',
-            true);
-        return $this->getPlatforms();
     }
 
     /**
      * Get an array of defined platforms
      *
-     * @return array Array of Platform objects
+     * @return array  Array of Platform objects
      */
-    public function getPlatforms()
+    public function getPlatforms(): array
     {
         return $this->dataConnector->getPlatforms();
     }
@@ -572,11 +522,11 @@ class Tool
      * Find an offered service based on a media type and HTTP action(s)
      *
      * @param string $format  Media type required
-     * @param array  $methods Array of HTTP actions required
+     * @param array $methods  Array of HTTP actions required
      *
-     * @return object The service object
+     * @return object  The service object
      */
-    public function findService($format, $methods)
+    public function findService(string $format, array $methods): object
     {
         $found = false;
         $services = $this->platform->profile->service_offered;
@@ -587,7 +537,7 @@ class Tool
                 if (!is_array($service->format) || !in_array($format, $service->format)) {
                     continue;
                 }
-                $missing = array();
+                $missing = [];
                 foreach ($methods as $method) {
                     if (!is_array($service->action) || !in_array($method, $service->action)) {
                         $missing[] = $method;
@@ -607,12 +557,12 @@ class Tool
     /**
      * Send the tool proxy to the platform
      *
-     * @return bool    True if the tool proxy was accepted
+     * @return bool  True if the tool proxy was accepted
      */
-    public function doToolProxyService()
+    public function doToolProxyService(): bool
     {
 // Create tool proxy
-        $toolProxyService = $this->findService('application/vnd.ims.lti.v2.toolproxy+json', array('POST'));
+        $toolProxyService = $this->findService('application/vnd.ims.lti.v2.toolproxy+json', ['POST']);
         $secret = Util::getRandomString(12);
         $toolProxy = new MediaType\ToolProxy($this, $toolProxyService, $secret);
         $http = $this->platform->doServiceRequest($toolProxyService, 'POST', 'application/vnd.ims.lti.v2.toolproxy+json',
@@ -628,25 +578,6 @@ class Tool
         return $ok;
     }
 
-    /**
-     * Generate a web page containing an auto-submitted form of parameters.
-     *
-     * @deprecated Use Util::sendForm() instead
-     * @see Util::sendForm()
-     *
-     * @param string $url         URL to which the form should be submitted
-     * @param array    $params    Array of form parameters
-     * @param string $target    Name of target (optional)
-     *
-     * @return string
-     */
-    public static function sendForm($url, $params, $target = '')
-    {
-        Util::logDebug('Method ceLTIc\LTI\Tool::sendForm() has been deprecated; please use ceLTIc\LTI\Util::sendForm() instead.',
-            true);
-        return Util::sendForm($url, $params, $target);
-    }
-
 ###
 ###    PROTECTED METHODS
 ###
@@ -654,7 +585,7 @@ class Tool
     /**
      * Process a valid launch request
      */
-    protected function onLaunch()
+    protected function onLaunch(): void
     {
         $this->reason = 'No onLaunch method found for tool.';
         $this->onError();
@@ -663,7 +594,7 @@ class Tool
     /**
      * Process a valid configure request
      */
-    protected function onConfigure()
+    protected function onConfigure(): void
     {
         $this->reason = 'No onConfigure method found for tool.';
         $this->onError();
@@ -672,7 +603,7 @@ class Tool
     /**
      * Process a valid dashboard request
      */
-    protected function onDashboard()
+    protected function onDashboard(): void
     {
         $this->reason = 'No onDashboard method found for tool.';
         $this->onError();
@@ -681,7 +612,7 @@ class Tool
     /**
      * Process a valid content-item request
      */
-    protected function onContentItem()
+    protected function onContentItem(): void
     {
         $this->reason = 'No onContentItem method found for tool.';
         $this->onError();
@@ -690,7 +621,7 @@ class Tool
     /**
      * Process a valid content-item update request
      */
-    protected function onContentItemUpdate()
+    protected function onContentItemUpdate(): void
     {
         $this->reason = 'No onContentItemUpdate method found for tool.';
         $this->onError();
@@ -699,7 +630,7 @@ class Tool
     /**
      * Process a valid submission review request
      */
-    protected function onSubmissionReview()
+    protected function onSubmissionReview(): void
     {
         $this->reason = 'No onSubmissionReview method found for tool.';
         $this->onError();
@@ -708,7 +639,7 @@ class Tool
     /**
      * Process a valid tool proxy registration request
      */
-    protected function onRegister()
+    protected function onRegister(): void
     {
         $this->reason = 'No onRegister method found for tool.';
         $this->onError();
@@ -717,7 +648,7 @@ class Tool
     /**
      * Process a dynamic registration request
      */
-    protected function onRegistration()
+    protected function onRegistration(): void
     {
         $platformConfig = $this->getPlatformConfiguration();
         if ($this->ok) {
@@ -734,7 +665,7 @@ class Tool
     /**
      * Process a valid start proctoring request
      */
-    protected function onLtiStartProctoring()
+    protected function onLtiStartProctoring(): void
     {
         $this->reason = 'No onLtiStartProctoring method found for tool.';
         $this->onError();
@@ -743,7 +674,7 @@ class Tool
     /**
      * Process a valid end assessment request
      */
-    protected function onLtiEndAssessment()
+    protected function onLtiEndAssessment(): void
     {
         $this->reason = 'No onLtiEndAssessment method found for tool.';
         $this->onError();
@@ -755,16 +686,16 @@ class Tool
      * @param array $requestParameters  Request parameters
      * @param array $authParameters     Authentication request parameters
      */
-    protected function onInitiateLogin($requestParameters, &$authParameters)
+    protected function onInitiateLogin(array $requestParameters, array &$authParameters): void
     {
         $hasSession = !empty(session_id());
         if (!$hasSession) {
             session_start();
         }
-        $_SESSION['ceLTIc_lti_authentication_request'] = array(
+        $_SESSION['ceLTIc_lti_authentication_request'] = [
             'state' => $authParameters['state'],
             'nonce' => $authParameters['nonce']
-        );
+        ];
         if (!$hasSession) {
             session_write_close();
         }
@@ -773,11 +704,11 @@ class Tool
     /**
      * Process response to an authentication request
      *
-     * @param string $state                 State value
-     * @param string $nonce                 Nonce value
-     * @param bool   $usePlatformStorage    True if platform storage is being used
+     * @param string $state             State value
+     * @param string $nonce             Nonce value
+     * @param bool $usePlatformStorage  True if platform storage is being used
      */
-    protected function onAuthenticate($state, $nonce, $usePlatformStorage)
+    protected function onAuthenticate(string $state, string $nonce, bool $usePlatformStorage): void
     {
         $hasSession = !empty(session_id());
         if (!$hasSession) {
@@ -820,7 +751,7 @@ class Tool
     /**
      * Process a change in the session ID
      */
-    protected function onResetSessionId()
+    protected function onResetSessionId(): void
     {
 
     }
@@ -828,7 +759,7 @@ class Tool
     /**
      * Process a response to an invalid request
      */
-    protected function onError()
+    protected function onError(): void
     {
         $this->ok = false;
     }
@@ -838,7 +769,7 @@ class Tool
      *
      * @return array|null  Platform configuration data
      */
-    protected function getPlatformConfiguration()
+    protected function getPlatformConfiguration(): ?array
     {
         if ($this->ok) {
             $parameters = Util::getRequestParameters();
@@ -894,16 +825,16 @@ class Tool
      *
      * @return array  Tool configuration data
      */
-    protected function getConfiguration($platformConfig)
+    protected function getConfiguration(array $platformConfig): array
     {
-        $claimsMapping = array(
+        $claimsMapping = [
             'User.id' => 'sub',
             'Person.name.full' => 'name',
             'Person.name.given' => 'given_name',
             'Person.name.middle' => 'middle_name',
             'Person.name.family' => 'family_name',
             'Person.email.primary' => 'email'
-        );
+        ];
         $toolName = (!empty($this->product->name)) ? $this->product->name : 'Unnamed tool';
         $toolDescription = (!empty($this->product->description)) ? $this->product->description : '';
         $oauthRequest = OAuth\OAuthRequest::from_request();
@@ -912,17 +843,17 @@ class Tool
         $domain = substr($toolUrl, $pos + 2);
         $domain = substr($domain, 0, strpos($domain, '/'));
         $claimsSupported = $platformConfig['claims_supported'];
-        $messagesSupported = array();
+        $messagesSupported = [];
         foreach ($platformConfig['https://purl.imsglobal.org/spec/lti-platform-configuration']['messages_supported'] as $message) {
             $messagesSupported[] = $message['type'];
         }
         $scopesSupported = $platformConfig['scopes_supported'];
         $iconUrl = null;
-        $messages = array();
-        $claims = array('iss');
-        $variables = array();
-        $constants = array();
-        $redirectUris = array();
+        $messages = [];
+        $claims = ['iss'];
+        $variables = [];
+        $constants = [];
+        $redirectUris = [];
         foreach ($this->resourceHandlers as $resourceHandler) {
             if (empty($iconUrl)) {
                 $iconUrl = $resourceHandler->icon;
@@ -932,7 +863,7 @@ class Tool
                 if (array_key_exists($type, Util::MESSAGE_TYPE_MAPPING)) {
                     $type = Util::MESSAGE_TYPE_MAPPING[$type];
                 }
-                $capabilities = array();
+                $capabilities = [];
                 if ($type === 'LtiResourceLinkRequest') {
                     $toolUrl = "{$this->baseUrl}{$message->path}";
                     $redirectUris[] = $toolUrl;
@@ -944,11 +875,11 @@ class Tool
                     $capabilities = $message->capabilities;
                     $variables = array_merge($message->variables, $variables);
                     $constants = array_merge($message->constants, $constants);
-                    $messages[] = array(
+                    $messages[] = [
                         'type' => $type,
                         'target_link_uri' => "{$this->baseUrl}{$message->path}",
                         'label' => $toolName
-                    );
+                    ];
                 }
                 foreach ($capabilities as $capability) {
                     if (array_key_exists($capability, $claimsMapping) && in_array($claimsMapping[$capability], $claimsSupported)) {
@@ -958,37 +889,37 @@ class Tool
             }
         }
         if (empty($redirectUris)) {
-            $redirectUris = array($toolUrl);
+            $redirectUris = [$toolUrl];
         } else {
             $redirectUris = array_unique($redirectUris);
         }
         if (!empty($claims)) {
             $claims = array_unique($claims);
         }
-        $custom = array();
+        $custom = [];
         foreach ($constants as $name => $value) {
             $custom[$name] = $value;
         }
         foreach ($variables as $name => $value) {
             $custom[$name] = '$' . $value;
         }
-        $toolConfig = array();
+        $toolConfig = [];
         $toolConfig['application_type'] = 'web';
         $toolConfig['client_name'] = $toolName;
-        $toolConfig['response_types'] = array('id_token');
-        $toolConfig['grant_types'] = array('implicit', 'client_credentials');
+        $toolConfig['response_types'] = ['id_token'];
+        $toolConfig['grant_types'] = ['implicit', 'client_credentials'];
         $toolConfig['initiate_login_uri'] = $toolUrl;
         $toolConfig['redirect_uris'] = $redirectUris;
         $toolConfig['jwks_uri'] = $this->jku;
         $toolConfig['token_endpoint_auth_method'] = 'private_key_jwt';
-        $toolConfig['https://purl.imsglobal.org/spec/lti-tool-configuration'] = array(
+        $toolConfig['https://purl.imsglobal.org/spec/lti-tool-configuration'] = [
             'domain' => $domain,
             'target_link_uri' => $toolUrl,
             'custom_parameters' => $custom,
             'claims' => $claims,
             'messages' => $messages,
             'description' => $toolDescription
-        );
+        ];
         $toolConfig['scope'] = implode(' ', array_intersect($this->requiredScopes, $scopesSupported));
         if (!empty($iconUrl)) {
             $toolConfig['logo_uri'] = "{$this->baseUrl}{$iconUrl}";
@@ -1005,7 +936,7 @@ class Tool
      *
      * @return array  Registration data
      */
-    protected function sendRegistration($platformConfig, $toolConfig)
+    protected function sendRegistration(array $platformConfig, array $toolConfig): array
     {
         if ($this->ok) {
             $parameters = Util::getRequestParameters();
@@ -1036,11 +967,11 @@ class Tool
      *
      * @param array $platformConfig      Platform configuration data
      * @param array $registrationConfig  Registration data
-     * @param bool  $doSave              True if the platform should be saved (optional, default is true)
+     * @param bool $doSave               True if the platform should be saved (optional, default is true)
      *
      * @return Platform  Platform object
      */
-    protected function getPlatformToRegister($platformConfig, $registrationConfig, $doSave = true)
+    protected function getPlatformToRegister(array $platformConfig, array $registrationConfig, bool $doSave = true): Platform
     {
         $domain = $platformConfig['issuer'];
         $pos = strpos($domain, '//');
@@ -1053,7 +984,7 @@ class Tool
         }
         $this->platform = new Platform($this->dataConnector);
         $this->platform->name = $domain;
-        $this->platform->ltiVersion = Util::LTI_VERSION1P3;
+        $this->platform->ltiVersion = LtiVersion::V1P3;
         $this->platform->signatureMethod = reset($platformConfig['id_token_signing_alg_values_supported']);
         $this->platform->platformId = $platformConfig['issuer'];
         $this->platform->clientId = $registrationConfig['client_id'];
@@ -1074,9 +1005,9 @@ class Tool
     /**
      * Prepare the page to complete a registration request
      *
-     * @param array $toolConfig      Tool configuration data
+     * @param array $toolConfig  Tool configuration data
      */
-    protected function getRegistrationResponsePage($toolConfig)
+    protected function getRegistrationResponsePage(array $toolConfig): void
     {
         $enabled = '';
         if (!empty($this->platform)) {
@@ -1180,13 +1111,13 @@ EOD;
     /**
      * Load the tool from the database by its consumer key.
      *
-     * @param string|null     $key             Consumer key
-     * @param DataConnector   $dataConnector   A data connector object
-     * @param bool            $autoEnable      True if the tool is to be enabled automatically (optional, default is false)
+     * @param string|null $key              Consumer key
+     * @param DataConnector $dataConnector  A data connector object
+     * @param bool $autoEnable              True if the tool is to be enabled automatically (optional, default is false)
      *
-     * @return Tool           The tool object
+     * @return Tool  The tool object
      */
-    public static function fromConsumerKey($key = null, $dataConnector = null, $autoEnable = false)
+    public static function fromConsumerKey(?string $key = null, DataConnector $dataConnector = null, bool $autoEnable = false): Tool
     {
         $tool = new static($dataConnector);
         $tool->key = $key;
@@ -1203,13 +1134,14 @@ EOD;
     /**
      * Load the tool from the database by its initiate login URL.
      *
-     * @param string          $initiateLoginUrl The initiate login URL
-     * @param DataConnector   $dataConnector    A data connector object
-     * @param bool            $autoEnable       True if the tool is to be enabled automatically (optional, default is false)
+     * @param string $initiateLoginUrl      The initiate login URL
+     * @param DataConnector $dataConnector  A data connector object
+     * @param bool $autoEnable              True if the tool is to be enabled automatically (optional, default is false)
      *
-     * @return Tool           The tool object
+     * @return Tool  The tool object
      */
-    public static function fromInitiateLoginUrl($initiateLoginUrl, $dataConnector = null, $autoEnable = false)
+    public static function fromInitiateLoginUrl(string $initiateLoginUrl, DataConnector $dataConnector = null,
+        bool $autoEnable = false): Tool
     {
         $tool = new static($dataConnector);
         $tool->initiateLoginUrl = $initiateLoginUrl;
@@ -1225,12 +1157,12 @@ EOD;
     /**
      * Load the tool from the database by its record ID.
      *
-     * @param int             $id               The tool record ID
-     * @param DataConnector   $dataConnector    A data connector object
+     * @param int $id                       The tool record ID
+     * @param DataConnector $dataConnector  A data connector object
      *
-     * @return Tool           The tool object
+     * @return Tool  The tool object
      */
-    public static function fromRecordId($id, $dataConnector)
+    public static function fromRecordId(int $id, DataConnector $dataConnector): Tool
     {
         $tool = new static($dataConnector);
         $tool->setRecordId($id);
@@ -1246,7 +1178,7 @@ EOD;
     /**
      * Perform the result of an action.
      */
-    private function result()
+    private function result(): void
     {
         if (!$this->ok) {
             $this->message = self::CONNECTION_ERROR_MESSAGE;
@@ -1259,7 +1191,7 @@ EOD;
                 if (!is_null($this->platform) && isset($this->messageParameters['lti_message_type']) &&
                     (($this->messageParameters['lti_message_type'] === 'ContentItemSelectionRequest') ||
                     ($this->messageParameters['lti_message_type'] === 'ContentItemUpdateRequest'))) {
-                    $formParams = array();
+                    $formParams = [];
                     if ($this->debugMode && !is_null($this->reason)) {
                         $formParams['lti_errormsg'] = "Debug error: {$this->reason}";
                     } else {
@@ -1271,9 +1203,12 @@ EOD;
                     if (isset($this->messageParameters['data'])) {
                         $formParams['data'] = $this->messageParameters['data'];
                     }
-                    $this->ltiVersion = (isset($this->messageParameters['lti_version'])) ? $this->messageParameters['lti_version'] : Util::LTI_VERSION1;
+                    if (empty($this->ltiVersion)) {
+                        $this->ltiVersion = LtiVersion::V1;
+                    }
                     $page = $this->sendMessage($errorUrl, 'ContentItemSelection', $formParams);
                     echo $page;
+                    exit;
                 } else {
                     if (strpos($errorUrl, '?') === false) {
                         $errorUrl .= '?';
@@ -1315,13 +1250,13 @@ EOD;
      *
      * The platform, resource link and user objects will be initialised if the request is valid.
      *
-     * @param bool    $strictMode          True if full compliance with the LTI specification is required
-     * @param bool    $disableCookieCheck  True if no cookie check should be made
-     * @param bool    $generateWarnings    True if warning messages should be generated
+     * @param bool $strictMode          True if full compliance with the LTI specification is required
+     * @param bool $disableCookieCheck  True if no cookie check should be made
+     * @param bool $generateWarnings    True if warning messages should be generated
      *
-     * @return bool    True if the request has been successfully validated.
+     * @return bool  True if the request has been successfully validated.
      */
-    private function authenticate($strictMode, $disableCookieCheck, $generateWarnings)
+    private function authenticate(bool $strictMode, bool $disableCookieCheck, bool $generateWarnings): bool
     {
         $doSavePlatform = false;
         $this->ok = $this->checkMessage();
@@ -1339,37 +1274,37 @@ EOD;
                     $strictMode, $generateWarnings);
             }
         }
-        if ($this->ok || $generateWarnings) {
+        if (($this->ok || $generateWarnings) && !empty($this->messageParameters['lti_message_type'])) {
             if ($this->messageParameters['lti_message_type'] === 'basic-lti-launch-request') {
                 if ($this->ok && (!isset($this->messageParameters['resource_link_id']) || (strlen(trim($this->messageParameters['resource_link_id'])) <= 0))) {
                     $this->ok = false;
                     $this->reason = 'Missing resource link ID.';
                 }
-                if ($this->messageParameters['lti_version'] === Util::LTI_VERSION1P3) {
+                if ($this->ltiVersion === LtiVersion::V1P3) {
                     if (!isset($this->messageParameters['roles'])) {
                         $this->setError('Missing roles parameter.', $strictMode, $generateWarnings);
                     } elseif (!empty($this->messageParameters['roles']) && empty(array_intersect(self::parseRoles($this->messageParameters['roles'],
-                                    Util::LTI_VERSION1P3), User::PRINCIPAL_ROLES))) {
+                                    LtiVersion::V1P3), User::PRINCIPAL_ROLES))) {
                         $this->setError('No principal role found in roles parameter.', $strictMode, $generateWarnings);
                     }
                 }
             } elseif (($this->messageParameters['lti_message_type'] === 'ContentItemSelectionRequest') ||
                 ($this->messageParameters['lti_message_type'] === 'ContentItemUpdateRequest')) {
                 $isUpdate = ($this->messageParameters['lti_message_type'] === 'ContentItemUpdateRequest');
-                $mediaTypes = array();
-                $contentTypes = array();
-                $fileTypes = array();
-                $documentTargets = array();
+                $mediaTypes = [];
+                $contentTypes = [];
+                $fileTypes = [];
+                $documentTargets = [];
                 if (isset($this->messageParameters['accept_media_types']) && (strlen(trim($this->messageParameters['accept_media_types'])) > 0)) {
                     $mediaTypes = array_map('trim', explode(',', $this->messageParameters['accept_media_types']));
                     $mediaTypes = array_filter($mediaTypes);
                     $mediaTypes = array_unique($mediaTypes);
                 }
-                if ((count($mediaTypes) <= 0) && ($this->messageParameters['lti_version'] !== Util::LTI_VERSION1P3)) {
+                if ((count($mediaTypes) <= 0) && ($this->ltiVersion === LtiVersion::V1P3)) {
                     $this->setError('Missing or empty accept_media_types parameter.', $strictMode, $generateWarnings);
                 }
                 if ($isUpdate) {
-                    if ($this->messageParameters['lti_version'] !== Util::LTI_VERSION1P3) {
+                    if ($this->ltiVersion === LtiVersion::V1P3) {
                         if (!$this->checkValue($this->messageParameters['accept_media_types'],
                                 array(Item::LTI_LINK_MEDIA_TYPE, Item::LTI_ASSIGNMENT_MEDIA_TYPE),
                                 'Invalid value in accept_media_types parameter: \'%s\'.', $strictMode, $generateWarnings, true)) {
@@ -1383,13 +1318,13 @@ EOD;
                 }
                 if ($this->ok) {
                     foreach ($mediaTypes as $mediaType) {
-                        if (strpos($mediaType, 'application/vnd.ims.lti.') !== 0) {
+                        if (!str_starts_with($mediaType, 'application/vnd.ims.lti.')) {
                             $fileTypes[] = $mediaType;
                         }
                         if (($mediaType === 'text/html') || ($mediaType === '*/*')) {
                             $contentTypes[] = Item::TYPE_LINK;
                             $contentTypes[] = Item::TYPE_HTML;
-                        } elseif ((strpos($mediaType, 'image/') === 0) || ($mediaType === '*/*')) {
+                        } elseif (str_starts_with($mediaType, 'image/') || ($mediaType === '*/*')) {
                             $contentTypes[] = Item::TYPE_IMAGE;
                         } elseif ($mediaType === Item::LTI_LINK_MEDIA_TYPE) {
                             $contentTypes[] = Item::TYPE_LTI_LINK;
@@ -1413,9 +1348,9 @@ EOD;
                             $generateWarnings);
                     } elseif (!empty($documentTargets)) {
                         if (empty($this->jwt) || !$this->jwt->hasJwt()) {
-                            $permittedTargets = array('embed', 'frame', 'iframe', 'window', 'popup', 'overlay', 'none');
+                            $permittedTargets = ['embed', 'frame', 'iframe', 'window', 'popup', 'overlay', 'none'];
                         } else {  // JWT
-                            $permittedTargets = array('embed', 'iframe', 'window');
+                            $permittedTargets = ['embed', 'iframe', 'window'];
                         }
                         foreach ($documentTargets as $documentTarget) {
                             if (!$this->checkValue($documentTarget, $permittedTargets,
@@ -1446,7 +1381,7 @@ EOD;
                 if (!isset($this->messageParameters['for_user_id']) && (strlen(trim($this->messageParameters['for_user_id'])) > 0)) {
                     $this->setError('Missing ID of \'for user\'', true, $generateWarnings);
                 }
-                if (($this->ok || $generateWarnings) && ($this->messageParameters['lti_version'] === Util::LTI_VERSION1P3)) {
+                if (($this->ok || $generateWarnings) && ($this->ltiVersion === LtiVersion::V1P3)) {
                     if (!isset($this->messageParameters['roles'])) {
                         $this->setError('Missing roles parameter.', $strictMode, $generateWarnings);
                     }
@@ -1470,8 +1405,7 @@ EOD;
                     !is_numeric($this->messageParameters['custom_ap_attempt_number'])) {
                     $this->setError('Missing or invalid value for attempt number.', true, $generateWarnings);
                 }
-                if ((!isset($this->messageParameters['user_id']) || (strlen(trim($this->messageParameters['user_id'])) <= 0)) &&
-                    !isset($this->messageParameters['relaunch_url'])) {
+                if (!isset($this->messageParameters['user_id']) || (strlen(trim($this->messageParameters['user_id'])) <= 0)) {
                     $this->setError('Empty user ID.', true, $generateWarnings);
                 }
             }
@@ -1485,7 +1419,8 @@ EOD;
             }
         }
 // Check consumer key
-        if (($this->ok || $generateWarnings) && ($this->messageParameters['lti_message_type'] !== 'ToolProxyRegistrationRequest')) {
+        if (($this->ok || $generateWarnings) && !empty($this->messageParameters['lti_message_type']) &&
+            ($this->messageParameters['lti_message_type'] !== 'ToolProxyRegistrationRequest')) {
             $now = time();
             if (!isset($this->messageParameters['oauth_consumer_key'])) {
                 $this->setError('Missing consumer key.', true, $generateWarnings);
@@ -1549,11 +1484,11 @@ EOD;
             if ($this->ok || $generateWarnings) {
                 if (isset($this->messageParameters['context_type'])) {
                     $context_types = explode(',', $this->messageParameters['context_type']);
-                    $permitted_types = array('CourseTemplate', 'CourseOffering', 'CourseSection', 'Group',
-                        'urn:lti:context-type:ims/lis/CourseTemplate', 'urn:lti:context-type:ims/lis/CourseOffering', 'urn:lti:context-type:ims/lis/CourseSection', 'urn:lti:context-type:ims/lis/Group');
-                    if ($this->messageParameters['lti_version'] !== Util::LTI_VERSION1) {
+                    $permitted_types = ['CourseTemplate', 'CourseOffering', 'CourseSection', 'Group',
+                        'urn:lti:context-type:ims/lis/CourseTemplate', 'urn:lti:context-type:ims/lis/CourseOffering', 'urn:lti:context-type:ims/lis/CourseSection', 'urn:lti:context-type:ims/lis/Group'];
+                    if ($this->ltiVersion === LtiVersion::V1) {
                         $permitted_types = array_merge($permitted_types,
-                            array('http://purl.imsglobal.org/vocab/lis/v2/course#CourseTemplate', 'http://purl.imsglobal.org/vocab/lis/v2/course#CourseOffering', 'http://purl.imsglobal.org/vocab/lis/v2/course#CourseSection', 'http://purl.imsglobal.org/vocab/lis/v2/course#Group'));
+                            ['http://purl.imsglobal.org/vocab/lis/v2/course#CourseTemplate', 'http://purl.imsglobal.org/vocab/lis/v2/course#CourseOffering', 'http://purl.imsglobal.org/vocab/lis/v2/course#CourseSection', 'http://purl.imsglobal.org/vocab/lis/v2/course#Group']);
                     }
                     $found = false;
                     foreach ($context_types as $context_type) {
@@ -1567,50 +1502,50 @@ EOD;
                                 $this->messageParameters['context_type']), $strictMode, $generateWarnings);
                     }
                 }
-                if (($this->ok || $generateWarnings) && (($this->messageParameters['lti_message_type'] === 'ContentItemSelectionRequest') ||
-                    ($this->messageParameters['lti_message_type'] === 'ContentItemUpdateRequest'))) {
+                if (($this->ok || $generateWarnings) && !empty($this->messageParameters['lti_message_type']) &&
+                    (($this->messageParameters['lti_message_type'] === 'ContentItemSelectionRequest') || ($this->messageParameters['lti_message_type'] === 'ContentItemUpdateRequest'))) {
                     $isUpdate = ($this->messageParameters['lti_message_type'] === 'ContentItemUpdateRequest');
                     if (isset($this->messageParameters['accept_unsigned']) &&
-                        !$this->checkValue($this->messageParameters['accept_unsigned'], array('true', 'false'),
+                        !$this->checkValue($this->messageParameters['accept_unsigned'], ['true', 'false'],
                             'Invalid value for accept_unsigned parameter: \'%s\'.', $strictMode, $generateWarnings)) {
                         $this->ok = false;
                     }
                     if (isset($this->messageParameters['accept_multiple'])) {
                         if (!$isUpdate) {
-                            if (!$this->checkValue($this->messageParameters['accept_multiple'], array('true', 'false'),
+                            if (!$this->checkValue($this->messageParameters['accept_multiple'], ['true', 'false'],
                                     'Invalid value for accept_multiple parameter: \'%s\'.', $strictMode, $generateWarnings)) {
                                 $this->ok = false;
                             }
-                        } elseif (!$this->checkValue($this->messageParameters['accept_multiple'], array('false'),
+                        } elseif (!$this->checkValue($this->messageParameters['accept_multiple'], ['false'],
                                 'Invalid value for accept_multiple parameter: \'%s\'.', $strictMode, $generateWarnings)) {
                             $this->ok = false;
                         }
                     }
                     if (isset($this->messageParameters['accept_copy_advice'])) {
                         if (!$isUpdate) {
-                            if (!$this->checkValue($this->messageParameters['accept_copy_advice'], array('true', 'false'),
+                            if (!$this->checkValue($this->messageParameters['accept_copy_advice'], ['true', 'false'],
                                     'Invalid value for accept_copy_advice parameter: \'%s\'.', $strictMode, $generateWarnings)) {
                                 $this->ok = false;
                             }
-                        } elseif (!$this->checkValue($this->messageParameters['accept_copy_advice'], array('false'),
+                        } elseif (!$this->checkValue($this->messageParameters['accept_copy_advice'], ['false'],
                                 'Invalid value for accept_copy_advice parameter: \'%s\'.', $strictMode, $generateWarnings)) {
                             $this->ok = false;
                         }
                     }
                     if (isset($this->messageParameters['auto_create']) &&
-                        !$this->checkValue($this->messageParameters['auto_create'], array('true', 'false'),
+                        !$this->checkValue($this->messageParameters['auto_create'], ['true', 'false'],
                             'Invalid value for auto_create parameter: \'%s\'.', $strictMode, $generateWarnings)) {
                         $this->ok = false;
                     }
                     if (isset($this->messageParameters['can_confirm']) &&
-                        !$this->checkValue($this->messageParameters['can_confirm'], array('true', 'false'),
+                        !$this->checkValue($this->messageParameters['can_confirm'], ['true', 'false'],
                             'Invalid value for can_confirm parameter: \'%s\'.', $strictMode, $generateWarnings)) {
                         $this->ok = false;
                     }
                 }
                 if (isset($this->messageParameters['launch_presentation_document_target'])) {
                     if (!$this->checkValue($this->messageParameters['launch_presentation_document_target'],
-                            array('embed', 'frame', 'iframe', 'window', 'popup', 'overlay'),
+                            ['embed', 'frame', 'iframe', 'window', 'popup', 'overlay'],
                             'Invalid value for launch_presentation_document_target parameter: \'%s\'.', $strictMode,
                             $generateWarnings, true)) {
                         $this->ok = false;
@@ -1628,7 +1563,7 @@ EOD;
         }
 
         if ($this->ok && ($this->messageParameters['lti_message_type'] === 'ToolProxyRegistrationRequest')) {
-            $this->ok = $this->messageParameters['lti_version'] === Util::LTI_VERSION2;
+            $this->ok = $this->ltiVersion === LtiVersion::V2;
             if (!$this->ok) {
                 $this->reason = 'Invalid lti_version parameter.';
             }
@@ -1639,7 +1574,7 @@ EOD;
                 } else {
                     $url .= '&';
                 }
-                $url .= 'lti_version=' . Util::LTI_VERSION2;
+                $url .= 'lti_version=' . LtiVersion::V2->value;
                 $http = new HttpMessage($url, 'GET', null, 'Accept: application/vnd.ims.lti.v2.toolconsumerprofile+json');
                 $this->ok = $http->send();
                 if (!$this->ok) {
@@ -1657,7 +1592,7 @@ EOD;
                 $this->platform = Platform::fromConsumerKey($this->messageParameters['reg_key'], $this->dataConnector);
                 $this->platform->profile = $tcProfile;
                 $capabilities = $this->platform->profile->capability_offered;
-                $missing = array();
+                $missing = [];
                 foreach ($this->resourceHandlers as $resourceHandler) {
                     foreach ($resourceHandler->requiredMessages as $message) {
                         if (!in_array($message->type, $capabilities)) {
@@ -1668,7 +1603,7 @@ EOD;
                 foreach ($this->constraints as $name => $constraint) {
                     if ($constraint['required']) {
                         if (empty(array_intersect($capabilities,
-                                    array_keys(array_intersect(self::$CUSTOM_SUBSTITUTION_VARIABLES, array($name)))))) {
+                                    array_keys(array_intersect(self::$CUSTOM_SUBSTITUTION_VARIABLES, [$name]))))) {
                             $missing[$name] = true;
                         }
                     }
@@ -1699,7 +1634,7 @@ EOD;
                 if ($this->messageParameters['lti_message_type'] === 'ToolProxyRegistrationRequest') {
                     $this->platform->profile = $tcProfile;
                     $this->platform->secret = $this->messageParameters['reg_password'];
-                    $this->platform->ltiVersion = $this->messageParameters['lti_version'];
+                    $this->platform->ltiVersion = $this->ltiVersion;
                     $this->platform->name = $tcProfile->product_instance->service_owner->service_owner_name->default_value;
                     $this->platform->consumerName = $this->platform->name;
                     $this->platform->consumerVersion = "{$tcProfile->product_instance->product_info->product_family->code}-{$tcProfile->product_instance->product_info->product_version}";
@@ -1716,7 +1651,7 @@ EOD;
             } else {
                 $url .= '&';
             }
-            $url .= 'lti_version=' . $this->messageParameters['lti_version'];
+            $url .= 'lti_version=' . $this->ltiVersion->value;
             $http = new HttpMessage($url, 'GET', null, 'Accept: application/vnd.ims.lti.v2.toolconsumerprofile+json');
             if ($http->send()) {
                 $tcProfile = Util::jsonDecode($http->response);
@@ -1740,7 +1675,7 @@ EOD;
                 }
             } else {
 // Validate message parameter constraints
-                $invalidParameters = array();
+                $invalidParameters = [];
                 foreach ($this->constraints as $name => $constraint) {
                     if (empty($constraint['messages']) || in_array($this->messageParameters['lti_message_type'],
                             $constraint['messages'])) {
@@ -1789,7 +1724,7 @@ EOD;
                         $this->context->title = $title;
                         if (isset($this->messageParameters['context_type'])) {
                             $this->context->type = trim($this->messageParameters['context_type']);
-                            if (strpos($this->context->type, 'http://purl.imsglobal.org/vocab/lis/v2/course#') === 0) {
+                            if (str_starts_with($this->context->type, 'http://purl.imsglobal.org/vocab/lis/v2/course#')) {
                                 $this->context->type = substr($this->context->type, 46);
                             }
                         }
@@ -1819,21 +1754,21 @@ EOD;
                     }
 // Delete any existing custom parameters
                     foreach ($this->platform->getSettings() as $name => $value) {
-                        if ((strpos($name, 'custom_') === 0) && (!in_array($name, self::$LTI_RETAIN_SETTING_NAMES))) {
+                        if (str_starts_with($name, 'custom_') && (!in_array($name, self::$LTI_RETAIN_SETTING_NAMES))) {
                             $this->platform->setSetting($name);
                             $doSavePlatform = true;
                         }
                     }
                     if (!empty($this->context)) {
                         foreach ($this->context->getSettings() as $name => $value) {
-                            if ((strpos($name, 'custom_') === 0) && (!in_array($name, self::$LTI_RETAIN_SETTING_NAMES))) {
+                            if (str_starts_with($name, 'custom_') && (!in_array($name, self::$LTI_RETAIN_SETTING_NAMES))) {
                                 $this->context->setSetting($name);
                             }
                         }
                     }
                     if (!empty($this->resourceLink)) {
                         foreach ($this->resourceLink->getSettings() as $name => $value) {
-                            if ((strpos($name, 'custom_') === 0) && (!in_array($name, self::$LTI_RETAIN_SETTING_NAMES))) {
+                            if (str_starts_with($name, 'custom_') && (!in_array($name, self::$LTI_RETAIN_SETTING_NAMES))) {
                                 $this->resourceLink->setSetting($name);
                             }
                         }
@@ -1866,7 +1801,7 @@ EOD;
                     }
 // Save other custom parameters at all levels
                     foreach ($this->messageParameters as $name => $value) {
-                        if ((strpos($name, 'custom_') === 0) && !in_array($name,
+                        if (str_starts_with($name, 'custom_') && !in_array($name,
                                 array_merge(self::$LTI_CONSUMER_SETTING_NAMES, self::$LTI_CONTEXT_SETTING_NAMES,
                                     self::$LTI_RESOURCE_LINK_SETTING_NAMES))) {
                             $this->platform->setSetting($name, $value);
@@ -1893,10 +1828,10 @@ EOD;
                     $this->userResult = UserResult::fromResourceLink($this->resourceLink, $userId);
 
 // Set the user name
-                    $firstname = (isset($this->messageParameters['lis_person_name_given'])) ? $this->messageParameters['lis_person_name_given'] : '';
-                    $middlename = (isset($this->messageParameters['lis_person_name_middle'])) ? $this->messageParameters['lis_person_name_middle'] : '';
-                    $lastname = (isset($this->messageParameters['lis_person_name_family'])) ? $this->messageParameters['lis_person_name_family'] : '';
-                    $fullname = (isset($this->messageParameters['lis_person_name_full'])) ? $this->messageParameters['lis_person_name_full'] : '';
+                    $firstname = $this->messageParameters['lis_person_name_given'] ?? '';
+                    $middlename = $this->messageParameters['lis_person_name_middle'] ?? '';
+                    $lastname = $this->messageParameters['lis_person_name_family'] ?? '';
+                    $fullname = $this->messageParameters['lis_person_name_full'] ?? '';
                     $this->userResult->setNames($firstname, $lastname, $fullname);
 
 // Set the sourcedId
@@ -1918,7 +1853,7 @@ EOD;
                     }
 
 // Set the user email
-                    $email = (isset($this->messageParameters['lis_person_contact_email_primary'])) ? $this->messageParameters['lis_person_contact_email_primary'] : '';
+                    $email = $this->messageParameters['lis_person_contact_email_primary'] ?? '';
                     $this->userResult->setEmail($email, $this->defaultEmail);
 
 // Set the user image URI
@@ -1928,14 +1863,13 @@ EOD;
 
 // Set the user roles
                     if (isset($this->messageParameters['roles'])) {
-                        $this->userResult->roles = self::parseRoles($this->messageParameters['roles'],
-                                $this->messageParameters['lti_version']);
+                        $this->userResult->roles = self::parseRoles($this->messageParameters['roles'], $this->ltiVersion);
                     }
 
 // Initialise the platform and check for changes
                     $this->platform->defaultEmail = $this->defaultEmail;
-                    if ($this->platform->ltiVersion !== $this->messageParameters['lti_version']) {
-                        $this->platform->ltiVersion = $this->messageParameters['lti_version'];
+                    if ($this->platform->ltiVersion !== $this->ltiVersion) {
+                        $this->platform->ltiVersion = $this->ltiVersion;
                         $doSavePlatform = true;
                     }
                     if (isset($this->messageParameters['deployment_id'])) {
@@ -2025,9 +1959,9 @@ EOD;
     /**
      * Check if a share arrangement is in place.
      *
-     * @return bool    True if no error is reported
+     * @return bool  True if no error is reported
      */
-    private function checkForShare()
+    private function checkForShare(): bool
     {
         $ok = true;
         $doSaveResourceLink = true;
@@ -2104,12 +2038,12 @@ EOD;
     /**
      * Generate a form to perform an authentication request.
      *
-     * @param array $parameters          Request parameters
-     * @param bool  $disableCookieCheck  True if no cookie check should be made
+     * @param array $parameters         Request parameters
+     * @param bool $disableCookieCheck  True if no cookie check should be made
      *
-     * @return bool True if form was generated
+     * @return bool  True if form was generated
      */
-    private function sendAuthenticationRequest($parameters, $disableCookieCheck)
+    private function sendAuthenticationRequest(array $parameters, bool $disableCookieCheck): bool
     {
         $clientId = null;
         if (isset($parameters['client_id'])) {
@@ -2121,7 +2055,7 @@ EOD;
         }
         $currentLogLevel = Util::$logLevel;
         $this->platform = Platform::fromPlatformId($parameters['iss'], $clientId, $deploymentId, $this->dataConnector);
-        if ($this->platform->debugMode && ($currentLogLevel < Util::LOGLEVEL_INFO)) {
+        if ($this->platform->debugMode && (!$currentLogLevel->logDebug())) {
             $this->debugMode = true;
             Util::logRequest();
         }
@@ -2158,9 +2092,9 @@ EOD;
                 $redirectUri = $oauthRequest->get_normalized_http_url();
                 if (!empty($_SERVER['QUERY_STRING'])) {
                     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                        $ignoreParams = array('lti_storage_target');
+                        $ignoreParams = ['lti_storage_target'];
                     } else {  // Remove all parameters added by platform from query string
-                        $ignoreParams = array('iss', 'target_link_uri', 'login_hint', 'lti_message_hint', 'client_id', 'lti_deployment_id', 'lti_storage_target');
+                        $ignoreParams = ['iss', 'target_link_uri', 'login_hint', 'lti_message_hint', 'client_id', 'lti_deployment_id', 'lti_storage_target'];
                     }
                     $queryString = '';
                     $params = explode('&', $_SERVER['QUERY_STRING']);
@@ -2183,7 +2117,7 @@ EOD;
                     }
                 }
                 $requestNonce = Util::getRandomString(32);
-                $params = array(
+                $params = [
                     'client_id' => $this->platform->clientId,
                     'login_hint' => $parameters['login_hint'],
                     'nonce' => $requestNonce,
@@ -2193,7 +2127,7 @@ EOD;
                     'response_type' => 'id_token',
                     'scope' => 'openid',
                     'state' => $nonce->getValue()
-                );
+                ];
                 if (isset($parameters['lti_message_hint'])) {
                     $params['lti_message_hint'] = $parameters['lti_message_hint'];
                 }
@@ -2218,11 +2152,11 @@ EOD;
     /**
      * Generate a form to perform a relaunch request.
      *
-     * @param bool  $disableCookieCheck  True if no cookie check should be made
+     * @param bool $disableCookieCheck  True if no cookie check should be made
      *
      * @return bool  True if a relaunch request was sent
      */
-    private function sendRelaunchRequest($disableCookieCheck)
+    private function sendRelaunchRequest(bool $disableCookieCheck): bool
     {
         $session_id = '';
         if (!$disableCookieCheck) {
@@ -2245,10 +2179,10 @@ EOD;
         $nonce->expires = time() + Tool::$stateLife;
         $this->ok = $nonce->save();
         if ($this->ok) {
-            $params = array(
+            $params = [
                 'tool_state' => $nonce->getValue(),
                 'platform_state' => $this->messageParameters['platform_state']
-            );
+            ];
             $params = $this->platform->addSignature($this->messageParameters['relaunch_url'], $params);
             $this->output = Util::sendForm($this->messageParameters['relaunch_url'], $params);
         } else {
@@ -2261,16 +2195,17 @@ EOD;
     /**
      * Validate a parameter value from an array of permitted values.
      *
-     * @param string $value             Value to be checked
-     * @param array  $values            Array of permitted values
-     * @param string $reason            Reason to generate when the value is not permitted
-     * @param bool   $strictMode        True if full compliance with the LTI specification is required
-     * @param bool   $generateWarnings  True if warning messages should be generated
-     * @param bool   $ignoreInvalid     True if invalid values are to be ignored (optional default is false)
+     * @param string $value           Value to be checked
+     * @param array $values           Array of permitted values
+     * @param string $reason          Reason to generate when the value is not permitted
+     * @param bool $strictMode        True if full compliance with the LTI specification is required
+     * @param bool $generateWarnings  True if warning messages should be generated
+     * @param bool $ignoreInvalid     True if invalid values are to be ignored (optional default is false)
      *
-     * @return bool    True if value is valid
+     * @return bool  True if value is valid
      */
-    private function checkValue(&$value, $values, $reason, $strictMode, $generateWarnings, $ignoreInvalid = false)
+    private function checkValue(string &$value, array $values, string $reason, bool $strictMode, bool $generateWarnings,
+        bool $ignoreInvalid = false): bool
     {
         $lookupValue = $value;
         if (!$strictMode) {
@@ -2299,11 +2234,11 @@ EOD;
     /**
      * Set error reason or add warning.
      *
-     * @param string  $reason            Reason to generate when the value is not permitted
-     * @param bool    $strictMode        True if full compliance with the LTI specification is required
-     * @param bool    $generateWarnings  True if warning messages should be generated
+     * @param string $reason          Reason to generate when the value is not permitted
+     * @param bool $strictMode        True if full compliance with the LTI specification is required
+     * @param bool $generateWarnings  True if warning messages should be generated
      */
-    private function setError($reason, $strictMode, $generateWarnings)
+    private function setError(string $reason, bool $strictMode, bool $generateWarnings): void
     {
         if ($strictMode && $this->ok) {
             $this->ok = false;
@@ -2316,13 +2251,13 @@ EOD;
     /**
      * Get the JavaScript for handling storage postMessages from a tool.
      *
-     * @param string  $message           Type of postMessage
-     * @param string  $state             Value of state
-     * @param string  $nonce             Value of nonce
+     * @param string $message  Type of postMessage
+     * @param string $state    Value of state
+     * @param string $nonce    Value of nonce
      *
-     * @return string       The JavaScript to handle storage postMessages
+     * @return string  The JavaScript to handle storage postMessages
      */
-    private function getStorageJS($message, $state, $nonce)
+    private function getStorageJS(string $message, string $state, string $nonce): string
     {
         $javascript = '';
         $timeoutDelay = static::$postMessageTimeoutDelay;
@@ -2391,7 +2326,7 @@ window.addEventListener('message', function (event) {
         } else if (event.data.key !== state) {
           ok = false;
           console.log('Key not expected: ' + event.data.key);
-        } else if (('{$message}' === 'lti.put_data') && (event.data.value != nonce)) {
+        } else if (('{$message}' === 'lti.put_data') && (event.data.value !== nonce)) {
           ok = false;
           console.log('Invalid value for key ' + event.data.key + ': ' + event.data.value + ' (expected ' + nonce + ')');
         } else {

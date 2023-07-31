@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\ApiHook;
 
@@ -17,16 +18,16 @@ class ApiPlatform
     /**
      * Platform object.
      *
-     * @var Platform|null $platform
+     * @var Platform $platform
      */
-    protected $platform = null;
+    protected Platform $platform;
 
     /**
      * Class constructor.
      *
      * @param Platform $platform
      */
-    public function __construct($platform)
+    public function __construct(Platform $platform)
     {
         $this->platform = $platform;
     }
@@ -36,7 +37,7 @@ class ApiPlatform
      *
      * @return bool  True if the API hook has been configured
      */
-    public function isConfigured()
+    public function isConfigured(): bool
     {
         return true;
     }
@@ -44,11 +45,11 @@ class ApiPlatform
     /**
      * Get Tool Settings.
      *
-     * @param bool     $simple     True if all the simple media type is to be used (optional, default is true)
+     * @param bool $simple  True if all the simple media type is to be used (optional, default is true)
      *
      * @return array|bool  The array of settings if successful, otherwise false
      */
-    public function getToolSettings($simple = true)
+    public function getToolSettings(bool $simple = true): array|bool
     {
         return false;
     }
@@ -56,11 +57,11 @@ class ApiPlatform
     /**
      * Perform a Tool Settings service request.
      *
-     * @param array    $settings   An associative array of settings (optional, default is none)
+     * @param array $settings  An associative array of settings (optional, default is none)
      *
-     * @return bool    True if action was successful, otherwise false
+     * @return bool  True if action was successful, otherwise false
      */
-    public function setToolSettings($settings = array())
+    public function setToolSettings(array $settings = []): bool
     {
         return false;
     }

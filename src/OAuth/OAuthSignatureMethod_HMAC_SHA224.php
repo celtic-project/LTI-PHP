@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\OAuth;
 
@@ -25,9 +26,9 @@ class OAuthSignatureMethod_HMAC_SHA224 extends OAuthSignatureMethod
      *
      * @return string
      */
-    function get_name()
+    function get_name(): string
     {
-        return "HMAC-SHA224";
+        return 'HMAC-SHA224';
     }
 
     /**
@@ -43,15 +44,15 @@ class OAuthSignatureMethod_HMAC_SHA224 extends OAuthSignatureMethod
      *
      * @return string
      */
-    public function build_signature($request, $consumer, $token)
+    public function build_signature(OAuthRequest $request, OAuthConsumer $consumer, ?OAuthToken $token): string
     {
         $base_string = $request->get_signature_base_string();
         $request->base_string = $base_string;
 
-        $key_parts = array(
+        $key_parts = [
             $consumer->secret,
-            ($token) ? $token->secret : ""
-        );
+            ($token) ? $token->secret : ''
+        ];
 
         $key_parts = OAuthUtil::urlencode_rfc3986($key_parts);
         $key = implode('&', $key_parts);

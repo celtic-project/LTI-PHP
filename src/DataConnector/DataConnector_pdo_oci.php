@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\DataConnector;
 
@@ -17,7 +18,7 @@ class DataConnector_pdo_oci extends DataConnector_pdo
      *
      * @var array $sequence
      */
-    private static $sequence = array();
+    private static array $sequence = [];
 
     /**
      * Class constructor
@@ -25,15 +26,17 @@ class DataConnector_pdo_oci extends DataConnector_pdo
      * @param object $db                 Database connection object
      * @param string $dbTableNamePrefix  Prefix for database table names (optional, default is none)
      */
-    public function __construct($db, $dbTableNamePrefix = '')
+    public function __construct(object $db, string $dbTableNamePrefix = '')
     {
         parent::__construct($db, $dbTableNamePrefix);
         $this->dateFormat = 'd-M-Y';
         $db->setAttribute(\PDO::ATTR_STRINGIFY_FETCHES, true);
         if (empty(self::$sequence)) {
             $n = strlen($this->dbTableNamePrefix) + 6;
-            $sql = 'SELECT TABLE_NAME, DATA_DEFAULT FROM USER_TAB_COLUMNS ' .
-                "WHERE (TABLE_NAME LIKE UPPER('{$this->dbTableNamePrefix}lti2_%')) AND (COLUMN_NAME = UPPER(CONCAT(SUBSTR(TABLE_NAME, {$n}), '_pk')))";
+            $sql = <<< EOD
+SELECT TABLE_NAME, DATA_DEFAULT FROM USER_TAB_COLUMNS
+WHERE (TABLE_NAME LIKE UPPER('{$this->dbTableNamePrefix}lti2_%')) AND (COLUMN_NAME = UPPER(CONCAT(SUBSTR(TABLE_NAME, {$n}), '_pk')))
+EOD;
             $query = $this->db->prepare($sql);
             if ($this->executeQuery($sql, $query)) {
                 $row = $query->fetchAll(\PDO::FETCH_ASSOC);
@@ -56,7 +59,7 @@ class DataConnector_pdo_oci extends DataConnector_pdo
      *
      * @return int  Id of last inserted record
      */
-    protected function getLastInsertId($tableName)
+    protected function getLastInsertId(string $tableName): int
     {
         $pk = 0;
         $sql = 'SELECT ' . self::$sequence[strtoupper($tableName)] . ' FROM dual';

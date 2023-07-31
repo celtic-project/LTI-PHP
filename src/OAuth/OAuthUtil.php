@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\OAuth;
 
@@ -19,10 +20,10 @@ class OAuthUtil
      *
      * @return array|string
      */
-    public static function urlencode_rfc3986($input)
+    public static function urlencode_rfc3986(mixed $input): array|string
     {
         if (is_array($input)) {
-            return array_map(array('ceLTIc\LTI\OAuth\OAuthUtil', 'urlencode_rfc3986'), $input);
+            return array_map(['ceLTIc\LTI\OAuth\OAuthUtil', 'urlencode_rfc3986'], $input);
         } elseif (is_scalar($input)) {
             return str_replace('+', ' ', str_replace('%7E', '~', rawurlencode($input)));
         } else {
@@ -41,7 +42,7 @@ class OAuthUtil
      *
      * @return string
      */
-    public static function urldecode_rfc3986($string)
+    public static function urldecode_rfc3986(string $string): string
     {
         return urldecode($string);
     }
@@ -59,9 +60,9 @@ class OAuthUtil
      *
      * @return array
      */
-    public static function split_header($header, $only_allow_oauth_parameters = true)
+    public static function split_header(string $header, bool $only_allow_oauth_parameters = true): array
     {
-        $params = array();
+        $params = [];
         if (preg_match_all('/(' . ($only_allow_oauth_parameters ? 'oauth_' : '') . '[a-z_-]*)=(:?"([^"]*)"|([^,]*))/', $header,
                 $matches)) {
             foreach ($matches[1] as $i => $h) {
@@ -80,7 +81,7 @@ class OAuthUtil
      *
      * @return array
      */
-    public static function get_headers()
+    public static function get_headers(): array
     {
         if (function_exists('apache_request_headers')) {
             // we need this to get the actual Authorization: header
@@ -91,7 +92,7 @@ class OAuthUtil
             // we always want the keys to be Cased-Like-This and arh()
             // returns the headers in the same case as they are in the
             // request
-            $out = array();
+            $out = [];
             foreach ($headers AS $key => $value) {
                 $key = str_replace(" ", "-", ucwords(strtolower(str_replace("-", " ", $key))));
                 $out[$key] = $value;
@@ -99,14 +100,14 @@ class OAuthUtil
         } else {
             // otherwise we don't have apache and are just going to have to hope
             // that $_SERVER actually contains what we need
-            $out = array();
+            $out = [];
             if (isset($_SERVER['CONTENT_TYPE']))
                 $out['Content-Type'] = $_SERVER['CONTENT_TYPE'];
             if (isset($_ENV['CONTENT_TYPE']))
                 $out['Content-Type'] = $_ENV['CONTENT_TYPE'];
 
             foreach ($_SERVER as $key => $value) {
-                if (substr($key, 0, 5) == 'HTTP_') {
+                if (substr($key, 0, 5) === 'HTTP_') {
                     // this is chaos, basically it is just there to capitalize the first
                     // letter of every word that is not an initial HTTP and strip HTTP
                     // code from przemek
@@ -129,14 +130,14 @@ class OAuthUtil
      *
      * @return array
      */
-    public static function parse_parameters($input)
+    public static function parse_parameters(?string $input): array
     {
         if (!isset($input) || !$input)
-            return array();
+            return [];
 
         $pairs = explode('&', $input);
 
-        $parsed_parameters = array();
+        $parsed_parameters = [];
         foreach ($pairs as $pair) {
             $split = explode('=', $pair, 2);
             $parameter = self::urldecode_rfc3986($split[0]);
@@ -149,7 +150,7 @@ class OAuthUtil
                 if (is_scalar($parsed_parameters[$parameter])) {
                     // This is the first duplicate, so transform scalar (string) into an array
                     // so we can add the duplicates
-                    $parsed_parameters[$parameter] = array($parsed_parameters[$parameter]);
+                    $parsed_parameters[$parameter] = [$parsed_parameters[$parameter]];
                 }
 
                 $parsed_parameters[$parameter][] = $value;
@@ -168,7 +169,7 @@ class OAuthUtil
      *
      * @return string
      */
-    public static function build_http_query($params)
+    public static function build_http_query(?array $params): string
     {
         if (!$params)
             return '';
@@ -182,7 +183,7 @@ class OAuthUtil
         // Ref: Spec: 9.1.1 (1)
         uksort($params, 'strcmp');
 
-        $pairs = array();
+        $pairs = [];
         foreach ($params as $parameter => $value) {
             if (is_array($value)) {
                 // If two or more parameters share the same name, they are sorted by their value

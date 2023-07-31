@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\Http;
 
@@ -17,23 +18,20 @@ class CurlClient implements ClientInterface
      *
      * @var int|null $httpVersion
      */
-    public static $httpVersion = null;
+    public static ?int $httpVersion = null;
 
     /**
      * Send the request to the target URL.
      *
      * @param HttpMessage $message
      *
-     * @return bool True if the request was successful
+     * @return bool  True if the request was successful
      */
-    public function send(HttpMessage $message)
+    public function send(HttpMessage $message): bool
     {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30);
         curl_setopt($ch, CURLOPT_URL, $message->getUrl());
-        if (!is_array($message->requestHeaders)) {
-            $message->requestHeaders = array();
-        }
         if (count(preg_grep("/^Accept:/i", $message->requestHeaders)) === 0) {
             $message->requestHeaders[] = 'Accept: */*';
         }
@@ -58,13 +56,13 @@ class CurlClient implements ClientInterface
             curl_setopt($ch, CURLOPT_HTTP_VERSION, self::$httpVersion);
         }
         $chResp = curl_exec($ch);
-        $message->requestHeaders = trim(str_replace("\r\n", "\n", curl_getinfo($ch, CURLINFO_HEADER_OUT)));
+        $message->requestHeaders = explode("\n", trim(str_replace("\r\n", "\n", curl_getinfo($ch, CURLINFO_HEADER_OUT))));
         $chResp = str_replace("\r\n", "\n", $chResp);
         $chRespSplit = explode("\n\n", $chResp, 2);
         if ((count($chRespSplit) > 1) && (substr($chRespSplit[1], 0, 5) === 'HTTP/')) {
             $chRespSplit = explode("\n\n", $chRespSplit[1], 2);
         }
-        $message->responseHeaders = trim($chRespSplit[0]);
+        $message->responseHeaders = explode("\n", trim($chRespSplit[0]));
         if (count($chRespSplit) > 1) {
             $message->response = $chRespSplit[1];
         } else {

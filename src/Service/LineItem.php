@@ -1,9 +1,11 @@
 <?php
+declare(strict_types=1);
 
 namespace ceLTIc\LTI\Service;
 
 use ceLTIc\LTI;
 use ceLTIc\LTI\Platform;
+use ceLTIc\LTI\SubmissionReview;
 
 /**
  * Class to implement the Line-item service
@@ -18,36 +20,36 @@ class LineItem extends AssignmentGrade
     /**
      * Line-item media type.
      */
-    const MEDIA_TYPE_LINE_ITEM = 'application/vnd.ims.lis.v2.lineitem+json';
+    public const MEDIA_TYPE_LINE_ITEM = 'application/vnd.ims.lis.v2.lineitem+json';
 
     /**
      * Line-item container media type.
      */
-    const MEDIA_TYPE_LINE_ITEMS = 'application/vnd.ims.lis.v2.lineitemcontainer+json';
+    public const MEDIA_TYPE_LINE_ITEMS = 'application/vnd.ims.lis.v2.lineitemcontainer+json';
 
     /**
      * Access scope.
      */
-    public static $SCOPE = 'https://purl.imsglobal.org/spec/lti-ags/scope/lineitem';
+    public static string $SCOPE = 'https://purl.imsglobal.org/spec/lti-ags/scope/lineitem';
 
     /**
      * Read-only access scope.
      */
-    public static $SCOPE_READONLY = 'https://purl.imsglobal.org/spec/lti-ags/scope/lineitem.readonly';
+    public static string $SCOPE_READONLY = 'https://purl.imsglobal.org/spec/lti-ags/scope/lineitem.readonly';
 
     /**
      * Default limit on size of container to be returned from requests.
      */
-    public static $defaultLimit = null;
+    public static ?int $defaultLimit = null;
 
     /**
      * Limit on size of container to be returned from requests.
      *
      * A limit of null (or zero) will disable paging of requests
      *
-     * @var int|null  $limit
+     * @var int|null $limit
      */
-    private $limit;
+    private ?int $limit;
 
     /**
      * Whether requests should be made one page at a time when a limit is set.
@@ -56,17 +58,17 @@ class LineItem extends AssignmentGrade
      *
      * @var bool $pagingMode
      */
-    private $pagingMode;
+    private bool $pagingMode;
 
     /**
      * Class constructor.
      *
-     * @param Platform     $platform   Platform object for this service request
-     * @param string       $endpoint   Service endpoint
-     * @param int|null     $limit      Limit of line-items to be returned in each request, null for all
-     * @param bool         $pagingMode True if only a single page should be requested when a limit is set
+     * @param Platform $platform  Platform object for this service request
+     * @param string $endpoint    Service endpoint
+     * @param int|null $limit     Limit of line-items to be returned in each request, null for all
+     * @param bool $pagingMode    True if only a single page should be requested when a limit is set
      */
-    public function __construct($platform, $endpoint, $limit = null, $pagingMode = false)
+    public function __construct(Platform $platform, string $endpoint, ?int $limit = null, bool $pagingMode = false)
     {
         parent::__construct($platform, $endpoint);
         $this->limit = $limit;
@@ -81,16 +83,16 @@ class LineItem extends AssignmentGrade
      * also be limited to a number of items which may mean that multiple requests will be made to retrieve the
      * full list.
      *
-     * @param string|null  $ltiResourceLinkId  LTI resource link ID (optional)
-     * @param string|null  $resourceId         Tool resource ID (optional)
-     * @param string|null  $tag                Tag (optional)
-     * @param int|null     $limit              Limit of line-items to be returned in each request, null for service default (optional)
+     * @param string|null $ltiResourceLinkId  LTI resource link ID (optional)
+     * @param string|null $resourceId         Tool resource ID (optional)
+     * @param string|null $tag                Tag (optional)
+     * @param int|null $limit                 Limit of line-items to be returned in each request, null for service default (optional)
      *
      * @return LTI\\LineItem[]|bool  Array of LineItem objects or false on error
      */
-    public function getAll($ltiResourceLinkId = null, $resourceId = null, $tag = null, $limit = null)
+    public function getAll(?string $ltiResourceLinkId = null, ?string $resourceId = null, ?string $tag = null, ?int $limit = null): array|bool
     {
-        $params = array();
+        $params = [];
         if (!empty($ltiResourceLinkId)) {
             $params['resource_link_id'] = $ltiResourceLinkId;
         }
@@ -109,7 +111,7 @@ class LineItem extends AssignmentGrade
         if (!empty($limit)) {
             $params['limit'] = $limit;
         }
-        $lineItems = array();
+        $lineItems = [];
         $endpoint = $this->endpoint;
         do {
             $this->scope = self::$SCOPE_READONLY;
@@ -126,7 +128,7 @@ class LineItem extends AssignmentGrade
                 if (!$this->pagingMode && $http->hasRelativeLink('next')) {
                     $url = $http->getRelativeLink('next');
                     $this->endpoint = $url;
-                    $params = array();
+                    $params = [];
                 }
             } else {
                 $lineItems = false;
@@ -144,7 +146,7 @@ class LineItem extends AssignmentGrade
      *
      * @return bool  True if successful
      */
-    public function createLineItem($lineItem)
+    public function createLineItem(LTI\LineItem $lineItem): bool
     {
         $lineItem->endpoint = null;
         $this->mediaType = self::MEDIA_TYPE_LINE_ITEM;
@@ -167,7 +169,7 @@ class LineItem extends AssignmentGrade
      *
      * @return bool  True if successful
      */
-    public function saveLineItem($lineItem)
+    public function saveLineItem(LTI\LineItem $lineItem): bool
     {
         $this->mediaType = self::MEDIA_TYPE_LINE_ITEM;
         $http = $this->send('PUT', null, self::toJson($lineItem));
@@ -189,7 +191,7 @@ class LineItem extends AssignmentGrade
      *
      * @return bool  True if successful
      */
-    public function deleteLineItem($lineItem)
+    public function deleteLineItem(LTI\LineItem $lineItem): bool
     {
         $this->mediaType = self::MEDIA_TYPE_LINE_ITEM;
         $http = $this->send('DELETE');
@@ -198,14 +200,14 @@ class LineItem extends AssignmentGrade
     }
 
     /**
-     * Retrieve a line item.
+     * Retrieve a line-item.
      *
-     * @param Platform     $platform   Platform object for this service request
+     * @param Platform $platform  Platform object for this service request
      * @param string $endpoint    Line-item endpoint
      *
      * @return LTI\\LineItem|bool  LineItem object, or false on error
      */
-    public static function getLineItem($platform, $endpoint)
+    public static function getLineItem(Platform $platform, string $endpoint): LTI\LineItem|bool
     {
         $service = new self($platform, $endpoint);
         $service->scope = self::$SCOPE_READONLY;
@@ -228,12 +230,12 @@ class LineItem extends AssignmentGrade
     /**
      * Create a line-item from a JSON object.
      *
-     * @param Platform     $platform   Platform object for this service request
-     * @param object       $json       JSON object to convert
+     * @param Platform $platform  Platform object for this service request
+     * @param object $json        JSON object to convert
      *
      * @return LTI\\LineItem|null  LineItem object, or null on error
      */
-    private static function toLineItem($platform, $json)
+    private static function toLineItem(Platform $platform, object $json): ?LTI\LineItem
     {
         if (!empty($json->id) && !empty($json->label) && !empty($json->scoreMaximum)) {
             $lineItem = new LTI\LineItem($platform, $json->label, $json->scoreMaximum);
@@ -256,7 +258,7 @@ class LineItem extends AssignmentGrade
                 $lineItem->submitUntil = strtotime($json->endDateTime);
             }
             if (!empty($json->submissionReview)) {
-                $lineItem->submissionReview = LTI\SubmissionReview::fromJsonObject($json->submissionReview);
+                $lineItem->submissionReview = SubmissionReview::fromJsonObject($json->submissionReview);
             }
         } else {
             $lineItem = null;
@@ -272,7 +274,7 @@ class LineItem extends AssignmentGrade
      *
      * @return string  JSON representation of line-item
      */
-    private static function toJson($lineItem)
+    private static function toJson(LTI\LineItem $lineItem): string
     {
         $json = new \stdClass();
         if (!empty($lineItem->endpoint)) {
