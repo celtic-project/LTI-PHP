@@ -117,9 +117,9 @@ class UserResult extends User
     /**
      * Get resource link.
      *
-     * @return ResourceLink  Resource link object
+     * @return ResourceLink|null  Resource link object
      */
-    public function getResourceLink(): ResourceLink
+    public function getResourceLink(): ?ResourceLink
     {
         if (is_null($this->resourceLink) && !is_null($this->resourceLinkId)) {
             $this->resourceLink = ResourceLink::fromRecordId($this->resourceLinkId, $this->getDataConnector());
