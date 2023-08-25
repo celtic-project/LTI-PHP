@@ -1,10 +1,6 @@
 <?php
 declare(strict_types=1);
 
-/**
- * Enumerations for LTI properties
- */
-
 namespace ceLTIc\LTI\Enum;
 
 /**
