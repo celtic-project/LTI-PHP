@@ -91,6 +91,13 @@ class Outcome
     public $dataSource = null;
 
     /**
+     * LTI user ID.
+     *
+     * @var string|null $ltiUserId
+     */
+    public $ltiUserId = null;
+
+    /**
      * Outcome value.
      *
      * @var string|null $value
@@ -131,6 +138,7 @@ class Outcome
             $this->gradingProgress = 'FullyGraded';
         }
         $this->comment = '';
+        $this->ltiUserId = null;
     }
 
     /**
@@ -171,6 +179,18 @@ class Outcome
     public function setPointsPossible($pointsPossible)
     {
         $this->pointsPossible = $pointsPossible;
+    }
+
+    /**
+     * Assign property values from another outcome instance.
+     *
+     * @param Outcome $outcome  Outcome instance
+     */
+    public function assign($outcome)
+    {
+        foreach (get_object_vars($outcome) as $name => $value) {
+            $this->$name = $value;
+        }
     }
 
 }

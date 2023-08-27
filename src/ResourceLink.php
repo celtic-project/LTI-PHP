@@ -722,8 +722,7 @@ class ResourceLink
 
         if (!empty($urlAGS)) {
             if (($action === self::EXT_READ) && ($ltiOutcome->type === self::EXT_TYPE_DECIMAL) && $sourceResourceLink->hasResultService()) {
-                $ltiOutcome = $this->doResultService($userResult, $urlAGS);
-                $ok = !empty($ltiOutcome);
+                $ok = $this->doResultService($ltiOutcome, $userResult, $urlAGS);
             } elseif ((($action === self::EXT_WRITE) && $this->checkValueType($ltiOutcome, array(self::EXT_TYPE_DECIMAL)) && $sourceResourceLink->hasScoreService()) ||
                 ($action === self::EXT_DELETE)) {
                 if ($action === self::EXT_DELETE) {
@@ -1632,14 +1631,15 @@ EOF;
     /**
      * Send a request to the Result service endpoint.
      *
+     * @param Outcome $ltiOutcome     Outcome object
      * @param UserResult $userResult   UserResult object
      * @param string $url  URL to send request to
      *
-     * @return Outcome    Outcome object
+     * @return bool  True if the request successfully obtained a response
      */
-    private function doResultService($userResult, $url)
+    private function doResultService($ltiOutcome, $userResult, $url)
     {
-        $outcome = null;
+        $ok = false;
         $this->extRequest = '';
         $this->extRequestHeaders = '';
         $this->extResponse = '';
@@ -1648,6 +1648,10 @@ EOF;
         if (!empty($url)) {
             $resultService = new Service\Result($this->getPlatform(), $url);
             $outcome = $resultService->get($userResult);
+            $ok = !empty($outcome);
+            if ($ok) {
+                $ltiOutcome->assign($outcome);
+            }
             $http = $resultService->getHttpMessage();
             $this->extResponse = $http->response;
             $this->extResponseHeaders = $http->responseHeaders;
@@ -1656,7 +1660,7 @@ EOF;
             $this->lastServiceRequest = $http;
         }
 
-        return $outcome;
+        return $ok;
     }
 
     /**
