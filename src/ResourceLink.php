@@ -622,8 +622,7 @@ class ResourceLink
 
         if (!empty($urlAGS)) {
             if (($action === ServiceAction::Read) && ($ltiOutcome->type === OutcomeType::Decimal) && $sourceResourceLink->hasResultService()) {
-                $ltiOutcome = $this->doResultService($userResult, $urlAGS);
-                $ok = !empty($ltiOutcome);
+                $ok = $this->doResultService($ltiOutcome, $userResult, $urlAGS);
             } elseif ((($action === ServiceAction::Write) && $this->checkValueType($ltiOutcome, array(OutcomeType::Decimal)) && $sourceResourceLink->hasScoreService()) ||
                 ($action === ServiceAction::Delete)) {
                 if ($action === ServiceAction::Delete) {
@@ -1473,14 +1472,15 @@ EOF;
     /**
      * Send a request to the Result service endpoint.
      *
+     * @param Outcome $ltiOutcome     Outcome object
      * @param UserResult $userResult  UserResult object
      * @param string $url             URL to send request to
      *
-     * @return Outcome  Outcome object
+     * @return bool  True if the request successfully obtained a response
      */
-    private function doResultService(UserResult $userResult, string $url): Outcome
+    private function doResultService(Outcome $ltiOutcome, UserResult $userResult, string $url): bool
     {
-        $outcome = null;
+        $ok = false;
         $this->extRequest = '';
         $this->extRequestHeaders = [];
         $this->extResponse = '';
@@ -1489,6 +1489,10 @@ EOF;
         if (!empty($url)) {
             $resultService = new Service\Result($this->getPlatform(), $url);
             $outcome = $resultService->get($userResult);
+            $ok = !empty($outcome);
+            if ($ok) {
+                $ltiOutcome->assign($outcome);
+            }
             $http = $resultService->getHttpMessage();
             $this->extResponse = $http->response;
             $this->extResponseHeaders = $http->responseHeaders;
@@ -1497,7 +1501,7 @@ EOF;
             $this->lastServiceRequest = $http;
         }
 
-        return $outcome;
+        return $ok;
     }
 
     /**
