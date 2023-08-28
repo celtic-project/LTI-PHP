@@ -1991,7 +1991,7 @@ EOD;
 
                 if ($this->ok) {
 
-// Persist changes to cpntext
+// Persist changes to context
                     if (isset($this->context)) {
                         $this->context->save();
                     }
