@@ -1375,10 +1375,10 @@ EOD;
                     $this->documentTargets = $documentTargets;
                 }
             } elseif ($this->messageParameters['lti_message_type'] === 'LtiSubmissionReviewRequest') {
-                if (!isset($this->messageParameters['custom_lineitem_url']) && (strlen(trim($this->messageParameters['custom_lineitem_url'])) > 0)) {
+                if (!isset($this->messageParameters['custom_lineitem_url']) || (strlen(trim($this->messageParameters['custom_lineitem_url'])) <= 0)) {
                     $this->setError('Missing LineItem service URL.', true, $generateWarnings);
                 }
-                if (!isset($this->messageParameters['for_user_id']) && (strlen(trim($this->messageParameters['for_user_id'])) > 0)) {
+                if (!isset($this->messageParameters['for_user_id']) || (strlen(trim($this->messageParameters['for_user_id'])) <= 0)) {
                     $this->setError('Missing ID of \'for user\'', true, $generateWarnings);
                 }
                 if (($this->ok || $generateWarnings) && ($this->ltiVersion === LtiVersion::V1P3)) {
