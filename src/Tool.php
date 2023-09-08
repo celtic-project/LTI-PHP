@@ -524,9 +524,9 @@ class Tool
      * @param string $format  Media type required
      * @param array $methods  Array of HTTP actions required
      *
-     * @return object  The service object
+     * @return object|bool  The service object if found, otherwise false
      */
-    public function findService(string $format, array $methods): object
+    public function findService(string $format, array $methods): object|bool
     {
         $found = false;
         $services = $this->platform->profile->service_offered;
