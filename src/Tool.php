@@ -1704,7 +1704,6 @@ EOD;
                     $this->platform->consumerName = $this->platform->name;
                     $this->platform->consumerVersion = "{$tcProfile->product_instance->product_info->product_family->code}-{$tcProfile->product_instance->product_info->product_version}";
                     $this->platform->consumerGuid = $tcProfile->product_instance->guid;
-                    $this->platform->enabled = true;
                     $this->platform->protected = true;
                     $doSavePlatform = true;
                 }
