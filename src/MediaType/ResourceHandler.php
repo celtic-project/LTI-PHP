@@ -40,9 +40,9 @@ class ResourceHandler
     /**
      * Resource icon information.
      *
-     * @var object|null $icon_info
+     * @var array|null $icon_info
      */
-    public ?object $icon_info = null;
+    public ?array $icon_info = null;
 
     /**
      * Resource messages.

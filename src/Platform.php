@@ -105,9 +105,9 @@ class Platform
     /**
      * The tool proxy.
      *
-     * @var object|null $toolProxy
+     * @var string|null $toolProxy
      */
-    public ?object $toolProxy = null;
+    public ?string $toolProxy = null;
 
     /**
      * Platform GUID (as reported by first platform connection).
