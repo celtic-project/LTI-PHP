@@ -637,15 +637,6 @@ class Tool
     }
 
     /**
-     * Process a valid tool proxy registration request
-     */
-    protected function onRegister(): void
-    {
-        $this->reason = 'No onRegister method found for tool.';
-        $this->onError();
-    }
-
-    /**
      * Process a dynamic registration request
      */
     protected function onRegistration(): void
@@ -1387,7 +1378,9 @@ EOD;
                     }
                 }
             } elseif ($this->messageParameters['lti_message_type'] === 'ToolProxyRegistrationRequest') {
-                if ((!isset($this->messageParameters['reg_key']) ||
+                if (!method_exists($this, 'onRegister')) {
+                    $this->setError('No onRegister method found for tool.', true, $generateWarnings);
+                } elseif ((!isset($this->messageParameters['reg_key']) ||
                     (strlen(trim($this->messageParameters['reg_key'])) <= 0)) ||
                     (!isset($this->messageParameters['reg_password']) ||
                     (strlen(trim($this->messageParameters['reg_password'])) <= 0)) ||
