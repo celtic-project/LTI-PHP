@@ -49,15 +49,15 @@ class SecurityContract
         foreach ($tool->requiredServices as $requiredService) {
             foreach ($requiredService->formats as $format) {
                 $service = $tool->findService($format, $requiredService->actions);
-                if (($service !== false) && !array_key_exists($service->{'@id'}, $toolServices)) {
-                    $id = $service->{'@id'};
+                if (($service !== false) && !array_key_exists($service->id, $toolServices)) {
+                    $id = $service->id;
                     $parts = explode(':', $id, 2);
                     if (count($parts) > 1) {
                         if (array_key_exists($parts[0], $tcContexts)) {
                             $id = "{$tcContexts[$parts[0]]}{$parts[1]}";
                         }
                     }
-                    $toolServices[$service->{'@id'}] = (object) [
+                    $toolServices[$service->id] = (object) [
                             '@type' => 'RestServiceProfile',
                             'service' => $id,
                             'action' => $requiredService->actions
@@ -68,15 +68,15 @@ class SecurityContract
         foreach ($tool->optionalServices as $optionalService) {
             foreach ($optionalService->formats as $format) {
                 $service = $tool->findService($format, $optionalService->actions);
-                if (($service !== false) && !array_key_exists($service->{'@id'}, $toolServices)) {
-                    $id = $service->{'@id'};
+                if (($service !== false) && !array_key_exists($service->id, $toolServices)) {
+                    $id = $service->id;
                     $parts = explode(':', $id, 2);
                     if (count($parts) > 1) {
                         if (array_key_exists($parts[0], $tcContexts)) {
                             $id = "{$tcContexts[$parts[0]]}{$parts[1]}";
                         }
                     }
-                    $toolServices[$service->{'@id'}] = (object) [
+                    $toolServices[$service->id] = (object) [
                             '@type' => 'RestServiceProfile',
                             'service' => $id,
                             'action' => $optionalService->actions

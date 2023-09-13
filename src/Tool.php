@@ -6,6 +6,7 @@ namespace ceLTIc\LTI;
 use ceLTIc\LTI\DataConnector\DataConnector;
 use ceLTIc\LTI\MediaType;
 use ceLTIc\LTI\Profile;
+use ceLTIc\LTI\Profile\ServiceDefinition;
 use ceLTIc\LTI\Content\Item;
 use ceLTIc\LTI\Jwt\Jwt;
 use ceLTIc\LTI\Http\HttpMessage;
@@ -524,16 +525,14 @@ class Tool
      * @param string $format  Media type required
      * @param array $methods  Array of HTTP actions required
      *
-     * @return object|bool  The service object if found, otherwise false
+     * @return ServiceDefinition|bool  The service object if found, otherwise false
      */
-    public function findService(string $format, array $methods): object|bool
+    public function findService(string $format, array $methods): ServiceDefinition|bool
     {
         $found = false;
         $services = $this->platform->profile->service_offered;
         if (is_array($services)) {
-            $n = -1;
             foreach ($services as $service) {
-                $n++;
                 if (!is_array($service->format) || !in_array($format, $service->format)) {
                     continue;
                 }
@@ -543,9 +542,14 @@ class Tool
                         $missing[] = $method;
                     }
                 }
-                $methods = $missing;
-                if (count($methods) <= 0) {
-                    $found = $service;
+                if (count($missing) <= 0) {
+                    $found = new ServiceDefinition($service->format, $service->action);
+                    if (!empty($service->{'@id'})) {
+                        $found->id = $service->{'@id'};
+                    }
+                    if (!empty($service->endpoint)) {
+                        $found->endpoint = $service->endpoint;
+                    }
                     break;
                 }
             }

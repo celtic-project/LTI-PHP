@@ -10,6 +10,7 @@ use ceLTIc\LTI\OAuth;
 use ceLTIc\LTI\Jwt\Jwt;
 use ceLTIc\LTI\Jwt\ClientInterface;
 use ceLTIc\LTI\Tool;
+use ceLTIc\LTI\Profile\ServiceDefinition;
 use ceLTIc\LTI\Enum\LtiVersion;
 use ceLTIc\LTI\Enum\IdScope;
 use ceLTIc\LTI\Util;
@@ -990,14 +991,14 @@ trait System
     /**
      * Perform a service request
      *
-     * @param object $service     Service object to be executed
-     * @param string $method      HTTP action
-     * @param string $format      Media type
-     * @param array|string $data  Array of parameters or body string
+     * @param ServiceDefinition $service  Service object to be executed
+     * @param string $method              HTTP action
+     * @param string $format              Media type
+     * @param array|string $data          Array of parameters or body string
      *
      * @return HttpMessage  HTTP object containing request and response details
      */
-    public function doServiceRequest(object $service, string $method, string $format, array|string $data): HttpMessage
+    public function doServiceRequest(ServiceDefinition $service, string $method, string $format, array|string $data): HttpMessage
     {
         $header = $this->addSignature($service->endpoint, $data, $method, $format);
 
