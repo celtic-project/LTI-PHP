@@ -581,9 +581,7 @@ class Tool
         $found = false;
         $services = $this->platform->profile->service_offered;
         if (is_array($services)) {
-            $n = -1;
             foreach ($services as $service) {
-                $n++;
                 if (!is_array($service->format) || !in_array($format, $service->format)) {
                     continue;
                 }
@@ -593,8 +591,7 @@ class Tool
                         $missing[] = $method;
                     }
                 }
-                $methods = $missing;
-                if (count($methods) <= 0) {
+                if (count($missing) <= 0) {
                     $found = $service;
                     break;
                 }
