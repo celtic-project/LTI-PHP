@@ -251,7 +251,7 @@ class FirebaseClient implements ClientInterface
                         $jwks = [
                             'keys' => [$json]
                         ];
-                        $publicKey = static::parseKeySet($jwks);
+                        $publicKey = JWK::parseKeySet($jwks, $this->getHeader('alg'));
                     } catch (\Exception $e) {
 
                     }
@@ -418,7 +418,7 @@ class FirebaseClient implements ClientInterface
             $keys = Util::jsonDecode($http->response, true);
             if (is_array($keys)) {
                 try {
-                    $publicKey = static::parseKeySet($keys);
+                    $publicKey = JWK::parseKeySet($keys, $this->getHeader('alg'));
                 } catch (\Exception $e) {
 
                 }
@@ -426,50 +426,6 @@ class FirebaseClient implements ClientInterface
         }
 
         return $publicKey;
-    }
-
-    /**
-     * Parse a set of JWK keys.
-     *
-     * This function is based on Firebase\JWT\JWK::parseKeySet but returns an array containing Key objects rather than an OpenSSL key
-     * resource so that the algorithm associated with each key can be identified.
-     *
-     * @param array $jwks  The JSON Web Key Set as an associative array
-     *
-     * @return array  An associative array of Key objects
-     *
-     * @throws InvalidArgumentException  Provided JWK Set is empty
-     * @throws UnexpectedValueException  Provided JWK Set was invalid
-     * @throws DomainException           OpenSSL failure
-     */
-    private static function parseKeySet(array $jwks): array
-    {
-        $keys = [];
-
-        if (!isset($jwks['keys'])) {
-            throw new \UnexpectedValueException('"keys" member must exist in the JWK Set');
-        }
-        if (empty($jwks['keys'])) {
-            throw new \InvalidArgumentException('JWK Set did not contain any keys');
-        }
-
-        foreach ($jwks['keys'] as $k => $v) {
-            if (!empty($v['alg'])) {
-                $kid = $v['kid'] ?? $k;
-                if ($key = JWK::parseKey($v)) {
-                    if (!$key instanceof Key) {
-                        $key = new Key($key, $v['alg']);
-                    }
-                    $keys[$kid] = $key;
-                }
-            }
-        }
-
-        if (empty($keys)) {
-            throw new \UnexpectedValueException('No supported algorithms found in JWK Set');
-        }
-
-        return $keys;
     }
 
 }
