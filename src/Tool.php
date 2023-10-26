@@ -407,9 +407,9 @@ class Tool
      * @param bool $disableCookieCheck  True if no cookie check should be made (optional, default is false)
      * @param bool $generateWarnings    True if warning messages should be generated (optional, default is false)
      *
-     * @return array  The message parameter array
+     * @return array|null  The message parameter array
      */
-    public function getMessageParameters(bool $strictMode = false, bool $disableCookieCheck = false, bool $generateWarnings = false): array
+    public function getMessageParameters(bool $strictMode = false, bool $disableCookieCheck = false, bool $generateWarnings = false): ?array
     {
         if (is_null($this->messageParameters)) {
             $this->parseMessage($strictMode, $disableCookieCheck, $generateWarnings);
