@@ -54,12 +54,12 @@ class LineItem
      * Class constructor.
      *
      * @param string                $label             Label
-     * @param int                   $scoreMaximum      Maximum score
+     * @param int|float             $scoreMaximum      Maximum score
      * @param string|null           $resourceId        Resource ID (optional)
      * @param string|null           $tag               Tag (optional)
      * @param SubmissionReview|null $submissionReview  Submission Review (optional)
      */
-    function __construct(string $label, int $scoreMaximum, ?string $resourceId = null, ?string $tag = null,
+    function __construct(string $label, int|float $scoreMaximum, ?string $resourceId = null, ?string $tag = null,
         ?SubmissionReview $submissionReview = null)
     {
         $this->label = $label;

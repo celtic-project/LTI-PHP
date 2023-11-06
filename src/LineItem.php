@@ -25,9 +25,9 @@ class LineItem
     /**
      * Points possible value.
      *
-     * @var int $pointsPossible
+     * @var int|float $pointsPossible
      */
-    public int $pointsPossible = 1;
+    public int|float $pointsPossible = 1;
 
     /**
      * LTI Resource Link ID with which the line-item is associated.
@@ -90,9 +90,9 @@ class LineItem
      *
      * @param Platform $platform            Platform object
      * @param string $label                 Label
-     * @param int $pointsPossible           Points possible value
+     * @param int|float $pointsPossible     Points possible value
      */
-    public function __construct(Platform $platform, string $label, int $pointsPossible)
+    public function __construct(Platform $platform, string $label, int|float $pointsPossible)
     {
         $this->platform = $platform;
         $this->label = $label;

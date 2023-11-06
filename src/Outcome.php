@@ -110,19 +110,19 @@ class Outcome
     /**
      * Points possible value.
      *
-     * @var int $pointsPossible
+     * @var int|float|null $pointsPossible
      */
-    private int $pointsPossible = 1;
+    private int|float|null $pointsPossible = 1;
 
     /**
      * Class constructor.
      *
-     * @param int|float|string $value   Outcome value (optional, default is none)
-     * @param int $pointsPossible       Points possible value (optional, default is none)
-     * @param string $activityProgress  Activity progress (optional, default is 'Completed')
-     * @param string $gradingProgress   Grading progress (optional, default is 'FullyGraded')
+     * @param int|float|string|null $value    Outcome value (optional, default is none)
+     * @param int|float|null $pointsPossible  Points possible value (optional, default is 1)
+     * @param string $activityProgress        Activity progress (optional, default is 'Completed')
+     * @param string $gradingProgress         Grading progress (optional, default is 'FullyGraded')
      */
-    public function __construct(int|float|string|null $value = null, int $pointsPossible = 1,
+    public function __construct(int|float|string|null $value = null, int|float|null $pointsPossible = 1,
         string $activityProgress = 'Completed', string $gradingProgress = 'FullyGraded')
     {
         $this->value = $value;
@@ -167,9 +167,9 @@ class Outcome
     /**
      * Get the points possible value.
      *
-     * @return int|null  Points possible value
+     * @return int|float|null  Points possible value
      */
-    public function getPointsPossible(): ?int
+    public function getPointsPossible(): int|float|null
     {
         return $this->pointsPossible;
     }
@@ -177,9 +177,9 @@ class Outcome
     /**
      * Set the points possible value.
      *
-     * @param int|null $pointsPossible  Points possible value
+     * @param int|float|null $pointsPossible  Points possible value
      */
-    public function setPointsPossible(?int $pointsPossible): void
+    public function setPointsPossible(int|float|null $pointsPossible): void
     {
         $this->pointsPossible = $pointsPossible;
     }
