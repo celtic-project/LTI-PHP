@@ -891,12 +891,12 @@ class Tool
         if (!empty($claims)) {
             $claims = array_unique($claims);
         }
-        $custom = [];
+        $custom = new \stdClass();
         foreach ($constants as $name => $value) {
-            $custom[$name] = $value;
+            $custom->{$name} = $value;
         }
         foreach ($variables as $name => $value) {
-            $custom[$name] = '$' . $value;
+            $custom->{$name} = '$' . $value;
         }
         $toolConfig = [];
         $toolConfig['application_type'] = 'web';
