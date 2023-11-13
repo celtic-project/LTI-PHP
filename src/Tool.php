@@ -972,7 +972,7 @@ class Tool
         $toolConfig['https://purl.imsglobal.org/spec/lti-tool-configuration'] = array(
             'domain' => $domain,
             'target_link_uri' => $toolUrl,
-            'custom_parameters' => $custom,
+            'custom_parameters' => (object) $custom,
             'claims' => $claims,
             'messages' => $messages,
             'description' => $toolDescription
