@@ -1411,8 +1411,10 @@ EOF;
             $retry = false;
             $newToken = false;
             if ($this->getPlatform()->useOAuth1()) {
+                $type = 'application/x-www-form-urlencoded';
                 $paramstosign = $params;
             } else {
+                $type = 'application/xml';
                 $paramstosign = '';
                 $accessToken = $this->platform->getAccessToken();
                 $retry = true;
@@ -1420,8 +1422,8 @@ EOF;
                     $accessToken = new AccessToken($this->platform);
                     $this->platform->setAccessToken($accessToken);
                 }
-                if (!$accessToken->hasScope($scope) && (empty(Tool::$defaultTool) || !in_array($scope,
-                        Tool::$defaultTool->requiredScopes))) {
+                if (!$accessToken->hasScope($scope) && (empty(Tool::$defaultTool) ||
+                    !in_array($scope, Tool::$defaultTool->requiredScopes))) {
                     $accessToken->expires = time();
                     $accessToken->get($scope, true);
                     $this->platform->setAccessToken($accessToken);
@@ -1430,12 +1432,12 @@ EOF;
             }
             do {
 // Add message signature
-                $signed = $this->platform->addSignature($url, $paramstosign, 'POST', 'application/x-www-form-urlencoded');
+                $signed = $this->platform->addSignature($url, $paramstosign, 'POST', $type);
 // Connect to platform
                 if (is_array($signed)) {
                     $http = new HttpMessage($url, 'POST', $signed, 'Accept: application/xml');
                 } else {
-                    $http = new HttpMessage($url, 'POST', $params, "{$signed}\nAccept: application/xml");
+                    $http = new HttpMessage($url, 'POST', $params, $signed);
                 }
                 if ($http->send()) {
 // Parse XML response
@@ -1457,6 +1459,7 @@ EOF;
                     $accessToken = $this->platform->getAccessToken();
                     $accessToken->expires = time();
                     $accessToken->get($scope, true);
+                    $retry = !empty($accessTOken->token);  // Only retry if a new token was obtained
                     $this->platform->setAccessToken($accessToken);
                     $newToken = true;
                 }
