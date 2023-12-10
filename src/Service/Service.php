@@ -111,7 +111,7 @@ class Service
                 $sep = '&';
             }
             foreach ($parameters as $name => $value) {
-                $url .= $sep . urlencode($name) . '=' . urlencode($value);
+                $url .= $sep . Util::urlEncode($name) . '=' . Util::urlEncode($value);
                 $sep = '&';
             }
         }

@@ -410,14 +410,14 @@ EOD;
                 $sep = '&';
             }
             foreach ($params as $key => $value) {
-                $key = urlencode($key);
+                $key = self::urlEncode($key);
                 if (!is_array($value)) {
-                    $value = urlencode($value);
+                    $value = self::urlEncode($value);
                     $url .= "{$sep}{$key}={$value}";
                     $sep = '&';
                 } else {
                     foreach ($value as $element) {
-                        $element = urlencode($element);
+                        $element = self::urlEncode($element);
                         $url .= "{$sep}{$key}={$element}";
                         $sep = '&';
                     }
@@ -504,6 +504,22 @@ EOD;
         $html = html_entity_decode($html, ENT_QUOTES | ENT_HTML401);
 
         return $html;
+    }
+
+    /**
+     * URL encode a value.
+     *
+     * @param string|null $val   The value to be encoded
+     *
+     * @return string
+     */
+    public static function urlEncode($val): string
+    {
+        if (!is_string($val)) {
+            $val = strval($val);
+        }
+
+        return urlencode($val);
     }
 
     /**

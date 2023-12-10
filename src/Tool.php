@@ -1211,11 +1211,11 @@ EOD;
                         $errorUrl .= '&';
                     }
                     if ($this->debugMode && !is_null($this->reason)) {
-                        $errorUrl .= 'lti_errormsg=' . urlencode("Debug error: {$this->reason}");
+                        $errorUrl .= 'lti_errormsg=' . Util::urlEncode("Debug error: {$this->reason}");
                     } else {
-                        $errorUrl .= 'lti_errormsg=' . urlencode($this->message);
+                        $errorUrl .= 'lti_errormsg=' . Util::urlEncode($this->message);
                         if (!is_null($this->reason)) {
-                            $errorUrl .= '&lti_errorlog=' . urlencode("Debug error: {$this->reason}");
+                            $errorUrl .= '&lti_errorlog=' . Util::urlEncode("Debug error: {$this->reason}");
                         }
                     }
                     header("Location: {$errorUrl}");
