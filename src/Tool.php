@@ -929,9 +929,9 @@ class Tool
      * @param array $platformConfig  Platform configuration data
      * @param array $toolConfig      Tool configuration data
      *
-     * @return array  Registration data
+     * @return array|null  Registration data
      */
-    protected function sendRegistration(array $platformConfig, array $toolConfig): array
+    protected function sendRegistration(array $platformConfig, array $toolConfig): ?array
     {
         if ($this->ok) {
             $parameters = Util::getRequestParameters();
