@@ -917,7 +917,10 @@ class Tool
         ];
         $toolConfig['scope'] = implode(' ', array_intersect($this->requiredScopes, $scopesSupported));
         if (!empty($iconUrl)) {
-            $toolConfig['logo_uri'] = "{$this->baseUrl}{$iconUrl}";
+            if ((strpos($iconUrl, '://') === false) && !empty($this->baseUrl)) {
+                $iconUrl = "{$this->baseUrl}{$iconUrl}";
+            }
+            $toolConfig['logo_uri'] = $iconUrl;
         }
 
         return $toolConfig;
