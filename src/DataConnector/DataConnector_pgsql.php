@@ -129,7 +129,7 @@ EOD;
                 $platform->profile = Util::jsonDecode($row->profile);
                 $platform->toolProxy = $row->tool_proxy;
                 $settings = Util::jsonDecode($row->settings, true);
-                if (!is_array($settings)) {
+                if (!is_array($settings) && is_string($row->settings)) {
                     $settings = @unserialize($row->settings);  // check for old serialized setting
                 }
                 if (!is_array($settings)) {
@@ -467,7 +467,7 @@ EOD;
                 $platform->profile = Util::jsonDecode($row->profile);
                 $platform->toolProxy = $row->tool_proxy;
                 $settings = Util::jsonDecode($row->settings, true);
-                if (!is_array($settings)) {
+                if (!is_array($settings) && is_string($row->settings)) {
                     $settings = @unserialize($row->settings);  // check for old serialized setting
                 }
                 if (!is_array($settings)) {
@@ -543,7 +543,7 @@ EOD;
                 $context->ltiContextId = $row->lti_context_id;
                 $context->type = $row->type;
                 $settings = Util::jsonDecode($row->settings, true);
-                if (!is_array($settings)) {
+                if (!is_array($settings) && is_string($row->settings)) {
                     $settings = @unserialize($row->settings);  // check for old serialized setting
                 }
                 if (!is_array($settings)) {
@@ -763,7 +763,7 @@ EOD;
                 $resourceLink->title = $row->title;
                 $resourceLink->ltiResourceLinkId = $row->lti_resource_link_id;
                 $settings = Util::jsonDecode($row->settings, true);
-                if (!is_array($settings)) {
+                if (!is_array($settings) && is_string($row->settings)) {
                     $settings = @unserialize($row->settings);  // check for old serialized setting
                 }
                 if (!is_array($settings)) {

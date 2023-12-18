@@ -142,7 +142,7 @@ EOD;
             $settingsValue = $row['settings']->load();
             if (is_string($settingsValue)) {
                 $settings = Util::jsonDecode($settingsValue, true);
-                if (!is_array($settings)) {
+                if (!is_array($settings) && is_string($settingsValue)) {
                     $settings = @unserialize($settingsValue);  // check for old serialized setting
                 }
                 if (!is_array($settings)) {
@@ -492,7 +492,7 @@ EOD;
                 $settingsValue = $row['settings']->load();
                 if (is_string($settingsValue)) {
                     $settings = Util::jsonDecode($settingsValue, true);
-                    if (!is_array($settings)) {
+                    if (!is_array($settings) && is_string($settingsValue)) {
                         $settings = @unserialize($settingsValue);  // check for old serialized setting
                     }
                     if (!is_array($settings)) {
@@ -575,7 +575,7 @@ EOD;
             $settingsValue = $row['settings']->load();
             if (is_string($settingsValue)) {
                 $settings = Util::jsonDecode($settingsValue, true);
-                if (!is_array($settings)) {
+                if (!is_array($settings) && is_string($settingsValue)) {
                     $settings = @unserialize($settingsValue);  // check for old serialized setting
                 }
                 if (!is_array($settings)) {
@@ -806,7 +806,7 @@ EOD;
             $settingsValue = $row['settings']->load();
             if (is_string($settingsValue)) {
                 $settings = Util::jsonDecode($settingsValue, true);
-                if (!is_array($settings)) {
+                if (!is_array($settings) && is_string($settingsValue)) {
                     $settings = @unserialize($settingsValue);  // check for old serialized setting
                 }
                 if (!is_array($settings)) {
