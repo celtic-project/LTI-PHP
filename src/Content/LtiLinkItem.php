@@ -30,16 +30,16 @@ class LtiLinkItem extends Item
     /**
      * Time period for availability.
      *
-     * @var string|null $available
+     * @var TimePeriod|null $available
      */
-    private ?string $available = null;
+    private ?TimePeriod $available = null;
 
     /**
      * Time period for submission.
      *
-     * @var string|null $submission
+     * @var TimePeriod|null $submission
      */
-    private ?string $submission = null;
+    private ?TimePeriod $submission = null;
 
     /**
      * Do not allow the item to be updated?
@@ -90,9 +90,9 @@ class LtiLinkItem extends Item
     /**
      * Set an availability time period for the content-item.
      *
-     * @param TimePeriod $available  Time period
+     * @param TimePeriod|null $available  Time period
      */
-    public function setAvailable(TimePeriod $available): void
+    public function setAvailable(?TimePeriod $available): void
     {
         $this->available = $available;
     }
@@ -100,9 +100,9 @@ class LtiLinkItem extends Item
     /**
      * Set a submission time period for the content-item.
      *
-     * @param TimePeriod $submission  Time period
+     * @param TimePeriod|null $submission  Time period
      */
-    public function setSubmission(TimePeriod $submission): void
+    public function setSubmission(?TimePeriod $submission): void
     {
         $this->submission = $submission;
     }

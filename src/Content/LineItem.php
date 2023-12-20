@@ -134,8 +134,6 @@ class LineItem
         $scoreMaximum = null;
         $activityId = null;
         $tag = null;
-        $available = null;
-        $submission = null;
         $submissionReview = null;
         foreach (get_object_vars($item) as $name => $value) {
             switch ($name) {
