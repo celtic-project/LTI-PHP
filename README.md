@@ -1,6 +1,6 @@
 This set of PHP classes encapsulates the code required by an LTI compliant tool provider to communicate with an LTI tool consumer.  It includes support for LTI 1.1 and the unofficial extensions to Basic LTI, as well as the registration process and services of LTI 1.2/2.0, and the new security model introduced by LTI 1.3.  The Names and Role Provisioning service and the Assignment and Grade services (Line Item, Result and Score) are also supported using either of the LTI security models.
 
-These classes are designed as an update to the LTI Tool Provider class library (http://www.spvsoftwareproducts.com/php/lti_tool_provider/) and a replacement for the library at https://github.com/IMSGlobal/LTI-Tool-Provider-Library-PHP which is no longer supported.
+These classes are designed as an update to the [LTI Tool Provider class library](http://www.spvsoftwareproducts.com/php/lti_tool_provider/) and a replacement for the library at https://github.com/IMSGlobal/LTI-Tool-Provider-Library-PHP which is no longer supported.
 
 Whilst supporting LTI is relatively simple, the benefits to using a class library like this one are:
 
