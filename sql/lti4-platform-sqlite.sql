@@ -1,0 +1,20 @@
+CREATE TABLE lti2_tool (
+  tool_pk INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  consumer_key TEXT DEFAULT NULL,
+  secret TEXT DEFAULT NULL,
+  message_url TEXT DEFAULT NULL,
+  initiate_login_url TEXT DEFAULT NULL,
+  redirection_uris TEXT DEFAULT NULL,
+  public_key TEXT DEFAULT NULL,
+  lti_version TEXT DEFAULT NULL,
+  signature_method TEXT DEFAULT NULL,
+  settings TEXT DEFAULT NULL,
+  enabled INTEGER NOT NULL,
+  enable_from TEXT DEFAULT NULL,
+  enable_until TEXT DEFAULT NULL,
+  last_access TEXT DEFAULT NULL,
+  created TEXT NOT NULL,
+  updated TEXT NOT NULL,
+  UNIQUE (initiate_login_url)
+) STRICT;
