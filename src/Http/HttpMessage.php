@@ -51,6 +51,13 @@ class HttpMessage
     public array $responseHeaders = [];
 
     /**
+     * JSON response body.
+     *
+     * @var object|array|null $responseJson
+     */
+    public object|array|null $responseJson = null;
+
+    /**
      * Relative links in response headers.
      *
      * @var array $relativeLinks
