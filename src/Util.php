@@ -361,6 +361,7 @@ EOD;
       Your browser may be blocking this request; try clicking the button below.<br><br>
       <input type="submit" value="Continue" />
     </p>
+
 EOD;
         if (!empty($params)) {
             foreach ($params as $key => $value) {
