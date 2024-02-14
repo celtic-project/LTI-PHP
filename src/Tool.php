@@ -1304,13 +1304,13 @@ EOD;
                 if ($isUpdate) {
                     if ($this->ltiVersion === LtiVersion::V1P3) {
                         if (!$this->checkValue($this->messageParameters['accept_media_types'],
-                                array(Item::LTI_LINK_MEDIA_TYPE, Item::LTI_ASSIGNMENT_MEDIA_TYPE),
+                                [Item::LTI_LINK_MEDIA_TYPE, Item::LTI_ASSIGNMENT_MEDIA_TYPE],
                                 'Invalid value in accept_media_types parameter: \'%s\'.', $strictMode, $generateWarnings, true)) {
                             $this->ok = false;
                         }
                     } elseif (!$this->checkValue($this->messageParameters['accept_types'],
-                            array(Item::TYPE_LTI_LINK, Item::TYPE_LTI_ASSIGNMENT),
-                            'Invalid value in accept_types parameter: \'%s\'.', $strictMode, $generateWarnings, true)) {
+                            [Item::TYPE_LTI_LINK, Item::TYPE_LTI_ASSIGNMENT], 'Invalid value in accept_types parameter: \'%s\'.',
+                            $strictMode, $generateWarnings, true)) {
                         $this->ok = false;
                     }
                 }

@@ -177,7 +177,7 @@ class User
      */
     public function setNames(string $firstname, string $lastname, string $fullname, ?string $middlename = null): void
     {
-        $names = array(0 => '', 1 => '');
+        $names = [0 => '', 1 => ''];
         if (!empty($fullname)) {
             $this->fullname = trim($fullname);
             $names = preg_split("/[\s]+/", $this->fullname);

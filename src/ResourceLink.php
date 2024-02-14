@@ -623,7 +623,7 @@ class ResourceLink
         if (!empty($urlAGS)) {
             if (($action === ServiceAction::Read) && ($ltiOutcome->type === OutcomeType::Decimal) && $sourceResourceLink->hasResultService()) {
                 $ok = $this->doResultService($ltiOutcome, $userResult, $urlAGS);
-            } elseif ((($action === ServiceAction::Write) && $this->checkValueType($ltiOutcome, array(OutcomeType::Decimal)) && $sourceResourceLink->hasScoreService()) ||
+            } elseif ((($action === ServiceAction::Write) && $this->checkValueType($ltiOutcome, [OutcomeType::Decimal]) && $sourceResourceLink->hasScoreService()) ||
                 ($action === ServiceAction::Delete)) {
                 if ($action === ServiceAction::Delete) {
                     $ltiOutcome->setValue(null);
@@ -641,7 +641,7 @@ class ResourceLink
             $outcome = $ltiOutcome->getValue();
             if (($action === ServiceAction::Read) && ($ltiOutcome->type === OutcomeType::Decimal)) {
                 $do = 'readResult';
-            } elseif (($action === ServiceAction::Write) && $this->checkValueType($ltiOutcome, array(OutcomeType::Decimal))) {
+            } elseif (($action === ServiceAction::Write) && $this->checkValueType($ltiOutcome, [OutcomeType::Decimal])) {
                 $do = 'replaceResult';
                 if (($ltiOutcome->getPointsPossible() <> 1) && ($ltiOutcome->getPointsPossible() > 0)) {
                     $outcome = $outcome / $ltiOutcome->getPointsPossible();
@@ -718,7 +718,7 @@ EOF;
             $outcome = $ltiOutcome->getValue();
             if (($action === ServiceAction::Read) && ($ltiOutcome->type === OutcomeType::Decimal)) {
                 $do = 'basic-lis-readresult';
-            } elseif (($action === ServiceAction::Write) && $this->checkValueType($ltiOutcome, array(OutcomeType::Decimal))) {
+            } elseif (($action === ServiceAction::Write) && $this->checkValueType($ltiOutcome, [OutcomeType::Decimal])) {
                 $do = 'basic-lis-updateresult';
                 if (($ltiOutcome->getPointsPossible() <> 1) && ($ltiOutcome->getPointsPossible() > 0)) {
                     $outcome = $outcome / $ltiOutcome->getPointsPossible();
