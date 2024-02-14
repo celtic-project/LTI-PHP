@@ -195,7 +195,7 @@ class User
             $this->middlename = trim($middlename);
         } elseif ((count($names) > 2) && !empty($names[1])) {
             $this->middlename = '';
-            for ($i = 1; $i < count($names); $i++) {
+            for ($i = 1; $i < count($names) - 1; $i++) {
                 $this->middlename .= $names[$i] . ' ';
             }
             $this->middlename = trim($this->middlename);
