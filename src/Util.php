@@ -513,7 +513,7 @@ EOD;
      *
      * @return string
      */
-    public static function urlEncode($val): string
+    public static function urlEncode(?string $val): string
     {
         if (!is_string($val)) {
             $val = strval($val);
