@@ -840,7 +840,7 @@ class Tool
         $claimsSupported = $platformConfig['claims_supported'];
         $messagesSupported = [];
         foreach ($platformConfig['https://purl.imsglobal.org/spec/lti-platform-configuration']['messages_supported'] as $message) {
-            $messagesSupported[] = $message['type'];
+            $messagesSupported[] = is_string($message) ? $message : $message['type'] ?? '';
         }
         $scopesSupported = $platformConfig['scopes_supported'];
         $iconUrl = null;
