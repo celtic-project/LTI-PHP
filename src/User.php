@@ -233,7 +233,7 @@ class User
             $this->email = $email;
         } elseif (!empty($defaultEmail)) {
             $this->email = $defaultEmail;
-            if (substr($this->email, 0, 1) === '@') {
+            if (str_starts_with($this->email, '@')) {
                 if (!empty($this->username)) {
                     $this->email = "{$this->username}{$this->email}";
                 } else {

@@ -1331,7 +1331,7 @@ EOF;
         if (!$ok) {
 // Convert numeric values to decimal
             if ($type === OutcomeType::Percentage) {
-                if (substr($value, -1) === '%') {
+                if (str_ends_with($value, '%')) {
                     $value = substr($value, 0, -1);
                 }
                 $ok = is_numeric($value) && ($value >= 0) && ($value <= 100);
@@ -1369,7 +1369,7 @@ EOF;
                 $ok = is_numeric($value) && ($value >= 0) && ($value <= 1);
                 if ($ok) {
                     $ltiOutcome->type = OutcomeType::Decimal;
-                } elseif (substr($value, -1) === '%') {
+                } elseif (str_ends_with($value, '%')) {
                     $value = substr($value, 0, -1);
                     $ok = is_numeric($value) && ($value >= 0) && ($value <= 100);
                     if ($ok) {

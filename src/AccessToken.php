@@ -128,7 +128,7 @@ class AccessToken
      */
     public function hasScope(string $scope = ''): bool
     {
-        if (substr($scope, -9) === '.readonly') {
+        if (str_ends_with($scope, '.readonly')) {
             $scope2 = substr($scope, 0, -9);
         } else {
             $scope2 = $scope;
@@ -153,7 +153,7 @@ class AccessToken
                 $scopesRequested = [$scope];
             } else {
                 $scopesRequested = Tool::$defaultTool->requiredScopes;
-                if (substr($scope, -9) === '.readonly') {
+                if (str_ends_with($scope, '.readonly')) {
                     $scope2 = substr($scope, 0, -9);
                 } else {
                     $scope2 = $scope;

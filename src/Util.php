@@ -444,7 +444,7 @@ EOD;
             $path = parse_url($url, PHP_URL_PATH);
             if (empty($path)) {
                 $path = '/';
-            } elseif (substr($path, -1) === '/') {
+            } elseif (str_ends_with($path, '/')) {
                 $path = substr($path, 0, -1);
             }
             if (!$delete) {

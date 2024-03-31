@@ -729,7 +729,7 @@ class Tool
             }
         } elseif (isset($_SESSION['ceLTIc_lti_authentication_request'])) {
             $auth = $_SESSION['ceLTIc_lti_authentication_request'];
-            if (substr($state, -16) === '.platformStorage') {
+            if (str_ends_with($state, '.platformStorage')) {
                 $state = substr($state, 0, -16);
             }
             if (($state !== $auth['state']) || ($nonce !== $auth['nonce'])) {

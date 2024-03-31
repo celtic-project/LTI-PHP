@@ -168,7 +168,7 @@ class LineItem
         if (is_null($scoreMaximum) && $label && $reportingMethod && $scoreConstraints) {
             foreach (get_object_vars($scoreConstraints) as $name => $value) {
                 $method = str_replace('Maximum', 'Score', $name);
-                if (substr($reportingMethod, -strlen($method)) === $method) {
+                if (str_ends_with($reportingMethod, $method)) {
                     $scoreMaximum = $value;
                     break;
                 }
