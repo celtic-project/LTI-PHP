@@ -103,9 +103,9 @@ class ResourceLink
     /**
      * Primary key value for resource link being shared (if any).
      *
-     * @var string|null $primaryResourceLinkId
+     * @var int|null $primaryResourceLinkId
      */
-    public ?string $primaryResourceLinkId = null;
+    public ?int $primaryResourceLinkId = null;
 
     /**
      * Whether the sharing request has been approved by the primary resource link.
@@ -154,14 +154,14 @@ class ResourceLink
      *
      * @var Context|null $context
      */
-    private $context = null;
+    private ?Context $context = null;
 
     /**
      * Context ID for this resource link.
      *
      * @var int|null $contextId
      */
-    private $contextId = null;
+    private ?int $contextId = null;
 
     /**
      * Setting values (LTI parameters, custom parameters and local parameters).
@@ -360,9 +360,9 @@ class ResourceLink
     /**
      * Get resource link ID.
      *
-     * @return string  ID for this resource link.
+     * @return string|null  ID for this resource link.
      */
-    public function getId(): string
+    public function getId(): ?string
     {
         return $this->ltiResourceLinkId;
     }
