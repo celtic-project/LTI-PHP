@@ -802,7 +802,7 @@ EOD;
     {
         $id = $resourceLink->getRecordId();
 
-// Delete any outstanding share keys for resource links for this consumer
+// Delete any outstanding share keys for this resource link
         $sql = <<< EOD
 DELETE FROM {$this->dbTableName(static::RESOURCE_LINK_SHARE_KEY_TABLE_NAME)}
 WHERE (resource_link_pk = ?)
@@ -826,7 +826,7 @@ EOD;
         if ($ok) {
             $sql = <<< EOD
 UPDATE {$this->dbTableName(static::RESOURCE_LINK_TABLE_NAME)}
-SET primary_resource_link_pk = NULL
+SET primary_resource_link_pk = NULL, share_approved = NULL
 WHERE (primary_resource_link_pk = ?)
 EOD;
             $stmt = $this->db->prepare($sql);
