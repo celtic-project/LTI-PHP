@@ -59,7 +59,7 @@ class CurlClient implements ClientInterface
         $message->requestHeaders = explode("\n", trim(str_replace("\r\n", "\n", curl_getinfo($ch, CURLINFO_HEADER_OUT))));
         $chResp = str_replace("\r\n", "\n", $chResp);
         $chRespSplit = explode("\n\n", $chResp, 2);
-        if ((count($chRespSplit) > 1) && (substr($chRespSplit[1], 0, 5) === 'HTTP/')) {
+        if ((count($chRespSplit) > 1) && str_starts_with($chRespSplit[1], 'HTTP/')) {
             $chRespSplit = explode("\n\n", $chRespSplit[1], 2);
         }
         $message->responseHeaders = explode("\n", trim($chRespSplit[0]));

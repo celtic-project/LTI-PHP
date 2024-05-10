@@ -421,7 +421,7 @@ trait System
                             unset($mediaTypes[array_search(Item::LTI_ASSIGNMENT_MEDIA_TYPE, $mediaTypes)]);
                             $messageParameters['accept_media_types'] = implode(',', $mediaTypes);
                             $types[] = Item::TYPE_LTI_ASSIGNMENT;
-                        } elseif (substr($mediaType, 0, 6) === 'image/') {
+                        } elseif (str_starts_with($mediaType, 'image/')) {
                             $types[] = 'image';
                             $types[] = 'link';
                             $types[] = 'file';
@@ -502,10 +502,10 @@ trait System
                         $group = $claim . $mapping['group'];
                         $claim = $mapping['claim'];
                     }
-                } elseif (substr($key, 0, 7) === 'custom_') {
+                } elseif (str_starts_with($key, 'custom_')) {
                     $group = Util::JWT_CLAIM_PREFIX . '/claim/custom';
                     $claim = substr($key, 7);
-                } elseif (substr($key, 0, 4) === 'ext_') {
+                } elseif (str_starts_with($key, 'ext_')) {
                     if ($key === 'ext_d2l_username') {
                         $group = 'http://www.brightspace.com';
                         $claim = 'username';
@@ -513,7 +513,7 @@ trait System
                         $group = Util::JWT_CLAIM_PREFIX . '/claim/ext';
                         $claim = substr($key, 4);
                     }
-                } elseif (substr($key, 0, 7) === 'lti1p1_') {
+                } elseif (str_starts_with($key, 'lti1p1_')) {
                     $group = Util::JWT_CLAIM_PREFIX . '/claim/lti1p1';
                     $claim = substr($key, 7);
                     if (empty($value)) {
@@ -585,8 +585,8 @@ trait System
         $parsedRoles = [];
         foreach ($roles as $role) {
             $role = trim($role);
-            if ((substr($role, 0, 4) !== 'urn:') &&
-                (substr($role, 0, 7) !== 'http://') && (substr($role, 0, 8) !== 'https://')) {
+            if (!str_starts_with($role, 'urn:') &&
+                !str_starts_with($role, 'http://') && !str_starts_with($role, 'https://')) {
                 switch ($ltiVersion) {
                     case LtiVersion::V1:
                         $role = str_replace('#', '/', $role);
@@ -639,7 +639,7 @@ trait System
                             ['http://purl.imsglobal.org/vocab/lis/v2/institution/person#',
                                 'http://purl.imsglobal.org/vocab/lis/v2/institution/person/'])) {
                         $role = 'urn:lti:instrole:ims/lis/' . substr($role, 58);
-                    } elseif (substr($role, 0, 50) === 'http://purl.imsglobal.org/vocab/lis/v2/membership#') {
+                    } elseif (str_starts_with($role, 'http://purl.imsglobal.org/vocab/lis/v2/membership#')) {
                         $principalRole = substr($role, 50);
                         if (($principalRole === 'Instructor') &&
                             (!empty(preg_grep('/^http:\/\/purl.imsglobal.org\/vocab\/lis\/v2\/membership\/Instructor#TeachingAssistant.*$/',
@@ -653,12 +653,12 @@ trait System
                         } else {
                             $role = "urn:lti:role:ims/lis/{$principalRole}";
                         }
-                    } elseif (substr($role, 0, 50) === 'http://purl.imsglobal.org/vocab/lis/v2/membership/') {
+                    } elseif (str_starts_with($role, 'http://purl.imsglobal.org/vocab/lis/v2/membership/')) {
                         $subroles = explode('#', substr($role, 50));
                         if (count($subroles) === 2) {
                             if (($subroles[0] === 'Instructor') && ($subroles[1] === 'TeachingAssistant')) {
                                 $role = 'urn:lti:role:ims/lis/TeachingAssistant';
-                            } elseif (($subroles[0] === 'Instructor') && (substr($subroles[1], 0, 17) === 'TeachingAssistant')) {
+                            } elseif (($subroles[0] === 'Instructor') && (str_starts_with($subroles[1], 'TeachingAssistant'))) {
                                 $role = "urn:lti:role:ims/lis/TeachingAssistant#{$subroles[1]}";
                             } else {
                                 $role = "urn:lti:role:ims/lis/{$subroles[0]}/{$subroles[1]}";
@@ -689,19 +689,19 @@ trait System
                     break;
                 case LtiVersion::V2:
                     $prefix = '';
-                    if (substr($role, 0, 24) === 'urn:lti:sysrole:ims/lis/') {
+                    if (str_starts_with($role, 'urn:lti:sysrole:ims/lis/')) {
                         $prefix = 'http://purl.imsglobal.org/vocab/lis/v2/person';
                         $role = substr($role, 24);
-                    } elseif (substr($role, 0, 25) === 'urn:lti:instrole:ims/lis/') {
+                    } elseif (str_starts_with($role, 'urn:lti:instrole:ims/lis/')) {
                         $prefix = 'http://purl.imsglobal.org/vocab/lis/v2/person';
                         $role = substr($role, 25);
-                    } elseif (substr($role, 0, 21) === 'urn:lti:role:ims/lis/') {
+                    } elseif (str_starts_with($role, 'urn:lti:role:ims/lis/')) {
                         $prefix = 'http://purl.imsglobal.org/vocab/lis/v2/membership';
                         $subroles = explode('/', substr($role, 21));
                         if (count($subroles) === 2) {
                             if (($subroles[0] === 'Instructor') && ($subroles[1] === 'TeachingAssistant')) {
                                 $role = 'TeachingAssistant';
-                            } elseif (($subroles[0] === 'Instructor') && (substr($subroles[1], 0, 17) === 'TeachingAssistant')) {
+                            } elseif (($subroles[0] === 'Instructor') && str_starts_with($subroles[1], 'TeachingAssistant')) {
                                 $role = "TeachingAssistant#{$subroles[1]}";
                             } else {
                                 $role = "{$subroles[0]}#{$subroles[1]}";
@@ -723,7 +723,7 @@ trait System
                                 'http://purl.imsglobal.org/vocab/lis/v2/institution/person/'])) {
                         $prefix = 'http://purl.imsglobal.org/vocab/lis/v2/person';
                         $role = substr($role, 58);
-                    } elseif (substr($role, 0, 50) === 'http://purl.imsglobal.org/vocab/lis/v2/membership#') {
+                    } elseif (str_starts_with($role, 'http://purl.imsglobal.org/vocab/lis/v2/membership#')) {
                         $prefix = 'http://purl.imsglobal.org/vocab/lis/v2/membership';
                         $principalRole = substr($role, 50);
                         $principalRole2 = str_replace('/', '\\/', $principalRole);
@@ -739,13 +739,13 @@ trait System
                         } else {
                             $role = $principalRole;
                         }
-                    } elseif (substr($role, 0, 50) === 'http://purl.imsglobal.org/vocab/lis/v2/membership/') {
+                    } elseif (str_starts_with($role, 'http://purl.imsglobal.org/vocab/lis/v2/membership/')) {
                         $prefix = 'http://purl.imsglobal.org/vocab/lis/v2/membership';
                         $subroles = explode('#', substr($role, 50));
                         if (count($subroles) === 2) {
                             if (($subroles[0] === 'Instructor') && ($subroles[1] === 'TeachingAssistant')) {
                                 $role = 'TeachingAssistant';
-                            } elseif (($subroles[0] === 'Instructor') && (substr($subroles[1], 0, 17) === 'TeachingAssistant')) {
+                            } elseif (($subroles[0] === 'Instructor') && (str_starts_with($subroles[1], 'TeachingAssistant'))) {
                                 $role = "TeachingAssistant#{$subroles[1]}";
                             } else {
                                 $role = "{$subroles[0]}#{$subroles[1]}";
@@ -769,13 +769,13 @@ trait System
                     break;
                 case LtiVersion::V1P3:
                     $prefix = '';
-                    if (substr($role, 0, 24) === 'urn:lti:sysrole:ims/lis/') {
+                    if (str_starts_with($role, 'urn:lti:sysrole:ims/lis/')) {
                         $prefix = 'http://purl.imsglobal.org/vocab/lis/v2/system/person';
                         $role = substr($role, 24);
-                    } elseif (substr($role, 0, 25) === 'urn:lti:instrole:ims/lis/') {
+                    } elseif (str_starts_with($role, 'urn:lti:instrole:ims/lis/')) {
                         $prefix = 'http://purl.imsglobal.org/vocab/lis/v2/institution/person';
                         $role = substr($role, 25);
-                    } elseif (substr($role, 0, 21) === 'urn:lti:role:ims/lis/') {
+                    } elseif (str_starts_with($role, 'urn:lti:role:ims/lis/')) {
                         $prefix = 'http://purl.imsglobal.org/vocab/lis/v2/membership';
                         $subroles = explode('/', substr($role, 21));
                         if (count($subroles) === 2) {
@@ -798,7 +798,7 @@ trait System
                         } else {
                             $role = substr($role, 21);
                         }
-                    } elseif (substr($role, 0, 46) === 'http://purl.imsglobal.org/vocab/lis/v2/person#') {
+                    } elseif (str_starts_with($role, 'http://purl.imsglobal.org/vocab/lis/v2/person#')) {
                         if (in_array(substr($role, 46), $systemRoles)) {
                             $prefix = 'http://purl.imsglobal.org/vocab/lis/v2/system/person';
                         } elseif (in_array(substr($role, 46), $institutionRoles)) {
@@ -809,7 +809,7 @@ trait System
                         if ($pos !== false) {
                             $role = substr($role, 0, $pos - 1) . '#' . substr($role, $pos + 1);
                         }
-                    } elseif (substr($role, 0, 50) === 'http://purl.imsglobal.org/vocab/lis/v2/membership#') {
+                    } elseif (str_starts_with($role, 'http://purl.imsglobal.org/vocab/lis/v2/membership#')) {
                         $prefix = 'http://purl.imsglobal.org/vocab/lis/v2/membership';
                         if (substr($role, 50, 18) === 'TeachingAssistant') {
                             $role = 'Instructor#TeachingAssistant';
@@ -819,7 +819,7 @@ trait System
                         } else {
                             $role = substr($role, 50);
                         }
-                    } elseif (substr($role, 0, 50) === 'http://purl.imsglobal.org/vocab/lis/v2/membership/') {
+                    } elseif (str_starts_with($role, 'http://purl.imsglobal.org/vocab/lis/v2/membership/')) {
                         $prefix = 'http://purl.imsglobal.org/vocab/lis/v2/membership';
                         $subroles = explode('#', substr($role, 50));
                         if (count($subroles) === 2) {
@@ -1020,7 +1020,7 @@ trait System
      */
     public function useOAuth1(): bool
     {
-        return empty($this->signatureMethod) || (substr($this->signatureMethod, 0, 2) !== 'RS');
+        return empty($this->signatureMethod) || !str_starts_with($this->signatureMethod, 'RS');
     }
 
     /**

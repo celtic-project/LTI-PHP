@@ -107,7 +107,7 @@ class OAuthUtil
                 $out['Content-Type'] = $_ENV['CONTENT_TYPE'];
 
             foreach ($_SERVER as $key => $value) {
-                if (substr($key, 0, 5) === 'HTTP_') {
+                if (str_starts_with($key, 'HTTP_')) {
                     // this is chaos, basically it is just there to capitalize the first
                     // letter of every word that is not an initial HTTP and strip HTTP
                     // code from przemek
