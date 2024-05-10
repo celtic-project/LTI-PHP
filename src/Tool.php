@@ -986,7 +986,7 @@ class Tool
         $this->platform->signatureMethod = reset($platformConfig['id_token_signing_alg_values_supported']);
         $this->platform->platformId = $platformConfig['issuer'];
         $this->platform->clientId = $registrationConfig['client_id'];
-        $this->platform->deploymentId = $registrationConfig['https://purl.imsglobal.org/spec/lti-tool-configuration']['deployment_id'];
+        $this->platform->deploymentId = $registrationConfig['https://purl.imsglobal.org/spec/lti-tool-configuration']['deployment_id'] ?? '';
         $this->platform->authenticationUrl = $platformConfig['authorization_endpoint'];
         $this->platform->accessTokenUrl = $platformConfig['token_endpoint'];
         $this->platform->jku = $platformConfig['jwks_uri'];
