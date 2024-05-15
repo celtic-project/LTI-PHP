@@ -1831,7 +1831,7 @@ EOD;
                     $middlename = $this->messageParameters['lis_person_name_middle'] ?? '';
                     $lastname = $this->messageParameters['lis_person_name_family'] ?? '';
                     $fullname = $this->messageParameters['lis_person_name_full'] ?? '';
-                    $this->userResult->setNames($firstname, $lastname, $fullname);
+                    $this->userResult->setNames($firstname, $lastname, $fullname, $middlename);
 
 // Set the sourcedId
                     if (isset($this->messageParameters['lis_person_sourcedid'])) {
