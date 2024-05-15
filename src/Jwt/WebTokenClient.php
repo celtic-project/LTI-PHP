@@ -433,9 +433,9 @@ class WebTokenClient implements ClientInterface
      *
      * @param string $privateKey  Private key in PEM format
      *
-     * @return string  Public key in PEM format
+     * @return string|null  Public key in PEM format
      */
-    public static function getPublicKey(string $privateKey): string
+    public static function getPublicKey(string $privateKey): ?string
     {
         return FirebaseClient::getPublicKey($privateKey);
     }
