@@ -2056,6 +2056,7 @@ EOD;
         $this->platform = Platform::fromPlatformId($parameters['iss'], $clientId, $deploymentId, $this->dataConnector);
         if ($this->platform->debugMode && (!$currentLogLevel->logDebug())) {
             $this->debugMode = true;
+            Util::$logLevel = LogLevel::Debug;
             Util::logRequest();
         }
         $ok = !is_null($this->platform) && !empty($this->platform->authenticationUrl);
