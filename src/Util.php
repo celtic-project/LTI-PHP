@@ -359,7 +359,7 @@ EOD;
   <form action="{$url}" method="post" target="{$target}" encType="application/x-www-form-urlencoded">
     <p id="id_blocked" style="display: none; color: red; font-weight: bold;">
       Your browser may be blocking this request; try clicking the button below.<br><br>
-      <input type="submit" value="Continue" />
+      <input type="submit" value="Continue">
     </p>
 
 EOD;
@@ -369,14 +369,14 @@ EOD;
                 if (!is_array($value)) {
                     $value = htmlentities($value, ENT_COMPAT | ENT_HTML401, 'UTF-8');
                     $page .= <<< EOD
-    <input type="hidden" name="{$key}" id="id_{$key}" value="{$value}" />
+    <input type="hidden" name="{$key}" id="id_{$key}" value="{$value}">
 
 EOD;
                 } else {
                     foreach ($value as $element) {
                         $element = htmlentities($element, ENT_COMPAT | ENT_HTML401, 'UTF-8');
                         $page .= <<< EOD
-    <input type="hidden" name="{$key}" value="{$element}" />
+    <input type="hidden" name="{$key}" value="{$element}">
 
 EOD;
                     }

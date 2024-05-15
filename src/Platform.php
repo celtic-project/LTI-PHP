@@ -545,7 +545,7 @@ class Platform
 
   window.addEventListener('message', function (event) {
     let ok = true;
-    if (typeof event.data !== "object") {
+    if (typeof event.data !== 'object') {
       ok = false;
       event.source.postMessage({
         subject: '.response',
