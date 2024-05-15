@@ -708,7 +708,7 @@ trait System
                             }
                         } elseif ((count($subroles) === 1) && (!empty(preg_grep("/^http:\/\/purl.imsglobal.org\/vocab\/lis\/v2\/membership\/{$subroles[0]}#.*$/",
                                     $roles)) ||
-                            !empty(preg_grep('/^{$subroles[0]#.*$/', $roles)))) {
+                            !empty(preg_grep('/^{$subroles[0]}#.*$/', $roles)))) {
                             $role = '';
                         } else {
                             $role = substr($role, 21);
@@ -1643,7 +1643,7 @@ trait System
                     }
                 } else {
                     foreach ($value as $element) {
-                        $params[$key] = array_diff($params[$key], [$value]);
+                        $params[$key] = array_diff($params[$key], [$element]);
                     }
                 }
             }
