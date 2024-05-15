@@ -1486,7 +1486,7 @@ EOD;
                     $context_types = explode(',', $this->messageParameters['context_type']);
                     $permitted_types = ['CourseTemplate', 'CourseOffering', 'CourseSection', 'Group',
                         'urn:lti:context-type:ims/lis/CourseTemplate', 'urn:lti:context-type:ims/lis/CourseOffering', 'urn:lti:context-type:ims/lis/CourseSection', 'urn:lti:context-type:ims/lis/Group'];
-                    if ($this->ltiVersion === LtiVersion::V1) {
+                    if ($this->ltiVersion !== LtiVersion::V1) {
                         $permitted_types = array_merge($permitted_types,
                             ['http://purl.imsglobal.org/vocab/lis/v2/course#CourseTemplate', 'http://purl.imsglobal.org/vocab/lis/v2/course#CourseOffering', 'http://purl.imsglobal.org/vocab/lis/v2/course#CourseSection', 'http://purl.imsglobal.org/vocab/lis/v2/course#Group']);
                     }
