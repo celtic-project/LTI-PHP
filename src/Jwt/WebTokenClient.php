@@ -185,9 +185,9 @@ class WebTokenClient implements ClientInterface
     /**
      * Get the value of the headers.
      *
-     * @return array  The value of the headers
+     * @return array|object|null  The value of the headers
      */
-    public function getHeaders(): array|object
+    public function getHeaders(): array|object|null
     {
         $headers = null;
         if ($this->jwt instanceof Signature\JWS) {
@@ -200,9 +200,9 @@ class WebTokenClient implements ClientInterface
     /**
      * Get the value of the headers for the last signed JWT (before any encryption).
      *
-     * @return array  The value of the headers
+     * @return array|object|null  The value of the headers
      */
-    public static function getLastHeaders(): array
+    public static function getLastHeaders(): array|object|null
     {
         return self::$lastHeaders;
     }
@@ -241,9 +241,9 @@ class WebTokenClient implements ClientInterface
     /**
      * Get the value of the payload.
      *
-     * @return array  The value of the payload
+     * @return array|object|null  The value of the payload
      */
-    public function getPayload(): array|object
+    public function getPayload(): array|object|null
     {
         return $this->claims;
     }
@@ -251,9 +251,9 @@ class WebTokenClient implements ClientInterface
     /**
      * Get the value of the payload for the last signed JWT (before any encryption).
      *
-     * @return array  The value of the payload
+     * @return array|object|null  The value of the payload
      */
-    public static function getLastPayload(): array
+    public static function getLastPayload(): array|object|null
     {
         return self::$lastPayload;
     }
