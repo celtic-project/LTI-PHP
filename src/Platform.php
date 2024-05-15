@@ -862,8 +862,12 @@ EOD;
             }
             $parameters['redirect_uri'] .= "{$sep}lti_storage_target=" . static::$browserStorageFrame;
         }
-        $html = Util::sendForm($parameters['redirect_uri'], $this->messageParameters);
-        echo $html;
+        if (isset($parameters['redirect_uri'])) {
+            $html = Util::sendForm($parameters['redirect_uri'], $this->messageParameters);
+            echo $html;
+        } else {
+            http_response_code(400);
+        }
         exit;
     }
 
