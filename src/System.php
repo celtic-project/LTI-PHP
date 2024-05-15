@@ -384,9 +384,9 @@ trait System
      *
      * @param bool $fullyQualified  True if claims should be fully qualified rather than grouped (default is false)
      *
-     * @return array  The message claim array
+     * @return array| null  The message claim array
      */
-    public function getMessageClaims(bool $fullyQualified = false): array
+    public function getMessageClaims(bool $fullyQualified = false): ?array
     {
         $messageClaims = null;
         if (!is_null($this->messageParameters)) {
@@ -899,7 +899,7 @@ trait System
      * @return array|string  Array of signed message parameters or request headers
      */
     public function signMessage(string &$url, string $type, string $ltiVersionString, array $params, ?string $loginHint = null,
-        ?string $ltiMessageHint = null): array|string
+        ?string $ltiMessageHint = null): array
     {
         if (($this instanceof Platform) && ($this->ltiVersion === LtiVersion::V1P3)) {
             if (!isset($loginHint) || (strlen($loginHint) <= 0)) {

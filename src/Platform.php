@@ -418,9 +418,9 @@ class Platform
     /**
      * Get the message parameters
      *
-     * @return array  The message parameter array
+     * @return array|null  The message parameter array
      */
-    public function getMessageParameters(): array
+    public function getMessageParameters(): ?array
     {
         if ($this->ok && is_null($this->messageParameters)) {
             $this->parseMessage(true, true, false);
