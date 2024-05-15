@@ -1452,6 +1452,8 @@ EOF;
                         }
                     } catch (\Exception $e) {
 
+                    } catch (\TypeError $e) {
+
                     }
                 }
                 $retry = $retry && !$newToken && !$ok;
@@ -1611,6 +1613,8 @@ EOD;
                             $ok = true;
                         }
                     } catch (\Exception $e) {
+
+                    } catch (\TypeError $e) {
 
                     }
                 }
