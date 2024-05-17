@@ -1583,14 +1583,17 @@ trait System
                     $data = '';
                 }
                 $hash = match ($this->signatureMethod) {
+                    'HMAC-SHA1' => base64_encode(sha1($data, true)),
                     'HMAC-SHA224' => base64_encode(hash('sha224', $data, true)),
                     'HMAC-SHA256' => base64_encode(hash('sha256', $data, true)),
                     'HMAC-SHA384' => base64_encode(hash('sha384', $data, true)),
                     'HMAC-SHA512' => base64_encode(hash('sha512', $data, true)),
-                    default => base64_encode(sha1($data, true))
+                    default => null
                 };
             }
-            $params['oauth_body_hash'] = $hash;
+            if (!empty($hash)) {
+                $params['oauth_body_hash'] = $hash;
+            }
         }
         if (!empty($timestamp)) {
             $params['oauth_timestamp'] = strval($timestamp);
@@ -1598,11 +1601,12 @@ trait System
 
 // Add OAuth signature
         $hmacMethod = match ($this->signatureMethod) {
+            'HMAC-SHA1' => new OAuth\OAuthSignatureMethod_HMAC_SHA1(),
             'HMAC-SHA224' => new OAuth\OAuthSignatureMethod_HMAC_SHA224(),
             'HMAC-SHA256' => new OAuth\OAuthSignatureMethod_HMAC_SHA256(),
             'HMAC-SHA384' => new OAuth\OAuthSignatureMethod_HMAC_SHA384(),
             'HMAC-SHA512' => new OAuth\OAuthSignatureMethod_HMAC_SHA512(),
-            default => new OAuth\OAuthSignatureMethod_HMAC_SHA1()
+            default => null
         };
         $key = $this->key;
         $secret = $this->secret;
@@ -1617,7 +1621,11 @@ trait System
         }
         $oauthConsumer = new OAuth\OAuthConsumer($key, $secret, null);
         $oauthReq = OAuth\OAuthRequest::from_consumer_and_token($oauthConsumer, null, $method, $endpoint, $params);
-        $oauthReq->sign_request($hmacMethod, $oauthConsumer, null);
+        if ($hmacMethod) {
+            $oauthReq->sign_request($hmacMethod, $oauthConsumer, null);
+        } else {
+            $oauthReq->set_parameter('oauth_signature_method', $this->signatureMethod, false);
+        }
         if (!is_array($data)) {
             $header = $oauthReq->to_header();
             if (empty($data)) {

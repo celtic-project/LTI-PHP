@@ -173,8 +173,9 @@ class OAuthRequest
             'oauth_timestamp' => strval(OAuthRequest::generate_timestamp()),
             'oauth_consumer_key' => $consumer->key]
         ;
-        if ($token)
+        if ($token) {
             $defaults['oauth_token'] = $token->key;
+        }
 
         $parameters = array_merge($defaults, $parameters);
 
@@ -209,9 +210,9 @@ class OAuthRequest
      *
      * @param string $name  Parameter name
      *
-     * @return string|null
+     * @return string|array|null
      */
-    public function get_parameter(string $name): ?string
+    public function get_parameter(string $name): string|array|null
     {
         return isset($this->parameters[$name]) ? $this->parameters[$name] : null;
     }
