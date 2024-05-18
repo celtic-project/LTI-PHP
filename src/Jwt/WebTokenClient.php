@@ -112,13 +112,17 @@ class WebTokenClient implements ClientInterface
             $this->jwt = $serializer->unserialize($jwtString);
         } catch (\Exception $e) {
             $ok = false;
+        } catch (TypeError $e) {
+            $ok = false;
         }
         if (!$ok) {
             try {
                 $serializer = new Encryption\Serializer\CompactSerializer();
-                $this->jwt = $serializer->unserialize($jwtString);
+                $this->jwe = $serializer->unserialize($jwtString);
                 $ok = $this->decrypt($privateKey);
             } catch (\Exception $e) {
+                $ok = false;
+            } catch (TypeError $e) {
                 $ok = false;
             }
         }
@@ -483,8 +487,7 @@ class WebTokenClient implements ClientInterface
     private function decrypt(string $privateKey): bool
     {
         $ok = false;
-        if ($this->jwt instanceof Encryption\JWE) {
-            $this->jwe = clone $this->jwt;
+        if ($this->jwe) {
             $keyEnc = $this->jwe->getSharedProtectedHeaderParameter('alg');
             $jwk = KeyManagement\JWKFactory::createFromKey($privateKey, null, ['alg' => $keyEnc, 'use' => 'enc']);
             $keyEncryptionAlgorithmManager = new Core\AlgorithmManager([new Encryption\Algorithm\KeyEncryption\RSAOAEP256()]);
@@ -498,9 +501,9 @@ class WebTokenClient implements ClientInterface
             $compressionMethodManager = new Encryption\Compression\CompressionMethodManager([new Encryption\Compression\Deflate()]);
             $jweDecrypter = new Encryption\JWEDecrypter($keyEncryptionAlgorithmManager, $contentEncryptionAlgorithmManager,
                 $compressionMethodManager);
-            if ($jweDecrypter->decryptUsingKey($this->jwt, $jwk, 0)) {
+            if ($jweDecrypter->decryptUsingKey($this->jwe, $jwk, 0)) {
                 try {
-                    $jwt = $this->jwt->getPayload();
+                    $jwt = $this->jwe->getPayload();
                     $serializer = new Signature\Serializer\CompactSerializer();
                     $this->jwt = $serializer->unserialize($jwt);
                     $ok = true;
