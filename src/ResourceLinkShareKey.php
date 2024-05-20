@@ -104,6 +104,8 @@ class ResourceLinkShareKey
 
     /**
      * Initialise the resource link share key.
+     *
+     * @return void
      */
     public function initialize(): void
     {
@@ -117,6 +119,8 @@ class ResourceLinkShareKey
      * Initialise the resource link share key.
      *
      * Synonym for initialize().
+     *
+     * @return void
      */
     public function initialise(): void
     {
@@ -174,6 +178,8 @@ class ResourceLinkShareKey
 
     /**
      * Load the resource link share key from the database.
+     *
+     * @return void
      */
     private function load(): void
     {

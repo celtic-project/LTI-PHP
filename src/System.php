@@ -245,6 +245,8 @@ trait System
      * Sets the system record ID.
      *
      * @param int|string|null $id  System record ID value
+     *
+     * @return void
      */
     public function setRecordId(int|string|null $id): void
     {
@@ -265,6 +267,8 @@ trait System
      * Set the consumer key.
      *
      * @param string|null $key  Consumer key value
+     *
+     * @return void
      */
     public function setKey(?string $key): void
     {
@@ -295,6 +299,8 @@ trait System
      *
      * @param string $name              Name of setting
      * @param string|array|null $value  Value to set, use an empty value to delete a setting (optional, default is null)
+     *
+     * @return void
      */
     public function setSetting(string $name, string|array|null $value = null): void
     {
@@ -323,6 +329,8 @@ trait System
      * Set an array of all setting values.
      *
      * @param array $settings  Associative array of setting values
+     *
+     * @return void
      */
     public function setSettings(array $settings): void
     {
@@ -1206,6 +1214,8 @@ trait System
      * @param bool $strictMode          True if full compliance with the LTI specification is required
      * @param bool $disableCookieCheck  True if no cookie check should be made
      * @param bool $generateWarnings    True if warning messages should be generated
+     *
+     * @return void
      */
     private function parseMessage(bool $strictMode, bool $disableCookieCheck, bool $generateWarnings): void
     {
@@ -1373,6 +1383,8 @@ trait System
      *
      * @param bool $strictMode        True if full compliance with the LTI specification is required
      * @param bool $generateWarnings  True if warning messages should be generated
+     *
+     * @return void
      */
     private function parseClaims(bool $strictMode, bool $generateWarnings): void
     {
@@ -1536,6 +1548,8 @@ trait System
      * Call any callback function for the requested action.
      *
      * This function may set the redirect_url and output properties.
+     *
+     * @return void
      */
     private function doCallback(): void
     {

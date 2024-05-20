@@ -65,6 +65,8 @@ class LtiLinkItem extends Item
      *
      * @param string $name        Name of parameter
      * @param string|null $value  Value of parameter
+     *
+     * @return void
      */
     public function addCustom(string $name, ?string $value = null): void
     {
@@ -81,6 +83,8 @@ class LtiLinkItem extends Item
      * Set a line-item for the content-item.
      *
      * @param LineItem $lineItem  Line-item
+     *
+     * @return void
      */
     public function setLineItem(LineItem $lineItem): void
     {
@@ -91,6 +95,8 @@ class LtiLinkItem extends Item
      * Set an availability time period for the content-item.
      *
      * @param TimePeriod|null $available  Time period
+     *
+     * @return void
      */
     public function setAvailable(?TimePeriod $available): void
     {
@@ -101,6 +107,8 @@ class LtiLinkItem extends Item
      * Set a submission time period for the content-item.
      *
      * @param TimePeriod|null $submission  Time period
+     *
+     * @return void
      */
     public function setSubmission(?TimePeriod $submission): void
     {
@@ -111,6 +119,8 @@ class LtiLinkItem extends Item
      * Set whether the content-item should not be allowed to be updated.
      *
      * @param bool|null $noUpdate  True if the item should not be updatable
+     *
+     * @return void
      */
     public function setNoUpdate(?bool $noUpdate): void
     {
@@ -175,6 +185,8 @@ class LtiLinkItem extends Item
      * Extract content-item details from its JSON representation.
      *
      * @param object $item  A JSON object representing an LTI link content-item
+     *
+     * @return void
      */
     protected function fromJsonObject(object $item): void
     {

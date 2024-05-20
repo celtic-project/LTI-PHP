@@ -157,6 +157,8 @@ class Item
      * Set a URL value for the content-item.
      *
      * @param string|null $url  URL value
+     *
+     * @return void
      */
     public function setUrl(?string $url): void
     {
@@ -167,6 +169,8 @@ class Item
      * Set a media type value for the content-item.
      *
      * @param string|null $mediaType  Media type value
+     *
+     * @return void
      */
     public function setMediaType(?string $mediaType): void
     {
@@ -177,6 +181,8 @@ class Item
      * Set a title value for the content-item.
      *
      * @param string|null $title  Title value
+     *
+     * @return void
      */
     public function setTitle(?string $title): void
     {
@@ -187,6 +193,8 @@ class Item
      * Set a link text value for the content-item.
      *
      * @param string|null $text  Link text value
+     *
+     * @return void
      */
     public function setText(?string $text): void
     {
@@ -197,6 +205,8 @@ class Item
      * Set an HTML embed value for the content-item.
      *
      * @param string|null $html  HTML text value
+     *
+     * @return void
      */
     public function setHtml(?string $html): void
     {
@@ -207,6 +217,8 @@ class Item
      * Add a placement for the content-item.
      *
      * @param Placement|null $placementAdvice  Placement advice object
+     *
+     * @return void
      */
     public function addPlacementAdvice(?Placement $placementAdvice): void
     {
@@ -219,6 +231,8 @@ class Item
      * Set an icon image for the content-item.
      *
      * @param Image|null $icon  Icon image object
+     *
+     * @return void
      */
     public function setIcon(?Image $icon): void
     {
@@ -229,6 +243,8 @@ class Item
      * Set a thumbnail image for the content-item.
      *
      * @param Image|null $thumbnail  Thumbnail image object
+     *
+     * @return void
      */
     public function setThumbnail(?Image $thumbnail): void
     {
@@ -239,6 +255,8 @@ class Item
      * Set whether the content-item should be hidden from learners by default.
      *
      * @param bool|null $hideOnCreate  True if the item should be hidden from learners
+     *
+     * @return void
      */
     public function setHideOnCreate(?bool $hideOnCreate): void
     {
@@ -489,6 +507,8 @@ class Item
      * Extract content-item details from its JSON representation.
      *
      * @param object $item  A JSON object representing a content-item
+     *
+     * @return void
      */
     protected function fromJsonObject(object $item): void
     {

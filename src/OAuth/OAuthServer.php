@@ -55,6 +55,8 @@ class OAuthServer
      * Add a signature method.
      *
      * @param OAuthSignatureMethod $signature_method  Signature method
+     *
+     * @return void
      */
     public function add_signature_method(OAuthSignatureMethod $signature_method): void
     {
@@ -240,6 +242,8 @@ class OAuthServer
      * @param OAuthRequest $request    Request
      * @param OAuthConsumer $consumer  Consumer
      * @param OAuthToken $token        Token
+     *
+     * @return void
      * @throws OAuthException
      */
     private function check_signature(OAuthRequest $request, OAuthConsumer $consumer, OAuthToken $token): void
@@ -273,6 +277,8 @@ class OAuthServer
      * Check that the timestamp is new enough.
      *
      * @param string|null $timestamp  Timestamp
+     *
+     * @return void
      * @throws OAuthException
      */
     private function check_timestamp(?string $timestamp): void
@@ -295,6 +301,8 @@ class OAuthServer
      * @param OAuthToken $token        Token
      * @param string|null $nonce       Nonce value
      * @param string|null $timestamp   Timestamp
+     *
+     * @return void
      * @throws OAuthException
      */
     private function check_nonce(OAuthConsumer $consumer, OAuthToken $token, ?string $nonce, ?string $timestamp): void

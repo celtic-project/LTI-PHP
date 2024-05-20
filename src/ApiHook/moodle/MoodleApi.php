@@ -274,6 +274,8 @@ trait MoodleApi
      * Set groups for users.
      *
      * @param array $users  Array of UserResult objects
+     *
+     * @return void
      */
     private function setGroups(array $users): void
     {

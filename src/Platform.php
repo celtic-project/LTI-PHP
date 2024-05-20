@@ -167,6 +167,8 @@ class Platform
 
     /**
      * Initialise the platform.
+     *
+     * @return void
      */
     public function initialize(): void
     {
@@ -204,6 +206,8 @@ class Platform
      * Initialise the platform.
      *
      * Synonym for initialize().
+     *
+     * @return void
      */
     public function initialise(): void
     {
@@ -299,6 +303,8 @@ class Platform
      * Set the authorization access token
      *
      * @param AccessToken $accessToken  Access token
+     *
+     * @return void
      */
     public function setAccessToken(AccessToken $accessToken): void
     {
@@ -431,6 +437,8 @@ class Platform
 
     /**
      * Process an incoming request
+     *
+     * @return void
      */
     public function handleRequest(): void
     {
@@ -694,6 +702,8 @@ EOD;
      * @param string $loginHint            The ID of the user
      * @param string|null $ltiMessageHint  The message hint being sent to the tool
      * @param array $params                An associative array of message parameters
+     *
+     * @return void
      */
     protected function onInitiateLogin(string &$url, string &$loginHint, ?string &$ltiMessageHint, array $params): void
     {
@@ -716,6 +726,8 @@ EOD;
      * Check the hint and recover the message parameters for an authentication request.
      *
      * Override this method if the data has been saved elsewhere.
+     *
+     * @return void
      */
     protected function onAuthenticate(): void
     {
@@ -743,6 +755,8 @@ EOD;
 
     /**
      * Process a valid content-item message
+     *
+     * @return void
      */
     protected function onContentItem(): void
     {
@@ -752,6 +766,8 @@ EOD;
 
     /**
      * Process a valid start assessment message
+     *
+     * @return void
      */
     protected function onLtiStartAssessment(): void
     {
@@ -761,6 +777,8 @@ EOD;
 
     /**
      * Process a response to an invalid message
+     *
+     * @return void
      */
     protected function onError(): void
     {

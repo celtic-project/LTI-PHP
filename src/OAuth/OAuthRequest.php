@@ -188,6 +188,8 @@ class OAuthRequest
      * @param string $name            Parameter name
      * @param string $value           Parameter value
      * @param bool $allow_duplicates  True if duplicates are allowed
+     *
+     * @return void
      */
     public function set_parameter(string $name, string $value, bool $allow_duplicates = true): void
     {
@@ -231,6 +233,8 @@ class OAuthRequest
      * Delete a parameter.
      *
      * @param string $name  Parameter name
+     *
+     * @return void
      */
     public function unset_parameter(string $name): void
     {
@@ -383,6 +387,8 @@ class OAuthRequest
      * @param OAuthSignatureMethod $signature_method  Signature method
      * @param OAuthConsumer $consumer                 Consumer
      * @param OAuthToken|null $token                  Token
+     *
+     * @return void
      */
     public function sign_request(OAuthSignatureMethod $signature_method, OAuthConsumer $consumer, ?OAuthToken $token): void
     {
