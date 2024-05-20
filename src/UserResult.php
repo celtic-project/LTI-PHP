@@ -72,7 +72,7 @@ class UserResult extends User
      */
     public function __construct()
     {
-        $this->initialize();
+        parent::__construct();
     }
 
     /**
