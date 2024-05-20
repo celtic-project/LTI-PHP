@@ -1255,7 +1255,7 @@ EOF;
      *
      * @return ResourceLink
      */
-    public static function fromContext(Context $context, string $ltiResourceLinkId, ?string $tempId = null)
+    public static function fromContext(Context $context, string $ltiResourceLinkId, ?string $tempId = null): ResourceLink
     {
         $resourceLink = new ResourceLink();
         $resourceLink->setContext($context);
@@ -1518,7 +1518,7 @@ EOF;
      *
      * @return bool  True if the request successfully obtained a response
      */
-    private function doScoreService(Outcome $ltiOutcome, UserResult $userResult, string $url)
+    private function doScoreService(Outcome $ltiOutcome, UserResult $userResult, string $url): bool
     {
         $ok = false;
         $this->extRequest = '';
