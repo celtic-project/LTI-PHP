@@ -96,12 +96,12 @@ interface ClientInterface
     /**
      * Get the value of the claim with the specified name.
      *
-     * @param string $name                                     Claim name
-     * @param int|string|bool|array|object|null $defaultValue  Default value
+     * @param string $name                                           Claim name
+     * @param int|float|string|bool|array|object|null $defaultValue  Default value
      *
-     * @return int|string|bool|array|object|null  The value of the claim with the specified name, or the default value if it does not exist
+     * @return int|float|string|bool|array|object|null  The value of the claim with the specified name, or the default value if it does not exist
      */
-    public function getClaim(string $name, int|string|bool|array|object|null $defaultValue = null): int|string|bool|array|object|null;
+    public function getClaim(string $name, int|float|string|bool|array|object|null $defaultValue = null): int|float|string|bool|array|object|null;
 
     /**
      * Get the value of the payload.
