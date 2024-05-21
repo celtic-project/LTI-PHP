@@ -7,6 +7,7 @@ use ceLTIc\LTI;
 use ceLTIc\LTI\Context;
 use ceLTIc\LTI\ResourceLink;
 use ceLTIc\LTI\Enum\IdScope;
+use ceLTIc\LTI\Enum\LtiVersion;
 
 /**
  * Class to implement the Membership service
@@ -222,7 +223,11 @@ class Membership extends Service
 // Set the user roles
                     if (isset($membership->role)) {
                         $roles = $this->parseContextsInArray($http->responseJson->{'@context'}, $membership->role);
-                        $userResult->roles = LTI\Tool::parseRoles($roles, $this->getPlatform()->ltiVersion);
+                        $ltiVersion = $this->getPlatform()->ltiVersion;
+                        if (empty($ltiVersion)) {
+                            $ltiVersion = LtiVersion::V1;
+                        }
+                        $userResult->roles = LTI\Tool::parseRoles($roles, $ltiVersion);
                     }
 
 // If a result sourcedid is provided save the user
@@ -307,7 +312,11 @@ class Membership extends Service
 
 // Set the user roles
                     if (isset($member->roles)) {
-                        $userResult->roles = LTI\Tool::parseRoles($member->roles, $this->getPlatform()->ltiVersion);
+                        $ltiVersion = $this->getPlatform()->ltiVersion;
+                        if (empty($ltiVersion)) {
+                            $ltiVersion = LtiVersion::V1;
+                        }
+                        $userResult->roles = LTI\Tool::parseRoles($member->roles, $ltiVersion);
                     }
 
 // If a result sourcedid is provided save the user
