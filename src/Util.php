@@ -570,7 +570,7 @@ EOD;
         foreach ($objVars as $attrName => $attrValue) {
             if (is_object($clone->$attrName)) {
                 $clone->$attrName = self::cloneObject($clone->$attrName);
-            } else if (is_array($clone->$attrName)) {
+            } elseif (is_array($clone->$attrName)) {
                 foreach ($clone->$attrName as &$attrArrayValue) {
                     if (is_object($attrArrayValue)) {
                         $attrArrayValue = self::cloneObject($attrArrayValue);

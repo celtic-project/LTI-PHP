@@ -1522,7 +1522,7 @@ trait System
                     $this->messageParameters['ext_d2l_username'] = $d2l['username'];
                     unset($payload->{$claim}['username']);
                 }
-            } else if (isset($ext) && is_object($ext)) {
+            } elseif (isset($ext) && is_object($ext)) {
                 if (!empty($d2l->username)) {
                     $this->messageParameters['ext_d2l_username'] = $d2l->username;
                     unset($payload->{$claim}->username);

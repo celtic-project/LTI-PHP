@@ -294,7 +294,7 @@ trait MoodleApi
                             foreach ($this->sourceObject->groupSets[$setId]['groups'] as $groupId) {
                                 if (!is_array($this->sourceObject->groups[$groupId]['set']) && ($this->sourceObject->groups[$groupId]['set'] === $setId)) {
                                     unset($this->sourceObject->groups[$groupId]['set']);
-                                } else if (is_array($this->sourceObject->groups[$groupId]['set']) && in_array($setId,
+                                } elseif (is_array($this->sourceObject->groups[$groupId]['set']) && in_array($setId,
                                         $this->sourceObject->groups[$groupId]['set'])) {
                                     $pos = array_search($setId, $this->sourceObject->groups[$groupId]['set']);
                                     unset($this->sourceObject->groups[$groupId]['set'][$pos]);
