@@ -891,7 +891,7 @@ class Tool
                     $capabilities = $message->capabilities;
                     $variables = array_merge($variables, $message->variables);
                     $constants = array_merge($constants, $message->constants);
-                } else if (in_array($type, $messagesSupported)) {
+                } elseif (in_array($type, $messagesSupported)) {
                     $redirectUris[] = "{$this->baseUrl}{$message->path}";
                     $capabilities = $message->capabilities;
                     $variables = array_merge($message->variables, $variables);
@@ -1040,12 +1040,12 @@ class Tool
             $now = time();
             if (!$this->platform->enabled) {
                 $enabled = ', but it will need to be enabled by the tool provider before it can be used';
-            } else if (!empty($this->platform->enableFrom) && ($this->platform->enableFrom > $now)) {
+            } elseif (!empty($this->platform->enableFrom) && ($this->platform->enableFrom > $now)) {
                 $enabled = ', but you will only have access from ' . date('j F Y H:i T', $this->platform->enableFrom);
                 if (!empty($this->platform->enableUntil)) {
                     $enabled .= ' until ' . date('j F Y H:i T', $this->platform->enableUntil);
                 }
-            } else if (!empty($this->platform->enableUntil)) {
+            } elseif (!empty($this->platform->enableUntil)) {
                 if ($this->platform->enableUntil > $now) {
                     $enabled = ', but you will only have access until ' . date('j F Y H:i T', $this->platform->enableUntil);
                 } else {
@@ -1816,7 +1816,7 @@ EOD;
                     foreach (self::$LTI_CONSUMER_SETTING_NAMES as $name) {
                         if (isset($this->messageParameters[$name])) {
                             $this->platform->setSetting($name, $this->messageParameters[$name]);
-                        } else if (!in_array($name, self::$LTI_RETAIN_SETTING_NAMES)) {
+                        } elseif (!in_array($name, self::$LTI_RETAIN_SETTING_NAMES)) {
                             $this->platform->setSetting($name);
                         }
                     }
@@ -1824,7 +1824,7 @@ EOD;
                         foreach (self::$LTI_CONTEXT_SETTING_NAMES as $name) {
                             if (isset($this->messageParameters[$name])) {
                                 $this->context->setSetting($name, $this->messageParameters[$name]);
-                            } else if (!in_array($name, self::$LTI_RETAIN_SETTING_NAMES)) {
+                            } elseif (!in_array($name, self::$LTI_RETAIN_SETTING_NAMES)) {
                                 $this->context->setSetting($name);
                             }
                         }
@@ -1833,7 +1833,7 @@ EOD;
                         foreach (self::$LTI_RESOURCE_LINK_SETTING_NAMES as $name) {
                             if (isset($this->messageParameters[$name])) {
                                 $this->resourceLink->setSetting($name, $this->messageParameters[$name]);
-                            } else if (!in_array($name, self::$LTI_RETAIN_SETTING_NAMES)) {
+                            } elseif (!in_array($name, self::$LTI_RETAIN_SETTING_NAMES)) {
                                 $this->resourceLink->setSetting($name);
                             }
                         }
