@@ -48,18 +48,26 @@ class Score extends AssignmentGrade
     public function submit(Outcome $ltiOutcome, User $user): bool
     {
         $score = $ltiOutcome->getValue();
+        $activityProgress = $ltiOutcome->activityProgress;
+        if (empty($activityProgress)) {
+            $activityProgress = 'Initialized';
+        }
+        $gradingProgress = $ltiOutcome->gradingProgress;
+        if (empty($gradingProgress)) {
+            $gradingProgress = 'NotReady';
+        }
         if (is_null($score)) {
             $json = [
-                'activityProgress' => 'Initialized',
-                'gradingProgress' => 'NotReady'
+                'activityProgress' => $activityProgress,
+                'gradingProgress' => $gradingProgress
             ];
         } else {
             $json = [
                 'scoreGiven' => $score,
                 'scoreMaximum' => $ltiOutcome->getPointsPossible(),
                 'comment' => $ltiOutcome->comment,
-                'activityProgress' => $ltiOutcome->activityProgress,
-                'gradingProgress' => $ltiOutcome->gradingProgress
+                'activityProgress' => $activityProgress,
+                'gradingProgress' => $gradingProgress
             ];
         }
         $json['userId'] = $user->ltiUserId;
