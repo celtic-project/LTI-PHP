@@ -1634,6 +1634,12 @@ trait System
                 $secret = Tool::$defaultTool->secret;
             }
         }
+        if (is_null($key)) {
+            $key = '';
+        }
+        if (is_null($secret)) {
+            $secret = '';
+        }
         $oauthConsumer = new OAuth\OAuthConsumer($key, $secret, null);
         $oauthReq = OAuth\OAuthRequest::from_consumer_and_token($oauthConsumer, null, $method, $endpoint, $params);
         if ($hmacMethod) {
