@@ -154,8 +154,10 @@ class LineItem extends AssignmentGrade
         $ok = $http->ok && !empty($http->responseJson);
         if ($ok) {
             $newLineItem = self::toLineItem($this->getPlatform(), $http->responseJson);
-            foreach (get_object_vars($newLineItem) as $key => $value) {
-                $lineItem->$key = $value;
+            if ($newLineItem) {
+                foreach (get_object_vars($newLineItem) as $key => $value) {
+                    $lineItem->$key = $value;
+                }
             }
         }
 
