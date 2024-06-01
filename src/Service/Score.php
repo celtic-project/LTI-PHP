@@ -56,23 +56,17 @@ class Score extends AssignmentGrade
         if (empty($gradingProgress)) {
             $gradingProgress = 'NotReady';
         }
-        if (is_null($score)) {
-            $json = [
-                'activityProgress' => $activityProgress,
-                'gradingProgress' => $gradingProgress
-            ];
-        } else {
-            $json = [
-                'scoreGiven' => $score,
-                'scoreMaximum' => $ltiOutcome->getPointsPossible(),
-                'comment' => $ltiOutcome->comment,
-                'activityProgress' => $activityProgress,
-                'gradingProgress' => $gradingProgress
-            ];
+        $json = [
+            'timestamp' => date_format(new \DateTime(), 'Y-m-d\TH:i:s.uP'),
+            'userId' => $user->ltiUserId,
+            'comment' => $ltiOutcome->comment,
+            'activityProgress' => $activityProgress,
+            'gradingProgress' => $gradingProgress
+        ];
+        if (!is_null($score)) {
+            $json['scoreGiven'] = $score;
+            $json['scoreMaximum'] = $ltiOutcome->getPointsPossible();
         }
-        $json['userId'] = $user->ltiUserId;
-        $date = new \DateTime();
-        $json['timestamp'] = date_format($date, 'Y-m-d\TH:i:s.uP');
         $data = json_encode($json);
         $http = $this->send('POST', null, $data);
 
