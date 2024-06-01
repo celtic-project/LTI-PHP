@@ -166,7 +166,7 @@ class Membership extends Service
                     if (!empty($http->responseJson->nextPage) && !empty($http->responseJson->pageOf->membershipSubject->membership)) {
                         $http->relativeLinks['next'] = $http->responseJson->nextPage;
                     }
-                } elseif (isset($http->responseJson->members)) {
+                } elseif (isset($http->responseJson->members) && is_array($http->responseJson->members)) {
                     $memberships = array_merge($memberships, $http->responseJson->members);
                 }
                 if (!$this->pagingMode && $http->hasRelativeLink('next')) {
