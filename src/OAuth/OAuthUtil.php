@@ -25,7 +25,7 @@ class OAuthUtil
         if (is_array($input)) {
             return array_map(['ceLTIc\LTI\OAuth\OAuthUtil', 'urlencode_rfc3986'], $input);
         } elseif (is_scalar($input)) {
-            return str_replace('+', ' ', str_replace('%7E', '~', rawurlencode($input)));
+            return str_replace('+', ' ', str_replace('%7E', '~', rawurlencode(strval($input))));
         } else {
             return '';
         }
@@ -201,6 +201,36 @@ class OAuthUtil
         // For each parameter, the name is separated from the corresponding value by an '=' character (ASCII code 61)
         // Each name-value pair is separated by an '&' character (ASCII code 38)
         return implode('&', $pairs);
+    }
+
+    public static function array_merge_recursive(array $array1, array $array2): array
+    {
+        $array = [];
+        foreach ($array1 as $key => $value) {
+            if (!isset($array2[$key])) {
+                $array[$key] = $value;
+            } elseif (!is_array($value)) {
+                if (!is_array($array2[$key])) {
+                    $array[$key] = [$value, $array2[$key]];
+                } else {
+                    $array[$key] = self::array_merge_recursive([$value], $array2[$key]);
+                }
+            } else {
+                if (!is_array($array2[$key])) {
+                    $array3 = [$array2[$key]];
+                } else {
+                    $array3 = $array2[$key];
+                }
+                $array[$key] = self::array_merge_recursive($value, $array3);
+            }
+        }
+        foreach ($array2 as $key => $value) {
+            if (!isset($array1[$key])) {
+                $array[$key] = $value;
+            }
+        }
+
+        return $array;
     }
 
 }

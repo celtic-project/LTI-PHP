@@ -1591,7 +1591,7 @@ EOD;
                 }
                 $errors = [];
                 foreach ($this->messageParameters as $name => $value) {
-                    if (str_starts_with($name, 'custom_') && !is_string($value)) {
+                    if (str_starts_with(strval($name), 'custom_') && !is_string($value)) {
                         $errors[] = substr($name, 7);
                     }
                 }
@@ -1840,7 +1840,7 @@ EOD;
                     }
 // Save other custom parameters at all levels
                     foreach ($this->messageParameters as $name => $value) {
-                        if (str_starts_with($name, 'custom_') && is_string($value) && !in_array($name,
+                        if (str_starts_with(strval($name), 'custom_') && is_string($value) && !in_array($name,
                                 array_merge(self::$LTI_CONSUMER_SETTING_NAMES, self::$LTI_CONTEXT_SETTING_NAMES,
                                     self::$LTI_RESOURCE_LINK_SETTING_NAMES))) {
                             $this->platform->setSetting($name, $value);

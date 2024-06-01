@@ -475,6 +475,7 @@ trait System
             }
             foreach ($messageParameters as $key => $value) {
                 $ok = true;
+                $key = strval($key);
                 if (array_key_exists($key, Util::JWT_CLAIM_MAPPING)) {
                     if (array_key_exists("{$key}.{$messageType}", Util::JWT_CLAIM_MAPPING)) {
                         $mapping = Util::JWT_CLAIM_MAPPING["{$key}.{$messageType}"];
@@ -1589,7 +1590,7 @@ trait System
 // Check for query parameters which need to be included in the signature
         $queryString = parse_url($endpoint, PHP_URL_QUERY);
         $queryParams = OAuth\OAuthUtil::parse_parameters($queryString);
-        $params = array_merge_recursive($queryParams, $params);
+        $params = OAuth\OAuthUtil::array_merge_recursive($queryParams, $params);
 
         if (!is_array($data)) {
             if (empty($hash)) {  // Calculate body hash

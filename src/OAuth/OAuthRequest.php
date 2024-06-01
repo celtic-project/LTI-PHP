@@ -67,7 +67,7 @@ class OAuthRequest
     function __construct(string $http_method, string $http_url, ?array $parameters = null)
     {
         $parameters = ($parameters) ? $parameters : [];
-        $parameters = array_merge(OAuthUtil::parse_parameters(parse_url($http_url, PHP_URL_QUERY)), $parameters);
+        $parameters = OAuthUtil::array_merge_recursive(OAuthUtil::parse_parameters(parse_url($http_url, PHP_URL_QUERY)), $parameters);
         $this->parameters = $parameters;
         $this->http_method = $http_method;
         $this->http_url = $http_url;
@@ -138,14 +138,14 @@ class OAuthRequest
                 // It's a POST request of the proper content-type, so parse POST
                 // parameters and add those overriding any duplicates from GET
                 $post_data = OAuthUtil::parse_parameters(file_get_contents(static::$POST_INPUT));
-                $parameters = array_merge_recursive($parameters, $post_data);
+                $parameters = OAuthUtil::array_merge_recursive($parameters, $post_data);
             }
 
             // We have a Authorization-header with OAuth data. Parse the header
             // and add those overriding any duplicates from GET or POST
             if (isset($request_headers['Authorization']) && str_starts_with($request_headers['Authorization'], 'OAuth ')) {
                 $header_parameters = OAuthUtil::split_header($request_headers['Authorization']);
-                $parameters = array_merge_recursive($parameters, $header_parameters);
+                $parameters = OAuthUtil::array_merge_recursive($parameters, $header_parameters);
             }
         }
 
@@ -177,7 +177,7 @@ class OAuthRequest
             $defaults['oauth_token'] = $token->key;
         }
 
-        $parameters = array_merge($defaults, $parameters);
+        $parameters = OAuthUtil::array_merge_recursive($defaults, $parameters);
 
         return new OAuthRequest($http_method, $http_url, $parameters);
     }
