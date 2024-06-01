@@ -56,14 +56,14 @@ class Outcome
      *
      * @var string|null $date
      */
-    public $date = null;
+    public ?string $date = null;
 
     /**
      * Outcome type value.
      *
-     * @var int|string|null $type
+     * @var OutcomeType|null $type
      */
-    public OutcomeType|null $type = null;
+    public ?OutcomeType $type = null;
 
     /**
      * Activity progress.
@@ -77,7 +77,7 @@ class Outcome
      *
      * @var string|null $gradingProgress
      */
-    public $gradingProgress = null;
+    public ?string $gradingProgress = null;
 
     /**
      * Comment.
