@@ -116,9 +116,9 @@ class ToolSettings extends Service
     public function set(array $settings): bool
     {
         if (!$this->simple) {
-            if (is_a($this->source, 'Platform')) {
+            if (is_a($this->source, 'ceLTIc\LTI\Platform')) {
                 $type = 'ToolProxy';
-            } elseif (is_a($this->source, 'Context')) {
+            } elseif (is_a($this->source, 'ceLTIc\LTI\Context')) {
                 $type = 'ToolProxyBinding';
             } else {
                 $type = 'LtiLink';
