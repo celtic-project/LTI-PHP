@@ -232,6 +232,13 @@ trait System
     private bool $settingsChanged = false;
 
     /**
+     * Signature base string from last OAuth signature generated.
+     *
+     * @var bool $baseString
+     */
+    private ?string $baseString = null;
+
+    /**
      * Get the system record ID.
      *
      * @return int|string|null  System record ID value
@@ -1056,6 +1063,16 @@ trait System
     }
 
     /**
+     * Get the last signature base string.
+     *
+     * @return string|null  Signature base string
+     */
+    public function getBaseString(): ?string
+    {
+        return $this->baseString;
+    }
+
+    /**
      * Verify the required properties of an LTI message.
      *
      * @return bool  True if it is a valid LTI message
@@ -1643,8 +1660,10 @@ trait System
         $oauthReq = OAuth\OAuthRequest::from_consumer_and_token($oauthConsumer, null, $method, $endpoint, $params);
         if ($hmacMethod) {
             $oauthReq->sign_request($hmacMethod, $oauthConsumer, null);
+            $this->baseString = $oauthReq->base_string;
         } else {
             $oauthReq->set_parameter('oauth_signature_method', $this->signatureMethod, false);
+            $this->baseString = null;
         }
         if (!is_array($data)) {
             $header = $oauthReq->to_header();
