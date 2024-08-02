@@ -126,19 +126,12 @@ class OAuthRequest
             // Find request headers
             $request_headers = OAuthUtil::get_headers();
 
-            // Parse the query-string to find GET parameters
-            if (isset($_SERVER['QUERY_STRING'])) {
-                $parameters = OAuthUtil::parse_parameters($_SERVER['QUERY_STRING']);
-            } else {
-                $parameters = [];
-            }
-
+            $parameters = [];
             if (($http_method === 'POST' && isset($request_headers['Content-Type']) && stristr($request_headers['Content-Type'],
                     'application/x-www-form-urlencoded')) || !empty($_POST)) {
                 // It's a POST request of the proper content-type, so parse POST
                 // parameters and add those overriding any duplicates from GET
-                $post_data = OAuthUtil::parse_parameters(file_get_contents(static::$POST_INPUT));
-                $parameters = OAuthUtil::array_merge_recursive($parameters, $post_data);
+                $parameters = OAuthUtil::parse_parameters(file_get_contents(static::$POST_INPUT));
             }
 
             // We have a Authorization-header with OAuth data. Parse the header
