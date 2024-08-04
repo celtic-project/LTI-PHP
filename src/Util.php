@@ -538,6 +538,68 @@ EOD;
     }
 
     /**
+     * Convert a value to a string.
+     *
+     * @param mixed $val   The value to be converted
+     *
+     * @return string
+     */
+    public static function valToString(mixed $val): string
+    {
+        if (!is_string($val)) {
+            if (is_scalar($val)) {
+                $val = strval($val);
+            } else {
+                $val = '';
+            }
+        }
+
+        return $val;
+    }
+
+    /**
+     * Convert a value to a numeric.
+     *
+     * @param mixed $val   The value to be converted
+     *
+     * @return int|float|null
+     */
+    public static function valToNumber(mixed $val): int|float|null
+    {
+        if (!is_int($val) && !is_float($val)) {
+            if (!is_numeric($val)) {
+                $val = null;
+            } elseif (strpos($val, '.') === false) {
+                $val = intval($val);
+            } else {
+                $val = floatval($val);
+            }
+        }
+
+        return $val;
+    }
+
+    /**
+     * Convert a value to a boolean.
+     *
+     * @param mixed $val   The value to be converted
+     *
+     * @return bool
+     */
+    public static function valToBoolean(mixed $val): bool
+    {
+        if (!is_bool($val)) {
+            if ($val !== 'true') {
+                $val = false;
+            } else {
+                $val = true;
+            }
+        }
+
+        return $val;
+    }
+
+    /**
      * Decode a JSON string.
      *
      * @param string|null $str   The JSON string to be decoded
