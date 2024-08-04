@@ -65,4 +65,5 @@ abstract class OAuthDataStore
      * @return string|null
      */
     abstract function new_access_token(string $token, OAuthConsumer $consumer, ?string $verifier = null): ?string;
+
 }

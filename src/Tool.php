@@ -1596,8 +1596,8 @@ EOD;
                     }
                 }
                 if (!empty($errors)) {
-                    $this->setError(sprintf('Custom parameters must have string values: %s', implode(', ', $errors)), $strictMode,
-                        $generateWarnings);
+                    $this->setError(sprintf('Custom parameters must have string values: \'%s\'', implode('\', \'', $errors)),
+                        $strictMode, $generateWarnings);
                 }
             }
         }
