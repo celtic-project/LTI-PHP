@@ -998,7 +998,6 @@ EOF;
 
 // Set the user name
                     $firstname = $members[$i]['person_name_given'] ?? '';
-                    $middlename = $members[$i]['person_name_middle'] ?? '';
                     $lastname = $members[$i]['person_name_family'] ?? '';
                     $fullname = $members[$i]['person_name_full'] ?? '';
                     $userResult->setNames($firstname, $lastname, $fullname);
