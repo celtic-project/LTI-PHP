@@ -118,7 +118,7 @@ class Image
             $url = $item;
         }
         if ($url) {
-            $obj = new Image($url, $height, $width);
+            $obj = new Image($url, $width, $height);
         }
 
         return $obj;
