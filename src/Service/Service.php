@@ -51,7 +51,7 @@ class Service
      *
      * @var Platform|null $platform
      */
-        private?Platform $platform = null;
+    private ?Platform $platform = null;
 
     /**
      * HttpMessage object for last service request.
@@ -111,7 +111,7 @@ class Service
                 $sep = '&';
             }
             foreach ($parameters as $name => $value) {
-                $url .= $sep . Util::urlEncode($name) . '=' . Util::urlEncode($value);
+                $url .= $sep . Util::urlEncode(strval($name)) . '=' . Util::urlEncode(strval($value));
                 $sep = '&';
             }
         }

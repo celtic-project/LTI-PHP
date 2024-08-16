@@ -807,7 +807,8 @@ EOF;
         $do = match ($action) {
             ServiceAction::Read => 'basic-lti-loadsetting',
             ServiceAction::Write => 'basic-lti-savesetting',
-            ServiceAction::Delete => 'basic-lti-deletesetting'
+            ServiceAction::Delete => 'basic-lti-deletesetting',
+            default => null
         };
         if (isset($do)) {
             $url = $this->getSetting('ext_ims_lti_tool_setting_url');
