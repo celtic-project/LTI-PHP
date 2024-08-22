@@ -307,7 +307,7 @@ class WebTokenClient implements ClientInterface
                             $jwks = $this->fetchPublicKey($jwksUrl, $this->getHeader('kid'));
                             $ok = $jwsVerifier->verifyWithKeySet($this->jwt, $jwks, 0);
                         } else {
-                            $json = Util::jsonDecode($publicKey, true);
+                            $json = Util::jsonDecode($publicKey, true);  // Check if public key is in PEM or JWK format
                             if (is_null($json)) {
                                 $jwk = self::getJwk($publicKey, ['alg' => $this->getHeader('alg'), 'use' => 'sig']);
                             } else {
