@@ -160,11 +160,18 @@ class Groups extends Service
                         foreach ($http->responseJson->sets as $set) {
                             $groupSets[$set->id] = [
                                 'title' => $set->name,
+                                'hidden' => false,
                                 'groups' => [],
                                 'num_members' => 0,
                                 'num_staff' => 0,
                                 'num_learners' => 0
                             ];
+                            if (isset($set->tag)) {
+                                $groupSets[$set->id]['tag'] = $set->tag;
+                            }
+                            if (isset($set->hidden)) {
+                                $groupSets[$set->id]['hidden'] = $set->hidden;
+                            }
                         }
                     }
                     if (!$this->pagingMode && $http->hasRelativeLink('next')) {
@@ -229,27 +236,39 @@ class Groups extends Service
                 if ($ok) {
                     if (isset($http->responseJson->groups)) {
                         foreach ($http->responseJson->groups as $agroup) {
-                            if (!$allowNonSets && empty($agroup->set_id)) {
+                            if (!$allowNonSets && empty($agroup->set_ids)) {
                                 continue;
                             }
                             $group = [
-                                'title' => $agroup->name
+                                'title' => $agroup->name,
+                                'hidden' => false
                             ];
-                            if (!empty($agroup->set_id)) {
-                                if (!array_key_exists($agroup->set_id, $groupSets)) {
-                                    $groupSets[$agroup->set_id] = [
-                                        'title' => "Set {$agroup->set_id}",
-                                        'groups' => [],
-                                        'num_members' => 0,
-                                        'num_staff' => 0,
-                                        'num_learners' => 0
-                                    ];
+                            if (!empty($agroup->set_ids) && is_array(($agroup->set_ids))) {
+                                foreach ($agroup->set_ids as $set_id) {
+                                    if (!array_key_exists($set_id, $groupSets)) {
+                                        $groupSets[$set_id] = [
+                                            'title' => "Set {$set_id}",
+                                            'groups' => [],
+                                            'num_members' => 0,
+                                            'num_staff' => 0,
+                                            'num_learners' => 0
+                                        ];
+                                    }
+                                    $groupSets[$set_id]['groups'][] = $agroup->id;
+                                    if (!isset($group['set'])) {
+                                        $group['set'] = $setid;
+                                    } elseif (!is_array($group['set'])) {
+                                        $group['set'] = [$group['set'], $setid];
+                                    } else {
+                                        $group['set'][] = $setid;
+                                    }
                                 }
-                                $groupSets[$agroup->set_id]['groups'][] = $agroup->id;
-                                $group['set'] = $agroup->set_id;
                             }
                             if (!empty($agroup->tag)) {
                                 $group['tag'] = $agroup->tag;
+                            }
+                            if (isset($agroup->hidden)) {
+                                $group['hidden'] = $agroup->hidden;
                             }
                             $groups[$agroup->id] = $group;
                         }
