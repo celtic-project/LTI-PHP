@@ -234,12 +234,29 @@ class FirebaseClient implements ClientInterface
     /**
      * Verify the signature of the JWT.
      *
+     * @deprecated Use verifySignature() instead
+     *
      * @param string|null $publicKey  Public key of issuer
      * @param string|null $jku        JSON Web Key URL of issuer (optional)
      *
      * @return bool  True if the JWT has a valid signature
      */
     public function verify(?string $publicKey, ?string $jku = null): bool
+    {
+        return $this->verifySignature($publicKey, $jku);
+    }
+
+    /**
+     * Verify the signature of the JWT.
+     *
+     * If a new public key is fetched and used to successfully verify the signature, the value of the publicKey parameter is updated.
+     *
+     * @param string|null $publicKey  Public key of issuer (passed by reference)
+     * @param string|null $jku        JSON Web Key URL of issuer (optional)
+     *
+     * @return bool  True if the JWT has a valid signature
+     */
+    public function verifySignature(?string &$publicKey, ?string $jku = null): bool
     {
         $ok = false;
         $hasPublicKey = !empty($publicKey);
@@ -251,30 +268,36 @@ class FirebaseClient implements ClientInterface
                         $jwks = [
                             'keys' => [$json]
                         ];
-                        $publicKey = JWK::parseKeySet($jwks, $this->getHeader('alg'));
+                        $key = JWK::parseKeySet($jwks, $this->getHeader('alg'));
                     } catch (\Exception $e) {
 
                     }
                 } else {
-                    $publicKey = new Key($publicKey, $this->getHeader('alg'));
+                    $key = new Key($publicKey, $this->getHeader('alg'));
                 }
             }
         } elseif (!empty($jku)) {
-            $publicKey = $this->fetchPublicKey($jku);
+            $key = $this->fetchPublicKey($jku);
         }
         JWT::$leeway = Jwt::$leeway;
         $retry = false;
         do {
             try {
-                JWT::decode($this->jwtString, $publicKey);
+                JWT::decode($this->jwtString, $key);
                 $ok = true;
+                if (!$hasPublicKey || $retry) {
+                    $keyDetails = openssl_pkey_get_details($key[$this->getHeader('kid')]->getKeyMaterial());
+                    if ($keyDetails !== false) {
+                        $publicKey = str_replace("\n", "\r\n", $keyDetails['key']);
+                    }
+                }
             } catch (\Exception $e) {
                 Util::logError($e->getMessage());
                 if ($retry) {
                     $retry = false;
                 } elseif ($hasPublicKey && !empty($jku)) {
                     try {
-                        $publicKey = $this->fetchPublicKey($jku);
+                        $key = $this->fetchPublicKey($jku);
                         $retry = true;
                     } catch (\Exception $e) {
 
@@ -418,7 +441,10 @@ class FirebaseClient implements ClientInterface
             $keys = Util::jsonDecode($http->response, true);
             if (is_array($keys)) {
                 try {
-                    $publicKey = JWK::parseKeySet($keys, $this->getHeader('alg'));
+                    $keys = JWK::parseKeySet($keys, $this->getHeader('alg'));
+                    if (array_key_exists($this->getHeader('kid'), $keys)) {
+                        $publicKey[$this->getHeader('kid')] = $keys[$this->getHeader('kid')];
+                    }
                 } catch (\Exception $e) {
 
                 }

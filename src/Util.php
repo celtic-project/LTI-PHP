@@ -174,6 +174,13 @@ final class Util
     public static bool $strictMode = false;
 
     /**
+     * Whether the automatic saving of fetched valid public keys should be disabled.
+     *
+     * @var bool $disableFetchedPublicKeysSave
+     */
+    public static bool $disableFetchedPublicKeysSave = false;
+
+    /**
      * Delay (in seconds) before a manual button is displayed in case a browser is blocking a form submission.
      *
      * @var int $formSubmissionTimeout
@@ -873,9 +880,9 @@ EOD;
     /**
      * Get the named boolean element from object.
      *
-     * @param object $obj               Object containing the element
-     * @param string $fullname          Name of element (may include a path)
-     * @param bool $required            True if the element must be present
+     * @param object $obj           Object containing the element
+     * @param string $fullname      Name of element (may include a path)
+     * @param bool $required        True if the element must be present
      * @param string|null $default  Value to return when a conversion is not possible (optional, default is an empty string)
      *
      * @return bool|null  Value of element (or null if not found or valid)
@@ -908,9 +915,9 @@ EOD;
     /**
      * Get the named number element from object.
      *
-     * @param object $obj               Object containing the element
-     * @param string $fullname          Name of element (may include a path)
-     * @param bool $required            True if the element must be present
+     * @param object $obj       Object containing the element
+     * @param string $fullname  Name of element (may include a path)
+     * @param bool $required    True if the element must be present
      *
      * @return int  Value of element (or 0 if not found or valid)
      */

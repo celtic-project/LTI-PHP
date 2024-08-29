@@ -265,12 +265,29 @@ class WebTokenClient implements ClientInterface
     /**
      * Verify the signature of the JWT.
      *
+     * @deprecated Use verifySignature() instead
+     *
      * @param string|null $publicKey  Public key of issuer
      * @param string|null $jku        JSON Web Key URL of issuer (optional)
      *
      * @return bool  True if the JWT has a valid signature
      */
     public function verify(?string $publicKey, ?string $jku = null): bool
+    {
+        return $this->verifySignature($publicKey, $jku);
+    }
+
+    /**
+     * Verify the signature of the JWT.
+     *
+     * If a new public key is fetched and used to successfully verify the signature, the value of the publicKey parameter is updated.
+     *
+     * @param string|null $publicKey  Public key of issuer (passed by reference)
+     * @param string|null $jku        JSON Web Key URL of issuer (optional)
+     *
+     * @return bool  True if the JWT has a valid signature
+     */
+    public function verifySignature(?string &$publicKey, ?string $jku = null): bool
     {
         $ok = false;
         $hasPublicKey = !empty($publicKey);
@@ -306,6 +323,9 @@ class WebTokenClient implements ClientInterface
                             }
                             $jwks = $this->fetchPublicKey($jwksUrl, $this->getHeader('kid'));
                             $ok = $jwsVerifier->verifyWithKeySet($this->jwt, $jwks, 0);
+                            if ($ok) {
+                                $publicKey = json_encode($jwks->get($this->getHeader('kid'))->all());
+                            }
                         } else {
                             $json = Util::jsonDecode($publicKey, true);  // Check if public key is in PEM or JWK format
                             if (is_null($json)) {

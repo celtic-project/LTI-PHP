@@ -1193,7 +1193,21 @@ trait System
             if (!$ok) {
                 $this->setReason('Invalid nonce');
             } elseif (!empty($publicKey) || !empty($jku) || Jwt::$allowJkuHeader) {
-                $ok = $this->jwt->verify($publicKey, $jku);
+                $currentKey = $publicKey;
+                $ok = $this->jwt->verifySignature($publicKey, $jku);
+                if (!Util::$disableFetchedPublicKeysSave && ($currentKey !== $publicKey)) {
+                    if ($this instanceof Tool) {
+                        $this->platform->rsaKey = $publicKey;
+                        $this->platform->save();
+                    } else {
+                        if (!empty(Tool::$defaultTool)) {
+                            Tool::$defaultTool->rsaKey = $publicKey;
+                            Tool::$defaultTool->save();
+                        } else {
+                            $this->rsaKey = $publicKey;
+                        }
+                    }
+                }
                 if (!$ok) {
                     $this->setReason('JWT signature check failed - perhaps an invalid public key or timestamp');
                 }
