@@ -195,7 +195,9 @@ class LineItem
      */
     public static function fromEndpoint(Platform $platform, string $endpoint): LineItem|bool
     {
-        return Service\LineItem::getLineItem($platform, $endpoint);
+        $lineItemService = new Service\LineItem($platform, $endpoint);
+
+        return lineItemService->get();
     }
 
 }

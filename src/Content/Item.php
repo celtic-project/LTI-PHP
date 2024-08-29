@@ -142,7 +142,7 @@ class Item
     function __construct(string $type, array|Placement|null $placementAdvices = null, ?string $id = null)
     {
         $this->type = $type;
-        if (!empty($placementAdvices)) {
+        if (!is_null($placementAdvices)) {
             if (!is_array($placementAdvices)) {
                 $placementAdvices = [$placementAdvices];
             }
@@ -218,13 +218,16 @@ class Item
      *
      * @param Placement|null $placementAdvice  Placement advice object
      *
-     * @return void
+     * @return bool  True if a placement was added
      */
-    public function addPlacementAdvice(?Placement $placementAdvice): void
+    public function addPlacementAdvice(?Placement $placementAdvice): bool
     {
-        if (!empty($placementAdvice)) {
+        $ok = !is_null($placementAdvice);
+        if ($ok) {
             $this->placements[$placementAdvice->documentTarget] = $placementAdvice;
         }
+
+        return $ok;
     }
 
     /**
@@ -290,30 +293,32 @@ class Item
             }
         }
 
-        return json_encode($obj);
+        return json_encode($obj, JSON_UNESCAPED_SLASHES);
     }
 
     /**
      * Generate an array of Item objects from their JSON representation.
      *
-     * @param object $items  A JSON object representing Content-Items
+     * @param object|array $items  A JSON object or array representing Content-Items
      *
      * @return array Array of Item objects
      */
-    public static function fromJson(object $items): array
+    public static function fromJson(object|array $items): array
     {
-        $isJsonLd = isset($items->{'@graph'});
-        if ($isJsonLd) {
-            $items = $items->{'@graph'};
-        }
-        if (!is_array($items)) {
-            $items = [$items];
-        }
         $objs = [];
-        foreach ($items as $item) {
-            $obj = self::fromJsonItem($item);
-            if (!empty($obj)) {
-                $objs[] = $obj;
+        if (is_object($items)) {
+            if (isset($items->{'@graph'})) {
+                $items = $items->{'@graph'};
+            }
+        }
+        if (is_array($items)) {
+            foreach ($items as $item) {
+                if (is_object($item)) {
+                    $obj = self::fromJsonItem($item);
+                    if (!is_null($obj)) {
+                        $objs[] = $obj;
+                    }
+                }
             }
         }
 
@@ -328,10 +333,10 @@ class Item
     protected function toJsonldObject(): object
     {
         $item = new \stdClass();
-        if (!empty($this->id)) {
+        if (!is_null($this->id)) {
             $item->{'@id'} = $this->id;
         }
-        if (!empty($this->type)) {
+        if (!is_null($this->type)) {
             if (($this->type === self::TYPE_LTI_LINK) || ($this->type === self::TYPE_LTI_ASSIGNMENT)) {
                 $item->{'@type'} = 'LtiLinkItem';
             } elseif ($this->type === self::TYPE_FILE) {
@@ -342,43 +347,43 @@ class Item
         } else {
             $item->{'@type'} = 'ContentItem';
         }
-        if (!empty($this->title)) {
+        if (!is_null($this->title)) {
             $item->title = $this->title;
         }
-        if (!empty($this->text)) {
+        if (!is_null($this->text)) {
             $item->text = $this->text;
-        } elseif (!empty($this->html)) {
+        } elseif (!is_null($this->html)) {
             $item->text = $this->html;
         }
-        if (!empty($this->url)) {
+        if (!is_null($this->url)) {
             $item->url = $this->url;
         }
-        if (!empty($this->mediaType)) {
+        if (!is_null($this->mediaType)) {
             $item->mediaType = $this->mediaType;
         }
-        if (!empty($this->placements)) {
+        if (!is_null($this->placements)) {
             $placementAdvice = new \stdClass();
             $placementAdvices = [];
             foreach ($this->placements as $placement) {
                 $obj = $placement->toJsonldObject();
-                if (!empty($obj)) {
-                    if (!empty($placement->documentTarget)) {
+                if (!is_null($obj)) {
+                    if (!is_null($placement->documentTarget)) {
                         $placementAdvices[] = $placement->documentTarget;
                     }
                     $placementAdvice = (object) array_merge((array) $placementAdvice, (array) $obj);
                 }
             }
-            if (!empty($placementAdvice)) {
+            if (!is_null($placementAdvice)) {
                 $item->placementAdvice = $placementAdvice;
-                if (!empty($placementAdvices)) {
+                if (!is_null($placementAdvices)) {
                     $item->placementAdvice->presentationDocumentTarget = implode(',', $placementAdvices);
                 }
             }
         }
-        if (!empty($this->icon)) {
+        if (!is_null($this->icon)) {
             $item->icon = $this->icon->toJsonldObject();
         }
-        if (!empty($this->thumbnail)) {
+        if (!is_null($this->thumbnail)) {
             $item->thumbnail = $this->thumbnail->toJsonldObject();
         }
         if (!is_null($this->hideOnCreate)) {
@@ -404,9 +409,9 @@ class Item
                 $item->type = self::TYPE_FILE;
                 break;
             case 'ContentItem':
-                if (empty($this->url)) {
+                if (is_null($this->url)) {
                     $item->type = self::TYPE_HTML;
-                } elseif (!empty($this->mediaType) && str_starts_with($this->mediaType, 'image')) {
+                } elseif (!is_null($this->mediaType) && str_starts_with($this->mediaType, 'image')) {
                     $item->type = self::TYPE_IMAGE;
                 } else {
                     $item->type = self::TYPE_LINK;
@@ -416,16 +421,16 @@ class Item
                 $item->type = $this->type;
                 break;
         }
-        if (!empty($this->title)) {
+        if (!is_null($this->title)) {
             $item->title = $this->title;
         }
-        if (!empty($this->text)) {
+        if (!is_null($this->text)) {
             $item->text = Util::stripHtml($this->text);
         }
-        if (!empty($this->html)) {
+        if (!is_null($this->html)) {
             $item->html = $this->html;
         }
-        if (!empty($this->url)) {
+        if (!is_null($this->url)) {
             $item->url = $this->url;
         }
         foreach ($this->placements as $type => $placement) {
@@ -436,14 +441,14 @@ class Item
                 Placement::TYPE_FRAME => $placement->toJsonObject(),
                 default => null
             };
-            if (!empty($obj)) {
+            if (!is_null($obj)) {
                 $item->{$type} = $obj;
             }
         }
-        if (!empty($this->icon)) {
+        if (!is_null($this->icon)) {
             $item->icon = $this->icon->toJsonObject();
         }
-        if (!empty($this->thumbnail)) {
+        if (!is_null($this->thumbnail)) {
             $item->thumbnail = $this->thumbnail->toJsonObject();
         }
         if (!is_null($this->hideOnCreate)) {
@@ -458,46 +463,58 @@ class Item
      *
      * @param object $item  A JSON or JSON-LD object representing a content-item
      *
-     * @return Item|LtiLinkItem|FileItem  The content-item object
+     * @return Item|LtiLinkItem|FileItem|null  The content-item object
      */
-    public static function fromJsonItem(object $item): Item|LtiLinkItem|FileItem
+    public static function fromJsonItem(object $item): Item|LtiLinkItem|FileItem|null
     {
         $obj = null;
         $placement = null;
-        if (isset($item->{'@type'})) {
-            if (isset($item->presentationDocumentTarget)) {
+        $type = Util::checkString($item, 'Item/@type', false, true,
+                ['ContentItem', 'LtiLinkItem', 'AssignmentLinkItem', 'FileItem'], false, null);
+        if (!is_null($type)) {
+            if (isset($item->presentationDocumentTarget) && is_object($item->presentationDocumentTarget)) {
                 $placement = Placement::fromJsonObject($item, $item->presentationDocumentTarget);
             }
-            $obj = match ($item->{'@type'}) {
+            $obj = match ($type) {
                 'ContentItem' => new Item('ContentItem', $placement),
                 'LtiLinkItem' => new LtiLinkItem($placement),
-                'FileItem' => new FileItem($placement)
+                'FileItem' => new FileItem($placement),
+                default => new Item($type, $placement),
             };
-        } elseif (isset($item->type)) {
-            $placements = [];
-            $placement = Placement::fromJsonObject($item, 'embed');
-            if (!empty($placement)) {
-                $placements[] = $placement;
+        } else {
+            $type = Util::checkString($item, 'Item/type', true, true, '', false, null);
+            if (!is_null($type)) {
+                if (!in_array($type, [self::TYPE_LINK, self::TYPE_LTI_LINK, self::TYPE_FILE, self::TYPE_HTML, self::TYPE_IMAGE])) {
+                    Util::setMessage(false, "Value of the 'Item/type' element not recognised ('{$type}' found)");
+                }
+                $placements = [];
+                $placement = Placement::fromJsonObject($item, 'embed');
+                if (!is_null($placement)) {
+                    $placements[] = $placement;
+                }
+                $placement = Placement::fromJsonObject($item, 'iframe');
+                if (!is_null($placement)) {
+                    $placements[] = $placement;
+                }
+                $placement = Placement::fromJsonObject($item, 'window');
+                if (!is_null($placement)) {
+                    $placements[] = $placement;
+                }
+                $obj = match ($type) {
+                    self::TYPE_LINK,
+                    self::TYPE_HTML,
+                    self::TYPE_IMAGE => new Item($type, $placements),
+                    self::TYPE_LTI_LINK => new LtiLinkItem($placements),
+                    self::TYPE_LTI_ASSIGNMENT => new LtiAssignmentItem($placements),
+                    self::TYPE_FILE => new FileItem($placements),
+                    default => new Item($type, $placements),
+                };
             }
-            $placement = Placement::fromJsonObject($item, 'iframe');
-            if (!empty($placement)) {
-                $placements[] = $placement;
-            }
-            $placement = Placement::fromJsonObject($item, 'window');
-            if (!empty($placement)) {
-                $placements[] = $placement;
-            }
-            $obj = match ($item->type) {
-                self::TYPE_LINK,
-                self::TYPE_HTML,
-                self::TYPE_IMAGE => new Item($item->type, $placements),
-                self::TYPE_LTI_LINK => new LtiLinkItem($placements),
-                self::TYPE_LTI_ASSIGNMENT => new LtiAssignmentItem($placements),
-                self::TYPE_FILE => new FileItem($placements)
-            };
         }
-        if (!empty($obj)) {
-            $obj->fromJsonObject($item);
+        if (!is_null($obj)) {
+            if (!$obj->fromJsonObject($item)) {
+                $obj = null;
+            }
         }
 
         return $obj;
@@ -508,13 +525,12 @@ class Item
      *
      * @param object $item  A JSON object representing a content-item
      *
-     * @return void
+     * @return bool  True if the item is valid
      */
-    protected function fromJsonObject(object $item): void
+    protected function fromJsonObject(object $item): bool
     {
-        if (isset($item->{'@id'})) {
-            $this->id = $item->{'@id'};
-        }
+        $ok = true;
+        $this->id = Util::checkString($item, 'Item/@id', false, true, '', false, $this->id);
         foreach (get_object_vars($item) as $name => $value) {
             switch ($name) {
                 case 'title':
@@ -522,23 +538,48 @@ class Item
                 case 'html':
                 case 'url':
                 case 'mediaType':
+                    $this->{$name} = Util::checkString($item, "Item/{$name}", false, false, '', false, null);
+                    if (is_null($this->{$name})) {
+                        $ok = false;
+                    }
+                    break;
                 case 'hideOnCreate':
-                    $this->{$name} = $item->{$name};
+                    $this->hideOnCreate = Util::checkBoolean($item, 'Item/hideOnCreate');
+                    if (is_null($this->hideOnCreate)) {
+                        $ok = false;
+                    }
                     break;
                 case 'placementAdvice':
-                    $this->addPlacementAdvice(Placement::fromJsonObject($item));
+                    $placements = Util::checkString($value, 'Item/placementAdvice/presentationDocumentTarget', false, true, '',
+                            false, null);
+                    if (!is_null($placements)) {
+                        $placements = explode(',', $placements);
+                        foreach ($placements as $placement) {
+                            $ok = $ok && $this->addPlacementAdvice(Placement::fromJsonObject($item, $placement));
+                        }
+                    }
                     break;
                 case 'embed':
                 case 'window':
                 case 'iframe':
-                    $this->addPlacementAdvice(Placement::fromJsonObject($item, $name));
+                    $ok = $ok && $this->addPlacementAdvice(Placement::fromJsonObject($item, $name));
                     break;
                 case 'icon':
                 case 'thumbnail':
-                    $this->{$name} = Image::fromJsonObject($item->{$name});
+                    if (is_object($value) || is_string($value)) {
+                        $this->{$name} = Image::fromJsonObject($value);
+                        if (is_null($this->{$name})) {
+                            $ok = false;
+                        }
+                    } else {
+                        $ok = false;
+                        Util::setMessage(true, "The {$name} element must be a simple object or string");
+                    }
                     break;
             }
         }
+
+        return $ok;
     }
 
 }

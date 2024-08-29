@@ -683,15 +683,15 @@ class ResourceLink
                             }
                         }
                         if (!empty($resultDataType)) {
-                            $xml = <<< EOF
+                            $xml = <<< EOD
 
           <resultData>
             <{$resultDataType}>{$comment}</{$resultDataType}>
           </resultData>
-EOF;
+EOD;
                         }
                     }
-                    $xml = <<< EOF
+                    $xml = <<< EOD
 
         <result>
           <resultScore>
@@ -699,16 +699,16 @@ EOF;
             <textString>{$outcome}</textString>
           </resultScore>{$xml}
         </result>
-EOF;
+EOD;
                 }
                 $sourcedId = htmlentities($sourcedId);
-                $xml = <<<EOF
+                $xml = <<< EOD
       <resultRecord>
         <sourcedGUID>
           <sourcedId>{$sourcedId}</sourcedId>
         </sourcedGUID>{$xml}
       </resultRecord>
-EOF;
+EOD;
                 if ($this->doLTI11Service($do, $urlLTI11, $xml)) {
                     switch ($action) {
                         case ServiceAction::Read:
@@ -1459,14 +1459,16 @@ EOF;
                     $this->extResponseHeaders = $http->responseHeaders;
                     try {
                         $this->extDoc = new DOMDocument();
-                        $this->extDoc->loadXML($http->response);
-                        $this->extNodes = $this->domnodeToArray($this->extDoc->documentElement);
-                        if (isset($this->extNodes['statusinfo']['codemajor']) && ($this->extNodes['statusinfo']['codemajor'] === 'Success')) {
-                            $ok = true;
+                        @$this->extDoc->loadXML($http->response);
+                        if ($this->extDoc->documentElement) {
+                            $this->extNodes = $this->domnodeToArray($this->extDoc->documentElement);
+                            if (isset($this->extNodes['statusinfo']['codemajor']) && ($this->extNodes['statusinfo']['codemajor'] === 'Success')) {
+                                $ok = true;
+                            }
+                        } else {
+                            Util::setMessage(true, 'Invalid XML in service response');
                         }
                     } catch (\Exception $e) {
-
-                    } catch (\TypeError $e) {
 
                     }
                 }
@@ -1620,15 +1622,17 @@ EOD;
                     $this->extResponseHeaders = $http->responseHeaders;
                     try {
                         $this->extDoc = new DOMDocument();
-                        $this->extDoc->loadXML($http->response);
-                        $this->extNodes = $this->domnodeToArray($this->extDoc->documentElement);
-                        if (isset($this->extNodes['imsx_POXHeader']['imsx_POXResponseHeaderInfo']['imsx_statusInfo']['imsx_codeMajor']) &&
-                            ($this->extNodes['imsx_POXHeader']['imsx_POXResponseHeaderInfo']['imsx_statusInfo']['imsx_codeMajor'] === 'success')) {
-                            $ok = true;
+                        @$this->extDoc->loadXML($http->response);
+                        if ($this->extDoc->documentElement) {
+                            $this->extNodes = $this->domnodeToArray($this->extDoc->documentElement);
+                            if (isset($this->extNodes['imsx_POXHeader']['imsx_POXResponseHeaderInfo']['imsx_statusInfo']['imsx_codeMajor']) &&
+                                ($this->extNodes['imsx_POXHeader']['imsx_POXResponseHeaderInfo']['imsx_statusInfo']['imsx_codeMajor'] === 'success')) {
+                                $ok = true;
+                            }
+                        } else {
+                            Util::setMessage(true, 'Invalid XML in service response');
                         }
                     } catch (\Exception $e) {
-
-                    } catch (\TypeError $e) {
 
                     }
                 }

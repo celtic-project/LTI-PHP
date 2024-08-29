@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace ceLTIc\LTI\Content;
 
+use ceLTIc\LTI\Util;
+
 /**
  * Class to represent a content-item placement object
  *
@@ -199,6 +201,7 @@ class Placement
      */
     public static function fromJsonObject(object $item, ?string $documentTarget = null): ?Placement
     {
+        $ok = true;
         $obj = null;
         $displayWidth = null;
         $displayHeight = null;
@@ -208,23 +211,22 @@ class Placement
         $html = null;
         if (isset($item->{'@type'})) {  // Version 1
             if (empty($documentTarget) && isset($item->placementAdvice)) {
-                if (isset($item->placementAdvice->presentationDocumentTarget)) {
-                    $documentTarget = $item->placementAdvice->presentationDocumentTarget;
-                }
+                $documentTarget = Util::checkString($item->placementAdvice, 'Item/placementAdvice/presentationDocumentTarget',
+                        false, true, ['embed', 'frame', 'iframe', 'none', 'overlay', 'popup', 'window'], false, null);
+                $ok = $ok && (!is_null($documentTarget) || isset($item->placementAdvice->presentationDocumentTarget));
             }
-            if (!empty($documentTarget) && isset($item->placementAdvice)) {
-                if (isset($item->placementAdvice->displayWidth)) {
-                    $displayWidth = $item->placementAdvice->displayWidth;
-                }
-                if (isset($item->placementAdvice->displayHeight)) {
-                    $displayHeight = $item->placementAdvice->displayHeight;
-                }
-                if (isset($item->placementAdvice->windowTarget)) {
-                    $windowTarget = $item->placementAdvice->windowTarget;
-                }
+            if (!empty($documentTarget) && isset($item->placementAdvice) && is_object($item->placementAdvice)) {
+                $displayWidth = Util::checkInteger($item->placementAdvice, 'Item/placementAdvice/displayWidth', false, 0, true);
+                $ok = $ok && (!is_null($displayWidth) || !isset($item->placementAdvice->displayWidth));
+                $displayHeight = Util::checkInteger($item->placementAdvice, 'Item/placementAdvice/displayHeight', false, 0, true);
+                $ok = $ok && (!is_null($displayHeight) || !isset($item->placementAdvice->displayHeight));
+                $windowTarget = Util::checkString($item->placementAdvice, 'Item/placementAdvice/windowTarget', false, true, '',
+                        false, null);
+                $ok = $ok && (!is_null($windowTarget) || !isset($item->placementAdvice->windowTarget));
             }
             if (isset($item->url)) {
-                $url = $item->url;
+                $url = Util::checkString($item, 'url', false, true, '', false, null);
+                $ok = $ok && !is_null($url);
             }
         } else {  // Version 2
             if (empty($documentTarget)) {
@@ -239,27 +241,23 @@ class Placement
                 $documentTarget = null;
             }
             if (!empty($documentTarget)) {
-                if (isset($item->{$documentTarget}->width)) {
-                    $displayWidth = $item->{$documentTarget}->width;
-                }
-                if (isset($item->{$documentTarget}->height)) {
-                    $displayHeight = $item->{$documentTarget}->height;
-                }
-                if (isset($item->{$documentTarget}->targetName)) {
-                    $windowTarget = $item->{$documentTarget}->targetName;
-                }
-                if (isset($item->{$documentTarget}->windowFeatures)) {
-                    $windowFeatures = $item->{$documentTarget}->windowFeatures;
-                }
-                if (isset($item->{$documentTarget}->src)) {
-                    $url = $item->{$documentTarget}->src;
-                }
-                if (isset($item->{$documentTarget}->html)) {
-                    $html = $item->{$documentTarget}->html;
-                }
+                $displayWidth = Util::checkInteger($item->{$documentTarget}, "Item/{$documentTarget}/width", false, 0, true);
+                $ok = $ok && (!is_null($displayWidth) || !isset($item->{$documentTarget}->width));
+                $displayHeight = Util::checkInteger($item->{$documentTarget}, "Item/{$documentTarget}/height", false, 0, true);
+                $ok = $ok && (!is_null($displayHeight) || !isset($item->{$documentTarget}->height));
+                $windowTarget = Util::checkString($item->{$documentTarget}, "Item/{$documentTarget}/targetName", false, true, '',
+                        false, null);
+                $ok = $ok && (!is_null($windowTarget) || !isset($item->{$documentTarget}->targetName));
+                $windowFeatures = Util::checkString($item->{$documentTarget}, "Item/{$documentTarget}/windowFeatures", false, true,
+                        '', false, null);
+                $ok = $ok && (!is_null($windowFeatures) || !isset($item->{$documentTarget}->windowFeatures));
+                $url = Util::checkString($item->{$documentTarget}, "Item/{$documentTarget}/src", false, true, '', false, $url);
+                $ok = $ok && (!is_null($url) || !isset($item->{$documentTarget}->src));
+                $html = Util::checkString($item->{$documentTarget}, "Item/{$documentTarget}/html", false, true, '', false, $html);
+                $ok = $ok && (!is_null($html) || !isset($item->{$documentTarget}->html));
             }
         }
-        if (!empty($documentTarget)) {
+        if ($ok && !empty($documentTarget)) {
             $obj = new Placement($documentTarget, $displayWidth, $displayHeight, $windowTarget, $windowFeatures, $url, $html);
         }
 

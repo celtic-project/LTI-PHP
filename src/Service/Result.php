@@ -6,6 +6,7 @@ namespace ceLTIc\LTI\Service;
 use ceLTIc\LTI\Platform;
 use ceLTIc\LTI\User;
 use ceLTIc\LTI\Outcome;
+use ceLTIc\LTI\Util;
 
 /**
  * Class to implement the Result service
@@ -91,9 +92,20 @@ class Result extends AssignmentGrade
             $http = $this->send('GET', $params);
             $url = '';
             if ($http->ok) {
+                $http->ok = empty($http->responseJson) || is_array($http->responseJson);
+            }
+            if ($http->ok) {
                 if (!empty($http->responseJson)) {
                     foreach ($http->responseJson as $outcome) {
-                        $outcomes[] = self::getOutcome($outcome);
+                        if (!is_object($outcome)) {
+                            $http->ok = false;
+                            break;
+                        } else {
+                            $obj = $this->getOutcome($outcome);
+                            if (!is_null($obj)) {
+                                $outcomes[] = $obj;
+                            }
+                        }
                     }
                 }
                 if (!$this->pagingMode && $http->hasRelativeLink('next')) {
@@ -101,11 +113,12 @@ class Result extends AssignmentGrade
                     $this->endpoint = $url;
                     $params = [];
                 }
-            } else {
-                $outcomes = false;
             }
         } while ($url);
         $this->endpoint = $endpoint;
+        if (!$http->ok) {
+            $outcomes = false;
+        }
 
         return $outcomes;
     }
@@ -124,8 +137,16 @@ class Result extends AssignmentGrade
         ];
         $http = $this->send('GET', $params);
         if ($http->ok) {
+            $http->ok = empty($http->responseJson) || is_array($http->responseJson);
+        }
+        if ($http->ok) {
             if (!empty($http->responseJson)) {
-                $outcome = self::getOutcome(reset($http->responseJson));
+                $obj = reset($http->responseJson);
+                if (is_object($obj)) {
+                    $outcome = $this->getOutcome($obj);
+                } else {
+                    $outcome = false;
+                }
             } else {
                 $outcome = null;
             }
@@ -144,20 +165,29 @@ class Result extends AssignmentGrade
      *
      * @param object $json  JSON representation of an outcome
      *
-     * @return Outcome  Outcome object
+     * @return Outcome|null  Outcome object
      */
-    private static function getOutcome(object $json): Outcome
+    private function getOutcome(object $json): ?Outcome
     {
-        $outcome = new Outcome();
-        $outcome->ltiUserId = $json->userId;
-        if (isset($json->resultScore)) {
-            $outcome->setValue($json->resultScore);
-        }
-        if (isset($json->resultMaximum)) {
-            $outcome->setPointsPossible($json->resultMaximum);
-        }
-        if (isset($json->comment)) {
-            $outcome->comment = $json->comment;
+        $outcome = null;
+        $id = Util::checkString($json, 'id', true);
+        $scoreOf = Util::checkString($json, 'scoreOf', true);
+        $userId = Util::checkString($json, 'userId', true);
+        $resultScore = Util::checkNumber($json, 'resultScore');
+        $resultMaximum = Util::checkNumber($json, 'resultMaximum', false, 0, true);
+        $comment = Util::checkString($json, 'comment');
+        if (!empty($userId)) {
+            $outcome = new Outcome();
+            $outcome->ltiUserId = $userId;
+            if (!is_null($resultScore)) {
+                $outcome->setValue($resultScore);
+            }
+            if (!is_null($resultMaximum)) {
+                $outcome->setPointsPossible($resultMaximum);
+            }
+            if (!empty($comment)) {
+                $outcome->comment = $comment;
+            }
         }
 
         return $outcome;

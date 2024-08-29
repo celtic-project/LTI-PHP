@@ -203,6 +203,14 @@ class OAuthUtil
         return implode('&', $pairs);
     }
 
+    /**
+     * Recursively merge two arrays.
+     *
+     * @param array $array1  First array
+     * @param array $array2  Second array
+     *
+     * @return array
+     */
     public static function array_merge_recursive(array $array1, array $array2): array
     {
         $array = [];

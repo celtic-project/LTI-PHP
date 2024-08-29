@@ -101,7 +101,7 @@ class OAuthDataStore extends OAuth\OAuthDataStore
             $ok = $nonce->save();
         }
         if (!$ok) {
-            $this->system->reason = 'Invalid nonce.';
+            $this->system->setReason('Invalid nonce');
         }
 
         return !$ok;

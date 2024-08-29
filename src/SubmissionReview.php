@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace ceLTIc\LTI;
 
+use ceLTIc\LTI\Util;
+
 /**
  * Class to represent a submission review
  *
@@ -53,27 +55,27 @@ class SubmissionReview
      *
      * @param object $json  A JSON object representing a submission review
      *
-     * @return SubmissionReview  The SubmissionReview object
+     * @return SubmissionReview|null  The SubmissionReview object
      */
-    public static function fromJsonObject(object $json): SubmissionReview
+    public static function fromJsonObject(object $json): ?SubmissionReview
     {
-        if (!empty($json->label)) {
-            $label = $json->label;
+        $ok = true;
+        $obj = null;
+        $label = Util::checkString($json, 'SubmissionReview/label', false, true, '', false, null);
+        $ok = $ok && (!is_null($label) || !isset($json->label));
+        $endpoint = Util::checkString($json, 'SubmissionReview/url', false, true, '', false, null);
+        $ok = $ok && (!is_null($endpoint) || !isset($json->url));
+        $custom = Util::checkObject($json, 'SubmissionReview/custom', false, true);
+        if (!is_null($custom)) {
+            $custom = (array) $custom;
         } else {
-            $label = null;
+            $ok = $ok && !isset($json->custom);
         }
-        if (!empty($json->url)) {
-            $endpoint = $json->url;
-        } else {
-            $endpoint = null;
-        }
-        if (!empty($json->custom)) {
-            $custom = $json->custom;
-        } else {
-            $custom = null;
+        if ($ok) {
+            $obj = new SubmissionReview($label, $endpoint, $custom);
         }
 
-        return new SubmissionReview($label, $endpoint, $custom);
+        return $obj;
     }
 
     /**

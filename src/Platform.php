@@ -9,6 +9,7 @@ use ceLTIc\LTI\Http\HttpMessage;
 use ceLTIc\LTI\Enum\IdScope;
 use ceLTIc\LTI\Enum\LogLevel;
 use ceLTIc\LTI\ApiHook\ApiHook;
+use ceLTIc\LTI\Content\Item;
 
 /**
  * Class to represent a platform
@@ -429,7 +430,7 @@ class Platform
     public function getMessageParameters(): ?array
     {
         if ($this->ok && is_null($this->messageParameters)) {
-            $this->parseMessage(true, true, false);
+            $this->parseMessage(true, false);
         }
 
         return $this->messageParameters;
@@ -438,9 +439,11 @@ class Platform
     /**
      * Process an incoming request
      *
+     * @param bool $generateWarnings    True if warning messages should be generated (optional, default is false)
+     *
      * @return void
      */
-    public function handleRequest(): void
+    public function handleRequest(bool $generateWarnings = false): void
     {
         $parameters = Util::getRequestParameters();
         if ($this->debugMode) {
@@ -453,7 +456,10 @@ class Platform
             } else {  // LTI message
                 $this->getMessageParameters();
                 Util::logRequest();
-                if ($this->ok && $this->authenticate()) {
+                if ($this->ok) {
+                    $this->authenticate($generateWarnings);
+                }
+                if ($this->ok) {
                     $this->doCallback();
                 }
             }
@@ -760,7 +766,7 @@ EOD;
      */
     protected function onContentItem(): void
     {
-        $this->reason = 'No onContentItem method found for platform';
+        $this->setReason('No onContentItem method found for platform');
         $this->onError();
     }
 
@@ -771,7 +777,7 @@ EOD;
      */
     protected function onLtiStartAssessment(): void
     {
-        $this->reason = 'No onLtiStartAssessment method found for platform';
+        $this->setReason('No onLtiStartAssessment method found for platform');
         $this->onError();
     }
 
@@ -794,16 +800,36 @@ EOD;
      *
      * The platform, resource link and user objects will be initialised if the request is valid.
      *
-     * @return bool  True if the request has been successfully validated.
+     * @param bool $generateWarnings    True if warning messages should be generated (optional, default is false)
+     *
+     * @return void
      */
-    private function authenticate(): bool
+    private function authenticate(bool $generateWarnings = false): void
     {
-        $this->ok = $this->checkMessage();
-        if ($this->ok) {
-            $this->ok = $this->verifySignature();
+        $this->checkMessage($generateWarnings);
+        if (($this->ok || $generateWarnings) && !empty($this->messageParameters['lti_message_type'])) {
+            if ($this->messageParameters['lti_message_type'] === 'ContentItemSelection') {
+                if (isset($this->messageParameters['content_items'])) {
+                    $value = Util::jsonDecode($this->messageParameters['content_items']);
+                    if (is_null($value)) {
+                        $this->setReason('Invalid JSON in \'content_items\' parameter');
+                    } elseif (empty($this->jwt) || !$this->jwt->hasJwt()) {
+                        if (is_object($value)) {
+                            Item::fromJson($value);
+                        } else {
+                            $this->setReason('\'content_items\' parameter must be an object');
+                        }
+                    } elseif (is_array($value)) {
+                        Item::fromJson($value);
+                    } else {
+                        $this->setReason('\'content_items\' parameter must be an array');
+                    }
+                }
+            }
         }
-
-        return $this->ok;
+        if ($this->ok) {
+            $this->verifySignature();
+        }
     }
 
     /**

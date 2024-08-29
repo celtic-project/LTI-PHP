@@ -8,6 +8,7 @@ use ceLTIc\LTI\Context;
 use ceLTIc\LTI\ResourceLink;
 use ceLTIc\LTI\Enum\IdScope;
 use ceLTIc\LTI\Enum\LtiVersion;
+use ceLTIc\LTI\Util;
 
 /**
  * Class to implement the Membership service
@@ -151,78 +152,312 @@ class Membership extends Service
             $this->source->getGroups();
             $parameters['groups'] = 'true';
         }
+        $ok = true;
         $userResults = [];
         $memberships = [];
         $endpoint = $this->endpoint;
         do {
             $http = $this->send('GET', $parameters);
+            $ok = $http->ok;
             $url = '';
-            if (!empty($http) && $http->ok) {
-                $isjsonld = false;
-                if (isset($http->responseJson->pageOf) && isset($http->responseJson->pageOf->membershipSubject) &&
-                    isset($http->responseJson->pageOf->membershipSubject->membership)) {
-                    $isjsonld = true;
-                    $memberships = array_merge($memberships, $http->responseJson->pageOf->membershipSubject->membership);
-                    if (!empty($http->responseJson->nextPage) && !empty($http->responseJson->pageOf->membershipSubject->membership)) {
+            if ($ok) {
+                $members = [];
+                if ($this->mediaType === self::MEDIA_TYPE_MEMBERSHIPS_V1) {
+                    if (empty(Util::checkString($http->responseJson, '@type', true, true, 'Page', false))) {
+                        $ok = $ok && !Util::$strictMode;
+                    }
+                    if (!isset($http->responseJson->pageOf)) {
+                        $ok = false;
+                        Util::setMessage(true, 'The pageOf element is missing');
+                    } else {
+                        if (empty(Util::checkString($http->responseJson->pageOf, 'pageOf/@type', true, true,
+                                    'LISMembershipContainer', false))) {
+                            $ok = $ok && !Util::$strictMode;
+                        }
+                        if (isset($http->responseJson->pageOf->membershipSubject)) {
+                            if (empty(Util::checkString($http->responseJson->pageOf->membershipSubject,
+                                        'pageOf/membershipSubject/@type', true, true, 'Context', false))) {
+                                $ok = $ok && !Util::$strictMode;
+                            }
+                            if (empty(Util::checkString($http->responseJson->pageOf->membershipSubject,
+                                        'pageOf/membershipSubject/contextId'))) {
+                                $ok = $ok && !Util::$strictMode;
+                            }
+                            $members = Util::checkArray($http->responseJson->pageOf->membershipSubject,
+                                    'pageOf/membershipSubject/membership');
+                        }
+                    }
+                    if (!empty($http->responseJson->nextPage) && !empty($members)) {
                         $http->relativeLinks['next'] = $http->responseJson->nextPage;
                     }
-                } elseif (isset($http->responseJson->members) && is_array($http->responseJson->members)) {
-                    $memberships = array_merge($memberships, $http->responseJson->members);
+                } else {  // Version 2 (NRPS)
+                    if (!isset($http->responseJson->context)) {
+                        if (Util::$strictMode) {
+                            $ok = false;
+                            Util::setMessage(true, 'The context element is missing');
+                        } else {
+                            Util::setMessage(false, 'The context element should be present');
+                        }
+                    } elseif (empty(Util::checkString($http->responseJson->context, 'context/id'))) {
+                        $ok = $ok && !Util::$strictMode;
+                    }
+                    $members = Util::checkArray($http->responseJson, 'members');
+                    if ($ok && !$this->pagingMode && $http->hasRelativeLink('next')) {
+                        $url = $http->getRelativeLink('next');
+                        $this->endpoint = $url;
+                        $parameters = [];
+                    }
                 }
-                if (!$this->pagingMode && $http->hasRelativeLink('next')) {
-                    $url = $http->getRelativeLink('next');
-                    $this->endpoint = $url;
-                    $parameters = [];
-                }
-            } else {
-                $userResults = false;
+                $memberships = array_merge($memberships, $members);
             }
         } while ($url);
         $this->endpoint = $endpoint;
-        if ($userResults !== false) {
+        if ($ok) {
             if ($isLink) {
                 $oldUsers = $this->source->getUserResultSourcedIDs(true, IdScope::Resource);
             }
+            if ($this->mediaType === self::MEDIA_TYPE_MEMBERSHIPS_V1) {
+                if (!empty($http->responseJson->{'@context'})) {
+                    $contexts = $http->responseJson->{'@context'};
+                    if (is_string($contexts)) {
+                        $contexts = [$contexts];
+                    } elseif (!is_array($contexts)) {
+                        $contexts = [];
+                    }
+                } else {
+                    $contexts = [];
+                }
+            }
             foreach ($memberships as $membership) {
-                if ($isjsonld) {
-                    $member = $membership->member;
+                if ($this->mediaType === self::MEDIA_TYPE_MEMBERSHIPS_V1) {
+                    if (isset($membership->member)) {
+                        $member = $membership->member;
+                    } else {
+                        Util::setMessage(true, 'The membership/member element is missing');
+                        $member = null;
+                    }
+                    if (empty(Util::checkArray($membership, 'membership/role', true, true)) && Util::$strictMode) {
+                        $member = null;
+                    }
                     if ($isLink) {
-                        $userResult = LTI\UserResult::fromResourceLink($this->source, $member->userId);
+                        $messages = Util::checkArray($membership, 'membership/message');
+                    }
+                    if (!empty($member)) {
+                        $userid = null;
+                        if (!empty($member->userId)) {
+                            $userid = $member->userId;
+                        } elseif (!empty($member->{'@id'})) {
+                            $userid = $member->{'@id'};
+                        }
+                        if (empty($userid)) {
+                            Util::setMessage(true, 'The membership/member/userid or @id element is missing');
+                        } elseif (!is_string($userid)) {
+                            if (Util::$strictMode) {
+                                Util::setMessage(true, 'The membership/member/userid or @id element must have a string ');
+                                $userid = null;
+                            } else {
+                                Util::setMessage(false, 'The membership/member/userid or @id element should have a string ');
+                                $userid = LTI\Util::valToString($userid);
+                            }
+                        }
+                        $roles = [];
+                        $stringroles = Util::checkArray($membership, 'membership/role', true, true);
+                        foreach ($stringroles as $role) {
+                            if (!is_string($role)) {
+                                if (Util::$strictMode) {
+                                    Util::setMessage(true, 'The membership/role element must only comprise string values');
+                                    $userid = null;
+                                } else {
+                                    Util::setMessage(false, 'The membership/role element should only comprise string values');
+                                }
+                            } else {
+                                $roles[] = $role;
+                            }
+                        }
+                        if (!empty($userid)) {
+                            if ($isLink) {
+                                $userResult = LTI\UserResult::fromResourceLink($this->source, $userid);
+                            } else {
+                                $userResult = new LTI\UserResult();
+                                $userResult->ltiUserId = $userid;
+                            }
+
+// Set the user name
+                            $firstname = Util::checkString($member, 'membership/member/givenName');
+                            $middlename = Util::checkString($member, 'membership/member/middleName');
+                            $lastname = Util::checkString($member, 'membership/member/familyName');
+                            $fullname = Util::checkString($member, 'membership/member/name');
+                            $userResult->setNames($firstname, $lastname, $fullname, $middlename);
+
+// Set the sourcedId
+                            if (isset($member->sourcedId)) {
+                                $userResult->sourcedId = Util::checkString($member, 'membership/member/sourcedId');
+                            }
+
+// Set the user email
+                            $email = Util::checkString($member, 'membership/member/email');
+                            $userResult->setEmail($email, $this->source->getPlatform()->defaultEmail);
+
+// Set the user roles
+                            if (!empty($roles)) {
+                                $roles = $this->parseContextsInArray($contexts, $roles);
+                                $ltiVersion = $this->getPlatform()->ltiVersion;
+                                if (empty($ltiVersion)) {
+                                    $ltiVersion = LtiVersion::V1;
+                                }
+                                $userResult->roles = LTI\Tool::parseRoles($roles, $ltiVersion);
+                            }
+
+// If a result sourcedid is provided save the user
+                            if ($isLink) {
+                                $doSave = false;
+                                if (is_array($messages)) {
+                                    foreach ($messages as $message) {
+                                        if (!is_object($message)) {
+                                            Util::setMessage(true,
+                                                'The membership/message element must comprise an array of objects (' . gettype($message) . ' found)');
+                                            continue;
+                                        } else {
+                                            if (isset($message->ext)) {
+                                                if (!is_object($message->ext)) {
+                                                    Util::setMessage(true,
+                                                        'The membership/message/ext element must be an object (' . gettype($message->ext) . ' found)');
+                                                }
+                                            }
+                                            if (isset($message->custom)) {
+                                                if (!is_object($message->custom)) {
+                                                    Util::setMessage(true,
+                                                        'The membership/message/custom element must be an object (' . gettype($message->custom) . ' found)');
+                                                }
+                                            }
+                                        }
+                                        if (!isset($message->message_type)) {
+                                            Util::setMessage(true,
+                                                'The membership/message elements must include a \'message_type\' property');
+                                        } elseif (($message->message_type === 'basic-lti-launch-request') || ($message->message_type === 'LtiResourceLinkRequest')) {
+                                            if (isset($message->lis_result_sourcedid)) {
+                                                $sourcedid = Util::checkString($message, 'membership/message/lis_result_sourcedid');
+                                                if (empty($userResult->ltiResultSourcedId) || ($userResult->ltiResultSourcedId !== $sourcedid)) {
+                                                    $userResult->ltiResultSourcedId = $sourcedid;
+                                                    $doSave = true;
+                                                }
+                                            } elseif ($userResult->isLearner() && empty($userResult->created)) {  // Ensure all learners are recorded in case Assignment and Grade services are used
+                                                $userResult->ltiResultSourcedId = '';
+                                                $doSave = true;
+                                            }
+                                            $username = null;
+                                            if (is_object($message->ext)) {
+                                                if (!empty($message->ext->username)) {
+                                                    $username = Util::checkString($message->ext, 'membership/message/ext/username');
+                                                } elseif (!empty($message->ext->user_username)) {
+                                                    $username = Util::checkString($message->ext,
+                                                            'membership/message/ext/user_username');
+                                                }
+                                            }
+                                            if (empty($username) && is_object($message->custom)) {
+                                                if (!empty($message->custom->username)) {
+                                                    $username = Util::checkString($message->custom,
+                                                            'membership/message/custom/username');
+                                                } elseif (!empty($message->custom->user_username)) {
+                                                    $username = Util::checkString($message->custom,
+                                                            'membership/message/custom/user_username');
+                                                }
+                                            }
+                                            if (!empty($username)) {
+                                                $userResult->username = $username;
+                                            }
+                                            break;
+                                        }
+                                    }
+                                } elseif ($userResult->isLearner() && empty($userResult->created)) {  // Ensure all learners are recorded in case Assignment and Grade services are used
+                                    $userResult->ltiResultSourcedId = '';
+                                    $doSave = true;
+                                }
+                                if (!$doSave && isset($member->resultSourcedId)) {
+                                    $userResult->setResourceLinkId($this->source->getId());
+                                    $userResult->ltiResultSourcedId = Util::checkString($member, 'membership/member/resultSourcedId');
+                                    $doSave = true;
+                                }
+                                if ($doSave) {
+                                    $userResult->save();
+                                }
+                            }
+                            $userResults[] = $userResult;
+
+// Remove old user (if it exists)
+                            if ($isLink) {
+                                unset($oldUsers[$userResult->getId(IdScope::Resource)]);
+                            }
+                        }
+                    }
+                } else {  // Version 2 (NRPS)
+                    $member = $membership;
+                    $userid = null;
+                    $userid = Util::checkString($member, 'members/user_id', true);
+                    $roles = [];
+                    $stringroles = Util::checkArray($member, 'members/roles', true, true);
+                    foreach ($stringroles as $role) {
+                        if (!is_string($role)) {
+                            if (Util::$strictMode) {
+                                Util::setMessage(true, 'The members/roles element must only comprise string values');
+                                $userid = null;
+                            } else {
+                                Util::setMessage(false, 'The members/roles element should only comprise string values');
+                            }
+                        } else {
+                            $roles[] = $role;
+                        }
+                    }
+                }
+                if ($isLink) {
+                    if (isset($member->message)) {
+                        $messages = $member->message;
+                        if (!is_array($messages)) {
+                            if (Util::$strictMode) {
+                                $userid = null;
+                                Util::setMessage(true,
+                                    'The members/message element must have an array value (' . gettype($member->message) . ' found)');
+                                $messages = [];
+                            } else {
+                                Util::setMessage(false,
+                                    'The members/message element should have an array value (' . gettype($membership->message) . ' found)');
+                                if (is_object($messages)) {
+                                    $messages = (array) $messages;
+                                } else {
+                                    $messages = [];
+                                }
+                            }
+                        }
+                    } else {
+                        $messages = [];
+                    }
+                }
+                if (!empty($userid)) {
+                    if ($isLink) {
+                        $userResult = LTI\UserResult::fromResourceLink($this->source, $userid);
                     } else {
                         $userResult = new LTI\UserResult();
-                        $userResult->ltiUserId = $member->userId;
+                        $userResult->ltiUserId = $userid;
                     }
 
 // Set the user name
-                    $firstname = $member->givenName ?? '';
-                    $middlename = $member->middleName ?? '';
-                    $lastname = $member->familyName ?? '';
-                    $fullname = $member->name ?? '';
-                    $userResult->setNames($firstname, $lastname, $fullname);
+                    $firstname = Util::checkString($member, 'members/given_mame');
+                    $middlename = Util::checkString($member, 'members/middle_name');
+                    $lastname = Util::checkString($member, 'members/family_name');
+                    $fullname = Util::checkString($member, 'members/name');
+                    $userResult->setNames($firstname, $lastname, $fullname, $middlename);
 
 // Set the sourcedId
-                    if (isset($member->sourcedId)) {
-                        $userResult->sourcedId = $member->sourcedId;
-                    }
-
-// Set the username
-                    if (isset($member->ext_username)) {
-                        $userResult->username = $member->ext_username;
-                    } elseif (isset($member->ext_user_username)) {
-                        $userResult->username = $member->ext_user_username;
-                    } elseif (isset($member->custom_username)) {
-                        $userResult->username = $member->custom_username;
-                    } elseif (isset($member->custom_user_username)) {
-                        $userResult->username = $member->custom_user_username;
+                    if (isset($member->lis_person_sourcedid)) {
+                        $userResult->sourcedId = Util::checkString($member, 'members/lis_person_sourcedid');
                     }
 
 // Set the user email
-                    $email = $member->email ?? '';
+                    $email = Util::checkString($member, 'email');
                     $userResult->setEmail($email, $this->source->getPlatform()->defaultEmail);
 
 // Set the user roles
-                    if (isset($membership->role)) {
-                        $roles = $this->parseContextsInArray($http->responseJson->{'@context'}, $membership->role);
+                    if (!empty($roles)) {
                         $ltiVersion = $this->getPlatform()->ltiVersion;
                         if (empty($ltiVersion)) {
                             $ltiVersion = LtiVersion::V1;
@@ -231,129 +466,85 @@ class Membership extends Service
                     }
 
 // If a result sourcedid is provided save the user
+                    $groupenrollments = [];
                     if ($isLink) {
                         $doSave = false;
-                        if (isset($membership->message)) {
-                            foreach ($membership->message as $message) {
-                                if (isset($message->message_type) && (($message->message_type === 'basic-lti-launch-request') || ($message->message_type) === 'LtiResourceLinkRequest')) {
-                                    if (isset($message->lis_result_sourcedid)) {
-                                        if (empty($userResult->ltiResultSourcedId) || ($userResult->ltiResultSourcedId !== $message->lis_result_sourcedid)) {
-                                            $userResult->ltiResultSourcedId = $message->lis_result_sourcedid;
+                        if (is_array($messages)) {
+                            foreach ($messages as $message) {
+                                if (!is_object($message)) {
+                                    Util::setMessage(true,
+                                        'The members/message element must comprise an array of objects (' . gettype($message) . ' found)');
+                                    continue;
+                                } else {
+                                    if (isset($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'})) {
+                                        if (!is_object($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'})) {
+                                            Util::setMessage(true,
+                                                'The members/message/https://purl.imsglobal.org/spec/lti/claim/ext element must be an object (' . gettype($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'}) . ' found)');
+                                        }
+                                    }
+                                    if (isset($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'})) {
+                                        if (!is_object($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'})) {
+                                            Util::setMessage(true,
+                                                'The members/message/https://purl.imsglobal.org/spec/lti/claim/custom element must be an object (' . gettype($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'}) . ' found)');
+                                        }
+                                    }
+                                    if (isset($member->group_enrollments)) {
+                                        if (!is_array($member->group_enrollments)) {
+                                            if (Util::$strictMode) {
+                                                Util::setMessage(true,
+                                                    'The members/message/group_enrollments element must be an array (' . gettype($member->group_enrollments) . ' found)');
+                                            } else {
+                                                Util::setMessage(false,
+                                                    'The members/message/group_enrollments element should be an array (' . gettype($member->group_enrollments) . ' found)');
+                                                if (is_object($member->group_enrollments)) {
+                                                    $groupenrollments = (array) $member->group_enrollments;
+                                                }
+                                            }
+                                        } else {
+                                            $groupenrollments = $member->group_enrollments;
+                                        }
+                                    }
+                                }
+                                if (!isset($message->{'https://purl.imsglobal.org/spec/lti/claim/message_type'})) {
+                                    Util::setMessage(true,
+                                        'The members/message elements must include a \'https://purl.imsglobal.org/spec/lti/claim/message_type\' property');
+                                } elseif (($message->{'https://purl.imsglobal.org/spec/lti/claim/message_type'} === 'basic-lti-launch-request') ||
+                                    ($message->{'https://purl.imsglobal.org/spec/lti/claim/message_type'} === 'LtiResourceLinkRequest')) {
+                                    if (isset($message->{'https://purl.imsglobal.org/spec/lti-bo/claim/basicoutcome'}) &&
+                                        isset($message->{'https://purl.imsglobal.org/spec/lti-bo/claim/basicoutcome'}->lis_result_sourcedid)) {
+                                        $sourcedid = Util::checkString($message->{'https://purl.imsglobal.org/spec/lti-bo/claim/basicoutcome'},
+                                                'members/message/https://purl.imsglobal.org/spec/lti-bo/claim/basicoutcome/lis_result_sourcedid');
+                                        if (empty($userResult->ltiResultSourcedId) || ($userResult->ltiResultSourcedId !== $sourcedid)) {
+                                            $userResult->ltiResultSourcedId = $sourcedid;
                                             $doSave = true;
                                         }
                                     } elseif ($userResult->isLearner() && empty($userResult->created)) {  // Ensure all learners are recorded in case Assignment and Grade services are used
                                         $userResult->ltiResultSourcedId = '';
                                         $doSave = true;
                                     }
-                                    if (isset($message->ext)) {
-                                        if (empty($userResult->username)) {
-                                            if (!empty($message->ext->username)) {
-                                                $userResult->username = $message->ext->username;
-                                            } elseif (!empty($message->ext->user_username)) {
-                                                $userResult->username = $message->ext->user_username;
-                                            }
+                                    $username = null;
+                                    if (isset($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'}) &&
+                                        is_object($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'})) {
+                                        if (!empty($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'}->username)) {
+                                            $username = Util::checkString($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'},
+                                                    'members/message/https://purl.imsglobal.org/spec/lti/claim/ext/username');
+                                        } elseif (!empty($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'}->user_username)) {
+                                            $username = Util::checkString($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'},
+                                                    'members/message/https://purl.imsglobal.org/spec/lti/claim/ext/user_username');
                                         }
                                     }
-                                    if (isset($message->custom)) {
-                                        if (empty($userResult->username)) {
-                                            if (!empty($message->custom->username)) {
-                                                $userResult->username = $message->custom->username;
-                                            } elseif (!empty($message->custom->user_username)) {
-                                                $userResult->username = $message->custom->user_username;
-                                            }
+                                    if (empty($username) && isset($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'}) &&
+                                        is_object($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'})) {
+                                        if (!empty($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'}->username)) {
+                                            $username = Util::checkString($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'},
+                                                    'members/message/https://purl.imsglobal.org/spec/lti/claim/custom/username');
+                                        } elseif (!empty($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'}->user_username)) {
+                                            $username = Util::checkString($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'},
+                                                    'members/message/https://purl.imsglobal.org/spec/lti/claim/custom/user_username');
                                         }
                                     }
-                                    break;
-                                }
-                            }
-                        } elseif ($userResult->isLearner() && empty($userResult->created)) {  // Ensure all learners are recorded in case Assignment and Grade services are used
-                            $userResult->ltiResultSourcedId = '';
-                            $doSave = true;
-                        }
-                        if (!$doSave && isset($member->resultSourcedId)) {
-                            $userResult->setResourceLinkId($this->source->getId());
-                            $userResult->ltiResultSourcedId = $member->resultSourcedId;
-                            $doSave = true;
-                        }
-                        if ($doSave) {
-                            $userResult->save();
-                        }
-                    }
-                    $userResults[] = $userResult;
-
-// Remove old user (if it exists)
-                    if ($isLink) {
-                        unset($oldUsers[$userResult->getId(IdScope::Resource)]);
-                    }
-                } else {  // Version 2
-                    $member = $membership;
-                    if ($isLink) {
-                        $userResult = LTI\UserResult::fromResourceLink($this->source, $member->user_id);
-                    } else {
-                        $userResult = new LTI\UserResult();
-                        $userResult->ltiUserId = $member->user_id;
-                    }
-
-// Set the user name
-                    $firstname = $member->given_name ?? '';
-                    $middlename = $member->middle_name ?? '';
-                    $lastname = $member->family_name ?? '';
-                    $fullname = $member->name ?? '';
-                    $userResult->setNames($firstname, $lastname, $fullname);
-
-// Set the sourcedId
-                    if (isset($member->lis_person_sourcedid)) {
-                        $userResult->sourcedId = $member->lis_person_sourcedid;
-                    }
-
-// Set the user email
-                    $email = $member->email ?? '';
-                    $userResult->setEmail($email, $this->source->getPlatform()->defaultEmail);
-
-// Set the user roles
-                    if (isset($member->roles)) {
-                        $ltiVersion = $this->getPlatform()->ltiVersion;
-                        if (empty($ltiVersion)) {
-                            $ltiVersion = LtiVersion::V1;
-                        }
-                        $userResult->roles = LTI\Tool::parseRoles($member->roles, $ltiVersion);
-                    }
-
-// If a result sourcedid is provided save the user
-                    if ($isLink) {
-                        $doSave = false;
-                        if (isset($member->message)) {
-                            $messages = $member->message;
-                            if (!is_array($messages)) {
-                                $messages = [$member->message];
-                            }
-                            foreach ($messages as $message) {
-                                if (isset($message->{'https://purl.imsglobal.org/spec/lti/claim/message_type'}) && (($message->{'https://purl.imsglobal.org/spec/lti/claim/message_type'} === 'basic-lti-launch-request') || ($message->{'https://purl.imsglobal.org/spec/lti/claim/message_type'}) === 'LtiResourceLinkRequest')) {
-                                    if (isset($message->{'https://purl.imsglobal.org/spec/lti-bo/claim/basicoutcome'}) &&
-                                        isset($message->{'https://purl.imsglobal.org/spec/lti-bo/claim/basicoutcome'}->lis_result_sourcedid)) {
-                                        $userResult->ltiResultSourcedId = $message->{'https://purl.imsglobal.org/spec/lti-bo/claim/basicoutcome'}->lis_result_sourcedid;
-                                        $doSave = true;
-                                    } elseif ($userResult->isLearner() && empty($userResult->created)) {  // Ensure all learners are recorded in case Assignment and Grade services are used
-                                        $userResult->ltiResultSourcedId = '';
-                                        $doSave = true;
-                                    }
-                                    if (isset($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'})) {
-                                        if (empty($userResult->username)) {
-                                            if (!empty($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'}->username)) {
-                                                $userResult->username = $message->{'https://purl.imsglobal.org/spec/lti/claim/ext'}->username;
-                                            } elseif (!empty($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'}->user_username)) {
-                                                $userResult->username = $message->{'https://purl.imsglobal.org/spec/lti/claim/ext'}->user_username;
-                                            }
-                                        }
-                                    }
-                                    if (isset($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'})) {
-                                        if (empty($userResult->username)) {
-                                            if (!empty($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'}->username)) {
-                                                $userResult->username = $message->{'https://purl.imsglobal.org/spec/lti/claim/custom'}->username;
-                                            } elseif (!empty($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'}->user_username)) {
-                                                $userResult->username = $message->{'https://purl.imsglobal.org/spec/lti/claim/custom'}->user_username;
-                                            }
-                                        }
+                                    if (!empty($username)) {
+                                        $userResult->username = $username;
                                     }
                                     break;
                                 }
@@ -367,25 +558,36 @@ class Membership extends Service
                         }
                     }
                     $userResults[] = $userResult;
-                    if (isset($member->group_enrollments)) {
+                    if (is_array($groupenrollments)) {
                         $userResult->groups = [];
-                        foreach ($member->group_enrollments as $group) {
-                            $groupId = $group->group_id;
-                            if (empty($this->source->groups) || !array_key_exists($groupId, $this->source->groups)) {
-                                $this->source->groups[$groupId] = [
-                                    'title' => "Group {$groupId}"
-                                ];
-                            }
-                            if (!empty($this->source->groups[$groupId]['set'])) {
-                                $this->source->groupSets[$this->source->groups[$groupId]['set']]['num_members']++;
-                                if ($userResult->isStaff()) {
-                                    $this->source->groupSets[$this->source->groups[$groupId]['set']]['num_staff']++;
+                        foreach ($groupenrollments as $group) {
+                            if (!is_object($group)) {
+                                Util::setMessage(true,
+                                    'The members/group_enrollments element must comprise an array of objects (' . gettype($group) . ' found)');
+                                continue;
+                            } elseif (!isset($group->group_id)) {
+                                Util::setMessage(true, 'The members/group_enrollments objects must have a \'group_id\' property');
+                                continue;
+                            } else {
+                                $groupId = Util::checkString($group, 'members/group_enrollments/group_id');
+                                if (!empty($groupId)) {
+                                    if (empty($this->source->groups) || !array_key_exists($groupId, $this->source->groups)) {
+                                        $this->source->groups[$groupId] = [
+                                            'title' => "Group {$groupId}"
+                                        ];
+                                    }
+                                    if (!empty($this->source->groups[$groupId]['set'])) {
+                                        $this->source->groupSets[$this->source->groups[$groupId]['set']]['num_members']++;
+                                        if ($userResult->isStaff()) {
+                                            $this->source->groupSets[$this->source->groups[$groupId]['set']]['num_staff']++;
+                                        }
+                                        if ($userResult->isLearner()) {
+                                            $this->source->groupSets[$this->source->groups[$groupId]['set']]['num_learners']++;
+                                        }
+                                    }
+                                    $userResult->groups[] = $groupId;
                                 }
-                                if ($userResult->isLearner()) {
-                                    $this->source->groupSets[$this->source->groups[$groupId]['set']]['num_learners']++;
-                                }
                             }
-                            $userResult->groups[] = $groupId;
                         }
                     }
 
@@ -402,6 +604,8 @@ class Membership extends Service
                     $userResult->delete();
                 }
             }
+        } else {
+            $userResults = false;
         }
 
         return $userResults;

@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace ceLTIc\LTI\Content;
 
+use ceLTIc\LTI\Util;
+
 /**
  * Class to represent a content-item image object
  *
@@ -89,12 +91,13 @@ class Image
     /**
      * Generate an Image object from its JSON or JSON-LD representation.
      *
-     * @param object $item  A JSON or JSON-LD object representing a content-item
+     * @param object|string $item  A JSON or JSON-LD object representing an image or an image URL
      *
      * @return Image|null  The Image object
      */
-    public static function fromJsonObject(object $item): ?Image
+    public static function fromJsonObject(object|string $item): ?Image
     {
+        $ok = true;
         $obj = null;
         $width = null;
         $height = null;
@@ -104,20 +107,26 @@ class Image
                 switch ($name) {
                     case '@id':
                     case 'url':
-                        $url = $item->{$name};
+                        $url = Util::checkString($item, "Image/{$name}", false, false, '', false, null);
                         break;
                     case 'width':
-                        $width = $item->width;
+                        $width = Util::checkInteger($item, "Image/width", false, 0, true);
+                        if (is_null($width)) {
+                            $ok = false;
+                        }
                         break;
                     case 'height':
-                        $height = $item->height;
+                        $height = Util::checkInteger($item, "Image/height", false, 0, true);
+                        if (is_null($height)) {
+                            $ok = false;
+                        }
                         break;
                 }
             }
         } else {
             $url = $item;
         }
-        if ($url) {
+        if ($ok && $url) {
             $obj = new Image($url, $width, $height);
         }
 

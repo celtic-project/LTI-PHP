@@ -6,6 +6,7 @@ namespace ceLTIc\LTI\Service;
 use ceLTIc\LTI;
 use ceLTIc\LTI\Platform;
 use ceLTIc\LTI\SubmissionReview;
+use ceLTIc\LTI\Util;
 
 /**
  * Class to implement the Line-item service
@@ -118,11 +119,18 @@ class LineItem extends AssignmentGrade
             $this->mediaType = self::MEDIA_TYPE_LINE_ITEMS;
             $http = $this->send('GET', $params);
             $this->scope = self::$SCOPE;
+            $ok = $http->ok && !empty($http->responseJson);
             $url = '';
-            if ($http->ok) {
-                if (!empty($http->responseJson)) {
-                    foreach ($http->responseJson as $lineItem) {
-                        $lineItems[] = self::toLineItem($this->getPlatform(), $lineItem);
+            if ($ok) {
+                $items = Util::checkArray($http, 'responseJson');
+                foreach ($items as $lineItemJson) {
+                    if (!is_object($lineItemJson)) {
+                        Util::setMessage(true, 'The array must comprise an array of objects (' . gettype($lineItemJson) . ' found)');
+                    } else {
+                        $lineItem = $this->toLineItem($this->getPlatform(), $lineItemJson);
+                        if ($lineItem) {
+                            $lineItems[] = $lineItem;
+                        }
                     }
                 }
                 if (!$this->pagingMode && $http->hasRelativeLink('next')) {
@@ -153,7 +161,7 @@ class LineItem extends AssignmentGrade
         $http = $this->send('POST', null, self::toJson($lineItem));
         $ok = $http->ok && !empty($http->responseJson);
         if ($ok) {
-            $newLineItem = self::toLineItem($this->getPlatform(), $http->responseJson);
+            $newLineItem = $this->toLineItem($this->getPlatform(), $http->responseJson);
             if ($newLineItem) {
                 foreach (get_object_vars($newLineItem) as $key => $value) {
                     $lineItem->$key = $value;
@@ -177,10 +185,12 @@ class LineItem extends AssignmentGrade
         $http = $this->send('PUT', null, self::toJson($lineItem));
         $ok = $http->ok;
         if ($ok && !empty($http->responseJson)) {
-            $savedLineItem = self::toLineItem($this->getPlatform(), $http->responseJson);
+            $savedLineItem = $this->toLineItem($this->getPlatform(), $http->responseJson);
+            if ($savedLineItem) {
             foreach (get_object_vars($savedLineItem) as $key => $value) {
                 $lineItem->$key = $value;
             }
+        }
         }
 
         return $ok;
@@ -204,6 +214,34 @@ class LineItem extends AssignmentGrade
     /**
      * Retrieve a line-item.
      *
+     * @return LTI\\LineItem|bool  LineItem object, or false on error
+     */
+    public function get(): LTI\LineItem|bool
+    {
+        $this->scope = self::$SCOPE_READONLY;
+        $this->mediaType = self::MEDIA_TYPE_LINE_ITEM;
+        $http = $this->send('GET');
+        if ($http->ok && !empty($http->responseJson)) {
+            if (!is_object($http->responseJson)) {
+                Util::setMessage(true, 'The response must be an object (' . gettype($http->responseJson) . ' found)');
+            } else {
+                $lineItem = $this->toLineItem($this->getPlatform(), $http->responseJson);
+                if (empty($lineItem)) {
+                    $lineItem = false;
+                }
+            }
+        } else {
+            $lineItem = false;
+        }
+
+        return $lineItem;
+    }
+
+    /**
+     * Retrieve a line-item.
+     *
+     * @deprecated Use LineItem::fromEndpoint() or get() instead
+     *
      * @param Platform $platform  Platform object for this service request
      * @param string $endpoint    Line-item endpoint
      *
@@ -211,18 +249,7 @@ class LineItem extends AssignmentGrade
      */
     public static function getLineItem(Platform $platform, string $endpoint): LTI\LineItem|bool
     {
-        $service = new self($platform, $endpoint);
-        $service->scope = self::$SCOPE_READONLY;
-        $service->mediaType = self::MEDIA_TYPE_LINE_ITEM;
-        $http = $service->send('GET');
-        $service->scope = self::$SCOPE;
-        if ($http->ok && !empty($http->responseJson)) {
-            $lineItem = self::toLineItem($platform, $http->responseJson);
-        } else {
-            $lineItem = false;
-        }
-
-        return $lineItem;
+        return LTI\LineItem::fromEndpoint($platform, $endpoint);
     }
 
 ###
@@ -237,30 +264,45 @@ class LineItem extends AssignmentGrade
      *
      * @return LTI\\LineItem|null  LineItem object, or null on error
      */
-    private static function toLineItem(Platform $platform, object $json): ?LTI\LineItem
+    private function toLineItem(Platform $platform, object $json): ?LTI\LineItem
     {
-        if (!empty($json->id) && !empty($json->label) && !empty($json->scoreMaximum)) {
-            $lineItem = new LTI\LineItem($platform, $json->label, $json->scoreMaximum);
-            if (!empty($json->id)) {
+        $id = Util::checkString($json, 'id', true, true);
+        $scoreMaximum = Util::checkNumber($json, 'scoreMaximum', true, 0, true);
+        $label = Util::checkString($json, 'label', true, true);
+        $resourceId = Util::checkString($json, 'resourceId');
+        $tag = Util::checkString($json, 'tag');
+        $startDateTime = Util::checkDateTime($json, 'startDateTime');
+        $endDateTime = Util::checkDateTIme($json, 'endDateTime');
+        $resourceLinkId = Util::checkString($json, 'resourceLinkId');
+        if (!empty($id) && !empty($label) &&
+            (!is_null($scoreMaximum) || (!empty($json->gradingScheme) && is_object($json->gradingScheme)))) {
+            $lineItem = new LTI\LineItem($platform, $label, $scoreMaximum);
+            if (!empty($json->gradingScheme)) {
+                $lineItem->gradingScheme = GradingScheme::fromJsonObject($json->gradingScheme);
+            }
                 $lineItem->endpoint = $json->id;
+            if (!empty($resourceLinkId)) {
+                $lineItem->ltiResourceLinkId = $resourceLinkId;
             }
-            if (!empty($json->resourceLinkId)) {
-                $lineItem->ltiResourceLinkId = $json->resourceLinkId;
+            if (!empty($resourceId)) {
+                $lineItem->resourceId = $resourceId;
             }
-            if (!empty($json->resourceId)) {
-                $lineItem->resourceId = $json->resourceId;
+            if (!empty($tag)) {
+                $lineItem->tag = $tag;
             }
-            if (!empty($json->tag)) {
-                $lineItem->tag = $json->tag;
+            if (!empty($startDateTime)) {
+                $lineItem->submitFrom = $startDateTime;
             }
-            if (!empty($json->startDateTime)) {
-                $lineItem->submitFrom = strtotime($json->startDateTime);
-            }
-            if (!empty($json->endDateTime)) {
-                $lineItem->submitUntil = strtotime($json->endDateTime);
+            if (!empty($endDateTime)) {
+                $lineItem->submitUntil = $endDateTime;
             }
             if (!empty($json->submissionReview)) {
+                if (is_object($json->submissionReview)) {
                 $lineItem->submissionReview = SubmissionReview::fromJsonObject($json->submissionReview);
+                } else {
+                    Util::setMessage(true,
+                        'The \'submissionReview\' element must be an object (' . gettype($json->submissionReviewJson) . ' found)');
+                }
             }
         } else {
             $lineItem = null;

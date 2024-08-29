@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace ceLTIc\LTI\Content;
 
 use ceLTIc\LTI\SubmissionReview;
+use ceLTIc\LTI\Util;
 
 /**
  * Class to represent a line-item object
@@ -81,14 +82,14 @@ class LineItem
         $lineItem->{'@type'} = 'LineItem';
         $lineItem->label = $this->label;
         $lineItem->reportingMethod = 'http://purl.imsglobal.org/ctx/lis/v2p1/Result#normalScore';
-        if (!empty($this->resourceId)) {
+        if (!is_null($this->resourceId)) {
             $lineItem->assignedActivity = (object) ['activityId' => $this->resourceId];
         }
         $lineItem->scoreConstraints = (object) [
                 '@type' => 'NumericLimits',
                 'normalMaximum' => $this->scoreMaximum
         ];
-        if (!empty($this->submissionReview)) {
+        if (!is_null($this->submissionReview)) {
             $lineItem->submissionReview = $this->submissionReview->toJsonObject();
         }
 
@@ -106,13 +107,13 @@ class LineItem
 
         $lineItem->label = $this->label;
         $lineItem->scoreMaximum = $this->scoreMaximum;
-        if (!empty($this->resourceId)) {
+        if (!is_null($this->resourceId)) {
             $lineItem->resourceId = $this->resourceId;
         }
-        if (!empty($this->tag)) {
+        if (!is_null($this->tag)) {
             $lineItem->tag = $this->tag;
         }
-        if (!empty($this->submissionReview)) {
+        if (!is_null($this->submissionReview)) {
             $lineItem->submissionReview = $this->submissionReview->toJsonObject();
         }
 
@@ -135,33 +136,42 @@ class LineItem
         $activityId = null;
         $tag = null;
         $submissionReview = null;
+        $hasLabel = false;
+        $hasScoreMaximum = false;
         foreach (get_object_vars($item) as $name => $value) {
             switch ($name) {
                 case 'label':
-                    $label = $item->label;
+                    $hasLabel = true;
+                    $label = Util::checkString($item, 'LineItem/label', false, true, '', false, $label);
                     break;
                 case 'reportingMethod':
-                    $reportingMethod = $item->reportingMethod;
+                    $reportingMethod = Util::checkString($item, 'LineItem/reportingMethod', false, true, '', false, $reportingMethod);
                     break;
                 case 'scoreConstraints':
-                    $scoreConstraints = $item->scoreConstraints;
+                    if (is_object($value)) {
+                        $scoreConstraints = $value;
+                    }
                     break;
                 case 'scoreMaximum':
-                    $scoreMaximum = $item->scoreMaximum;
+                    $hasScoreMaximum = true;
+                    $scoreMaximum = Util::checkNumber($item, 'LineItem/scoreMaximum', false, 0, true);
                     break;
                 case 'assignedActivity':
-                    if (isset($item->assignedActivity->activityId)) {
-                        $activityId = $item->assignedActivity->activityId;
+                    if (isset($item->assignedActivity)) {
+                        $activityId = Util::checkString($item->assignedActivity, 'LineItem/assignedActivity/activityId', false,
+                                true, '', false, $activityId);
                     }
                     break;
                 case 'resourceId':
-                    $activityId = $item->resourceId;
+                    $activityId = Util::checkString($item, 'LineItem/resourceId', false, true, '', false, $activityId);
                     break;
                 case 'tag':
-                    $tag = $item->tag;
+                    $tag = Util::checkString($item, 'LineItem/tag', false, true, '', false, $tag);
                     break;
                 case 'submissionReview':
-                    $submissionReview = SubmissionReview::fromJsonObject($item->submissionReview);
+                    if (is_object($item->submissionReview)) {
+                        $submissionReview = SubmissionReview::fromJsonObject($item->submissionReview);
+                    }
                     break;
             }
         }
@@ -169,13 +179,20 @@ class LineItem
             foreach (get_object_vars($scoreConstraints) as $name => $value) {
                 $method = str_replace('Maximum', 'Score', $name);
                 if (str_ends_with($reportingMethod, $method)) {
-                    $scoreMaximum = $value;
+                    $scoreMaximum = Util::checkNumber($scoreConstraints, "LineItem/scoreConstraints/{$name}", false, 0, true);
                     break;
                 }
             }
         }
-        if (!is_null($scoreMaximum)) {
+        if (!is_null($label) && !is_null($scoreMaximum)) {
             $obj = new LineItem($label, $scoreMaximum, $activityId, $tag, $submissionReview);
+        } else {
+            if (!$hasLabel) {
+                Util::setMessage(true, 'A line item must have a label');
+            }
+            if (!$hasScoreMaximum) {
+                Util::setMessage(true, 'A line item must have a maximum score');
+            }
         }
 
         return $obj;

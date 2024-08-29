@@ -5,6 +5,7 @@ namespace ceLTIc\LTI;
 
 use ceLTIc\LTI\OAuth;
 use ceLTIc\LTI\Enum\LogLevel;
+use ceLTIc\LTI\Jwt\ClientInterface;
 
 /**
  * Class to implement utility methods
@@ -44,7 +45,7 @@ final class Util
         'auto_create' => ['suffix' => 'dl', 'group' => 'deep_linking_settings', 'claim' => 'auto_create', 'isBoolean' => true],
         'can_confirm' => ['suffix' => 'dl', 'group' => 'deep_linking_settings', 'claim' => 'can_confirm'],
         'content_item_return_url' => ['suffix' => 'dl', 'group' => 'deep_linking_settings', 'claim' => 'deep_link_return_url'],
-        'content_items' => ['suffix' => 'dl', 'group' => '', 'claim' => 'content_items', 'isObject' => true],
+        'content_items' => ['suffix' => 'dl', 'group' => '', 'claim' => 'content_items', 'isContentItemSelection' => true],
         'data' => ['suffix' => 'dl', 'group' => 'deep_linking_settings', 'claim' => 'data'],
         'data.LtiDeepLinkingResponse' => ['suffix' => 'dl', 'group' => '', 'claim' => 'data'],
         'text' => ['suffix' => 'dl', 'group' => 'deep_linking_settings', 'claim' => 'text'],
@@ -77,6 +78,8 @@ final class Util
         'role_scope_mentor' => ['suffix' => '', 'group' => '', 'claim' => 'role_scope_mentor', 'isArray' => true],
         'platform_id' => ['suffix' => '', 'group' => null, 'claim' => 'iss'],
         'deployment_id' => ['suffix' => '', 'group' => '', 'claim' => 'deployment_id'],
+        'oauth_nonce' => ['suffix' => '', 'group' => null, 'claim' => 'nonce'],
+        'oauth_timestamp' => ['suffix' => '', 'group' => null, 'claim' => 'iat', 'isInteger' => true],
         'lti_message_type' => ['suffix' => '', 'group' => '', 'claim' => 'message_type'],
         'lti_version' => ['suffix' => '', 'group' => '', 'claim' => 'version'],
         'resource_link_description' => ['suffix' => '', 'group' => 'resource_link', 'claim' => 'description'],
@@ -164,11 +167,25 @@ final class Util
     public static LogLevel $logLevel = LogLevel::None;
 
     /**
+     * Whether full compliance with the LTI specification is required.
+     *
+     * @var bool $strictMode
+     */
+    public static bool $strictMode = false;
+
+    /**
      * Delay (in seconds) before a manual button is displayed in case a browser is blocking a form submission.
      *
      * @var int $formSubmissionTimeout
      */
     public static int $formSubmissionTimeout = 2;
+
+    /**
+     * Messages relating to service request.
+     *
+     * @var array $messages
+     */
+    private static array $messages = [true => [], false => []];
 
     /**
      * Check whether the request received could be an LTI message.
@@ -327,6 +344,33 @@ final class Util
             }
         }
         error_log($message . $source);
+    }
+
+    /**
+     * Set an error or warning message.
+     *
+     * @param bool $isError    True if the message represents an error
+     * @param string $message  Message
+     *
+     * @return void
+     */
+    public static function setMessage(bool $isError, string $message): void
+    {
+        if (!in_array($message, self::$messages[$isError])) {
+            self::$messages[$isError][] = $message;
+        }
+    }
+
+    /**
+     * Get the system error or warning messages.
+     *
+     * @param bool $isError  True if error messages are to be returned
+     *
+     * @return array  Array of messages
+     */
+    public static function getMessages(bool $isError): array
+    {
+        return self::$messages[$isError];
     }
 
     /**
@@ -540,17 +584,20 @@ EOD;
     /**
      * Convert a value to a string.
      *
-     * @param mixed $val   The value to be converted
+     * @param mixed $val            The value to be converted
+     * @param string|null $default  Value to return when a conversion is not possible (optional, default is an empty string)
      *
      * @return string
      */
-    public static function valToString(mixed $val): string
+    public static function valToString(mixed $val, ?string $default = ''): string
     {
         if (!is_string($val)) {
-            if (is_scalar($val)) {
+            if (is_bool($val)) {
+                $val = ($val) ? 'true' : 'false';
+            } elseif (is_scalar($val)) {
                 $val = strval($val);
             } else {
-                $val = '';
+                $val = $default;
             }
         }
 
@@ -589,14 +636,307 @@ EOD;
     public static function valToBoolean(mixed $val): bool
     {
         if (!is_bool($val)) {
-            if ($val !== 'true') {
-                $val = false;
-            } else {
+            if (($val === 'true' || $val === 1)) {
                 $val = true;
+            } else {
+                $val = false;
             }
         }
 
         return $val;
+    }
+
+    /**
+     * Get the named object element from object.
+     *
+     * @param object $obj         Object containing the element
+     * @param string $fullname    Name of element
+     * @param bool $required      True if the element must be present
+     * @param bool $stringValues  True if the values must be strings
+     *
+     * @return object|null  Value of element (or null if not found)
+     */
+    public static function checkObject(object $obj, string $fullname, bool $required = false, bool $stringValues = false): ?object
+    {
+        $element = null;
+        $name = $fullname;
+        $pos = strrpos($name, '/');
+        if ($pos !== false) {
+            $name = substr($name, $pos + 1);
+        }
+        if (isset($obj->{$name})) {
+            if (is_object($obj->{$name})) {
+                $element = $obj->{$name};
+                if ($stringValues) {
+                    foreach (get_object_vars($element) as $elementName => $elementValue) {
+                        if (!is_string($elementValue)) {
+                            if (!self::$strictMode) {
+                                self::setMessage(false,
+                                    "Properties of the {$fullname} element should have a string value (" . gettype($elementValue) . ' found)');
+                                $element->{$elementName} = self::valToString($elementValue);
+                            } else {
+                                $element = null;
+                                self::setMessage(true,
+                                    "Properties of the {$fullname} element must have a string value (" . gettype($elementValue) . ' found)');
+                                break;
+                            }
+                        }
+                    }
+                }
+            } else {
+                self::setMessage(false, "The '{$fullname}' element must be an object (" . gettype($obj->{$name}) . ' found)');
+            }
+        } elseif ($required) {
+            self::setMessage(true, "The '{$fullname}' element is missing");
+        }
+
+        return $element;
+    }
+
+    /**
+     * Get the named array element from object.
+     *
+     * @param object $obj       Object containing the element
+     * @param string $fullname  Name of element
+     * @param bool $required    True if the element must be present
+     * @param bool $notEmpty    True if the element must not have an empty value
+     *
+     * @return array  Value of element (or empty string if not found)
+     */
+    public static function checkArray(object $obj, string $fullname, bool $required = false, bool $notEmpty = false): array
+    {
+        $arr = [];
+        $name = $fullname;
+        $pos = strrpos($name, '/');
+        if ($pos !== false) {
+            $name = substr($name, $pos + 1);
+        }
+        if (isset($obj->{$name})) {
+            if (is_array($obj->{$name})) {
+                $arr = $obj->{$name};
+                if ($notEmpty && empty($arr)) {
+                    self::setMessage(true, "The '{$fullname}' element must not be empty");
+                }
+            } elseif (self::$strictMode) {
+                self::setMessage(false, "The '{$fullname}' element must have an array value (" . gettype($obj->{$name}) . ' found)');
+            } else {
+                self::setMessage(false,
+                    "The '{$fullname}' element should have an array value (" . gettype($obj->{$name}) . ' found)');
+                if (is_object($obj->{$name})) {
+                    $arr = (array) $obj->{$name};
+                }
+            }
+        } elseif ($required) {
+            self::setMessage(true, "The '{$fullname}' element is missing");
+        }
+
+        return $arr;
+    }
+
+    /**
+     * Get the named string element from object.
+     *
+     * @param object $obj               Object containing the element
+     * @param string $fullname          Name of element (may include a path)
+     * @param bool $required            True if the element must be present
+     * @param bool $notEmpty            True if the element must not have an empty value
+     * @param string $fixedValue        Required value of element (empty string if none)
+     * @param bool $overrideStrictMode  Ignore strict mode setting
+     * @param string|null $default      Value to return when a conversion is not possible (optional, default is an empty string)
+     *
+     * @return string  Value of element (or default value if not found or valid)
+     */
+    public static function checkString(object $obj, string $fullname, bool $required = false, bool $notEmpty = false,
+        string|array $fixedValue = '', bool $overrideStrictMode = false, ?string $default = ''): ?string
+    {
+        $value = $default;
+        $name = $fullname;
+        $pos = strrpos($name, '/');
+        if ($pos !== false) {
+            $name = substr($name, $pos + 1);
+        }
+        if (isset($obj->{$name})) {
+            if (is_string($obj->{$name})) {
+                if (!empty($fixedValue) && is_string($fixedValue) && ($obj->{$name} !== $fixedValue)) {
+                    if (self::$strictMode || $overrideStrictMode) {
+                        self::setMessage(true,
+                            "The '{$fullname}' element must have a value of '{$fixedValue}' ('{$obj->{$name}}' found)");
+                    } else {
+                        self::setMessage(false,
+                            "The '{$fullname}' element should have a value of '{$fixedValue}' ('{$obj->{$name}}' found)");
+                    }
+                } elseif (!empty($fixedValue) && is_array($fixedValue) && !in_array($obj->{$name}, $fixedValue)) {
+                    self::setMessage(self::$strictMode || $overrideStrictMode,
+                        "Value of the '{$fullname}' element not recognised ('{$obj->{$name}}' found)");
+                } elseif ($notEmpty && empty($obj->{$name})) {
+                    if (self::$strictMode || $overrideStrictMode) {
+                        self::setMessage(true, "The '{$fullname}' element must not be empty");
+                    } else {
+                        self::setMessage(false, "The '{$fullname}' element should not be empty");
+                    }
+                } else {
+                    $value = $obj->{$name};
+                }
+            } elseif ($required || !is_null($obj->{$name})) {
+                if (self::$strictMode || $overrideStrictMode) {
+                    self::setMessage(true,
+                        "The '{$fullname}' element must have a string value (" . gettype($obj->{$name}) . ' found)');
+                } else {
+                    self::setMessage(false,
+                        "The '{$fullname}' element should have a string value (" . gettype($obj->{$name}) . ' found)');
+                    $value = self::valToString($obj->{$name}, $default);
+                }
+            }
+        } elseif ($required) {
+            self::setMessage(true, "The '{$fullname}' element is missing");
+        }
+
+        return $value;
+    }
+
+    /**
+     * Get the named number element from object.
+     *
+     * @param object $obj               Object containing the element
+     * @param string $fullname          Name of element (may include a path)
+     * @param bool $required            True if the element must be present
+     * @param int|false $minimum        Minimum value (or false is none)
+     * @param bool $minimumExclusive    True if value must exceed the minimum
+     * @param bool $overrideStrictMode  Ignore strict mode setting
+     *
+     * @return int|float|null  Value of element (or null if not found or valid)
+     */
+    public static function checkNumber(object $obj, string $fullname, bool $required = false, int|false $minimum = false,
+        bool $minimumExclusive = false, bool $overrideStrictMode = false): int|float|null
+    {
+        $value = null;
+        $name = $fullname;
+        $pos = strrpos($name, '/');
+        if ($pos !== false) {
+            $name = substr($name, $pos + 1);
+        }
+        if (isset($obj->{$name})) {
+            if (is_int($obj->{$name}) || is_float($obj->{$name})) {
+                if (($minimum !== false) && !$minimumExclusive && ($obj->{$name} < $minimum)) {
+                    self::setMessage(true, "The '{$fullname}' element must have a numeric value of at least {$minimum}");
+                } elseif (($minimum !== false) && $minimumExclusive && ($obj->{$name} <= $minimum)) {
+                    self::setMessage(true, "The '{$fullname}' element must have a numeric value greater than {$minimum}");
+                } else {
+                    $value = $obj->{$name};
+                }
+            } elseif ($required || !is_null($obj->{$name})) {
+                if (self::$strictMode || $overrideStrictMode) {
+                    self::setMessage(true,
+                        "The '{$fullname}' element must have a numeric value (" . gettype($obj->{$name}) . ' found)');
+                } else {
+                    self::setMessage(false,
+                        "The '{$fullname}' element should have a numeric value (" . gettype($obj->{$name}) . ' found)');
+                    $value = self::valToNumber($obj->{$name});
+                }
+            }
+        } elseif ($required) {
+            self::setMessage(true, "The '{$fullname}' element is missing");
+        }
+
+        return $value;
+    }
+
+    /**
+     * Get the named integer element from object.
+     *
+     * @param object $obj               Object containing the element
+     * @param string $fullname          Name of element (may include a path)
+     * @param bool $required            True if the element must be present
+     * @param int|false $minimum        Minimum value (or false is none)
+     * @param bool $minimumExclusive    True if value must exceed the minimum
+     * @param bool $overrideStrictMode  Ignore strict mode setting
+     *
+     * @return int|null  Value of element (or null if not found or valid)
+     */
+    public static function checkInteger(object $obj, string $fullname, bool $required = false, int|false $minimum = false,
+        bool $minimumExclusive = false, bool $overrideStrictMode = false): int|null
+    {
+        $value = self::checkNumber($obj, $fullname, $required, $minimum, $minimumExclusive, $overrideStrictMode);
+        if (is_float($value)) {
+            if (self::$strictMode) {
+                self::setMessage(true, "The '{$fullname}' element must have an integer value");
+                $value = null;
+            } else {
+                self::setMessage(false, "The '{$fullname}' element should have an integer value");
+                $value = intval($value);
+            }
+        }
+
+        return $value;
+    }
+
+    /**
+     * Get the named boolean element from object.
+     *
+     * @param object $obj               Object containing the element
+     * @param string $fullname          Name of element (may include a path)
+     * @param bool $required            True if the element must be present
+     * @param string|null $default  Value to return when a conversion is not possible (optional, default is an empty string)
+     *
+     * @return bool|null  Value of element (or null if not found or valid)
+     */
+    public static function checkBoolean(object $obj, string $fullname, bool $required = false, ?bool $default = null): ?bool
+    {
+        $value = $default;
+        $name = $fullname;
+        $pos = strrpos($name, '/');
+        if ($pos !== false) {
+            $name = substr($name, $pos + 1);
+        }
+        if (isset($obj->{$name})) {
+            if (is_bool($obj->{$name})) {
+                $value = $obj->{$name};
+            } elseif (!self::$strictMode) {
+                self::setMessage(false,
+                    "The '{$fullname}' element should have a boolean value (" . gettype($obj->{$name}) . ' found)');
+                $value = self::valToBoolean($obj->{$name});
+            } else {
+                self::setMessage(true, "The '{$fullname}' element must have a boolean value (" . gettype($obj->{$name}) . ' found)');
+            }
+        } elseif ($required) {
+            self::setMessage(true, "The '{$fullname}' element is missing");
+        }
+
+        return $value;
+    }
+
+    /**
+     * Get the named number element from object.
+     *
+     * @param object $obj               Object containing the element
+     * @param string $fullname          Name of element (may include a path)
+     * @param bool $required            True if the element must be present
+     *
+     * @return int  Value of element (or 0 if not found or valid)
+     */
+    public static function checkDateTime(object $obj, string $fullname, bool $required = false): int
+    {
+        $value = 0;
+        $name = $fullname;
+        $pos = strrpos($name, '/');
+        if ($pos !== false) {
+            $name = substr($name, $pos + 1);
+        }
+        if (isset($obj->{$name})) {
+            if (is_string($obj->{$name})) {
+                $value = strtotime($obj->{$name});
+                if ($value === false) {
+                    self::setMessage(true, "The '{$fullname}' element must have a datetime value");
+                    $value = 0;
+                }
+            } else {
+                self::setMessage(true, "The '{$fullname}' element must have a string value (" . gettype($obj->{$name}) . ' found)');
+            }
+        } elseif ($required) {
+            self::setMessage(true, "The '{$fullname}' element is missing");
+        }
+
+        return $value;
     }
 
     /**

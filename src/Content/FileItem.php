@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace ceLTIc\LTI\Content;
 
+use ceLTIc\LTI\Util;
+
 /**
  * Class to represent a file content-item object
  *
@@ -100,19 +102,27 @@ class FileItem extends Item
      *
      * @param object $item  A JSON object representing a file content-item
      *
-     * @return void
+     * @return bool  True if the item is valid
      */
-    protected function fromJsonObject(object $item): void
+    protected function fromJsonObject(object $item): bool
     {
-        parent::fromJsonObject($item);
-        foreach (get_object_vars($item) as $name => $value) {
-            switch ($name) {
-                case 'copyAdvice':
-                case 'expiresAt':
-                    $this->{$name} = $item->{$name};
-                    break;
+        $ok = parent::fromJsonObject($item);
+        if ($ok) {
+            foreach (get_object_vars($item) as $name => $value) {
+                switch ($name) {
+                    case 'copyAdvice':
+                        $this->copyAdvice = Util::checkBoolean($item, 'FileItem/copyAdvice');
+                        $ok = $ok && !is_null($this->copyAdvice);
+                        break;
+                    case 'expiresAt':
+                        $this->expiresAt = Util::checkBoolean($item, 'FileItem/expiresAt');
+                        $ok = $ok && !is_null($this->expiresAt);
+                        break;
+                }
             }
         }
+
+        return $ok;
     }
 
 }
