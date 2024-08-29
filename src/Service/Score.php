@@ -67,6 +67,15 @@ class Score extends AssignmentGrade
             $json['scoreGiven'] = $score;
             $json['scoreMaximum'] = $ltiOutcome->getPointsPossible();
         }
+        if (!empty($ltiOutcome->submissionStarted) || !empty($ltiOutcome->submissionCompleted)) {
+            $json['submission'] = [];
+            if (!empty($ltiOutcome->submissionStarted)) {
+                $json['submission']['startedAt'] = date_format($ltiOutcome->submissionStarted, 'Y-m-d\TH:i:s.uP');
+            }
+            if (!empty($ltiOutcome->submissionStarted)) {
+                $json['submission']['submittedAt'] = date_format($ltiOutcome->submissionCompleted, 'Y-m-d\TH:i:s.uP');
+            }
+        }
         $data = json_encode($json);
         $http = $this->send('POST', null, $data);
 

@@ -87,6 +87,20 @@ class Outcome
     public ?string $comment = null;
 
     /**
+     * Date submission started.
+     *
+     * @var DateTime|null $submissionStarted
+     */
+    public ?\DateTime $submissionStarted = null;
+
+    /**
+     * Date submission completed.
+     *
+     * @var DateTime|null $submissionCompleted
+     */
+    public ?\DateTime $submissionCompleted = null;
+
+    /**
      * Outcome data source value.
      *
      * @var string|null $dataSource
