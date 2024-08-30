@@ -274,6 +274,8 @@ class WebTokenClient implements ClientInterface
      */
     public function verify(?string $publicKey, ?string $jku = null): bool
     {
+        Util::logDebug('Method ceLTIc\LTI\Jwt\WebTokenClient->verify has been deprecated; please use ceLTIc\LTI\Jwt\WebTokenClient->verifySignature instead.',
+            true);
         return $this->verifySignature($publicKey, $jku);
     }
 

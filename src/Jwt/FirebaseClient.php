@@ -243,6 +243,8 @@ class FirebaseClient implements ClientInterface
      */
     public function verify(?string $publicKey, ?string $jku = null): bool
     {
+        Util::logDebug('Method ceLTIc\LTI\Jwt\FirebaseClient->verify has been deprecated; please use ceLTIc\LTI\Jwt\FirebaseClient->verifySignature instead.',
+            true);
         return $this->verifySignature($publicKey, $jku);
     }
 

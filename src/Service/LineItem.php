@@ -249,6 +249,8 @@ class LineItem extends AssignmentGrade
      */
     public static function getLineItem(Platform $platform, string $endpoint): LTI\LineItem|bool
     {
+        Util::logDebug('Method ceLTIc\LTI\Service\LineItem::getLineItem has been deprecated; please use ceLTIc\LTI\LineItem::fromEndpoint or ceLTIc\LTI\Service\LineItem->get instead.',
+            true);
         return LTI\LineItem::fromEndpoint($platform, $endpoint);
     }
 
