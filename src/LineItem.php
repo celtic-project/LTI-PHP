@@ -197,7 +197,7 @@ class LineItem
     {
         $lineItemService = new Service\LineItem($platform, $endpoint);
 
-        return lineItemService->get();
+        return $lineItemService->get();
     }
 
 }
