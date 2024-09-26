@@ -892,6 +892,9 @@ EOD;
             $this->onAuthenticate();
         }
         if ($this->ok) {
+            $this->ok = is_string(Tool::$defaultTool->messageUrl);
+        }
+        if ($this->ok) {
             $this->messageParameters = $this->addSignature(Tool::$defaultTool->messageUrl, $this->messageParameters, 'POST', null,
                 $parameters['nonce']);
         }
