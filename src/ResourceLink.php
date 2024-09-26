@@ -730,12 +730,14 @@ EOD;
         if (!$ok && !empty($urlExt)) {
             $do = '';
             $outcome = $ltiOutcome->getValue();
-            if (($action === ServiceAction::Read) && ($ltiOutcome->type === OutcomeType::Decimal)) {
+            if ($action === ServiceAction::Read) {
                 $do = 'basic-lis-readresult';
-            } elseif (($action === ServiceAction::Write) && $this->checkValueType($ltiOutcome, [OutcomeType::Decimal])) {
+            } elseif ($action === ServiceAction::Write) {
                 $do = 'basic-lis-updateresult';
-                if (($ltiOutcome->getPointsPossible() <> 1) && ($ltiOutcome->getPointsPossible() > 0)) {
-                    $outcome = $outcome / $ltiOutcome->getPointsPossible();
+                if ($this->checkValueType($ltiOutcome, [OutcomeType::Decimal])) {
+                    if (($ltiOutcome->getPointsPossible() <> 1) && ($ltiOutcome->getPointsPossible() > 0)) {
+                        $outcome = $outcome / $ltiOutcome->getPointsPossible();
+                    }
                 }
             } elseif ($action === ServiceAction::Delete) {
                 $do = 'basic-lis-deleteresult';
