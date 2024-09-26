@@ -72,7 +72,7 @@ class Score extends AssignmentGrade
             if (!empty($ltiOutcome->submissionStarted)) {
                 $json['submission']['startedAt'] = date_format($ltiOutcome->submissionStarted, 'Y-m-d\TH:i:s.uP');
             }
-            if (!empty($ltiOutcome->submissionStarted)) {
+            if (!empty($ltiOutcome->submissionCompleted)) {
                 $json['submission']['submittedAt'] = date_format($ltiOutcome->submissionCompleted, 'Y-m-d\TH:i:s.uP');
             }
         }
