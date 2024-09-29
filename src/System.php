@@ -1840,6 +1840,7 @@ trait System
                 $params[$paramName] = $jwt::sign($payload, $this->signatureMethod, $privateKey, $kid, $jku, $this->encryptionMethod,
                         $publicKey);
             } catch (\Exception $e) {
+                $this->setReason($e->getMessage());
                 $params = [];
             }
 

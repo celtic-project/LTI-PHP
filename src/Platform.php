@@ -897,6 +897,12 @@ EOD;
         if ($this->ok) {
             $this->messageParameters = $this->addSignature(Tool::$defaultTool->messageUrl, $this->messageParameters, 'POST', null,
                 $parameters['nonce']);
+            if (!$this->ok) {
+                $this->messageParameters['error'] = 'Unable to sign message';
+                if (!empty($this->reason)) {
+                    $this->messageParameters['error_description'] = $this->reason;
+                }
+            }
         }
         if (isset($parameters['state'])) {
             $this->messageParameters['state'] = $parameters['state'];
