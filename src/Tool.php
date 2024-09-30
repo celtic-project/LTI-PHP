@@ -420,7 +420,7 @@ class Tool
         if ($this->ok && is_null($this->messageParameters)) {
             $this->parseMessage($disableCookieCheck, $generateWarnings);
         }
-        if ($this->ok && is_null($this->messageParameters)) {
+        if ($this->ok && !is_null($this->messageParameters)) {
 // Set debug mode
             if (!Util::$logLevel->logDebug()) {
                 $this->debugMode = (isset($this->messageParameters['custom_debug']) &&
@@ -1786,10 +1786,10 @@ EOD;
                         }
                         if (empty($this->context)) {
                             $this->resourceLink = ResourceLink::fromPlatform($this->platform,
-                                    trim($this->messageParameters['resource_link_id']), $contentItemId);
+                                trim($this->messageParameters['resource_link_id']), $contentItemId);
                         } else {
                             $this->resourceLink = ResourceLink::fromContext($this->context,
-                                    trim($this->messageParameters['resource_link_id']), $contentItemId);
+                                trim($this->messageParameters['resource_link_id']), $contentItemId);
                         }
                         $title = '';
                         if (isset($this->messageParameters['resource_link_title'])) {
