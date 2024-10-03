@@ -170,7 +170,7 @@ class OAuthRequest
             $defaults['oauth_token'] = $token->key;
         }
 
-        $parameters = OAuthUtil::array_merge_recursive($defaults, $parameters);
+        $parameters = array_merge($defaults, $parameters);
 
         return new OAuthRequest($http_method, $http_url, $parameters);
     }
