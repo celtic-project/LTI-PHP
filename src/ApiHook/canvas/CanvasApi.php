@@ -125,7 +125,7 @@ trait CanvasApi
                         ];
                     }
                 }
-                if (preg_match('/\<([^\>]+)\>; *rel=\"next\"/', $http->responseHeaders, $matches)) {
+                if (preg_match('/\<([^\>]+)\>; *rel=\"next\"/', implode("\n", $http->responseHeaders), $matches)) {
                     $url = $matches[1];
                 }
             }
@@ -161,7 +161,7 @@ trait CanvasApi
                 foreach ($enrolments as $enrolment) {
                     $roles[strval($enrolment->user_id)] = $enrolment->type;
                 }
-                if (preg_match('/\<([^\>]+)\>; *rel=\"next\"/', $http->responseHeaders, $matches)) {
+                if (preg_match('/\<([^\>]+)\>; *rel=\"next\"/', implode("\n", $http->responseHeaders), $matches)) {
                     $url = $matches[1];
                 }
             } else {
@@ -243,7 +243,7 @@ trait CanvasApi
                     }
                     $users[$userId] = $user;
                 }
-                if (preg_match('/\<([^\>]+)\>; *rel=\"next\"/', $http->responseHeaders, $matches)) {
+                if (preg_match('/\<([^\>]+)\>; *rel=\"next\"/', implode("\n", $http->responseHeaders), $matches)) {
                     $url = $matches[1];
                 }
             } else {
@@ -302,7 +302,7 @@ trait CanvasApi
                         }
                     }
                 }
-                if (preg_match('/\<([^\>]+)\>; *rel=\"next\"/', $http->responseHeaders, $matches)) {
+                if (preg_match('/\<([^\>]+)\>; *rel=\"next\"/', implode("\n", $http->responseHeaders), $matches)) {
                     $url = $matches[1];
                 }
             }
