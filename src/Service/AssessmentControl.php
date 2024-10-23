@@ -18,6 +18,11 @@ class AssessmentControl extends Service
 {
 
     /**
+     * Media type for the Assessment Control service.
+     */
+    public const MEDIA_TYPE_ASSESSMENT_CONTROL = 'application/vnd.ims.lti-ap.v1.control+json';
+
+    /**
      * Access scope.
      *
      * @var string $SCOPE
@@ -42,7 +47,7 @@ class AssessmentControl extends Service
         parent::__construct($resourceLink->getPlatform(), $endpoint);
         $this->resourceLink = $resourceLink;
         $this->scope = self::$SCOPE;
-        $this->mediaType = 'application/vnd.ims.lti-ap.v1.control+json';
+        $this->mediaType = self::MEDIA_TYPE_ASSESSMENT_CONTROL;
     }
 
     /**

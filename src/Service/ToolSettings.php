@@ -20,6 +20,16 @@ class ToolSettings extends Service
 {
 
     /**
+     * Media type for tool settings service.
+     */
+    public const MEDIA_TYPE_TOOL_SETTINGS = 'application/vnd.ims.lti.v2.toolsettings+json';
+
+    /**
+     * Media type for tool settings simple service.
+     */
+    public const MEDIA_TYPE_TOOL_SETTINGS_SIMPLE = 'application/vnd.ims.lti.v2.toolsettings.simple+json';
+
+    /**
      * Access scope.
      *
      * @var string $SCOPE
@@ -68,9 +78,9 @@ class ToolSettings extends Service
         parent::__construct($platform, $endpoint);
         $this->scope = self::$SCOPE;
         if ($simple) {
-            $this->mediaType = 'application/vnd.ims.lti.v2.toolsettings.simple+json';
+            $this->mediaType = self::MEDIA_TYPE_TOOL_SETTINGS_SIMPLE;
         } else {
-            $this->mediaType = 'application/vnd.ims.lti.v2.toolsettings+json';
+            $this->mediaType = self::MEDIA_TYPE_TOOL_SETTINGS;
         }
         $this->source = $source;
         $this->simple = $simple;

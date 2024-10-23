@@ -16,6 +16,10 @@ use ceLTIc\LTI\Outcome;
  */
 class Score extends AssignmentGrade
 {
+    /**
+     * Media type for the Score service.
+     */
+    public const MEDIA_TYPE_SCORE = 'application/vnd.ims.lis.v1.score+json';
 
     /**
      * Access scope.
@@ -34,7 +38,7 @@ class Score extends AssignmentGrade
     {
         parent::__construct($platform, $endpoint, '/scores');
         $this->scope = self::$SCOPE;
-        $this->mediaType = 'application/vnd.ims.lis.v1.score+json';
+        $this->mediaType = self::MEDIA_TYPE_SCORE;
     }
 
     /**
