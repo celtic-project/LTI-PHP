@@ -21,7 +21,7 @@ class Result extends AssignmentGrade
     /**
      * Media type for the Result service.
      */
-    public const MEDIA_TYPE_RESULTS = 'application/vnd.ims.lis.v2.resultcontainer+json';
+    public const MEDIA_TYPE_RESULT = 'application/vnd.ims.lis.v2.resultcontainer+json';
 
     /**
      * Access scope.
@@ -69,7 +69,7 @@ class Result extends AssignmentGrade
         $this->limit = $limit;
         $this->pagingMode = $pagingMode;
         $this->scope = self::$SCOPE;
-        $this->mediaType = self::MEDIA_TYPE_RESULTS;
+        $this->mediaType = self::MEDIA_TYPE_RESULT;
     }
 
     /**
