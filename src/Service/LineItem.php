@@ -218,6 +218,8 @@ class LineItem extends AssignmentGrade
      */
     public function get(): LTI\LineItem|bool
     {
+        $lineItem = false;
+
         $this->scope = self::$SCOPE_READONLY;
         $this->mediaType = self::MEDIA_TYPE_LINE_ITEM;
         $http = $this->send('GET');
@@ -230,8 +232,6 @@ class LineItem extends AssignmentGrade
                     $lineItem = false;
                 }
             }
-        } else {
-            $lineItem = false;
         }
 
         return $lineItem;
