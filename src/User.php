@@ -230,12 +230,12 @@ class User
     /**
      * Set the user's email address.
      *
-     * @param string $email              Email address value
+     * @param stringnull $email          Email address value
      * @param string|null $defaultEmail  Value to use if no email is provided (optional, default is none)
      *
      * @return void
      */
-    public function setEmail(string $email, ?string $defaultEmail = null): void
+    public function setEmail(?string $email, ?string $defaultEmail = null): void
     {
         if (!empty($email)) {
             $this->email = $email;
