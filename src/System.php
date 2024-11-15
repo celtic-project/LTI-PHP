@@ -1368,6 +1368,11 @@ trait System
                             $this->parseClaims($generateWarnings);
                         }
                     }
+                    if ($this->ok || $generateWarnings) {
+                        if (isset($iss) && isset($this->rawParameters['iss']) && ($this->rawParameters['iss'] !== $iss)) {
+                            $this->setReason('\'iss\' parameter does not match \'iss\' claim');
+                        }
+                    }
                 }
             } catch (\Exception $e) {
                 $this->setReason('Message does not contain a valid JWT');
@@ -1838,7 +1843,7 @@ trait System
             try {
                 $jwt = Jwt::getJwtClient();
                 $params[$paramName] = $jwt::sign($payload, $this->signatureMethod, $privateKey, $kid, $jku, $this->encryptionMethod,
-                        $publicKey);
+                    $publicKey);
             } catch (\Exception $e) {
                 $this->setReason($e->getMessage());
                 $params = [];

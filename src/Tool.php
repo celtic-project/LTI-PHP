@@ -463,9 +463,11 @@ class Tool
         }
         if ($_SERVER['REQUEST_METHOD'] === 'HEAD') {  // Ignore HEAD requests
             Util::logRequest(true);
-        } elseif (isset($parameters['iss']) && (strlen($parameters['iss']) > 0)) {  // Initiate login request
+        } elseif (isset($parameters['target_link_uri'])) {  // Initiate login request
             Util::logRequest();
-            if (!isset($parameters['login_hint']) || (strlen($parameters['login_hint']) <= 0)) {
+            if (!isset($parameters['iss']) || (strlen($parameters['iss']) <= 0)) {
+                $this->setReason('Missing \'iss\' parameter');
+            } elseif (!isset($parameters['login_hint']) || (strlen($parameters['login_hint']) <= 0)) {
                 $this->setReason('Missing \'login_hint\' parameter');
             } elseif (!isset($parameters['target_link_uri']) || (strlen($parameters['target_link_uri']) <= 0)) {
                 $this->setReason('Missing \'target_link_uri\' parameter');
