@@ -276,6 +276,7 @@ class LineItem extends AssignmentGrade
         $startDateTime = Util::checkDateTime($json, 'startDateTime');
         $endDateTime = Util::checkDateTIme($json, 'endDateTime');
         $resourceLinkId = Util::checkString($json, 'resourceLinkId');
+        $gradesReleased = Util::checkBoolean($json, 'gradesReleased');
         if (!empty($id) && !empty($label) &&
             (!is_null($scoreMaximum) || (!empty($json->gradingScheme) && is_object($json->gradingScheme)))) {
             $lineItem = new LTI\LineItem($platform, $label, $scoreMaximum);
@@ -297,6 +298,9 @@ class LineItem extends AssignmentGrade
             }
             if (!empty($endDateTime)) {
                 $lineItem->submitUntil = $endDateTime;
+            }
+            if (!is_null($gradesReleased)) {
+                $lineItem->gradesReleased = $gradesReleased;
             }
             if (!empty($json->submissionReview)) {
                 if (is_object($json->submissionReview)) {
@@ -346,6 +350,9 @@ class LineItem extends AssignmentGrade
         }
         if (!empty($lineItem->submitUntil)) {
             $json->endDateTime = date('Y-m-d\TH:i:sP', $lineItem->submitUntil);
+        }
+        if (!is_null($lineItem->gradesReleased)) {
+            $json->gradesReleased = $lineItem->gradesReleased;
         }
         if (!empty($lineItem->submissionReview)) {
             $json->submissionReview = $lineItem->submissionReview->toJsonObject();

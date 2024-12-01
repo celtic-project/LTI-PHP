@@ -79,6 +79,13 @@ class LineItem
     public ?SubmissionReview $submissionReview = null;
 
     /**
+     * Grades should be released.
+     *
+     * @var bool|null $gradesReleased
+     */
+    public ?bool $gradesReleased = null;
+
+    /**
      * Platform for this line-item.
      *
      * @var Platform|null $platform

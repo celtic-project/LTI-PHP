@@ -52,6 +52,13 @@ class LineItem
     private ?SubmissionReview $submissionReview = null;
 
     /**
+     * Grades should be released.
+     *
+     * @var bool|null $gradesReleased
+     */
+    private ?bool $gradesReleased = null;
+
+    /**
      * Class constructor.
      *
      * @param string                $label             Label
@@ -59,15 +66,17 @@ class LineItem
      * @param string|null           $resourceId        Resource ID (optional)
      * @param string|null           $tag               Tag (optional)
      * @param SubmissionReview|null $submissionReview  Submission Review (optional)
+     * @param bool|null             $gradesReleased    Grades should be released
      */
     function __construct(string $label, int|float $scoreMaximum, ?string $resourceId = null, ?string $tag = null,
-        ?SubmissionReview $submissionReview = null)
+        ?SubmissionReview $submissionReview = null, ?bool $gradesReleased = null)
     {
         $this->label = $label;
         $this->scoreMaximum = $scoreMaximum;
         $this->resourceId = $resourceId;
         $this->tag = $tag;
         $this->submissionReview = $submissionReview;
+        $this->gradesReleased = $gradesReleased;
     }
 
     /**
@@ -91,6 +100,9 @@ class LineItem
         ];
         if (!is_null($this->submissionReview)) {
             $lineItem->submissionReview = $this->submissionReview->toJsonObject();
+        }
+        if (!is_null($this->gradesReleased)) {
+            $lineItem->gradesReleased = $this->gradesReleased;
         }
 
         return $lineItem;
@@ -116,6 +128,9 @@ class LineItem
         if (!is_null($this->submissionReview)) {
             $lineItem->submissionReview = $this->submissionReview->toJsonObject();
         }
+        if (!is_null($this->gradesReleased)) {
+            $lineItem->gradesReleased = $this->gradesReleased;
+        }
 
         return $lineItem;
     }
@@ -136,6 +151,7 @@ class LineItem
         $activityId = null;
         $tag = null;
         $submissionReview = null;
+        $gradesReleased = null;
         $hasLabel = false;
         $hasScoreMaximum = false;
         foreach (get_object_vars($item) as $name => $value) {
@@ -173,6 +189,9 @@ class LineItem
                         $submissionReview = SubmissionReview::fromJsonObject($item->submissionReview);
                     }
                     break;
+                case 'gradesReleased':
+                    $gradesReleased = Util::checkBoolean($item, 'Item/gradesReleased', false);
+                    break;
             }
         }
         if (is_null($scoreMaximum) && $label && $reportingMethod && $scoreConstraints) {
@@ -185,7 +204,7 @@ class LineItem
             }
         }
         if (!is_null($label) && !is_null($scoreMaximum)) {
-            $obj = new LineItem($label, $scoreMaximum, $activityId, $tag, $submissionReview);
+            $obj = new LineItem($label, $scoreMaximum, $activityId, $tag, $submissionReview, $gradesReleased);
         } else {
             if (!$hasLabel) {
                 Util::setMessage(true, 'A line item must have a label');
