@@ -658,7 +658,7 @@ class Context
      *
      * @return bool  True if context was successfully loaded
      */
-    private function load(int $id = null): bool
+    private function load(?int $id = null): bool
     {
         $this->initialize();
         $this->id = $id;

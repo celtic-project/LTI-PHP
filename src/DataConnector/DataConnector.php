@@ -123,7 +123,7 @@ class DataConnector
      *
      * @return bool  True if memcache is enabled
      */
-    public static function useMemcache(string $host = null, int $port = -1): bool
+    public static function useMemcache(?string $host = '', int $port = -1): bool
     {
         if (is_null($host)) {
             $useMemcache = !empty(self::$memcache);

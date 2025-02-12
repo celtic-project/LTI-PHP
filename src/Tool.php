@@ -451,7 +451,7 @@ class Tool
      * @param bool $disableCookieCheck  True if no cookie check should be made (optional, default is false)
      * @param bool $generateWarnings    True if warning messages should be generated (optional, default is false)
      */
-    public function handleRequest(bool $strictMode = null, bool $disableCookieCheck = false, bool $generateWarnings = false): void
+    public function handleRequest(?bool $strictMode = null, bool $disableCookieCheck = false, bool $generateWarnings = false): void
     {
         $currentStrictMode = Util::$strictMode;
         if (!is_null($strictMode)) {
@@ -1154,7 +1154,7 @@ EOD;
      *
      * @return Tool  The tool object
      */
-    public static function fromConsumerKey(?string $key = null, DataConnector $dataConnector = null, bool $autoEnable = false): Tool
+    public static function fromConsumerKey(?string $key = null, ?DataConnector $dataConnector = null, bool $autoEnable = false): Tool
     {
         $tool = new static($dataConnector);
         $tool->key = $key;
@@ -1177,7 +1177,7 @@ EOD;
      *
      * @return Tool  The tool object
      */
-    public static function fromInitiateLoginUrl(string $initiateLoginUrl, DataConnector $dataConnector = null,
+    public static function fromInitiateLoginUrl(string $initiateLoginUrl, ?DataConnector $dataConnector = null,
         bool $autoEnable = false): Tool
     {
         $tool = new static($dataConnector);

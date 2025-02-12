@@ -514,7 +514,7 @@ class Platform
      * @return Platform  The platform object
      */
     public static function fromPlatformId(string $platformId, ?string $clientId, ?string $deploymentId,
-        DataConnector $dataConnector = null, bool $autoEnable = false): Platform
+        ?DataConnector $dataConnector = null, bool $autoEnable = false): Platform
     {
         $platform = new static($dataConnector);
         $platform->platformId = $platformId;
