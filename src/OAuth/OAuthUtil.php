@@ -221,7 +221,7 @@ class OAuthUtil
                 if (!is_array($array2[$key])) {
                     $array[$key] = [$value, $array2[$key]];
                 } else {
-                    $array[$key] = self::array_merge_recursive([$value], $array2[$key]);
+                    $array[$key] = \array_merge([$value], $array2[$key]);
                 }
             } else {
                 if (!is_array($array2[$key])) {
@@ -229,7 +229,7 @@ class OAuthUtil
                 } else {
                     $array3 = $array2[$key];
                 }
-                $array[$key] = self::array_merge_recursive($value, $array3);
+                $array[$key] = \array_merge($value, $array3);
             }
         }
         foreach ($array2 as $key => $value) {
