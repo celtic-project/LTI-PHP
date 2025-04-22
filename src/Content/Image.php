@@ -107,17 +107,20 @@ class Image
                 switch ($name) {
                     case '@id':
                     case 'url':
-                        $url = Util::checkString($item, "Image/{$name}", false, false, '', false, null);
+                        $url = Util::checkUrl($item, "Image/{$name}", true);
+                        if (is_null($url)) {
+                            $ok = false;
+                        }
                         break;
                     case 'width':
                         $width = Util::checkInteger($item, "Image/width", false, 0, true);
-                        if (is_null($width)) {
+                        if (is_null($width) && Util::$strictMode) {
                             $ok = false;
                         }
                         break;
                     case 'height':
                         $height = Util::checkInteger($item, "Image/height", false, 0, true);
-                        if (is_null($height)) {
+                        if (is_null($height) && Util::$strictMode) {
                             $ok = false;
                         }
                         break;
@@ -126,7 +129,7 @@ class Image
         } else {
             $url = $item;
         }
-        if ($ok && $url) {
+        if ($ok && is_string($url)) {
             $obj = new Image($url, $width, $height);
         }
 

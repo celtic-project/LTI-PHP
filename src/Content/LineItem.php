@@ -145,7 +145,7 @@ class LineItem
     public static function fromJsonObject(object $item): ?LineItem
     {
         $obj = null;
-        $label = null;
+        $label = '';
         $reportingMethod = null;
         $scoreMaximum = null;
         $activityId = null;
@@ -158,7 +158,7 @@ class LineItem
             switch ($name) {
                 case 'label':
                     $hasLabel = true;
-                    $label = Util::checkString($item, 'LineItem/label', false, true, '', false, $label);
+                    $label = Util::checkString($item, 'LineItem/label', false, null, '', false, $label);
                     break;
                 case 'reportingMethod':
                     $reportingMethod = Util::checkString($item, 'LineItem/reportingMethod', false, true, '', false, $reportingMethod);
@@ -170,12 +170,12 @@ class LineItem
                     break;
                 case 'scoreMaximum':
                     $hasScoreMaximum = true;
-                    $scoreMaximum = Util::checkNumber($item, 'LineItem/scoreMaximum', false, 0, true);
+                    $scoreMaximum = Util::checkNumber($item, 'LineItem/scoreMaximum', true, 0, true);
                     break;
                 case 'assignedActivity':
                     if (isset($item->assignedActivity)) {
                         $activityId = Util::checkString($item->assignedActivity, 'LineItem/assignedActivity/activityId', false,
-                                true, '', false, $activityId);
+                            true, '', false, $activityId);
                     }
                     break;
                 case 'resourceId':

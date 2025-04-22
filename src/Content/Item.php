@@ -470,7 +470,7 @@ class Item
         $obj = null;
         $placement = null;
         $type = Util::checkString($item, 'Item/@type', false, true,
-                ['ContentItem', 'LtiLinkItem', 'AssignmentLinkItem', 'FileItem'], false, null);
+            ['ContentItem', 'LtiLinkItem', 'AssignmentLinkItem', 'FileItem'], false, null);
         if (!is_null($type)) {
             if (isset($item->presentationDocumentTarget) && is_object($item->presentationDocumentTarget)) {
                 $placement = Placement::fromJsonObject($item, $item->presentationDocumentTarget);
@@ -533,25 +533,27 @@ class Item
         $this->id = Util::checkString($item, 'Item/@id', false, true, '', false, $this->id);
         foreach (get_object_vars($item) as $name => $value) {
             switch ($name) {
-                case 'title':
-                case 'text':
-                case 'html':
                 case 'url':
-                case 'mediaType':
-                    $this->{$name} = Util::checkString($item, "Item/{$name}", false, false, '', false, null);
+                    $this->{$name} = Util::checkUrl($item, "Item/{$name}", true);
                     if (is_null($this->{$name})) {
                         $ok = false;
                     }
                     break;
+                case 'title':
+                case 'text':
+                case 'html':
+                case 'mediaType':
+                    $this->{$name} = Util::checkString($item, "Item/{$name}", false, null, '', false, null);
+                    break;
                 case 'hideOnCreate':
-                    $this->hideOnCreate = Util::checkBoolean($item, 'Item/hideOnCreate');
-                    if (is_null($this->hideOnCreate)) {
+                    $this->hideOnCreate = Util::checkBoolean($item, 'Item/hideOnCreate', false);
+                    if (is_null($this->hideOnCreate) && Util::$strictMode) {
                         $ok = false;
                     }
                     break;
                 case 'placementAdvice':
-                    $placements = Util::checkString($value, 'Item/placementAdvice/presentationDocumentTarget', false, true, '',
-                            false, null);
+                    $placements = Util::checkString($value, 'Item/placementAdvice/presentationDocumentTarget', true, true, '',
+                        false, null);
                     if (!is_null($placements)) {
                         $placements = explode(',', $placements);
                         foreach ($placements as $placement) {

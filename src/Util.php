@@ -671,7 +671,7 @@ EOD;
         if ($pos !== false) {
             $name = substr($name, $pos + 1);
         }
-        if (isset($obj->{$name})) {
+        if (property_exists($obj, $name)) {
             if (is_object($obj->{$name})) {
                 $element = $obj->{$name};
                 if ($stringValues) {
@@ -718,7 +718,7 @@ EOD;
         if ($pos !== false) {
             $name = substr($name, $pos + 1);
         }
-        if (isset($obj->{$name})) {
+        if (property_exists($obj, $name)) {
             if (is_array($obj->{$name})) {
                 $arr = $obj->{$name};
                 if ($notEmpty && empty($arr)) {
@@ -746,14 +746,14 @@ EOD;
      * @param object $obj               Object containing the element
      * @param string $fullname          Name of element (may include a path)
      * @param bool $required            True if the element must be present
-     * @param bool $notEmpty            True if the element must not have an empty value
+     * @param bool|null $notEmpty       True if the element must not have an empty value (use null to issue a warning message when it does)
      * @param string $fixedValue        Required value of element (empty string if none)
      * @param bool $overrideStrictMode  Ignore strict mode setting
      * @param string|null $default      Value to return when a conversion is not possible (optional, default is an empty string)
      *
      * @return string  Value of element (or default value if not found or valid)
      */
-    public static function checkString(object $obj, string $fullname, bool $required = false, bool $notEmpty = false,
+    public static function checkString(object $obj, string $fullname, bool $required = false, ?bool $notEmpty = false,
         string|array $fixedValue = '', bool $overrideStrictMode = false, ?string $default = ''): ?string
     {
         $value = $default;
@@ -762,7 +762,7 @@ EOD;
         if ($pos !== false) {
             $name = substr($name, $pos + 1);
         }
-        if (isset($obj->{$name})) {
+        if (property_exists($obj, $name)) {
             if (is_string($obj->{$name})) {
                 if (!empty($fixedValue) && is_string($fixedValue) && ($obj->{$name} !== $fixedValue)) {
                     if (self::$strictMode || $overrideStrictMode) {
@@ -783,6 +783,9 @@ EOD;
                     }
                 } else {
                     $value = $obj->{$name};
+                    if (is_null($notEmpty) && empty($value)) {
+                        self::setMessage(false, "The '{$fullname}' element is empty");
+                    }
                 }
             } elseif ($required || !is_null($obj->{$name})) {
                 if (self::$strictMode || $overrideStrictMode) {
@@ -793,9 +796,34 @@ EOD;
                         "The '{$fullname}' element should have a string value (" . gettype($obj->{$name}) . ' found)');
                     $value = self::valToString($obj->{$name}, $default);
                 }
+            } else {
+                $value = $default;
+                if (is_null($notEmpty) && empty($value)) {
+                    self::setMessage(false, "The '{$fullname}' element is empty");
+                }
             }
         } elseif ($required) {
             self::setMessage(true, "The '{$fullname}' element is missing");
+        }
+
+        return $value;
+    }
+
+    /**
+     * Get the named filly-qualified URL element from object.
+     *
+     * @param object $obj               Object containing the element
+     * @param string $fullname          Name of element (may include a path)
+     * @param bool $required            True if the element must be present
+     *
+     * @return string  Value of element (or default value if not found or valid)
+     */
+    public static function checkUrl(object $obj, string $fullname, bool $required = false): ?string
+    {
+        $value = self::checkString($obj, $fullname, $required);
+        if (is_string($value) && (strpos($value, 'http://') !== 0) && (strpos($value, 'https://') !== 0)) {
+            $value = null;
+            self::setMessage(true, "The '{$fullname}' element must be a fully-qualified URL");
         }
 
         return $value;
@@ -822,23 +850,25 @@ EOD;
         if ($pos !== false) {
             $name = substr($name, $pos + 1);
         }
-        if (isset($obj->{$name})) {
-            if (is_int($obj->{$name}) || is_float($obj->{$name})) {
-                if (($minimum !== false) && !$minimumExclusive && ($obj->{$name} < $minimum)) {
+        if (property_exists($obj, $name)) {
+            $num = self::valToNumber($obj->{$name});
+            if (!is_null($num)) {
+                if (($minimum !== false) && !$minimumExclusive && ($num < $minimum)) {
                     self::setMessage(true, "The '{$fullname}' element must have a numeric value of at least {$minimum}");
-                } elseif (($minimum !== false) && $minimumExclusive && ($obj->{$name} <= $minimum)) {
+                } elseif (($minimum !== false) && $minimumExclusive && ($num <= $minimum)) {
                     self::setMessage(true, "The '{$fullname}' element must have a numeric value greater than {$minimum}");
                 } else {
-                    $value = $obj->{$name};
+                    $value = $num;
                 }
-            } elseif ($required || !is_null($obj->{$name})) {
-                if (self::$strictMode || $overrideStrictMode) {
+            }
+            if (is_null($num) || (!is_null($value) && ($obj->{$name} !== $value))) {
+                if (($required && is_null($value)) || self::$strictMode || $overrideStrictMode) {
                     self::setMessage(true,
                         "The '{$fullname}' element must have a numeric value (" . gettype($obj->{$name}) . ' found)');
+                    $value = null;
                 } else {
                     self::setMessage(false,
                         "The '{$fullname}' element should have a numeric value (" . gettype($obj->{$name}) . ' found)');
-                    $value = self::valToNumber($obj->{$name});
                 }
             }
         } elseif ($required) {
@@ -895,7 +925,7 @@ EOD;
         if ($pos !== false) {
             $name = substr($name, $pos + 1);
         }
-        if (isset($obj->{$name})) {
+        if (property_exists($obj, $name)) {
             if (is_bool($obj->{$name})) {
                 $value = $obj->{$name};
             } elseif (!self::$strictMode) {
@@ -929,7 +959,7 @@ EOD;
         if ($pos !== false) {
             $name = substr($name, $pos + 1);
         }
-        if (isset($obj->{$name})) {
+        if (property_exists($obj, $name)) {
             if (is_string($obj->{$name})) {
                 $value = strtotime($obj->{$name});
                 if ($value === false) {
