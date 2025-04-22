@@ -184,7 +184,7 @@ class OAuthServer
         if (!in_array($signature_method, array_keys($this->signature_methods))) {
             throw new OAuthException('Signature method ' . var_export($signature_method, true) . ' not supported ' .
                     'try one of the following: ' . implode(', ', array_keys($this->signature_methods))
-            );
+                );
         }
 
         return $this->signature_methods[$signature_method];

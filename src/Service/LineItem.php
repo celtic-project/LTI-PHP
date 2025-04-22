@@ -187,10 +187,10 @@ class LineItem extends AssignmentGrade
         if ($ok && !empty($http->responseJson)) {
             $savedLineItem = $this->toLineItem($this->getPlatform(), $http->responseJson);
             if ($savedLineItem) {
-            foreach (get_object_vars($savedLineItem) as $key => $value) {
-                $lineItem->$key = $value;
+                foreach (get_object_vars($savedLineItem) as $key => $value) {
+                    $lineItem->$key = $value;
+                }
             }
-        }
         }
 
         return $ok;
@@ -283,7 +283,7 @@ class LineItem extends AssignmentGrade
             if (!empty($json->gradingScheme)) {
                 $lineItem->gradingScheme = GradingScheme::fromJsonObject($json->gradingScheme);
             }
-                $lineItem->endpoint = $json->id;
+            $lineItem->endpoint = $json->id;
             if (!empty($resourceLinkId)) {
                 $lineItem->ltiResourceLinkId = $resourceLinkId;
             }
@@ -304,7 +304,7 @@ class LineItem extends AssignmentGrade
             }
             if (!empty($json->submissionReview)) {
                 if (is_object($json->submissionReview)) {
-                $lineItem->submissionReview = SubmissionReview::fromJsonObject($json->submissionReview);
+                    $lineItem->submissionReview = SubmissionReview::fromJsonObject($json->submissionReview);
                 } else {
                     Util::setMessage(true,
                         'The \'submissionReview\' element must be an object (' . gettype($json->submissionReviewJson) . ' found)');
