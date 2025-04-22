@@ -408,17 +408,19 @@ class FirebaseClient implements ClientInterface
         }
         if ($res !== false) {
             $details = openssl_pkey_get_details($res);
-            $key = [
-                'kty' => 'RSA',
-                'n' => JWT::urlsafeB64Encode($details['rsa']['n']),
-                'e' => JWT::urlsafeB64Encode($details['rsa']['e']),
-                'alg' => $signatureMethod,
-                'use' => 'sig'
-            ];
-            if (!empty($kid)) {
-                $key['kid'] = $kid;
+            if (isset($details['rsa']) && isset($details['rsa']['n']) && isset($details['rsa']['e'])) {
+                $key = [
+                    'kty' => 'RSA',
+                    'n' => JWT::urlsafeB64Encode($details['rsa']['n']),
+                    'e' => JWT::urlsafeB64Encode($details['rsa']['e']),
+                    'alg' => $signatureMethod,
+                    'use' => 'sig'
+                ];
+                if (!empty($kid)) {
+                    $key['kid'] = $kid;
+                }
+                $keys['keys'][] = $key;
             }
-            $keys['keys'][] = $key;
         }
 
         return $keys;
