@@ -1366,6 +1366,14 @@ trait System
                             $this->messageParameters['oauth_consumer_key'] = $aud;
                             $this->messageParameters['oauth_signature_method'] = $this->jwt->getHeader('alg');
                             $this->parseClaims($generateWarnings);
+                            $url = $this->jwt->getClaim(Util::JWT_CLAIM_PREFIX . '/claim/target_link_uri');
+                            if (!empty($url)) {
+                                $queryString = parse_url($url, PHP_URL_QUERY);
+                                if ($queryString) {
+                                    $this->messageParameters = array_merge($this->getCustomQueryParameters($queryString),
+                                        $this->messageParameters);
+                                }
+                            }
                         }
                     }
                     if ($this->ok || $generateWarnings) {
@@ -1413,7 +1421,7 @@ trait System
                     }
                 }
             }
-            $this->messageParameters = $this->rawParameters;
+            $this->messageParameters = array_merge($this->getCustomQueryParameters($_SERVER['QUERY_STRING']), $this->rawParameters);
         }
     }
 

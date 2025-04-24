@@ -133,6 +133,13 @@ class Tool
     ];
 
     /**
+     * True if custom parameters can be passed in the query string.
+     *
+     * @var bool $allowCustomQueryParameters
+     */
+    public static bool $allowCustomQueryParameters = false;
+
+    /**
      * Platform object.
      *
      * @var Platform|null $platform
@@ -327,6 +334,13 @@ class Tool
      * @var string|null $errorOutput
      */
     protected ?string $errorOutput = null;
+
+    /**
+     * Custom parameters passed in query string, if allowed.
+     *
+     * @var array|null $customQueryParameters
+     */
+    private ?array $customQueryParameters = null;
 
     /**
      * LTI parameter constraints for auto validation checks.
@@ -596,6 +610,16 @@ class Tool
         }
 
         return $ok;
+    }
+
+    /**
+     * Whether a tool has received custom parameters in the query string.
+     *
+     * @return bool
+     */
+    public function hasCustomQueryParameters(): bool
+    {
+        return !empty($this->customQueryParameters);
     }
 
 ###
@@ -2002,6 +2026,36 @@ EOD;
                 }
             }
         }
+    }
+
+    /**
+     * Get any custom parameters from query string, if allowed.
+     *
+     * @param string $queryString  LTI message query string
+     *
+     * @return array
+     */
+    private function getCustomQueryParameters(string $queryString): array
+    {
+        if (is_null($this->customQueryParameters)) {
+            $this->customQueryParameters = [];
+            if (static::$allowCustomQueryParameters) {
+                $queryParams = OAuth\OAuthUtil::parse_parameters($queryString);
+                foreach ($queryParams as $name => $value) {
+                    if (str_starts_with(strval($name), 'custom_')) {
+                        if (!is_array($value)) {
+                            $this->customQueryParameters[$name] = $value;
+                        } else {
+                            foreach ($value as $avalue) {
+                                $this->customQueryParameters[$name] = $avalue;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return $this->customQueryParameters;
     }
 
     /**
