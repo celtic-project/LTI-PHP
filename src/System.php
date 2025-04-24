@@ -1731,11 +1731,17 @@ trait System
                             unset($params[$key]);
                         }
                     } else {
-                        $params[$key] = array_diff($params[$key], [$value]);
+                        $k = array_search($value, $params[$key]);
+                        if ($k !== false) {
+                            unset($params[$key][$k]);
+                        }
                     }
                 } else {
                     foreach ($value as $element) {
-                        $params[$key] = array_diff($params[$key], [$element]);
+                        $k = array_search($element, $params[$key]);
+                        if ($k !== false) {
+                            unset($params[$key][$k]);
+                        }
                     }
                 }
             }
