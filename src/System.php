@@ -898,7 +898,11 @@ trait System
     {
         if (!empty($url)) {
 // Add standard parameters
-            $params['lti_version'] = $ltiVersionString;
+            if (!empty($ltiVersionString)) {
+                $params['lti_version'] = $ltiVersionString;
+            } else {
+                unset($params['lti_version']);
+            }
             $params['lti_message_type'] = $type;
 // Add signature
             $params = $this->addSignature($url, $params, 'POST', 'application/x-www-form-urlencoded');
@@ -934,7 +938,11 @@ trait System
                 }
             }
 // Add standard parameters
-            $params['lti_version'] = $ltiVersionString;
+            if (!empty($ltiVersionString)) {
+                $params['lti_version'] = $ltiVersionString;
+            } else {
+                unset($params['lti_version']);
+            }
             $params['lti_message_type'] = $type;
             $this->onInitiateLogin($url, $loginHint, $ltiMessageHint, $params);
 
