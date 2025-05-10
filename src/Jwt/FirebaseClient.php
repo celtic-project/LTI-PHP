@@ -263,20 +263,18 @@ class FirebaseClient implements ClientInterface
         $ok = false;
         $hasPublicKey = !empty($publicKey);
         if ($hasPublicKey) {
-            if (is_string($publicKey)) {
-                $json = Util::jsonDecode($publicKey, true);
-                if (!is_null($json)) {
-                    try {
-                        $jwks = [
-                            'keys' => [$json]
-                        ];
-                        $key = JWK::parseKeySet($jwks, $this->getHeader('alg'));
-                    } catch (\Exception $e) {
+            $json = Util::jsonDecode($publicKey, true);
+            if (!is_null($json)) {
+                try {
+                    $jwks = [
+                        'keys' => [$json]
+                    ];
+                    $key = JWK::parseKeySet($jwks, $this->getHeader('alg'));
+                } catch (\Exception $e) {
 
-                    }
-                } else {
-                    $key = new Key($publicKey, $this->getHeader('alg'));
                 }
+            } else {
+                $key = new Key($publicKey, $this->getHeader('alg'));
             }
         } elseif (!empty($jku)) {
             $key = $this->fetchPublicKey($jku);
