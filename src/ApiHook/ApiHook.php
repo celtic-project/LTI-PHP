@@ -64,8 +64,8 @@ trait ApiHook
      */
     public static function registerApiHook(string $hookName, string $familyCode, string $className): void
     {
-        $objectClass = get_class();
-        self::$API_HOOKS["{$objectClass}-{$hookName}-{$familyCode}"] = $className;
+        $class = self::class;
+        self::$API_HOOKS["{$class}-{$hookName}-{$familyCode}"] = $className;
     }
 
     /**
