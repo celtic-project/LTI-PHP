@@ -5,7 +5,7 @@ namespace ceLTIc\LTI;
 
 use ceLTIc\LTI\OAuth;
 use ceLTIc\LTI\Enum\LogLevel;
-use ceLTIc\LTI\Jwt\ClientInterface;
+use Psr\Log\LoggerInterface;
 
 /**
  * Class to implement utility methods
@@ -188,6 +188,13 @@ final class Util
     public static int $formSubmissionTimeout = 2;
 
     /**
+     * The client used to handle log messages.
+     *
+     * @var LoggerInterface $loggerClient
+     */
+    private static LoggerInterface $loggerClient;
+
+    /**
      * Messages relating to service request.
      *
      * @var array $messages
@@ -236,7 +243,7 @@ final class Util
     public static function logError(string $message, bool $showSource = true): void
     {
         if (self::$logLevel->logError()) {
-            self::log("[ERROR] {$message}", $showSource);
+            self::logMessage($message, LogLevel::Error, $showSource);
         }
     }
 
@@ -251,7 +258,7 @@ final class Util
     public static function logInfo(string $message, bool $showSource = false): void
     {
         if (self::$logLevel->logInfo()) {
-            self::log("[INFO] {$message}", $showSource);
+            self::logMessage($message, LogLevel::Info, $showSource);
         }
     }
 
@@ -266,7 +273,7 @@ final class Util
     public static function logDebug(string $message, bool $showSource = false): void
     {
         if (self::$logLevel->logDebug()) {
-            self::log("[DEBUG] {$message}", $showSource);
+            self::logMessage($message, LogLevel::Debug, $showSource);
         }
     }
 
@@ -328,12 +335,29 @@ final class Util
     /**
      * Log an error message irrespective of the logging level.
      *
+     * @deprecated Use logMessage() instead
+     *
      * @param string $message   Message to be logged
      * @param bool $showSource  True if the name and line number of the current file are to be included
      *
      * @return void
      */
     public static function log(string $message, bool $showSource = false): void
+    {
+        self::logDebug('Method ceLTIc\LTI\Util::log has been deprecated; please use ceLTIc\LTI\Util::logMessage instead.', true);
+        self::logMessage($message, LogLevel::None, $showSource);
+    }
+
+    /**
+     * Log an error message irrespective of the logging level.
+     *
+     * @param string $message   Message to be logged
+     * @param LogLevel $type    Type of message to be logged (optional, default is none)
+     * @param bool $showSource  True if the name and line number of the current file are to be included
+     *
+     * @return void
+     */
+    public static function logMessage(string $message, LogLevel $type = LogLevel::None, bool $showSource = false): void
     {
         $source = '';
         if ($showSource) {
@@ -350,7 +374,63 @@ final class Util
                 $source = PHP_EOL . "See: {$source}";
             }
         }
-        error_log($message . $source);
+        $message = $message . $source;
+        $loggerClient = Util::getLoggerClient();
+        if (empty($loggerClient)) {
+            $prefix = match ($type) {
+                LogLevel::Error => '[ERROR] ',
+                LogLevel::Info => '[INFO] ',
+                LogLevel::Debug => '[DEBUG] ',
+                default => ''
+            };
+            error_log($prefix . $message);
+        } else {
+            switch ($type) {
+                case LogLevel::Error:
+                    $loggerClient->error($message);
+                    break;
+                case LogLevel::Info:
+                    $loggerClient->info($message);
+                    break;
+                case LogLevel::Debug:
+                    $loggerClient->debug($message);
+                    break;
+                default:
+                    $loggerClient->notice($message);
+                    break;
+            }
+        }
+    }
+
+    /**
+     * Set the Logger client to use for logging messages.
+     *
+     * @param LoggerInterface|null $loggerClient  Logger client (use null to reset to default)
+     *
+     * @return void
+     */
+    public static function setLoggerClient(?LoggerInterface $loggerClient): void
+    {
+        Util::$loggerClient = $loggerClient;
+        if (!empty($loggerClient)) {
+            Util::logDebug('LoggerClient set to \'' . get_class(self::$loggerClient) . '\'');
+        } else {
+            Util::logDebug('LoggerClient set to use error_log');
+        }
+    }
+
+    /**
+     * Get the Logger client to use for logging messages.
+     *
+     * @return LoggerInterface|null  Logger client
+     */
+    public static function getLoggerClient(): ?LoggerInterface
+    {
+        if (!empty(Util::$loggerClient)) {
+            return Util::$loggerClient;
+        } else {
+            return null;
+        }
     }
 
     /**
