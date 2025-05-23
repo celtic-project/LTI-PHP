@@ -293,16 +293,31 @@ final class Util
     public static function logRequest(bool $debugLevel = false): void
     {
         if (self::$logLevel->logDebug() || (!$debugLevel && self::$logLevel->logInfo())) {
-            $message = "{$_SERVER['REQUEST_METHOD']} request received for '{$_SERVER['REQUEST_URI']}'";
+            $message = '';
+            $headers = OAuth\OAuthUtil::get_headers();
             $body = file_get_contents(OAuth\OAuthRequest::$POST_INPUT);
             if (!empty($body)) {
-                $params = OAuth\OAuthUtil::parse_parameters($body);
-                if (!empty($params)) {
+                if (isset($headers['Content-Type']) && (trim(explode(';', $headers['Content-Type'])[0]) == 'application/x-www-form-urlencoded')) {
+                    $params = OAuth\OAuthUtil::parse_parameters($body);
                     $message .= " with body parameters of:\n" . var_export($params, true);
                 } else {
-                    $message .= " with a body of:\n" . var_export($body, true);
+                    $message .= ' with a body of:';
+                    if (!preg_match('/[^\s\x20-\x7e]/', $body)) {
+                        $message .= "\n" . var_export($body, true);
+                    } else {
+                        $message .= ' <Body contains binary data>';
+                    }
                 }
             }
+            if (!empty($headers)) {
+                if (!empty($message)) {
+                    $message .= "\nand ";
+                } else {
+                    $message .= " with ";
+                }
+                $message .= "headers of:\n" . var_export($headers, true);
+            }
+            $message = "{$_SERVER['REQUEST_METHOD']} request received for '{$_SERVER['REQUEST_URI']}'{$message}";
             if (!$debugLevel) {
                 self::logInfo($message);
             } else {
