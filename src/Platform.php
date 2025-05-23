@@ -10,6 +10,8 @@ use ceLTIc\LTI\Enum\IdScope;
 use ceLTIc\LTI\Enum\LogLevel;
 use ceLTIc\LTI\ApiHook\ApiHook;
 use ceLTIc\LTI\Content\Item;
+use ceLTIc\LTI\Oauth;
+use ceLTIc\LTI\Jwt\Jwt;
 
 /**
  * Class to represent a platform
@@ -39,6 +41,13 @@ class Platform
      * @var string|null $browserStorageFrame
      */
     public static ?string $browserStorageFrame = null;
+
+    /**
+     * Life (in seconds) of an issued access token (default is 1 hour).
+     *
+     * @var int $accessTokenLife
+     */
+    public static $accessTokenLife = 3600;
 
     /**
      * Platform ID.
@@ -477,6 +486,90 @@ class Platform
             }
             Util::logError($errorMessage);
         }
+    }
+
+    /**
+     * Generate an access token value.
+     *
+     * @param array $supportedScopes  Supported scopes
+     *
+     * @return never
+     */
+    public function sendAccessToken($supportedScopes): never
+    {
+        $scopesRequested = explode(' ',
+            OAuth\OAuthUtil::parse_parameters(file_get_contents(OAuth\OAuthRequest::$POST_INPUT))['scope']);
+        $scopesPermitted = array();
+        foreach ($scopesRequested as $scope) {
+            if (in_array($scope, $supportedScopes)) {
+                $scopesPermitted[] = $scope;
+            }
+        }
+        if (!empty($scopesPermitted)) {
+            $life = static::$accessTokenLife;
+            $scopes = implode(' ', array_unique($scopesPermitted));
+            $payload['sub'] = $this->clientId;
+            $payload['iat'] = time();
+            $payload['exp'] = $payload['iat'] + $life;
+            $payload['imsglobal.org.security.scope'] = $scopes;
+            try {
+                $jwt = Jwt::getJwtClient();
+                $tokenValue = $jwt::sign($payload, $this->signatureMethod, $this->rsaKey);
+                $body = <<< EOD
+{
+  "access_token" : "{$tokenValue}",
+  "token_type" : "bearer",
+  "expires_in" : {$life},
+  "scope" : "{$scopes}"
+}
+EOD;
+                Util::sendResponse($body, 'Content-Type: application/json; charset=utf-8');
+            } catch (\Exception $e) {
+                $reason = $e->getMessage();
+                if (empty($reason)) {
+                    $reason = 'System Error';
+                }
+            }
+        } else {
+            $reason = 'No valid scope requested';
+        }
+        Util::sendResponse('', '', 400, $reason);
+    }
+
+    /**
+     * Verify the authorisation of a service request.
+     *
+     * array $allowedScopes  Array of scopes at least one of which is required to authorise the request (passed by reference)
+     *
+     * @return bool  True if the request is authorised
+     */
+    public function verifyAuthorization(array &$allowedSscopes): bool
+    {
+        $requestHeaders = OAuth\OAuthUtil::get_headers();
+        $ok = isset($requestHeaders['Authorization']);
+        if ($ok) {
+            $authHeader = strtolower($requestHeaders['Authorization']);
+            if (str_starts_with($authHeader, 'bearer ')) {  // Access token
+                $token = trim(substr($requestHeaders['Authorization'], 7));
+                $jwt = Jwt::getJwtClient();
+                $ok = $jwt->load($token);
+                if ($ok) {
+                    $publicKey = $jwt->getPublicKey($this->rsaKey);
+                    $ok = $jwt->verifySignature($publicKey);
+                }
+                if ($ok) {
+                    $scopes = explode(' ', $jwt->getClaim('imsglobal.org.security.scope'));
+                    $allowedSscopes = \array_intersect($allowedSscopes, $scopes);
+                    $ok = !empty($allowedSscopes);
+                }
+            } elseif (str_starts_with($authHeader, 'oauth ')) {  // OAuth 1
+                $ok = $this->verifySignature();
+            } else {  // Unsupported type of Authorization header
+                $ok = false;
+            }
+        }
+
+        return $ok;
     }
 
     /**

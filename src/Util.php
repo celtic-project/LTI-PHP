@@ -537,6 +537,44 @@ EOD;
     }
 
     /**
+     * Send a service response.
+     *
+     * @param string $body           Body of response (default is empty)
+     * @param string $contentType    Content type of response (default is empty)
+     * @param int $statusCode        Status code of response (default is 200)
+     * @param string $statusMessage  Status message of response (default is 'OK')
+     *
+     * @return never
+     */
+    public static function sendResponse(string $body = '', string $contentType = '', int $statusCode = 200,
+        string $statusMessage = 'OK'): never
+    {
+        $status = strval($statusCode);
+        $response = "{$_SERVER['SERVER_PROTOCOL']} {$status} {$statusMessage}";
+        header($response);
+        $response .= "\nDate: " . gmdate(DATE_RFC2822);
+        $response .= "\nServer: " . $_SERVER['SERVER_SOFTWARE'];
+        foreach (headers_list() as $header) {
+            $response .= "\n{$header}";
+        }
+        if (!empty($body)) {
+            if (!empty($contentType)) {
+                $response .= "\nContent-Type: {$contentType}";
+            }
+            $response .= "\nContent-Length: " . strval(strlen($body));
+            $response .= "\n\n";
+            if (!preg_match('/[^\s\x20-\x7e]/', $body)) {
+                $response .= $body;
+            } else {
+                $response .= '<Body contains binary data>';
+            }
+            echo $body;
+        }
+        self::logDebug('Response sent: ' . $response);
+        exit;
+    }
+
+    /**
      * Redirect to a URL with query parameters.
      *
      * @param string $url    URL to which the form should be submitted
