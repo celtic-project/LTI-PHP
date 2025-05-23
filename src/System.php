@@ -1144,9 +1144,11 @@ trait System
     /**
      * Verify the signature of a message.
      *
+     * @param bool $generateWarnings    True if warning messages should be generated
+     *
      * @return bool  True if the signature is valid
      */
-    public function verifySignature(): bool
+    public function verifySignature($generateWarnings = false): bool
     {
         $key = $this->key;
         if (!empty($key)) {
@@ -1172,42 +1174,8 @@ trait System
                 $jku = $this->jku;
             }
         }
-        if (empty($this->jwt) || empty($this->jwt->hasJwt())) {  // OAuth-signed message
-            try {
-                $store = new OAuthDataStore($this);
-                $server = new OAuth\OAuthServer($store);
-                $method = new OAuth\OAuthSignatureMethod_HMAC_SHA224();
-                $server->add_signature_method($method);
-                $method = new OAuth\OAuthSignatureMethod_HMAC_SHA256();
-                $server->add_signature_method($method);
-                $method = new OAuth\OAuthSignatureMethod_HMAC_SHA384();
-                $server->add_signature_method($method);
-                $method = new OAuth\OAuthSignatureMethod_HMAC_SHA512();
-                $server->add_signature_method($method);
-                $method = new OAuth\OAuthSignatureMethod_HMAC_SHA1();
-                $server->add_signature_method($method);
-                $request = OAuth\OAuthRequest::from_request();
-                if (isset($request->get_parameters()['_new_window']) && !isset($this->messageParameters['_new_window'])) {
-                    $request->unset_parameter('_new_window');
-                }
-                $server->verify_request($request);
-            } catch (\Exception $e) {
-                $this->ok = false;
-                if (empty($this->reason)) {
-                    $oauthConsumer = new OAuth\OAuthConsumer($key, $secret);
-                    $signature = $request->build_signature($method, $oauthConsumer, null);
-                    if ($this->debugMode) {
-                        $this->setReason($e->getMessage());
-                    }
-                    $this->setReason('OAuth signature check failed - perhaps an incorrect secret or timestamp');
-                    $this->details[] = "Shared secret: '{$secret}'";
-                    $this->details[] = 'Current timestamp: ' . time();
-                    $this->details[] = "Expected signature: {$signature}";
-                    $this->details[] = "Base string: {$request->base_string}";
-                }
-            }
-        } else {  // JWT-signed message
-            $nonce = new PlatformNonce($platform, Util::valToString($this->jwt->getClaim('nonce')));
+        if (!empty($this->jwt) && !empty($this->jwt->hasJwt())) {  // JWT-signed message
+            $nonce = new PlatformNonce($platform, $this->jwt->getClaim('nonce'));
             $ok = !$nonce->load();
             if ($ok) {
                 $ok = $nonce->save();
@@ -1235,6 +1203,101 @@ trait System
                 }
             } else {
                 $this->setReason('Unable to verify JWT signature as neither a public key nor a JSON Web Key URL is specified');
+            }
+        } else {
+            $request = OAuth\OAuthRequest::from_request();
+            $parameters = $request->get_parameters();
+            if (!isset($parameters['client_assertion_type'])) {  // OAuth-signed message
+                try {
+                    $store = new OAuthDataStore($this);
+                    $server = new OAuth\OAuthServer($store);
+                    $method = new OAuth\OAuthSignatureMethod_HMAC_SHA224();
+                    $server->add_signature_method($method);
+                    $method = new OAuth\OAuthSignatureMethod_HMAC_SHA256();
+                    $server->add_signature_method($method);
+                    $method = new OAuth\OAuthSignatureMethod_HMAC_SHA384();
+                    $server->add_signature_method($method);
+                    $method = new OAuth\OAuthSignatureMethod_HMAC_SHA512();
+                    $server->add_signature_method($method);
+                    $method = new OAuth\OAuthSignatureMethod_HMAC_SHA1();
+                    $server->add_signature_method($method);
+                    $request = OAuth\OAuthRequest::from_request();
+                    if (isset($parameters['_new_window']) && !isset($this->messageParameters['_new_window'])) {
+                        $request->unset_parameter('_new_window');
+                    }
+                    $server->verify_request($request);
+                } catch (\Exception $e) {
+                    $this->ok = false;
+                    if (empty($this->reason)) {
+                        $oauthConsumer = new OAuth\OAuthConsumer($key, $secret);
+                        $signature = $request->build_signature($method, $oauthConsumer, null);
+                        if ($this->debugMode) {
+                            $this->setReason($e->getMessage());
+                        }
+                        if (empty($this->reason)) {
+                            $this->setReason('OAuth signature check failed - perhaps an incorrect secret or timestamp');
+                        }
+                        $this->details[] = "Shared secret: '{$secret}'";
+                        $this->details[] = 'Current timestamp: ' . time();
+                        $this->details[] = "Expected signature: {$signature}";
+                        $this->details[] = "Base string: {$request->base_string}";
+                    }
+                }
+            } elseif (isset($parameters['grant_type']) && ($parameters['grant_type'] === 'client_credentials') &&
+                ($parameters['client_assertion_type'] === 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer') &&
+                isset($parameters['client_assertion']) && !empty($parameters['scope'])) {
+                $jwt = Jwt::getJwtClient();
+                $ok = $jwt->load($parameters['client_assertion']);
+                if (!$ok) {
+                    $this->setReason('Request does not contain a valid client_assertion JWT');
+                } else {
+                    $this->jwt = $jwt;
+                    if ($this->ok || $generateWarnings) {
+                        $iat = $this->getClaimInteger('iat', true, $generateWarnings);
+                    }
+                    if ($this->ok || $generateWarnings) {
+                        $exp = $this->getClaimInteger('exp', true, $generateWarnings);
+                    }
+                    if (($this->ok || $generateWarnings) && !is_null($iat) && !is_null($exp) && ($iat > $exp)) {
+                        $this->setReason('\'iat\' claim must not have a value greater than \'exp\' claim');
+                    }
+                    if ($this->ok || $generateWarnings) {
+                        $nonce = $this->getClaimString('jti', true, true, $generateWarnings);
+                    }
+                    if ($this->ok || $generateWarnings) {
+                        $iss = $this->getClaimString('iss', true, true, $generateWarnings);
+                    }
+                    if ($this->ok || $generateWarnings) {
+                        $sub = $this->getClaimString('sub', true, true, $generateWarnings);
+                    }
+                    if ($this->ok || $generateWarnings) {
+                        if ($sub !== $iss) {
+                            $this->setReason('\'iss\' and \'sub\' claims must have the same value');
+                        } elseif ($sub !== $platform->clientId) {
+                            $this->setReason('\'iss\' and \'sub\' claim values do not match the client ID');
+                        }
+                    }
+                    if ($this->ok || $generateWarnings) {
+                        $aud = $this->getClaimArray('aud', true, true, $generateWarnings);
+                    }
+                    if ($this->ok || $generateWarnings) {
+                        if (is_array($aud) && !in_array($platform->accessTokenUrl, $aud)) {
+                            $this->setReason('\'aud\' claim must contain access token URL');
+                        }
+                    }
+                    if ($this->ok || $generateWarnings) {
+                        $deploymentId = $this->getClaimString(Util::JWT_CLAIM_PREFIX . '/claim/deployment_id', false, true,
+                            $generateWarnings);
+                    }
+                }
+                if ($ok) {
+                    $ok = $jwt->verifySignature($publicKey, $jku);
+                    if (!$ok) {
+                        $this->setReason('Invalid JWT signature');
+                    }
+                }
+            } else {
+                $this->setReason('Invalid request');
             }
         }
 

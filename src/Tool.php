@@ -1520,7 +1520,7 @@ EOD;
                     $doSavePlatform = $doSavePlatform || ($last !== $today);
                 }
                 $this->platform->lastAccess = $now;
-                $this->verifySignature();
+                $this->verifySignature($generateWarnings);
             }
             if ($this->ok) {
                 if ($this->platform->protected) {
