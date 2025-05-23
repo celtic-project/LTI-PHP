@@ -496,6 +496,20 @@ trait System
                         $value = array_map('trim', explode(',', $value));
                         $value = array_filter($value);
                         sort($value);
+                    } elseif (isset($mapping['isObject']) && $mapping['isObject']) {
+                        $value = array_map('trim', explode(",", $value));
+                        $value = array_filter($value);
+                        $props = [];
+                        foreach ($value as $line) {
+                            $parts = explode('=', $line, 2);
+                            if (count($parts) > 1) {
+                                $props[trim($parts[0])] = trim($parts[1]);
+                            } else {
+                                $props[trim($parts[0])] = '';
+                            }
+                        }
+                        ksort($props);
+                        $value = (object) $props;
                     } elseif (isset($mapping['isContentItemSelection']) && $mapping['isContentItemSelection']) {
                         $value = Util::jsonDecode($value);
                         if (is_object($value) && isset($value->{'@graph'}) && is_array($value->{'@graph'})) {
@@ -1480,6 +1494,18 @@ trait System
                         }
                         if (is_array($value)) {
                             $value = implode(',', $value);
+                        }
+                    } elseif (isset($mapping['isObject']) && $mapping['isObject']) {
+                        if (!is_object($value)) {
+                            $value = $this->checkClaimObject($claim, $value, false);
+                        }
+                        $values = [];
+                        if (is_object($value)) {
+                            $props = get_object_vars($value);
+                            foreach ($props as $k => $v) {
+                                $values[] = "{$k}={$v}";
+                            }
+                            $value = implode(',', $values);
                         }
                     } elseif (isset($mapping['isContentItemSelection']) && $mapping['isContentItemSelection']) {
                         $value = $this->checkClaimArray($claim, $value, false);

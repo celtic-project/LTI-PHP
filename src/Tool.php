@@ -129,7 +129,13 @@ class Tool
         'ToolProxyBinding.memberships.url' => 'custom_context_memberships_url',
         'ToolProxyBinding.nrps.url' => 'custom_context_memberships_v2_url',
         'LtiLink.memberships.url' => 'custom_link_memberships_url',
-        'LtiLink.acs.url' => 'custom_ap_acs_url'
+        'LtiLink.acs.url' => 'custom_ap_acs_url',
+        'Caliper.endpoint' => 'custom_caliper_endpoint_url',
+        'Caliper.federated.session.id' => 'custom_caliper_federated_session_id',
+        'Caliper.maximum.payload.size' => 'custom_caliper_maximum_payload_size',
+        'Caliper.supported.extensions' => 'custom_caliper_supported_extensions',
+        'Caliper.supported.versions' => 'custom_caliper_supported_versions',
+        'Caliper.scopes' => 'custom_caliper_scopes'
     ];
 
     /**

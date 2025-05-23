@@ -125,7 +125,13 @@ final class Util
         'custom_ap_verified_user_family_name' => ['suffix' => 'ap', 'group' => 'verified_user', 'claim' => 'family_name'],
         'custom_ap_verified_user_full_name' => ['suffix' => 'ap', 'group' => 'verified_user', 'claim' => 'full_name'],
         'custom_ap_verified_user_image' => ['suffix' => 'ap', 'group' => 'verified_user', 'claim' => 'picture'],
-        'custom_ap_end_assessment_return' => ['suffix' => 'ap', 'group' => '', 'claim' => 'end_assessment_return', 'isBoolean' => true]
+        'custom_ap_end_assessment_return' => ['suffix' => 'ap', 'group' => '', 'claim' => 'end_assessment_return', 'isBoolean' => true],
+        'custom_caliper_endpoint_url' => ['suffix' => 'ces', 'group' => 'caliper-endpoint-service', 'claim' => 'caliper_endpoint_url'],
+        'custom_caliper_federated_session_id' => ['suffix' => 'ces', 'group' => 'caliper-endpoint-service', 'claim' => 'caliper_federated_session_id'],
+        'custom_caliper_maximum_payload_size' => ['suffix' => 'ces', 'group' => 'caliper-endpoint-service', 'claim' => 'caliper_maximum_payload_size', 'isInteger' => true],
+        'custom_caliper_supported_extensions' => ['suffix' => 'ces', 'group' => 'caliper-endpoint-service', 'claim' => 'caliper_supported_extensions', 'isObject' => true],
+        'custom_caliper_supported_versions' => ['suffix' => 'ces', 'group' => 'caliper-endpoint-service', 'claim' => 'caliper_supported_versions', 'isArray' => true],
+        'custom_caliper_scopes' => ['suffix' => 'ces', 'group' => 'caliper-endpoint-service', 'claim' => 'scopes', 'isArray' => true]
     ];
 
     /**
