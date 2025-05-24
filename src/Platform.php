@@ -10,7 +10,7 @@ use ceLTIc\LTI\Enum\IdScope;
 use ceLTIc\LTI\Enum\LogLevel;
 use ceLTIc\LTI\ApiHook\ApiHook;
 use ceLTIc\LTI\Content\Item;
-use ceLTIc\LTI\Oauth;
+use ceLTIc\LTI\OAuth;
 use ceLTIc\LTI\Jwt\Jwt;
 
 /**
