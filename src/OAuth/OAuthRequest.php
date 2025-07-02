@@ -67,7 +67,10 @@ class OAuthRequest
     function __construct(string $http_method, string $http_url, ?array $parameters = null)
     {
         $parameters = ($parameters) ? $parameters : [];
-        $parameters = OAuthUtil::array_merge_recursive(OAuthUtil::parse_parameters(parse_url($http_url, PHP_URL_QUERY)), $parameters);
+        $query_params = parse_url($http_url, PHP_URL_QUERY);
+        if ($query_params) {
+            $parameters = OAuthUtil::array_merge_recursive(OAuthUtil::parse_parameters($query_params), $parameters);
+        }
         $this->parameters = $parameters;
         $this->http_method = $http_method;
         $this->http_url = $http_url;
@@ -293,16 +296,20 @@ class OAuthRequest
     public function get_normalized_http_url(): string
     {
         $parts = parse_url($this->http_url);
-
-        $scheme = (isset($parts['scheme'])) ? $parts['scheme'] : 'http';
-        $port = (isset($parts['port'])) ? $parts['port'] : (($scheme === 'https') ? '443' : '80');
-        $host = (isset($parts['host'])) ? strtolower($parts['host']) : '';
-        $path = (isset($parts['path'])) ? $parts['path'] : '';
-        if ((($scheme === 'https') && (intval($port) !== 443)) || (($scheme === 'http') && (intval($port) !== 80))) {
-            $host = "{$host}:{$port}";
+        if (is_array($parts)) {
+            $scheme = (isset($parts['scheme'])) ? $parts['scheme'] : 'http';
+            $port = (isset($parts['port'])) ? $parts['port'] : (($scheme === 'https') ? '443' : '80');
+            $host = (isset($parts['host'])) ? strtolower($parts['host']) : '';
+            $path = (isset($parts['path'])) ? $parts['path'] : '';
+            if ((($scheme === 'https') && (intval($port) !== 443)) || (($scheme === 'http') && (intval($port) !== 80))) {
+                $host = "{$host}:{$port}";
+            }
+            $url = "{$scheme}://{$host}{$path}";
+        } else {
+            $url = '';
         }
 
-        return "{$scheme}://{$host}{$path}";
+        return $url;
     }
 
     /**

@@ -1756,7 +1756,11 @@ trait System
         }
 // Check for query parameters which need to be included in the signature
         $queryString = parse_url($endpoint, PHP_URL_QUERY);
-        $queryParams = OAuth\OAuthUtil::parse_parameters($queryString);
+        if ($queryString) {
+            $queryParams = OAuth\OAuthUtil::parse_parameters($queryString);
+        } else {
+            $queryParams = [];
+        }
 
         if (!is_array($data)) {
             if (empty($hash)) {  // Calculate body hash
