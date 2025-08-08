@@ -10,6 +10,7 @@ use Jose\Component\KeyManagement;
 use Jose\Component\Checker;
 use Jose\Component\Encryption;
 use Jose\Component\Encryption\JWE;
+use Symfony\Component\Clock\NativeClock;
 use ceLTIc\LTI\Util;
 use ceLTIc\LTI\Http\HttpMessage;
 
@@ -295,13 +296,24 @@ class WebTokenClient implements ClientInterface
         $hasPublicKey = !empty($publicKey);
         $retry = false;
         $leeway = Jwt::$leeway;
+        if (class_exists('Jose\Component\Checker\InternalClock')) {
+            $clock = new Checker\InternalClock();
+            $issuedAtChecker = new Checker\IssuedAtChecker($leeway, false, $clock);
+            $notBeforeChecker = new Checker\NotBeforeChecker($leeway, false, $clock);
+            $expirationTimeChecker = new Checker\ExpirationTimeChecker($leeway, false, $clock);
+        } else {
+            $clock = new NativeClock();
+            $issuedAtChecker = new Checker\IssuedAtChecker($clock, $leeway);
+            $notBeforeChecker = new Checker\NotBeforeChecker($clock, $leeway);
+            $expirationTimeChecker = new Checker\ExpirationTimeChecker($clock, $leeway);
+        }
         do {
             try {
                 $claimCheckerManager = new Checker\ClaimCheckerManager(
                     [
-                    new Checker\IssuedAtChecker($leeway),
-                    new Checker\NotBeforeChecker($leeway),
-                    new Checker\ExpirationTimeChecker($leeway)
+                    $issuedAtChecker,
+                    $notBeforeChecker,
+                    $expirationTimeChecker
                     ]
                 );
                 $claimCheckerManager->check(Util::jsonDecode($this->jwt->getPayload(), true));
@@ -347,10 +359,12 @@ class WebTokenClient implements ClientInterface
                         }
                         break;
                 }
-            } catch (\Exception $e) {
-                Util::logError($e->getMessage());
-            } catch (\TypeError $e) {
-                Util::logError($e->getMessage());
+            } catch (\Exception | \TypeError $e) {
+                if (!$retry && $hasPublicKey && !empty($jku)) {
+                    Util::logError($e->getMessage() . ' [will retry]');
+                } else {
+                    Util::logError($e->getMessage());
+                }
             }
             if (!$ok) {
                 if ($retry) {
