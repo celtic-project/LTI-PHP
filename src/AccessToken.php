@@ -147,8 +147,20 @@ class AccessToken
      */
     public function get(string $scope = '', bool $scopeOnly = false): AccessToken
     {
+        $this->scopes = [];
+        $this->token = null;
+        $this->expires = null;
+        $this->created = null;
+        $this->updated = null;
+
         $url = $this->platform->accessTokenUrl;
-        if (!empty($url) && !empty(Tool::$defaultTool) && !empty(Tool::$defaultTool->rsaKey)) {
+        if (empty($url)) {
+            Util::logError('Unable to obtain an access token from platform: no URL found');
+        } elseif (empty(Tool::$defaultTool)) {
+            Util::logError('Unable to obtain an access token from platform: default tool not defined');
+        } elseif (empty(Tool::$defaultTool->rsaKey)) {
+            Util::logError('Unable to obtain an access token from platform: no private key set for default tool');
+        } else {
             if ($scopeOnly) {
                 $scopesRequested = [$scope];
             } else {
@@ -203,12 +215,6 @@ class AccessToken
                     }
                 } while ($retry);
             }
-        } else {
-            $this->scopes = [];
-            $this->token = null;
-            $this->expires = null;
-            $this->created = null;
-            $this->updated = null;
         }
 
         return $this;
