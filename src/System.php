@@ -75,7 +75,7 @@ trait System
     public ?DataConnector $dataConnector = null;
 
     /**
-     * RSA key in PEM or JSON format.
+     * RSA/EC key in PEM or JSON format.
      *
      * Set to the private key for signing outgoing messages and service requests, and to the public key
      * for verifying incoming messages and service requests.
@@ -1066,7 +1066,7 @@ trait System
      */
     public function useOAuth1(): bool
     {
-        return empty($this->signatureMethod) || !str_starts_with($this->signatureMethod, 'RS');
+        return empty($this->signatureMethod) || str_starts_with($this->signatureMethod, 'HMAC');
     }
 
     /**

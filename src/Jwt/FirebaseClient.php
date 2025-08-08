@@ -22,7 +22,7 @@ class FirebaseClient implements ClientInterface
     /**
      * Supported signature algorithms.
      */
-    public const SUPPORTED_ALGORITHMS = ['RS256', 'RS384', 'RS512'];
+    public const SUPPORTED_ALGORITHMS = ['RS256', 'RS384', 'RS512', 'ES256', 'ES384'];
 
     /**
      * JSON web token string.
@@ -269,36 +269,38 @@ class FirebaseClient implements ClientInterface
                     $jwks = [
                         'keys' => [$json]
                     ];
-                    $key = JWK::parseKeySet($jwks, $this->getHeader('alg'));
+                    $jwk = JWK::parseKeySet($jwks, $this->getHeader('alg'));
                 } catch (\Exception $e) {
 
                 }
             } else {
-                $key = new Key($publicKey, $this->getHeader('alg'));
+                $jwk = new Key($publicKey, $this->getHeader('alg'));
             }
         } elseif (!empty($jku)) {
-            $key = $this->fetchPublicKey($jku);
+            $jwk = $this->fetchPublicKey($jku);
         }
         JWT::$leeway = Jwt::$leeway;
         $retry = false;
         do {
             try {
-                JWT::decode($this->jwtString, $key);
+                JWT::decode($this->jwtString, $jwk);
                 $ok = true;
                 if (!$hasPublicKey || $retry) {
-                    $keyDetails = openssl_pkey_get_details($key[$this->getHeader('kid')]->getKeyMaterial());
+                    $key = openssl_pkey_get_public($jwk[$this->getHeader('kid')]->getKeyMaterial());
+                    $keyDetails = openssl_pkey_get_details($key);
                     if ($keyDetails !== false) {
                         $publicKey = str_replace("\n", "\r\n", $keyDetails['key']);
                     }
                 }
-            } catch (\Exception $e) {
-                Util::logError($e->getMessage());
+            } catch (\Exception | \TypeError $e) {
                 if ($retry) {
+                    Util::logError($e->getMessage());
                     $retry = false;
                 } elseif ($hasPublicKey && !empty($jku)) {
+                    Util::logDebug($e->getMessage() . ' [will retry]');
                     try {
                         $key = $this->fetchPublicKey($jku);
-                        $retry = true;
+                        $retry = !empty($key);
                     } catch (\Exception $e) {
 
                     }
@@ -349,21 +351,35 @@ class FirebaseClient implements ClientInterface
     public static function generateKey(string $signatureMethod = 'RS256'): ?string
     {
         $privateKey = null;
-        $size = match ($signatureMethod) {
-            'RS512' => 4096,
-            'RS384' => 3072,
-            default => 2048
+        $config = match ($signatureMethod) {
+            'ES512' => [
+                'private_key_type' => OPENSSL_KEYTYPE_EC,
+                'curve_name' => 'secp521r1'
+            ],
+            'ES384' => [
+                'private_key_type' => OPENSSL_KEYTYPE_EC,
+                'curve_name' => 'secp384r1'
+            ],
+            'ES256' => [
+                'private_key_type' => OPENSSL_KEYTYPE_EC,
+                'curve_name' => 'prime256v1' // 'secp256k1'
+            ],
+            'RS512' => [
+                'private_key_bits' => 4096,
+                'private_key_type' => OPENSSL_KEYTYPE_RSA
+            ],
+            'RS384' => [
+                'private_key_bits' => 3072,
+                'private_key_type' => OPENSSL_KEYTYPE_RSA
+            ],
+            default => [
+                'private_key_bits' => 2048,
+                'private_key_type' => OPENSSL_KEYTYPE_RSA
+            ]
         };
-        $config = [
-            "private_key_bits" => $size,
-            "private_key_type" => OPENSSL_KEYTYPE_RSA
-        ];
         $res = openssl_pkey_new($config);
         if ($res !== false) {
-            if (openssl_pkey_export($res, $privateKey)) {
-                $privateKey = str_replace('-----BEGIN PRIVATE KEY-----', '-----BEGIN RSA PRIVATE KEY-----', $privateKey);
-                $privateKey = str_replace('-----END PRIVATE KEY-----', '-----END RSA PRIVATE KEY-----', $privateKey);
-            }
+            openssl_pkey_export($res, $privateKey);
         }
 
         return $privateKey;
@@ -418,6 +434,19 @@ class FirebaseClient implements ClientInterface
                     $key['kid'] = $kid;
                 }
                 $keys['keys'][] = $key;
+            } elseif (isset($details['ec']) && isset($details['ec']['x']) && isset($details['ec']['y']) && isset($details['ec']['curve_name'])) {
+                $key = [
+                    'kty' => 'EC',
+                    'crv' => $details['ec']['curve_name'],
+                    'x' => JWT::urlsafeB64Encode($details['ec']['x']),
+                    'y' => JWT::urlsafeB64Encode($details['ec']['y']),
+                    'alg' => $signatureMethod,
+                    'use' => 'sig'
+                ];
+                if (!empty($kid)) {
+                    $key['kid'] = $kid;
+                }
+                $keys['keys'][] = $key;
             }
         }
 
@@ -441,15 +470,40 @@ class FirebaseClient implements ClientInterface
         $http = new HttpMessage($jku);
         if ($http->send()) {
             $keys = Util::jsonDecode($http->response, true);
-            if (is_array($keys)) {
-                try {
-                    $keys = JWK::parseKeySet($keys, $this->getHeader('alg'));
-                    if (array_key_exists($this->getHeader('kid'), $keys)) {
-                        $publicKey[$this->getHeader('kid')] = $keys[$this->getHeader('kid')];
-                    }
-                } catch (\Exception $e) {
+            if (is_array($keys) && isset($keys['keys'])) {
+                $publicKeys = ['keys' => []];
+                foreach ($keys['keys'] as $key) {
+                    if (isset($key['kid']) && ($key['kid'] === $this->getHeader('kid'))) {
+                        if ($key['kty'] === 'EC') {
+                            switch ($key['crv']) {
+                                case 'prime256v1':
+                                case 'secp256r1':
+                                    $key['crv'] = 'P-256';
+                                    break;
+                                case 'ansip256k1':
+                                    $key['crv'] = 'secp256k1';
+                                    break;
+                                case 'ansip384r1':
+                                case 'secp384r1':
+                                    $key['crv'] = 'P-384';
+                                    break;
+                            }
+                        }
+                        $publicKeys['keys'][] = $key;
+                        try {
+                            $keys = JWK::parseKeySet($publicKeys, $this->getHeader('alg'));
+                            if (array_key_exists($this->getHeader('kid'), $keys)) {
+                                $publicKey[$this->getHeader('kid')] = $keys[$this->getHeader('kid')];
+                            }
+                        } catch (\Exception $e) {
 
+                        }
+                        break;
+                    }
                 }
+            }
+            if (empty($publicKey)) {
+                Util::logError("Public key not found for kid: '{$this->getHeader('kid')}'");
             }
         }
 
