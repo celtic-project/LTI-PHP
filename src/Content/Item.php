@@ -154,6 +154,16 @@ class Item
     }
 
     /**
+     * Get ID for the content-item.
+     *
+     * @return string|null
+     */
+    public function getId(): ?string
+    {
+        return $this->id;
+    }
+
+    /**
      * Set a URL value for the content-item.
      *
      * @param string|null $url  URL value
