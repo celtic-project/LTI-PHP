@@ -565,24 +565,26 @@ EOD;
      * @param int $statusCode        Status code of response (default is 200)
      * @param string $statusMessage  Status message of response (default is 'OK')
      *
-     * @return never
+     * @return void
      */
     public static function sendResponse(string $body = '', string $contentType = '', int $statusCode = 200,
-        string $statusMessage = 'OK'): never
+        string $statusMessage = 'OK'): void
     {
         $status = strval($statusCode);
         $response = "{$_SERVER['SERVER_PROTOCOL']} {$status} {$statusMessage}";
         header($response);
         $response .= "\nDate: " . gmdate(DATE_RFC2822);
         $response .= "\nServer: " . $_SERVER['SERVER_SOFTWARE'];
+        if (!empty($body)) {
+            if (!empty($contentType)) {
+                header("Content-Type: {$contentType}");
+            }
+            header("Content-Length: " . strval(strlen($body)));
+        }
         foreach (headers_list() as $header) {
             $response .= "\n{$header}";
         }
         if (!empty($body)) {
-            if (!empty($contentType)) {
-                $response .= "\nContent-Type: {$contentType}";
-            }
-            $response .= "\nContent-Length: " . strval(strlen($body));
             $response .= "\n\n";
             if (!preg_match('/[^\s\x20-\x7e]/', $body)) {
                 $response .= $body;
@@ -596,38 +598,52 @@ EOD;
     }
 
     /**
-     * Redirect to a URL with query parameters.
+     * Add query parameters to a URL.
      *
      * @param string $url    URL to which the form should be submitted
      * @param array $params  Array of form parameters
      *
-     * @return never
+     * @return string
      */
-    public static function redirect(string $url, array $params): never
+    public static function addQueryParameters(string $url, array $params): string
     {
-        if (!empty($params)) {
-            if (strpos($url, '?') === false) {
-                $url .= '?';
-                $sep = '';
-            } else {
+        if (strpos($url, '?') === false) {
+            $url .= '?';
+            $sep = '';
+        } else {
+            $sep = '&';
+        }
+        foreach ($params as $key => $value) {
+            $key = self::urlEncode($key);
+            if (!is_array($value)) {
+                $value = self::urlEncode($value);
+                $url .= "{$sep}{$key}={$value}";
                 $sep = '&';
-            }
-            foreach ($params as $key => $value) {
-                $key = self::urlEncode($key);
-                if (!is_array($value)) {
-                    $value = self::urlEncode($value);
-                    $url .= "{$sep}{$key}={$value}";
+            } else {
+                foreach ($value as $element) {
+                    $element = self::urlEncode($element);
+                    $url .= "{$sep}{$key}={$element}";
                     $sep = '&';
-                } else {
-                    foreach ($value as $element) {
-                        $element = self::urlEncode($element);
-                        $url .= "{$sep}{$key}={$element}";
-                        $sep = '&';
-                    }
                 }
             }
         }
 
+        return $url;
+    }
+
+    /**
+     * Redirect to a URL with query parameters.
+     *
+     * @param string $url        URL to which the form should be submitted
+     * @param array $params      Array of form parameters (optional, default is none)
+     *
+     * @return void
+     */
+    public static function redirect(string $url, array $params = []): void
+    {
+        if (!empty($params)) {
+            $url = Util::addQueryParameters($url, $params);
+        }
         header("Location: {$url}");
         exit;
     }
