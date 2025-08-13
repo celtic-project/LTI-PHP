@@ -858,16 +858,18 @@ EOD;
     /**
      * Get the named array element from object.
      *
-     * @param object $obj       Object containing the element
-     * @param string $fullname  Name of element
-     * @param bool $required    True if the element must be present
-     * @param bool $notEmpty    True if the element must not have an empty value
+     * @param object $obj          Object containing the element
+     * @param string $fullname     Name of element
+     * @param bool $required       True if the element must be present
+     * @param bool $notEmpty       True if the element must not have an empty value
+     * @param array|null $default  Value to return when a conversion is not possible (optional, default is an empty array)
      *
-     * @return array  Value of element (or empty string if not found)
+     * @return array|null  Value of element (or default value if not found)
      */
-    public static function checkArray(object $obj, string $fullname, bool $required = false, bool $notEmpty = false): array
+    public static function checkArray(object $obj, string $fullname, bool $required = false, bool $notEmpty = false,
+        ?array $default = []): ?array
     {
-        $arr = [];
+        $arr = $default;
         $name = $fullname;
         $pos = strrpos($name, '/');
         if ($pos !== false) {
