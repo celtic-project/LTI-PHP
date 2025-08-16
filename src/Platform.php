@@ -1000,7 +1000,7 @@ EOD;
         if (isset($parameters['state'])) {
             $this->messageParameters['state'] = $parameters['state'];
         }
-        if (!empty(static::$browserStorageFrame)) {
+        if ($this->ok && !empty(static::$browserStorageFrame)) {
             if (strpos($parameters['redirect_uri'], '?') === false) {
                 $sep = '?';
             } else {
@@ -1009,8 +1009,7 @@ EOD;
             $parameters['redirect_uri'] .= "{$sep}lti_storage_target=" . static::$browserStorageFrame;
         }
         if (isset($parameters['redirect_uri'])) {
-            $html = Util::sendForm($parameters['redirect_uri'], $this->messageParameters);
-            echo $html;
+            echo Util::sendForm($parameters['redirect_uri'], $this->messageParameters);
         } else {
             http_response_code(400);
         }

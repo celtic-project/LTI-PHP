@@ -83,14 +83,14 @@ class DataConnector
     protected string $dbTableNamePrefix = '';
 
     /**
-     * SQL date format (default = 'Y-m-d')
+     * SQL date format (default = 'Y-m-d').
      *
      * @var string $dateFormat
      */
     protected string $dateFormat = 'Y-m-d';
 
     /**
-     * SQL time format (default = 'H:i:s')
+     * SQL time format (default = 'H:i:s').
      *
      * @var string $timeFormat
      */

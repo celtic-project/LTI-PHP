@@ -530,16 +530,17 @@ class Tool
      *
      * @param string $name              Name of parameter to be checked
      * @param bool $required            True if parameter is required (optional, default is true)
-     * @param int|null $maxLength       Maximum permitted length of parameter value (optional, default is null)
+     * @param int|null $maximumLength   Maximum permitted length of parameter value (optional, default is null)
      * @param array|null $messageTypes  Array of message types to which the constraint applies (optional, default is all)
      */
-    public function setParameterConstraint(string $name, bool $required = true, ?int $maxLength = null, ?array $messageTypes = null): void
+    public function setParameterConstraint(string $name, bool $required = true, ?int $maximumLength = null,
+        ?array $messageTypes = null): void
     {
         $name = trim($name);
         if (!empty($name)) {
             $this->constraints[$name] = [
                 'required' => $required,
-                'max_length' => $maxLength,
+                'max_length' => $maximumLength,
                 'messages' => $messageTypes
             ];
         }
@@ -1279,20 +1280,16 @@ EOD;
                     echo $page;
                     exit;
                 } else {
-                    if (strpos($errorUrl, '?') === false) {
-                        $errorUrl .= '?';
-                    } else {
-                        $errorUrl .= '&';
-                    }
+                    $params = [];
                     if ($this->debugMode && !is_null($this->reason)) {
-                        $errorUrl .= 'lti_errormsg=' . Util::urlEncode("Debug error: {$this->reason}");
+                        $params['lti_errormsg'] = "Debug error: {$this->reason}";
                     } else {
-                        $errorUrl .= 'lti_errormsg=' . Util::urlEncode($this->message);
+                        $params['lti_errormsg'] = $this->message;
                         if (!is_null($this->reason)) {
-                            $errorUrl .= '&lti_errorlog=' . Util::urlEncode("Debug error: {$this->reason}");
+                            $params['lti_errorlog'] = "Debug error: {$this->reason}";
                         }
                     }
-                    header("Location: {$errorUrl}");
+                    Util::redirect($errorUrl, $params);
                 }
                 exit;
             } else {
@@ -1306,7 +1303,7 @@ EOD;
                 exit;
             }
         } elseif (!is_null($this->redirectUrl)) {
-            header("Location: {$this->redirectUrl}");
+            Util::redirect($this->redirectUrl);
             exit;
         } elseif (!is_null($this->output)) {
             echo $this->output;
@@ -2244,7 +2241,7 @@ EOD;
                 if (!Tool::$authenticateUsingGet) {
                     $this->output = Util::sendForm($this->platform->authenticationUrl, $params, '', $javascript);
                 } else {
-                    Util::redirect($this->platform->authenticationUrl, $params, '', $javascript);
+                    $this->redirectUrl = Util::addQueryParameters($this->platform->authenticationUrl, $params);
                 }
             } else {
                 $this->setReason('Unable to generate a state value');
