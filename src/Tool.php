@@ -781,7 +781,7 @@ class Tool
             $this->rawParameters['_storage_check'] = '';
             $javascript = $this->getStorageJS('lti.get_data', $state, '');
             echo Util::sendForm($_SERVER['REQUEST_URI'], $this->rawParameters, '', $javascript);
-            exit;
+            $this->doExit();
         } elseif (isset($this->rawParameters['_storage_check'])) {
             if (!empty(($this->rawParameters['_storage_check']))) {
                 $state = $parts[0];
@@ -1276,9 +1276,7 @@ EOD;
                     if (empty($this->ltiVersion)) {
                         $this->ltiVersion = LtiVersion::V1;
                     }
-                    $page = $this->sendMessage($errorUrl, 'ContentItemSelection', $formParams);
-                    echo $page;
-                    exit;
+                    echo $this->sendMessage($errorUrl, 'ContentItemSelection', $formParams);
                 } else {
                     $params = [];
                     if ($this->debugMode && !is_null($this->reason)) {
@@ -1291,7 +1289,7 @@ EOD;
                     }
                     Util::redirect($errorUrl, $params);
                 }
-                exit;
+                $this->doExit();
             } else {
                 if (!is_null($this->errorOutput)) {
                     echo $this->errorOutput;
@@ -1300,14 +1298,14 @@ EOD;
                 } else {
                     echo "Error: {$this->message}";
                 }
-                exit;
+                $this->doExit();
             }
         } elseif (!is_null($this->redirectUrl)) {
             Util::redirect($this->redirectUrl);
-            exit;
+            $this->doExit();
         } elseif (!is_null($this->output)) {
             echo $this->output;
-            exit;
+            $this->doExit();
         }
     }
 

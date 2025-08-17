@@ -523,7 +523,9 @@ class Platform
   "scope" : "{$scopes}"
 }
 EOD;
+                $this->ok = true;
                 Util::sendResponse($body, 'Content-Type: application/json; charset=utf-8');
+                $this->doExit();
             } catch (\Exception $e) {
                 $reason = $e->getMessage();
                 if (empty($reason)) {
@@ -533,7 +535,9 @@ EOD;
         } else {
             $reason = 'No valid scope requested';
         }
+        $this->ok = false;
         Util::sendResponse('', '', 400, $reason);
+        $this->doExit();
     }
 
     /**
@@ -1013,7 +1017,7 @@ EOD;
         } else {
             http_response_code(400);
         }
-        exit;
+        $this->doExit();
     }
 
 }

@@ -594,7 +594,6 @@ EOD;
             echo $body;
         }
         self::logDebug('Response sent: ' . $response);
-        exit;
     }
 
     /**
@@ -636,16 +635,19 @@ EOD;
      *
      * @param string $url        URL to which the form should be submitted
      * @param array $params      Array of form parameters (optional, default is none)
+     * @param bool $disableExit  True if the exit statement should not be called
      *
      * @return void
      */
-    public static function redirect(string $url, array $params = []): void
+    public static function redirect(string $url, array $params = [], bool $disableExit = false): void
     {
         if (!empty($params)) {
             $url = Util::addQueryParameters($url, $params);
         }
         header("Location: {$url}");
-        exit;
+        if (!$disableExit) {
+            exit;
+        }
     }
 
     /**
