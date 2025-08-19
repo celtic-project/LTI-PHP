@@ -409,7 +409,12 @@ class Tool
      */
     public function save(): bool
     {
-        return $this->dataConnector->saveTool($this);
+        $secret = $this->secret;
+        $this->secret = Util::encrypt($secret, DataConnector::$maximumSecretLength);
+        $ok = $this->dataConnector->saveTool($this);
+        $this->secret = $secret;
+
+        return $ok;
     }
 
     /**
@@ -553,7 +558,12 @@ class Tool
      */
     public function getPlatforms(): array
     {
-        return $this->dataConnector->getPlatforms();
+        $platforms = $this->dataConnector->getPlatforms();
+        foreach ($platforms as $platform) {
+            $platform->secret = Util::decrypt($platform->secret);
+        }
+
+        return $platforms;
     }
 
     /**
@@ -1189,9 +1199,9 @@ EOD;
     {
         $tool = new static($dataConnector);
         $tool->key = $key;
-        if (!empty($dataConnector)) {
-            $ok = $dataConnector->loadTool($tool);
-            if ($ok && $autoEnable) {
+        if (!empty($dataConnector) && $dataConnector->loadTool($tool)) {
+            $tool->secret = Util::decrypt($tool->secret);
+            if ($autoEnable) {
                 $tool->enabled = true;
             }
         }
@@ -1213,7 +1223,8 @@ EOD;
     {
         $tool = new static($dataConnector);
         $tool->initiateLoginUrl = $initiateLoginUrl;
-        if ($dataConnector->loadTool($tool)) {
+        if (!empty($dataConnector) && $dataConnector->loadTool($tool)) {
+            $tool->secret = Util::decrypt($tool->secret);
             if ($autoEnable) {
                 $tool->enabled = true;
             }
@@ -1235,6 +1246,7 @@ EOD;
         $tool = new static($dataConnector);
         $tool->setRecordId($id);
         $dataConnector->loadTool($tool);
+        $tool->secret = Util::decrypt($tool->secret);
 
         return $tool;
     }

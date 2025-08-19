@@ -231,7 +231,12 @@ class Platform
      */
     public function save(): bool
     {
-        return $this->dataConnector->savePlatform($this);
+        $secret = $this->secret;
+        $this->secret = Util::encrypt($secret, DataConnector::$maximumSecretLength);
+        $ok = $this->dataConnector->savePlatform($this);
+        $this->secret = $secret;
+
+        return $ok;
     }
 
     /**
@@ -414,7 +419,12 @@ class Platform
      */
     public function getTools(): array
     {
-        return $this->dataConnector->getTools();
+        $tools = $this->dataConnector->getTools();
+        foreach ($tools as $tool) {
+            $tool->secret = Util::decrypt($tool->secret);
+        }
+
+        return $tools;
     }
 
     /**
@@ -589,9 +599,9 @@ EOD;
     {
         $platform = new static($dataConnector);
         $platform->key = $key;
-        if (!empty($dataConnector)) {
-            $ok = $dataConnector->loadPlatform($platform);
-            if ($ok && $autoEnable) {
+        if (!empty($dataConnector) && $dataConnector->loadPlatform($platform)) {
+            $platform->secret = Util::decrypt($platform->secret);
+            if ($autoEnable) {
                 $platform->enabled = true;
             }
         }
@@ -617,7 +627,8 @@ EOD;
         $platform->platformId = $platformId;
         $platform->clientId = $clientId;
         $platform->deploymentId = $deploymentId;
-        if ($dataConnector->loadPlatform($platform)) {
+        if (!empty($dataConnector) && $dataConnector->loadPlatform($platform)) {
+            $platform->secret = Util::decrypt($platform->secret);
             if ($autoEnable) {
                 $platform->enabled = true;
             }
@@ -639,6 +650,7 @@ EOD;
         $platform = new static($dataConnector);
         $platform->setRecordId($id);
         $dataConnector->loadPlatform($platform);
+        $platform->secret = Util::decrypt($platform->secret);
 
         return $platform;
     }

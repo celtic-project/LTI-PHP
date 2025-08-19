@@ -194,6 +194,18 @@ final class Util
     public static int $formSubmissionTimeout = 2;
 
     /**
+     * Key to use when encrypting and decrypting values.
+     *
+     * @var string|null $encryptionKey
+     */
+    public static ?string $encryptionKey = null;
+
+    /**
+     * The cryptography algorithm used by the encryption/decryption methods.
+     */
+    private const CIPHER_METHOD = 'aes-256-gcm';
+
+    /**
      * The client used to handle log messages.
      *
      * @var LoggerInterface $loggerClient
@@ -1179,6 +1191,69 @@ EOD;
         }
 
         return $clone;
+    }
+
+    /**
+     * Check whether the application instance supports the encryption/decryption methods.
+     *
+     * @return bool  True if encryption is supported by this application instance
+     */
+    public static function canEncrypt(): bool
+    {
+        return !empty(self::$encryptionKey) && function_exists('openssl_encrypt') &&
+            in_array(self::CIPHER_METHOD, openssl_get_cipher_methods());
+    }
+
+    /**
+     * Encrypt a string value.
+     *
+     * @param string|null $value  String to be encrypted
+     * @param int $maximumLength  Maximum length allowed for encrypted string (optional, default is 0 for no restriction)
+     *
+     * @return string|null  Encrypted string, or the original value if encryption was not possible
+     */
+    public static function encrypt(?string $value, int $maximumLength = 0): ?string
+    {
+        if (!empty($value) && self::canEncrypt()) {
+            $ivLength = openssl_cipher_iv_length(self::CIPHER_METHOD);
+            $iv = openssl_random_pseudo_bytes($ivLength);
+            $encryptedValue = openssl_encrypt($value, self::CIPHER_METHOD, self::$encryptionKey, 0, $iv, $tag);
+            if ($encryptedValue !== false) {
+                $encryptedValue = base64_encode($iv) . ':' . base64_encode($tag) . ':' . $encryptedValue;
+                if (($maximumLength <= 0) || (strlen($encryptedValue) <= $maximumLength)) {
+                    $value = $encryptedValue;
+                }
+            }
+        }
+
+        return $value;
+    }
+
+    /**
+     * Decrypt an encrypted string value.
+     *
+     * @param string|null $value   String to be decrypted
+     *
+     * @return string|null  Decrypted string, or the unchanged value if decryption was not possible
+     */
+    public static function decrypt(?string $value): ?string
+    {
+        if (!empty($value) && self::canEncrypt()) {
+            $parts = explode(':', $value, 3);
+            if (count($parts) === 3) {
+                $iv = base64_decode($parts[0], true);
+                $tag = base64_decode($parts[1], true);
+                $encryptedValue = $parts[2];
+                if (!empty($iv) && !empty($tag) && !empty($encryptedValue)) {
+                    $decryptedValue = openssl_decrypt($encryptedValue, self::CIPHER_METHOD, self::$encryptionKey, 0, $iv, $tag);
+                    if ($decryptedValue !== false) {
+                        $value = $decryptedValue;
+                    }
+                }
+            }
+        }
+
+        return $value;
     }
 
 }

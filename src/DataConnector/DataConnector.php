@@ -69,6 +69,13 @@ class DataConnector
     public const TOOL_TABLE_NAME = 'lti2_tool';
 
     /**
+     * Maximum length for a platform/tool shared secret field (default = 1024).
+     *
+     * @var int $maximumSecretLength
+     */
+    public static int $maximumSecretLength = 1024;
+
+    /**
      * Database connection.
      *
      * @var object|resource $db
