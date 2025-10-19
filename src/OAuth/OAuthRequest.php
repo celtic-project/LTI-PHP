@@ -88,9 +88,19 @@ class OAuthRequest
     public static function from_request(?string $http_method = null, ?string $http_url = null, ?array $parameters = null): OAuthRequest
     {
         if (!$http_url) {
-            if ((isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && ($_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')) ||
-                (isset($_SERVER['HTTP_X_FORWARDED_SSL']) && ($_SERVER['HTTP_X_FORWARDED_SSL'] === 'on')) ||
-                (isset($_SERVER['HTTP_X_URL_SCHEME']) && ($_SERVER['HTTP_X_URL_SCHEME'] === 'https'))) {
+            $proto = null;
+            if (isset($_SERVER['HTTP_X_FORWARDED_PROTO'])) {
+                $forwardedProto = explode(',', str_replace(' ', ',', trim($_SERVER['HTTP_X_FORWARDED_PROTO'])));
+                $proto = reset($forwardedProto);
+            } elseif (isset($_SERVER['HTTP_X_URL_SCHEME'])) {
+                $proto = $_SERVER['HTTP_X_URL_SCHEME'];
+            }
+            $ssl = null;
+            if (isset($_SERVER['HTTP_X_FORWARDED_SSL'])) {
+                $forwardedSsl = explode(',', str_replace(' ', ',', trim($_SERVER['HTTP_X_FORWARDED_SSL'])));
+                $ssl = reset($forwardedSsl);
+            }
+            if (($proto === 'https') || ($ssl === 'on')) {
                 $_SERVER['HTTPS'] = 'on';
                 $_SERVER['SERVER_PORT'] = 443;
             } elseif (isset($_SERVER['HTTP_X_FORWARDED_PROTO'])) {
