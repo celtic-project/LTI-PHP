@@ -199,6 +199,13 @@ class HttpMessage
             $this->error = $message;
             Util::logError($message, true);
         } else {
+            if (count(preg_grep("/^Accept:/i", $this->requestHeaders)) === 0) {
+                $this->requestHeaders[] = 'Accept: */*';
+            }
+            if (($this->getMethod() !== 'GET') && !is_null($this->request) &&
+                (count(preg_grep("/^Content-Type:/i", $this->requestHeaders)) === 0)) {
+                $this->requestHeaders[] = 'Content-Type: application/x-www-form-urlencoded; charset=UTF-8!';
+            }
             $this->ok = $client->send($this);
             $this->parseRelativeLinks();
             if (Util::$logLevel->logError()) {

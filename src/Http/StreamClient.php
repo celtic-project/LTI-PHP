@@ -24,13 +24,6 @@ class StreamClient implements ClientInterface
      */
     public function send(HttpMessage $message): bool
     {
-        if (count(preg_grep("/^Accept:/i", $message->requestHeaders)) === 0) {
-            $message->requestHeaders[] = 'Accept: */*';
-        }
-        if (($message->getMethod() !== 'GET') && !is_null($message->request) &&
-            (count(preg_grep("/^Content-Type:/i", $message->requestHeaders)) === 0)) {
-            $message->requestHeaders[] = 'Content-Type: application/x-www-form-urlencoded; charset=UTF-8';
-        }
         $opts = [
             'method' => $message->getMethod(),
             'content' => $message->request,
