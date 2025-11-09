@@ -166,6 +166,20 @@ final class Util
     public static ?array $requestParameters = null;
 
     /**
+     * Value of library version.
+     *
+     * @var string $version
+     */
+    public static string $version = '5.3.0';
+
+    /**
+     * Value of User-Agent header of HTTP requests.
+     *
+     * @var string $userAgentHeaderValue
+     */
+    public static string $userAgentHeaderValue = 'LTI-PHP/{VERSION} (from ceLTIc Project)';
+
+    /**
      * Current logging level.
      *
      * @var LogLevel $logLevel

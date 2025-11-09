@@ -199,6 +199,9 @@ class HttpMessage
             $this->error = $message;
             Util::logError($message, true);
         } else {
+            if (count(preg_grep("/^User-Agent:/i", $this->requestHeaders)) === 0) {
+                $this->requestHeaders[] = 'User-Agent: ' . str_replace('{VERSION}', Util::$version, Util::$userAgentHeaderValue);
+            }
             if (count(preg_grep("/^Accept:/i", $this->requestHeaders)) === 0) {
                 $this->requestHeaders[] = 'Accept: */*';
             }
