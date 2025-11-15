@@ -553,7 +553,7 @@ EOD;
     /**
      * Verify the authorisation of a service request.
      *
-     * array $allowedScopes  Array of scopes at least one of which is required to authorise the request (passed by reference)
+     * @param array $allowedScopes  Array of scopes at least one of which is required to authorise the request (passed by reference)
      *
      * @return bool  True if the request is authorised
      */
