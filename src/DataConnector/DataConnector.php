@@ -702,6 +702,8 @@ class DataConnector
             $platform->setSetting('_oauth2_access_token_url');
             $platform->jku = $platform->getSetting('_jku', $platform->jku);
             $platform->setSetting('_jku');
+            $platform->kid = $tool->getSetting('_kid', $platform->kid);
+            $platform->setSetting('_kid');
             $platform->encryptionMethod = $platform->getSetting('_encryption_method', $platform->encryptionMethod);
             $platform->setSetting('_encryption_method');
             $platform->debugMode = $platform->getSetting('_debug', $platform->debugMode ? 'true' : 'false') === 'true';
@@ -715,6 +717,7 @@ class DataConnector
             $platform->setSetting('_authentication_request_url',
                 !empty($platform->authenticationUrl) ? $platform->authenticationUrl : null);
             $platform->setSetting('_oauth2_access_token_url', !empty($platform->accessTokenUrl) ? $platform->accessTokenUrl : null);
+            $platform->setSetting('_kid', !empty($platform->kid) ? $platform->kid : null);
             $platform->setSetting('_jku', !empty($platform->jku) ? $platform->jku : null);
             $platform->setSetting('_encryption_method', !empty($platform->encryptionMethod) ? $platform->encryptionMethod : null);
             $platform->setSetting('_debug', $platform->debugMode ? 'true' : null);
@@ -732,6 +735,8 @@ class DataConnector
     protected function fixToolSettings(Tool $tool, bool $isSave): void
     {
         if (!$isSave) {
+            $tool->kid = $tool->getSetting('_kid', $tool->kid);
+            $tool->setSetting('_kid');
             $tool->encryptionMethod = $tool->getSetting('_encryption_method', $tool->encryptionMethod);
             $tool->setSetting('_encryption_method');
             $tool->debugMode = $tool->getSetting('_debug', $tool->debugMode ? 'true' : 'false') === 'true';
@@ -740,6 +745,7 @@ class DataConnector
                 Util::$logLevel = LogLevel::Debug;
             }
         } else {
+            $tool->setSetting('_kid', !empty($tool->kid) ? $tool->kid : null);
             $tool->setSetting('_encryption_method', !empty($tool->encryptionMethod) ? $tool->encryptionMethod : null);
             $tool->setSetting('_debug', $tool->debugMode ? 'true' : null);
         }
