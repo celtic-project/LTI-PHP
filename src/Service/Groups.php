@@ -254,6 +254,12 @@ class Groups extends Service
                         $tag = Util::checkString($agroup, 'groups/tag');
                         $hidden = Util::checkBoolean($agroup, 'hidden', false, false);
                         $setids = Util::checkArray($agroup, 'groups/set_ids');
+                        if (!Util::$strictMode && empty($setids)) {  // Check for deprecated name as a fallback
+                            $setid = Util::checkString($agroup, 'groups/set_id', false, null);
+                            if (!empty($setid)) {
+                                $setids = [$setid];
+                            }
+                        }
                         if (!empty($id) && !empty($name)) {
                             if (!$allowNonSets && empty($setids)) {
                                 continue;
