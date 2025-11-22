@@ -1191,17 +1191,34 @@ trait System
                 $this->setReason('Invalid nonce');
             } elseif (!empty($publicKey) || !empty($jku) || Jwt::$allowJkuHeader) {
                 $currentKey = $publicKey;
+                if (!empty($publicKey) && $this->jwt->hasHeader('kid')) {
+                    if ($this instanceof Tool) {
+                        $cachedKid = $this->platform->kid;
+                    } else {
+                        $cachedKid = Tool::$defaultTool->kid;
+                    }
+                    if (!empty($jku) && !empty($cachedKid) && ($cachedKid !== $this->jwt->getHeader('kid'))) {  // Ignore cached key
+                        $publicKey = null;
+                    }
+                }
                 $ok = $this->jwt->verifySignature($publicKey, $jku);
                 if (!Util::$disableFetchedPublicKeysSave && ($currentKey !== $publicKey)) {
+                    $kid = null;
+                    if ($this->jwt->hasHeader('kid')) {
+                        $kid = $this->jwt->getHeader('kid');
+                    }
                     if ($this instanceof Tool) {
                         $this->platform->rsaKey = $publicKey;
+                        $this->platform->kid = $kid;
                         $this->platform->save();
                     } else {
                         if (!empty(Tool::$defaultTool)) {
                             Tool::$defaultTool->rsaKey = $publicKey;
+                            Tool::$defaultTool->kid = $kid;
                             Tool::$defaultTool->save();
                         } else {
                             $this->rsaKey = $publicKey;
+                            $this->kid = $kid;
                         }
                     }
                 }
