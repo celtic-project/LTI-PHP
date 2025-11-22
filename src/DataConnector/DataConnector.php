@@ -702,7 +702,7 @@ class DataConnector
             $platform->setSetting('_oauth2_access_token_url');
             $platform->jku = $platform->getSetting('_jku', $platform->jku);
             $platform->setSetting('_jku');
-            $platform->kid = $tool->getSetting('_kid', $platform->kid);
+            $platform->kid = $platform->getSetting('_kid', $platform->kid);
             $platform->setSetting('_kid');
             $platform->encryptionMethod = $platform->getSetting('_encryption_method', $platform->encryptionMethod);
             $platform->setSetting('_encryption_method');
