@@ -111,9 +111,7 @@ class WebTokenClient implements ClientInterface
         try {
             $serializer = new Signature\Serializer\CompactSerializer();
             $this->jwt = $serializer->unserialize($jwtString);
-        } catch (\Exception $e) {
-            $ok = false;
-        } catch (\TypeError $e) {
+        } catch (\Exception | \TypeError $e) {
             $ok = false;
         }
         if (!$ok) {
@@ -121,9 +119,7 @@ class WebTokenClient implements ClientInterface
                 $serializer = new Encryption\Serializer\CompactSerializer();
                 $this->jwe = $serializer->unserialize($jwtString);
                 $ok = $this->decrypt($privateKey);
-            } catch (\Exception $e) {
-                $ok = false;
-            } catch (\TypeError $e) {
+            } catch (\Exception | \TypeError $e) {
                 $ok = false;
             }
         }
@@ -296,7 +292,7 @@ class WebTokenClient implements ClientInterface
         $hasPublicKey = !empty($publicKey);
         $retry = false;
         $leeway = Jwt::$leeway;
-        if (class_exists('Jose\Component\Checker\InternalClock')) {
+        if (class_exists('Jose\Component\Checker\InternalClock')) {  // Prior to version 4
             $clock = new Checker\InternalClock();
             $issuedAtChecker = new Checker\IssuedAtChecker($leeway, false, $clock);
             $notBeforeChecker = new Checker\NotBeforeChecker($leeway, false, $clock);
@@ -438,24 +434,42 @@ class WebTokenClient implements ClientInterface
         if (!empty($encryptionMethod)) {
             if (!empty($publicKey)) {
                 $keyEnc = 'RSA-OAEP-256';
-                $jwk = self::getJwk($publicKey, ['alg' => $keyEnc, 'use' => 'enc', 'zip' => 'DEF']);
-                $keyEncryptionAlgorithmManager = new Core\AlgorithmManager([new Encryption\Algorithm\KeyEncryption\RSAOAEP256()]);
-                $contentEncryptionAlgorithmManager = new Core\AlgorithmManager(
-                    [
-                    new Encryption\Algorithm\ContentEncryption\A128CBCHS256(),
-                    new Encryption\Algorithm\ContentEncryption\A192CBCHS384(),
-                    new Encryption\Algorithm\ContentEncryption\A256CBCHS512(),
-                    ]
-                );
-                $compressionMethodManager = new Encryption\Compression\CompressionMethodManager([new Encryption\Compression\Deflate()]);
-                $jweBuilder = new Encryption\JWEBuilder($keyEncryptionAlgorithmManager, $contentEncryptionAlgorithmManager,
-                    $compressionMethodManager);
-                $jwe = $jweBuilder
-                    ->create()
-                    ->withPayload($jwt)
-                    ->withSharedProtectedHeader(['alg' => $keyEnc, 'enc' => $encryptionMethod, 'zip' => 'DEF'])
-                    ->addRecipient($jwk)
-                    ->build();
+                if (class_exists('Jose\Component\Encryption\Compression\CompressionMethodManager')) {  // Prior to version 4
+                    $jwk = self::getJwk($publicKey, ['alg' => $keyEnc, 'use' => 'enc', 'zip' => 'DEF']);
+                    $keyEncryptionAlgorithmManager = new Core\AlgorithmManager([new Encryption\Algorithm\KeyEncryption\RSAOAEP256()]);
+                    $contentEncryptionAlgorithmManager = new Core\AlgorithmManager(
+                        [
+                        new Encryption\Algorithm\ContentEncryption\A128CBCHS256(),
+                        new Encryption\Algorithm\ContentEncryption\A192CBCHS384(),
+                        new Encryption\Algorithm\ContentEncryption\A256CBCHS512(),
+                        ]
+                    );
+                    $compressionMethodManager = new Encryption\Compression\CompressionMethodManager([new Encryption\Compression\Deflate()]);
+                    $jweBuilder = new Encryption\JWEBuilder($keyEncryptionAlgorithmManager, $contentEncryptionAlgorithmManager,
+                        $compressionMethodManager);
+                    $jwe = $jweBuilder
+                        ->create()
+                        ->withPayload($jwt)
+                        ->withSharedProtectedHeader(['alg' => $keyEnc, 'enc' => $encryptionMethod, 'zip' => 'DEF'])
+                        ->addRecipient($jwk)
+                        ->build();
+                } else {
+                    $jwk = self::getJwk($publicKey, ['alg' => $keyEnc, 'use' => 'enc']);
+                    $encryptionAlgorithmManager = new Core\AlgorithmManager([
+                        new Encryption\Algorithm\KeyEncryption\RSAOAEP256(),
+                        new Encryption\Algorithm\ContentEncryption\A128CBCHS256(),
+                        new Encryption\Algorithm\ContentEncryption\A192CBCHS384(),
+                        new Encryption\Algorithm\ContentEncryption\A256CBCHS512(),
+                        ]
+                    );
+                    $jweBuilder = new Encryption\JWEBuilder($encryptionAlgorithmManager);
+                    $jwe = $jweBuilder
+                        ->create()
+                        ->withPayload($jwt)
+                        ->withSharedProtectedHeader(['alg' => $keyEnc, 'enc' => $encryptionMethod])
+                        ->addRecipient($jwk)
+                        ->build();
+                }
                 $serializer = new Encryption\Serializer\CompactSerializer();
                 $jwt = $serializer->serialize($jwe);
             } else {
@@ -546,17 +560,29 @@ class WebTokenClient implements ClientInterface
         if ($this->jwe) {
             $keyEnc = $this->jwe->getSharedProtectedHeaderParameter('alg');
             $jwk = KeyManagement\JWKFactory::createFromKey($privateKey, null, ['alg' => $keyEnc, 'use' => 'enc']);
-            $keyEncryptionAlgorithmManager = new Core\AlgorithmManager([new Encryption\Algorithm\KeyEncryption\RSAOAEP256()]);
-            $contentEncryptionAlgorithmManager = new Core\AlgorithmManager(
-                [
-                new Encryption\Algorithm\ContentEncryption\A128CBCHS256(),
-                new Encryption\Algorithm\ContentEncryption\A192CBCHS384(),
-                new Encryption\Algorithm\ContentEncryption\A256CBCHS512()
-                ]
-            );
-            $compressionMethodManager = new Encryption\Compression\CompressionMethodManager([new Encryption\Compression\Deflate()]);
-            $jweDecrypter = new Encryption\JWEDecrypter($keyEncryptionAlgorithmManager, $contentEncryptionAlgorithmManager,
-                $compressionMethodManager);
+            if (class_exists('Jose\Component\Encryption\Compression\CompressionMethodManager')) {  // Prior to version 4
+                $keyEncryptionAlgorithmManager = new Core\AlgorithmManager([new Encryption\Algorithm\KeyEncryption\RSAOAEP256()]);
+                $contentEncryptionAlgorithmManager = new Core\AlgorithmManager(
+                    [
+                    new Encryption\Algorithm\ContentEncryption\A128CBCHS256(),
+                    new Encryption\Algorithm\ContentEncryption\A192CBCHS384(),
+                    new Encryption\Algorithm\ContentEncryption\A256CBCHS512()
+                    ]
+                );
+                $compressionMethodManager = new Encryption\Compression\CompressionMethodManager([new Encryption\Compression\Deflate()]);
+                $jweDecrypter = new Encryption\JWEDecrypter($keyEncryptionAlgorithmManager, $contentEncryptionAlgorithmManager,
+                    $compressionMethodManager);
+            } else {
+                $encryptionAlgorithmManager = new Core\AlgorithmManager(
+                    [
+                    new Encryption\Algorithm\KeyEncryption\RSAOAEP256(),
+                    new Encryption\Algorithm\ContentEncryption\A128CBCHS256(),
+                    new Encryption\Algorithm\ContentEncryption\A192CBCHS384(),
+                    new Encryption\Algorithm\ContentEncryption\A256CBCHS512()
+                    ]
+                );
+                $jweDecrypter = new Encryption\JWEDecrypter($encryptionAlgorithmManager);
+            }
             if ($jweDecrypter->decryptUsingKey($this->jwe, $jwk, 0)) {
                 try {
                     $jwt = $this->jwe->getPayload();
@@ -565,6 +591,7 @@ class WebTokenClient implements ClientInterface
                     $ok = true;
                 } catch (\Exception $e) {
                     $ok = false;
+                    Util::logError($e->getMessage());
                 }
             }
         }
