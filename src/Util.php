@@ -432,18 +432,19 @@ final class Util
             };
             error_log($prefix . $message);
         } else {
+            $context = ['ip' => $_SERVER['REMOTE_ADDR']];
             switch ($type) {
                 case LogLevel::Error:
-                    $loggerClient->error($message);
+                    $loggerClient->error($message, $context);
                     break;
                 case LogLevel::Info:
-                    $loggerClient->info($message);
+                    $loggerClient->info($message, $context);
                     break;
                 case LogLevel::Debug:
-                    $loggerClient->debug($message);
+                    $loggerClient->debug($message, $context);
                     break;
                 default:
-                    $loggerClient->notice($message);
+                    $loggerClient->notice($message, $context);
                     break;
             }
         }

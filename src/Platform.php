@@ -554,11 +554,11 @@ EOD;
     /**
      * Verify the authorisation of a service request.
      *
-     * array $allowedScopes  Array of scopes at least one of which is required to authorise the request (passed by reference)
+     * @param array $allowedScopes  Array of scopes at least one of which is required to authorise the request (passed by reference)
      *
      * @return bool  True if the request is authorised
      */
-    public function verifyAuthorization(array &$allowedSscopes): bool
+    public function verifyAuthorization(array &$allowedScopes): bool
     {
         $requestHeaders = OAuth\OAuthUtil::get_headers();
         $ok = isset($requestHeaders['Authorization']);
@@ -574,8 +574,8 @@ EOD;
                 }
                 if ($ok) {
                     $scopes = explode(' ', $jwt->getClaim('imsglobal.org.security.scope'));
-                    $allowedSscopes = \array_intersect($allowedSscopes, $scopes);
-                    $ok = !empty($allowedSscopes);
+                    $allowedScopes = \array_intersect($allowedScopes, $scopes);
+                    $ok = !empty($allowedScopes);
                 }
             } elseif (str_starts_with($authHeader, 'oauth ')) {  // OAuth 1
                 $ok = $this->verifySignature();

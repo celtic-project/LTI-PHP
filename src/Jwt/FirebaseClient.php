@@ -299,8 +299,8 @@ class FirebaseClient implements ClientInterface
                 } elseif ($hasPublicKey && !empty($jku)) {
                     Util::logDebug($e->getMessage() . ' [will retry]');
                     try {
-                        $key = $this->fetchPublicKey($jku);
-                        $retry = !empty($key);
+                        $jwk = $this->fetchPublicKey($jku);
+                        $retry = !empty($jwk);
                     } catch (\Exception $e) {
 
                     }
