@@ -540,11 +540,14 @@ class Item
     protected function fromJsonObject(object $item): bool
     {
         $ok = true;
-        $this->id = Util::checkString($item, 'Item/@id', false, true, '', false, $this->id);
+        $this->id = Util::checkString($item, 'Item/@id');
+        if (empty($this->id)) {
+            $this->id = Util::checkString($item, 'Item/id', false, true);
+        }
         foreach (get_object_vars($item) as $name => $value) {
             switch ($name) {
                 case 'url':
-                    $this->{$name} = Util::checkUrl($item, "Item/{$name}", true);
+                    $this->{$name} = Util::checkUrl($item, "Item/{$name}", true, true);
                     if (is_null($this->{$name})) {
                         $ok = false;
                     }

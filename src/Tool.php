@@ -65,7 +65,8 @@ class Tool
         'ext_ims_lis_memberships_id', 'ext_ims_lis_memberships_url',
         'custom_context_memberships_url', 'custom_context_memberships_v2_url',
         'custom_context_group_sets_url', 'custom_context_groups_url',
-        'custom_lineitems_url', 'custom_ags_scopes'
+        'custom_lineitems_url', 'custom_ags_scopes',
+        'custom_linkcontentitems_url', 'custom_linkcontent_scopes', 'custom_linkcontent_types'
     ];
 
     /**
@@ -79,7 +80,8 @@ class Tool
         'ext_ims_lti_tool_setting', 'ext_ims_lti_tool_setting_id', 'ext_ims_lti_tool_setting_url',
         'custom_link_setting_url', 'custom_link_memberships_url',
         'custom_lineitems_url', 'custom_lineitem_url', 'custom_ags_scopes',
-        'custom_ap_acs_url'
+        'custom_ap_acs_url',
+        'custom_linkcontentitems_url', 'custom_linkcontentitem_url', 'custom_linkcontent_scopes', 'custom_linkcontent_types'
     ];
 
     /**

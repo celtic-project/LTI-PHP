@@ -8,6 +8,7 @@ use ceLTIc\LTI\Http\HttpMessage;
 use ceLTIc\LTI\ApiHook\ApiHook;
 use ceLTIc\LTI\DataConnector\DataConnector;
 use ceLTIc\LTI\Enum\ToolSettingsMode;
+use ceLTIc\LTI\ContentItem\ContentItem;
 
 /**
  * Class to represent a platform context
@@ -610,6 +611,54 @@ class Context
     }
 
     /**
+     * Check if the Link and Content service is available.
+     *
+     * @return bool  True if this context supports the Link and Content service
+     */
+    public function hasLinkContentService(): bool
+    {
+        return !empty($this->getSetting('custom_linkcontentitems_url'));
+    }
+
+    /**
+     * Get content-items.
+     *
+     * @param int|null $limit  Limit of content-items to be returned in each request, null for service default
+     *
+     * @return ContentItem[]|bool  Array of ContentItem objects or false on error
+     */
+    public function getContentItems(?int $limit = null): array|bool
+    {
+        $contentItems = false;
+        $this->lastServiceRequest = null;
+        $linkContentService = $this->getLinkContentService();
+        if (!empty($linkContentService)) {
+            $contentItems = $linkContentService->getAll(null, $limit);
+            $this->lastServiceRequest = $linkContentService->getHttpMessage();
+        }
+
+        return $contentItems;
+    }
+
+    /**
+     * Create a new content-item.
+     *
+     * @param ContentItem $contentItem  Content-item object
+     *
+     * @return bool  True if successful
+     */
+    public function createContentItem(ContentItem &$contentItem): bool
+    {
+        $ok = false;
+        $linkContentService = $this->getLinkContentService();
+        if (!empty($linkContentService)) {
+            $ok = $linkContentService->createContentItem($contentItem);
+        }
+
+        return $ok;
+    }
+
+    /**
      * Load the context from the database.
      *
      * @param int $id                       Record ID of context
@@ -680,6 +729,23 @@ class Context
         }
 
         return $lineItemService;
+    }
+
+    /**
+     * Get the Link and Content service object.
+     *
+     * @return Service\LinkContent|bool  Link and Content service, or false if not available
+     */
+    private function getLinkContentService(): Service\LinkContent|bool
+    {
+        $url = $this->getSetting('custom_linkcontentitems_url');
+        if (!empty($url)) {
+            $linkContentService = new Service\LinkContent($this->getPlatform(), $url);
+        } else {
+            $linkContentService = false;
+        }
+
+        return $linkContentService;
     }
 
 }

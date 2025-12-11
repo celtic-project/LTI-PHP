@@ -131,7 +131,12 @@ final class Util
         'custom_caliper_maximum_payload_size' => ['suffix' => 'ces', 'group' => 'caliper-endpoint-service', 'claim' => 'caliper_maximum_payload_size', 'isInteger' => true],
         'custom_caliper_supported_extensions' => ['suffix' => 'ces', 'group' => 'caliper-endpoint-service', 'claim' => 'caliper_supported_extensions', 'isObject' => true],
         'custom_caliper_supported_versions' => ['suffix' => 'ces', 'group' => 'caliper-endpoint-service', 'claim' => 'caliper_supported_versions', 'isArray' => true],
-        'custom_caliper_scopes' => ['suffix' => 'ces', 'group' => 'caliper-endpoint-service', 'claim' => 'scopes', 'isArray' => true]
+        'custom_caliper_scopes' => ['suffix' => 'ces', 'group' => 'caliper-endpoint-service', 'claim' => 'scopes', 'isArray' => true],
+        'custom_linkcontentitems_url' => ['suffix' => '', 'group' => 'linkcontentservice', 'claim' => 'contentitems'],
+        'custom_linkcontentitem_url' => ['suffix' => '', 'group' => 'linkcontentservice', 'claim' => 'contentitem'],
+        'custom_linkcontent_version' => ['suffix' => '', 'group' => 'linkcontentservice', 'claim' => 'version', 'isArray' => true],
+        'custom_linkcontent_scopes' => ['suffix' => '', 'group' => 'linkcontentservice', 'claim' => 'scopes', 'isArray' => true],
+        'custom_linkcontent_types' => ['suffix' => '', 'group' => 'linkcontentservice', 'claim' => 'types', 'isArray' => true]
     ];
 
     /**
@@ -1001,15 +1006,23 @@ EOD;
      * @param object $obj               Object containing the element
      * @param string $fullname          Name of element (may include a path)
      * @param bool $required            True if the element must be present
+     * @param bool $allowEmpty          True if the element can be empty
      *
      * @return string  Value of element (or default value if not found or valid)
      */
-    public static function checkUrl(object $obj, string $fullname, bool $required = false): ?string
+    public static function checkUrl(object $obj, string $fullname, bool $required = false, bool $allowEmpty = false): ?string
     {
         $value = self::checkString($obj, $fullname, $required);
-        if (is_string($value) && (strpos($value, 'http://') !== 0) && (strpos($value, 'https://') !== 0)) {
-            $value = null;
-            self::setMessage(true, "The '{$fullname}' element must be a fully-qualified URL");
+        if (is_string($value)) {
+            if (empty($value)) {
+                if (!$allowEmpty) {
+                    $value = null;
+                    self::setMessage(true, "The '{$fullname}' element cannot be empty");
+                }
+            } elseif (!str_starts_with($value, 'http://') && !str_starts_with($value, 'https://')) {
+                $value = null;
+                self::setMessage(true, "The '{$fullname}' element must be a fully-qualified URL");
+            }
         }
 
         return $value;
