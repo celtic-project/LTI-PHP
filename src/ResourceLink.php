@@ -1705,9 +1705,9 @@ EOD;
     /**
      * Get the Line-item service object.
      *
-     * @return Service\LineItem  Line-item service, or false if not available
+     * @return Service\LineItem|bool  Line-item service, or false if not available
      */
-    private function getLineItemService(): Service\LineItem
+    private function getLineItemService(): Service\LineItem|bool
     {
         $url = $this->getSetting('custom_lineitems_url');
         if (!empty($url)) {
