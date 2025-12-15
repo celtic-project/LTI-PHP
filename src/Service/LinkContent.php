@@ -101,6 +101,8 @@ class LinkContent extends Service
      */
     public function getAll(?string $ltiResourceLinkId = null, ?int $limit = null): array|bool
     {
+        $this->scope = self::$SCOPE_READ;
+        $this->mediaType = self::MEDIA_TYPE_CONTENT_ITEMS;
         $params = [];
         if (!empty($ltiResourceLinkId)) {
             $params['resource_link_id'] = $ltiResourceLinkId;
@@ -157,6 +159,7 @@ class LinkContent extends Service
      */
     public function createContentItem(ContentItem &$contentItem): bool
     {
+        $this->scope = self::$SCOPE_CREATE;
         $this->mediaType = self::MEDIA_TYPE_CONTENT_ITEM;
         $http = $this->send('POST', null, $contentItem->toJson());
         $ok = $http->ok && !empty($http->responseJson);
@@ -177,8 +180,9 @@ class LinkContent extends Service
      *
      * @return bool  True if successful
      */
-    public function saveContentItem(ContentItem $contentItem): bool
+    public function saveContentItem(ContentItem &$contentItem): bool
     {
+        $this->scope = self::$SCOPE_UPDATE;
         $this->mediaType = self::MEDIA_TYPE_CONTENT_ITEM;
         $http = $this->send('PUT', null, $contentItem->toJson());
         $ok = $http->ok;
@@ -201,6 +205,7 @@ class LinkContent extends Service
      */
     public function deleteContentItem(): bool
     {
+        $this->scope = self::$SCOPE_DELETE;
         $this->mediaType = self::MEDIA_TYPE_CONTENT_ITEM;
         $http = $this->send('DELETE');
 

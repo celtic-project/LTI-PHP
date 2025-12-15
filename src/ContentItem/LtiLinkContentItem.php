@@ -32,6 +32,13 @@ class LtiLinkContentItem extends ContentItem
     public ?array $lineItemIds = null;
 
     /**
+     * Has the link been published?
+     *
+     * @var bool|null $published
+     */
+    public ?bool $published = null;
+
+    /**
      * Class constructor.
      *
      * @param string|null $id          Endpoint of content item
@@ -60,6 +67,9 @@ class LtiLinkContentItem extends ContentItem
         }
         if (!is_null($this->lineItemIds)) {
             $item->lineItemIds = $this->lineItemIds;
+        }
+        if (!is_null($this->published)) {
+            $item->published = $this->published;
         }
 
         return $item;
@@ -99,6 +109,14 @@ class LtiLinkContentItem extends ContentItem
                     $lineItemIds = Util::checkArray($obj, 'lineItemIds', false, false, null);
                     if (!is_null($lineItemIds)) {
                         $this->lineItemIds = $lineItemIds;
+                    } else {
+                        $ok = false;
+                    }
+                    break;
+                case 'published':
+                    $published = Util::checkBoolean($obj, 'published', false);
+                    if (!is_null($published)) {
+                        $this->published = $published;
                     } else {
                         $ok = false;
                     }

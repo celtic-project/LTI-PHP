@@ -45,6 +45,29 @@ class ContentItem
     }
 
     /**
+     * Save a content-item.
+     *
+     * @param Platform $platform  Platform object
+     *
+     * @return bool  True if successful
+     */
+    public function save(Platform $platform): bool
+    {
+        $ok = false;
+        if (!empty($this->item)) {
+            $id = $this->item->getId();
+            if (!empty($id)) {
+                $linkContentService = new Service\LinkContent($platform, $id);
+                if (!empty($linkContentService)) {
+                    $ok = $linkContentService->saveContentItem($this);
+                }
+            }
+        }
+
+        return $ok;
+    }
+
+    /**
      * Delete a content-item.
      *
      * @param Platform $platform  Platform object
