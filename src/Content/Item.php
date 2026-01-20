@@ -371,7 +371,7 @@ class Item
         if (!is_null($this->mediaType)) {
             $item->mediaType = $this->mediaType;
         }
-        if (!is_null($this->placements)) {
+        if (!empty($this->placements)) {
             $placementAdvice = new \stdClass();
             $placementAdvices = [];
             foreach ($this->placements as $placement) {
