@@ -66,7 +66,7 @@ class OAuthRequest
      */
     function __construct(string $http_method, string $http_url, ?array $parameters = null)
     {
-        $parameters = ($parameters) ? $parameters : [];
+        $parameters = $parameters ?: [];
         $query_params = parse_url($http_url, PHP_URL_QUERY);
         if ($query_params) {
             $parameters = OAuthUtil::array_merge_recursive(OAuthUtil::parse_parameters($query_params), $parameters);
@@ -129,7 +129,7 @@ class OAuthRequest
             $scheme = ($_SERVER['HTTPS'] === 'on') ? 'https' : 'http';
             $http_url = "{$scheme}://{$_SERVER['SERVER_NAME']}:{$_SERVER['SERVER_PORT']}{$_SERVER['REQUEST_URI']}";
         }
-        $http_method = ($http_method) ? $http_method : $_SERVER['REQUEST_METHOD'];
+        $http_method = $http_method ?: $_SERVER['REQUEST_METHOD'];
 
         // We weren't handed any parameters, so let's find the ones relevant to
         // this request.
@@ -172,7 +172,7 @@ class OAuthRequest
     public static function from_consumer_and_token(OAuthConsumer $consumer, ?OAuthToken $token, string $http_method,
         string $http_url, ?array $parameters = null): OAuthRequest
     {
-        $parameters = ($parameters) ? $parameters : [];
+        $parameters = $parameters ?: [];
         $defaults = [
             'oauth_version' => OAuthRequest::$version,
             'oauth_nonce' => OAuthRequest::generate_nonce(),

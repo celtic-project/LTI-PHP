@@ -509,7 +509,7 @@ class Platform
     {
         $scopesRequested = explode(' ',
             OAuth\OAuthUtil::parse_parameters(file_get_contents(OAuth\OAuthRequest::$POST_INPUT))['scope']);
-        $scopesPermitted = array();
+        $scopesPermitted = [];
         foreach ($scopesRequested as $scope) {
             if (in_array($scope, $supportedScopes)) {
                 $scopesPermitted[] = $scope;
