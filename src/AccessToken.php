@@ -150,8 +150,6 @@ class AccessToken
         $this->scopes = [];
         $this->token = null;
         $this->expires = null;
-        $this->created = null;
-        $this->updated = null;
 
         $url = $this->platform->accessTokenUrl;
         if (empty($url)) {
