@@ -69,7 +69,6 @@ class CurlClient implements ClientInterface
                 $message->error = curl_error($ch);
             }
         }
-        curl_close($ch);
 
         return $message->ok;
     }
