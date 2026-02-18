@@ -1017,7 +1017,7 @@ EOD;
             $this->messageParameters['state'] = $parameters['state'];
         }
         if ($this->ok && !empty(static::$browserStorageFrame)) {
-            if (strpos($parameters['redirect_uri'], '?') === false) {
+            if (!str_contains($parameters['redirect_uri'], '?')) {
                 $sep = '?';
             } else {
                 $sep = '&';

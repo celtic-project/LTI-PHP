@@ -719,7 +719,7 @@ trait System
                         } elseif (in_array(substr($role, 46), $institutionRoles)) {
                             $role = 'urn:lti:instrole:ims/lis/' . substr($role, 46);
                         }
-                    } elseif (strpos($role, 'Instructor#TeachingAssistant') !== false) {
+                    } elseif (str_contains($role, 'Instructor#TeachingAssistant')) {
                         if (str_ends_with($role, 'Instructor#TeachingAssistant')) {
                             $role = str_replace('Instructor#', '', $role);
                         } else {
@@ -801,7 +801,7 @@ trait System
                     }
                     if (!empty($role)) {
                         $pos = strrpos($role, '/');
-                        if ((strpos($role, '#') !== false) || ($pos !== false)) {
+                        if ((str_contains($role, '#')) || ($pos !== false)) {
                             $prefix .= '/';
                             if ($pos !== false) {
                                 $role = substr($role, 0, $pos) . '#' . substr($role, $pos + 1);
@@ -885,7 +885,7 @@ trait System
                     }
                     if (!empty($prefix) && !empty($role)) {
                         $pos = strrpos($role, '/');
-                        if ((strpos($role, '#') !== false) || ($pos !== false)) {
+                        if ((str_contains($role, '#')) || ($pos !== false)) {
                             $prefix .= '/';
                             if ($pos !== false) {
                                 $role = substr($role, 0, $pos) . '#' . substr($role, $pos + 1);
@@ -985,7 +985,7 @@ trait System
                 $url = Tool::$defaultTool->initiateLoginUrl;
             }
             if (!empty(static::$browserStorageFrame)) {
-                if (strpos($url, '?') === false) {
+                if (!str_contains($url, '?')) {
                     $sep = '?';
                 } else {
                     $sep = '&';

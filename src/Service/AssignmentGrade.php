@@ -38,11 +38,11 @@ class AssignmentGrade extends Service
      */
     private static function addPath(string $endpoint, string $path): string
     {
-        if (strpos($endpoint, '?') === false) {
+        if (!str_contains($endpoint, '?')) {
             if (!str_ends_with($endpoint, $path)) {
                 $endpoint .= $path;
             }
-        } elseif (strpos($endpoint, "{$path}?") === false) {
+        } elseif (!str_contains($endpoint, "{$path}?")) {
             $endpoint = str_replace('?', "{$path}?", $endpoint);
         }
 

@@ -638,7 +638,7 @@ EOD;
      */
     public static function addQueryParameters(string $url, array $params): string
     {
-        if (strpos($url, '?') === false) {
+        if (!str_contains($url, '?')) {
             $url .= '?';
             $sep = '';
         } else {
@@ -812,7 +812,7 @@ EOD;
         if (!is_int($val) && !is_float($val)) {
             if (!is_numeric($val)) {
                 $val = null;
-            } elseif (strpos($val, '.') === false) {
+            } elseif (!str_contains($val, '.')) {
                 $val = intval($val);
             } else {
                 $val = floatval($val);
