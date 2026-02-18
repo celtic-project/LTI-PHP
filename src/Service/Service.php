@@ -105,7 +105,7 @@ class Service
     {
         $url = $this->endpoint;
         if (!empty($parameters)) {
-            if (strpos($url, '?') === false) {
+            if (!str_contains($url, '?')) {
                 $sep = '?';
             } else {
                 $sep = '&';

@@ -509,7 +509,7 @@ class Platform
     {
         $scopesRequested = explode(' ',
             OAuth\OAuthUtil::parse_parameters(file_get_contents(OAuth\OAuthRequest::$POST_INPUT))['scope']);
-        $scopesPermitted = array();
+        $scopesPermitted = [];
         foreach ($scopesRequested as $scope) {
             if (in_array($scope, $supportedScopes)) {
                 $scopesPermitted[] = $scope;
@@ -1017,7 +1017,7 @@ EOD;
             $this->messageParameters['state'] = $parameters['state'];
         }
         if ($this->ok && !empty(static::$browserStorageFrame)) {
-            if (strpos($parameters['redirect_uri'], '?') === false) {
+            if (!str_contains($parameters['redirect_uri'], '?')) {
                 $sep = '?';
             } else {
                 $sep = '&';
