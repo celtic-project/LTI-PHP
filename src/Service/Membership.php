@@ -184,7 +184,7 @@ class Membership extends Service
                                 $ok = $ok && !Util::$strictMode;
                             }
                             $members = Util::checkArray($http->responseJson->pageOf->membershipSubject,
-                                    'pageOf/membershipSubject/membership');
+                                'pageOf/membershipSubject/membership');
                         }
                     }
                     if (!empty($http->responseJson->nextPage) && !empty($members)) {
@@ -351,16 +351,16 @@ class Membership extends Service
                                                     $username = Util::checkString($message->ext, 'membership/message/ext/username');
                                                 } elseif (!empty($message->ext->user_username)) {
                                                     $username = Util::checkString($message->ext,
-                                                            'membership/message/ext/user_username');
+                                                        'membership/message/ext/user_username');
                                                 }
                                             }
                                             if (empty($username) && is_object($message->custom)) {
                                                 if (!empty($message->custom->username)) {
                                                     $username = Util::checkString($message->custom,
-                                                            'membership/message/custom/username');
+                                                        'membership/message/custom/username');
                                                 } elseif (!empty($message->custom->user_username)) {
                                                     $username = Util::checkString($message->custom,
-                                                            'membership/message/custom/user_username');
+                                                        'membership/message/custom/user_username');
                                                 }
                                             }
                                             if (!empty($username)) {
@@ -441,7 +441,7 @@ class Membership extends Service
                     }
 
 // Set the user name
-                    $firstname = Util::checkString($member, 'members/given_mame');
+                    $firstname = Util::checkString($member, 'members/given_name');
                     $middlename = Util::checkString($member, 'members/middle_name');
                     $lastname = Util::checkString($member, 'members/family_name');
                     $fullname = Util::checkString($member, 'members/name');
@@ -513,7 +513,7 @@ class Membership extends Service
                                     if (isset($message->{'https://purl.imsglobal.org/spec/lti-bo/claim/basicoutcome'}) &&
                                         isset($message->{'https://purl.imsglobal.org/spec/lti-bo/claim/basicoutcome'}->lis_result_sourcedid)) {
                                         $sourcedid = Util::checkString($message->{'https://purl.imsglobal.org/spec/lti-bo/claim/basicoutcome'},
-                                                'members/message/https://purl.imsglobal.org/spec/lti-bo/claim/basicoutcome/lis_result_sourcedid');
+                                            'members/message/https://purl.imsglobal.org/spec/lti-bo/claim/basicoutcome/lis_result_sourcedid');
                                         if (empty($userResult->ltiResultSourcedId) || ($userResult->ltiResultSourcedId !== $sourcedid)) {
                                             $userResult->ltiResultSourcedId = $sourcedid;
                                             $doSave = true;
@@ -527,20 +527,20 @@ class Membership extends Service
                                         is_object($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'})) {
                                         if (!empty($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'}->username)) {
                                             $username = Util::checkString($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'},
-                                                    'members/message/https://purl.imsglobal.org/spec/lti/claim/ext/username');
+                                                'members/message/https://purl.imsglobal.org/spec/lti/claim/ext/username');
                                         } elseif (!empty($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'}->user_username)) {
                                             $username = Util::checkString($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'},
-                                                    'members/message/https://purl.imsglobal.org/spec/lti/claim/ext/user_username');
+                                                'members/message/https://purl.imsglobal.org/spec/lti/claim/ext/user_username');
                                         }
                                     }
                                     if (empty($username) && isset($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'}) &&
                                         is_object($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'})) {
                                         if (!empty($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'}->username)) {
                                             $username = Util::checkString($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'},
-                                                    'members/message/https://purl.imsglobal.org/spec/lti/claim/custom/username');
+                                                'members/message/https://purl.imsglobal.org/spec/lti/claim/custom/username');
                                         } elseif (!empty($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'}->user_username)) {
                                             $username = Util::checkString($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'},
-                                                    'members/message/https://purl.imsglobal.org/spec/lti/claim/custom/user_username');
+                                                'members/message/https://purl.imsglobal.org/spec/lti/claim/custom/user_username');
                                         }
                                     }
                                     if (!empty($username)) {
