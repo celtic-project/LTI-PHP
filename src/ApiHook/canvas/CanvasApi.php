@@ -80,7 +80,7 @@ trait CanvasApi
                 $this->setGroupSets($perPage, $prefix);
             }
             $users = $this->getUsers($perPage, $withGroups);
-            if ($withGroups) {
+            if ($users && $withGroups) {
                 $this->setGroups($perPage, $users);
             }
         } else {
