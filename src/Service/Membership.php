@@ -294,6 +294,18 @@ class Membership extends Service
                                 $userResult->sourcedId = Util::checkString($member, 'membership/member/sourcedId');
                             }
 
+// Set the username
+                            $username = Util::checkString($member, 'membership/member/ext_username');
+                            if (empty($username)) {
+                                $username = Util::checkString($member, 'membership/member/ext_user_username');
+                            }
+                            if (empty($username)) {
+                                $username = Util::checkString($member, 'membership/member/ext_d2l_username');
+                            }
+                            if (!empty($username)) {
+                                $this->userResult->username = $username;
+                            }
+
 // Set the user email
                             $email = Util::checkString($member, 'membership/member/email');
                             $userResult->setEmail($email, $this->source->getPlatform()->defaultEmail);
@@ -352,6 +364,9 @@ class Membership extends Service
                                                 } elseif (!empty($message->ext->user_username)) {
                                                     $username = Util::checkString($message->ext,
                                                         'membership/message/ext/user_username');
+                                                } elseif (!empty($message->ext->d2l_username)) {
+                                                    $username = Util::checkString($message->ext,
+                                                        'membership/message/ext/d2l_username');
                                                 }
                                             }
                                             if (empty($username) && is_object($message->custom)) {
@@ -452,6 +467,18 @@ class Membership extends Service
                         $userResult->sourcedId = Util::checkString($member, 'members/lis_person_sourcedid');
                     }
 
+// Set the username
+                    $username = Util::checkString($member, 'members/ext_username');
+                    if (empty($username)) {
+                        $username = Util::checkString($member, 'members/ext_user_username');
+                    }
+                    if (empty($username)) {
+                        $username = Util::checkString($member, 'members/ext_d2l_username');
+                    }
+                    if (!empty($username)) {
+                        $userResult->username = $username;
+                    }
+
 // Set the user email
                     $email = Util::checkString($member, 'email');
                     $userResult->setEmail($email, $this->source->getPlatform()->defaultEmail);
@@ -531,6 +558,9 @@ class Membership extends Service
                                         } elseif (!empty($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'}->user_username)) {
                                             $username = Util::checkString($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'},
                                                 'members/message/https://purl.imsglobal.org/spec/lti/claim/ext/user_username');
+                                        } elseif (!empty($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'}->d2l_username)) {
+                                            $username = Util::checkString($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'},
+                                                'members/message/https://purl.imsglobal.org/spec/lti/claim/ext/d2l_username');
                                         }
                                     }
                                     if (empty($username) && isset($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'}) &&
