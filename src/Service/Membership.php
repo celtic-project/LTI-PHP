@@ -303,7 +303,7 @@ class Membership extends Service
                                 $username = Util::checkString($member, 'membership/member/ext_d2l_username');
                             }
                             if (!empty($username)) {
-                                $this->userResult->username = $username;
+                                $userResult->username = $username;
                             }
 
 // Set the user email
