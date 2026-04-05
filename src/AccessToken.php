@@ -8,11 +8,10 @@ use ceLTIc\LTI\Http\HttpMessage;
 use ceLTIc\LTI\Util;
 
 /**
- * Class to represent an HTTP message
+ * Class to represent an access token
  *
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
  * @copyright  SPV Software Products
- * @version  3.0.0
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3
  */
 class AccessToken
@@ -40,13 +39,6 @@ class AccessToken
     public array $scopes = [];
 
     /**
-     * Platform for this token.
-     *
-     * @var Platform $platform
-     */
-    private Platform $platform;
-
-    /**
      * Timestamp for when the object was created.
      *
      * @var int|null $created
@@ -59,6 +51,13 @@ class AccessToken
      * @var int|null $updated
      */
     public ?int $updated = null;
+
+    /**
+     * Platform for this token.
+     *
+     * @var Platform $platform
+     */
+    private Platform $platform;
 
     /**
      * Class constructor.

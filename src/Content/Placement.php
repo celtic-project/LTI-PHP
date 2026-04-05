@@ -212,7 +212,7 @@ class Placement
         if (isset($item->{'@type'})) {  // Version 1
             if (empty($documentTarget) && isset($item->placementAdvice)) {
                 $documentTarget = Util::checkString($item->placementAdvice, 'Item/placementAdvice/presentationDocumentTarget',
-                        false, true, ['embed', 'frame', 'iframe', 'none', 'overlay', 'popup', 'window'], false, null);
+                    false, true, ['embed', 'frame', 'iframe', 'none', 'overlay', 'popup', 'window'], false, null);
                 $ok = $ok && (!is_null($documentTarget) || isset($item->placementAdvice->presentationDocumentTarget));
             }
             if (!empty($documentTarget) && isset($item->placementAdvice) && is_object($item->placementAdvice)) {
@@ -221,7 +221,7 @@ class Placement
                 $displayHeight = Util::checkInteger($item->placementAdvice, 'Item/placementAdvice/displayHeight', false, 0, true);
                 $ok = $ok && (!is_null($displayHeight) || !isset($item->placementAdvice->displayHeight));
                 $windowTarget = Util::checkString($item->placementAdvice, 'Item/placementAdvice/windowTarget', false, true, '',
-                        false, null);
+                    false, null);
                 $ok = $ok && (!is_null($windowTarget) || !isset($item->placementAdvice->windowTarget));
             }
             if (isset($item->url)) {
@@ -246,10 +246,10 @@ class Placement
                 $displayHeight = Util::checkInteger($item->{$documentTarget}, "Item/{$documentTarget}/height", false, 0, true);
                 $ok = $ok && (!is_null($displayHeight) || !isset($item->{$documentTarget}->height));
                 $windowTarget = Util::checkString($item->{$documentTarget}, "Item/{$documentTarget}/targetName", false, true, '',
-                        false, null);
+                    false, null);
                 $ok = $ok && (!is_null($windowTarget) || !isset($item->{$documentTarget}->targetName));
                 $windowFeatures = Util::checkString($item->{$documentTarget}, "Item/{$documentTarget}/windowFeatures", false, true,
-                        '', false, null);
+                    '', false, null);
                 $ok = $ok && (!is_null($windowFeatures) || !isset($item->{$documentTarget}->windowFeatures));
                 $url = Util::checkString($item->{$documentTarget}, "Item/{$documentTarget}/src", false, true, '', false, $url);
                 $ok = $ok && (!is_null($url) || !isset($item->{$documentTarget}->src));
