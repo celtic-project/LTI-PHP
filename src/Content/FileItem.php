@@ -115,8 +115,8 @@ class FileItem extends Item
                         $ok = $ok && !is_null($this->copyAdvice);
                         break;
                     case 'expiresAt':
-                        $this->expiresAt = Util::checkBoolean($item, 'FileItem/expiresAt');
-                        $ok = $ok && !is_null($this->expiresAt);
+                        $this->expiresAt = Util::checkDateTime($item, 'FileItem/expiresAt');
+                        $ok = $ok && !empty($this->expiresAt);
                         break;
                 }
             }

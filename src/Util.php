@@ -1142,7 +1142,7 @@ EOD;
     }
 
     /**
-     * Get the named number element from object.
+     * Get the named ISO8601-formatted datetime element from object.
      *
      * @param object $obj       Object containing the element
      * @param string $fullname  Name of element (may include a path)
@@ -1160,10 +1160,20 @@ EOD;
         }
         if (property_exists($obj, $name)) {
             if (is_string($obj->{$name})) {
-                $value = strtotime($obj->{$name});
-                if ($value === false) {
-                    self::setMessage(true, "The '{$fullname}' element must have a datetime value");
+                $dateTime = \DateTime::createFromFormat(DATE_ATOM, $obj->{$name});
+                if ($dateTime !== false) {
+                    $value = $dateTime->getTimestamp();
+                } elseif (self::$strictMode) {
+                    self::setMessage(true, "The '{$fullname}' element must have a datetime value in ISO8601 format");
                     $value = 0;
+                } else {
+                    $value = strtotime($obj->{$name});
+                    if ($value === false) {
+                        self::setMessage(true, "The '{$fullname}' element must have a datetime value");
+                        $value = 0;
+                    } else {
+                        self::setMessage(false, "The '{$fullname}' element should have a datetime value in ISO8601 format");
+                    }
                 }
             } else {
                 self::setMessage(true, "The '{$fullname}' element must have a string value (" . gettype($obj->{$name}) . ' found)');

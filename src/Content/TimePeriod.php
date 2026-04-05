@@ -65,13 +65,9 @@ class TimePeriod
         $timePeriod = new \stdClass();
         if (!is_null($this->startDateTime)) {
             $timePeriod->startDateTime = gmdate('Y-m-d\TH:i:s\Z', $this->startDateTime);
-        } else {
-            $timePeriod->startDateTime = null;
         }
         if (!is_null($this->endDateTime)) {
             $timePeriod->endDateTime = gmdate('Y-m-d\TH:i:s\Z', $this->endDateTime);
-        } else {
-            $timePeriod->endDateTime = null;
         }
 
         return $timePeriod;
@@ -90,22 +86,16 @@ class TimePeriod
         $startDateTime = null;
         $endDateTime = null;
         foreach (get_object_vars($item) as $name => $value) {
-            if (!Util::$strictMode) {
-                $value = Util::valToString($value);
-            }
-            if (!is_string($value)) {
-                continue;
-            }
             switch ($name) {
                 case 'startDateTime':
-                    $startDateTime = strtotime($value);
-                    if ($startDateTime === false) {
+                    $startDateTime = Util::checkDateTime($item, $name);
+                    if (empty($startDateTime)) {
                         $startDateTime = null;
                     }
                     break;
                 case 'endDateTime':
-                    $endDateTime = strtotime($value);
-                    if ($endDateTime === false) {
+                    $endDateTime = Util::checkDateTime($item, $name);
+                    if (empty($endDateTime)) {
                         $endDateTime = null;
                     }
                     break;
