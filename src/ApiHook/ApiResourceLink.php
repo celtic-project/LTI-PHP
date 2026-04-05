@@ -55,7 +55,7 @@ class ApiResourceLink
      *
      * @return string|bool  Outcome value read or true if the request was successfully processed
      */
-    public function doOutcomesService(ServiceAction $action, Outcome $ltiOutcome, UserResult $userResult): bool
+    public function doOutcomesService(ServiceAction $action, Outcome $ltiOutcome, UserResult $userResult): string|bool
     {
         return false;
     }
