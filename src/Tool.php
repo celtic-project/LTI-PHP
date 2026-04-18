@@ -1359,7 +1359,7 @@ EOD;
         if (($this->ok || $generateWarnings) && !empty($this->messageParameters['lti_message_type'])) {
             if ($this->messageParameters['lti_message_type'] === 'basic-lti-launch-request') {
                 if ($this->ok && (!isset($this->messageParameters['resource_link_id']) || (strlen(trim($this->messageParameters['resource_link_id'])) <= 0))) {
-                    $this->setReason('Missing resource link ID', true, $generateWarnings);
+                    $this->setReason('Missing resource link ID');
                 }
                 if ($this->ltiVersion === LtiVersion::V1P3) {
                     if (!isset($this->messageParameters['roles'])) {
