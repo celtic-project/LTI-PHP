@@ -408,7 +408,7 @@ class Item
      *
      * @return object  JSON object
      */
-    protected function toJsonObject(): object
+    public function toJsonObject(): object
     {
         $item = new \stdClass();
         switch ($this->type) {
