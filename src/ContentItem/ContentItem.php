@@ -35,6 +35,16 @@ class ContentItem
     protected Item $item;
 
     /**
+     * Set content item.
+     *
+     * @param Item $item  Item object for this content item.
+     */
+    public function setItem(Item $item): void
+    {
+        $this->item = $item;
+    }
+
+    /**
      * Get content item.
      *
      * @return Item  Item object for this content item.
@@ -135,7 +145,7 @@ class ContentItem
             Item::TYPE_LTI_LINK => new LtiLinkContentItem($id),
             default => new ContentItem(),
         };
-        $contentItem->item = match ($type) {
+        $contentItem->setItem(match ($type) {
             Item::TYPE_LINK,
             Item::TYPE_HTML,
             Item::TYPE_IMAGE => new Item($type, null, $id),
@@ -143,7 +153,7 @@ class ContentItem
             Item::TYPE_LTI_ASSIGNMENT => new Content\LtiAssignmentItem(null, $id),
             Item::TYPE_FILE => new Content\FileItem(null, $id),
             default => new Item($type, null, $id),
-        };
+        });
 
         return $contentItem;
     }
