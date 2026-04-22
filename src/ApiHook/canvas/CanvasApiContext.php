@@ -7,7 +7,7 @@ use ceLTIc\LTI\ApiHook\ApiContext;
 use ceLTIc\LTI\Context;
 
 /**
- * Class to implement Resource Link services for a Canvas platform via its proprietary API.
+ * Class to implement Context services for a Canvas platform via its proprietary API.
  *
  * @author  Simon Booth <s.p.booth@stir.ac.uk>
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
