@@ -148,7 +148,7 @@ class LineItem
     public function getOutcomes(?int $limit = null): array|bool
     {
         $resultService = new Service\Result($this->platform, $this->endpoint);
-        return $resultService->getAll();
+        return $resultService->getAll($limit);
     }
 
     /**
