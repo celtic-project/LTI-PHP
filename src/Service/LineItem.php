@@ -277,13 +277,9 @@ class LineItem extends AssignmentGrade
         $endDateTime = Util::checkDateTIme($json, 'endDateTime');
         $resourceLinkId = Util::checkString($json, 'resourceLinkId');
         $gradesReleased = Util::checkBoolean($json, 'gradesReleased');
-        if (!empty($id) && !empty($label) &&
-            (!is_null($scoreMaximum) || (!empty($json->gradingScheme) && is_object($json->gradingScheme)))) {
+        if (!empty($id) && !empty($label) && !is_null($scoreMaximum)) {
             $lineItem = new LTI\LineItem($platform, $label, $scoreMaximum);
-            if (!empty($json->gradingScheme)) {
-                $lineItem->gradingScheme = GradingScheme::fromJsonObject($json->gradingScheme);
-            }
-            $lineItem->endpoint = $json->id;
+            $lineItem->endpoint = $id;
             if (!empty($resourceLinkId)) {
                 $lineItem->ltiResourceLinkId = $resourceLinkId;
             }
