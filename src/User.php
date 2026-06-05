@@ -121,6 +121,13 @@ class User
     /**
      * Groups for user.
      *
+     * A group is represented by an associative array with the following elements:
+     *   - title
+     *   - tag
+     *   - hidden
+     *   - set (ID of group set, array of IDs if the group belongs to more than one set, omitted if the group is not part of a set)
+     * The array key value is the group ID.
+     * 
      * @var array $groups
      */
     public array $groups = [];

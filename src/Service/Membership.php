@@ -607,12 +607,18 @@ class Membership extends Service
                                         ];
                                     }
                                     if (!empty($this->source->groups[$groupId]['set'])) {
-                                        $this->source->groupSets[$this->source->groups[$groupId]['set']]['num_members']++;
-                                        if ($userResult->isStaff()) {
-                                            $this->source->groupSets[$this->source->groups[$groupId]['set']]['num_staff']++;
+                                        $sets = $this->source->groups[$groupId]['set'];
+                                        if (!is_array($sets)) {
+                                            $sets = [$sets];
                                         }
-                                        if ($userResult->isLearner()) {
-                                            $this->source->groupSets[$this->source->groups[$groupId]['set']]['num_learners']++;
+                                        foreach ($sets as $set) {
+                                            $this->source->groupSets[$set]['num_members']++;
+                                            if ($userResult->isStaff()) {
+                                                $this->source->groupSets[$set]['num_staff']++;
+                                            }
+                                            if ($userResult->isLearner()) {
+                                                $this->source->groupSets[$set]['num_learners']++;
+                                            }
                                         }
                                     }
                                     $userResult->groups[] = $groupId;
