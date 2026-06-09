@@ -1529,8 +1529,12 @@ trait System
                         $this->setReason("Invalid tool_state parameter: '{$state}'");
                     }
                 }
-                $this->messageParameters = array_merge($this->getCustomQueryParameters($_SERVER['QUERY_STRING']),
-                    $this->rawParameters);
+                if (!empty($_SERVER['QUERY_STRING'])) {
+                    $this->messageParameters = array_merge($this->getCustomQueryParameters($_SERVER['QUERY_STRING']),
+                        $this->rawParameters);
+                } else {
+                    $this->messageParameters = $this->rawParameters;
+                }
             } else {
                 $this->messageParameters = $this->rawParameters;
             }
