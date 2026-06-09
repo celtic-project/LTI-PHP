@@ -95,9 +95,9 @@ class HttpMessage
     /**
      * The client used to send the request.
      *
-     * @var ClientInterface $httpClient
+     * @var ClientInterface|null $httpClient
      */
-    private static ClientInterface $httpClient;
+    private static ?ClientInterface $httpClient = null;
 
     /**
      * Class constructor.
@@ -167,12 +167,9 @@ class HttpMessage
     {
         if (empty(self::$httpClient)) {
             if (function_exists('curl_init')) {
-                self::$httpClient = new CurlClient();
+                self::setHttpClient(new CurlClient());
             } elseif (ini_get('allow_url_fopen')) {
-                self::$httpClient = new StreamClient();
-            }
-            if (self::$httpClient) {
-                Util::logDebug('HttpClient set to \'' . get_class(self::$httpClient) . '\'');
+                self::setHttpClient(new StreamClient());
             }
         }
 

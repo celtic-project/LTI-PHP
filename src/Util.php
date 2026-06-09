@@ -227,9 +227,9 @@ final class Util
     /**
      * The client used to handle log messages.
      *
-     * @var LoggerInterface $loggerClient
+     * @var LoggerInterface|null $loggerClient
      */
-    private static LoggerInterface $loggerClient;
+    private static ?LoggerInterface $loggerClient = null;
 
     /**
      * Messages relating to service request.
@@ -479,11 +479,7 @@ final class Util
      */
     public static function getLoggerClient(): ?LoggerInterface
     {
-        if (!empty(Util::$loggerClient)) {
-            return Util::$loggerClient;
-        } else {
-            return null;
-        }
+        return Util::$loggerClient;
     }
 
     /**
