@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace ceLTIc\LTI\Jwt;
 
 /**
- * Interface to represent an HWT client
+ * Interface to represent a JWT client
  *
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
  * @copyright  SPV Software Products

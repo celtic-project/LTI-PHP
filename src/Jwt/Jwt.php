@@ -6,7 +6,7 @@ namespace ceLTIc\LTI\Jwt;
 use ceLTIc\LTI\Util;
 
 /**
- * Class to represent an HTTP message request
+ * Class to represent a JWT client
  *
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
  * @copyright  SPV Software Products
@@ -52,7 +52,7 @@ class Jwt
     }
 
     /**
-     * Set the JWT client to use for handling JWTs.
+     * Set the client to use for handling JWTs.
      *
      * @param ClientInterface|null $jwtClient
      *
@@ -65,7 +65,7 @@ class Jwt
     }
 
     /**
-     * Get the JWT client to use for handling JWTs. If one is not set, a default client is created.
+     * Get the client to use for handling JWTs. If one is not set, a default client is created.
      *
      * @return ClientInterface|null  The JWT client
      */
