@@ -725,7 +725,7 @@ trait System
                         } else {
                             $role = str_replace('Instructor#', 'TeachingAssistant/', $role);
                         }
-                    } elseif ((str_ends_with($role, 'Instructor')) &&
+                    } elseif (str_ends_with($role, 'Instructor') &&
                         !empty(preg_grep('/^http:\/\/purl.imsglobal.org\/vocab\/lis\/v2\/membership\/Instructor#TeachingAssistant.*$/',
                                 $roles))) {
                         $role = '';
@@ -1431,7 +1431,7 @@ trait System
                                         session_start();
                                         $this->onResetSessionId();
                                     }
-                                    $usePlatformStorage = (str_ends_with($state, '.platformStorage'));
+                                    $usePlatformStorage = str_ends_with($state, '.platformStorage');
                                     if ($usePlatformStorage) {
                                         $state = substr($state, 0, -16);
                                     }

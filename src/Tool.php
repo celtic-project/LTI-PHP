@@ -1339,7 +1339,7 @@ EOD;
         $this->checkMessage($generateWarnings);
         if (!empty($this->jwt) && !empty($this->jwt->hasJwt())) {
             if ($this->ok || $generateWarnings) {
-                $sub = $this->getClaimString('sub', true, true, $generateWarnings);
+                $this->getClaimString('sub', true, true, $generateWarnings);
             }
             if ($this->ok || $generateWarnings) {
                 if (!empty($this->jwt->getClaim('https://purl.imsglobal.org/spec/lti/claim/context', '')) &&
