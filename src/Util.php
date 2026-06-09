@@ -695,6 +695,11 @@ EOD;
             $oauthRequest = OAuth\OAuthRequest::from_request();
             $url = $oauthRequest->get_normalized_http_url();
             $secure = (parse_url($url, PHP_URL_SCHEME) === 'https');
+            if ($secure) {
+                $sameSite = 'None';
+            } else {
+                $sameSite = 'Lax';
+            }
             $path = parse_url($url, PHP_URL_PATH);
             if (empty($path)) {
                 $path = '/';
@@ -711,10 +716,10 @@ EOD;
                     [
                         'expires' => $expires,
                         'path' => $path,
-                        'domain' => $_SERVER['HTTP_HOST'],
+                        'domain' => $_SERVER['SERVER_NAME'],
                         'secure' => $secure,
                         'httponly' => true,
-                        'SameSite' => 'None'
+                        'SameSite' => $sameSite
                     ]
                 );
             } else {
