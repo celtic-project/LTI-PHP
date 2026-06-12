@@ -719,8 +719,8 @@ class Tool
     protected function onRegistration(): void
     {
         $platformConfig = $this->getPlatformConfiguration();
+        $toolConfig = $this->getConfiguration($platformConfig);
         if ($this->ok) {
-            $toolConfig = $this->getConfiguration($platformConfig);
             $registrationConfig = $this->sendRegistration($platformConfig, $toolConfig);
             if ($this->ok) {
                 $this->getPlatformToRegister($platformConfig, $registrationConfig);
@@ -898,9 +898,9 @@ class Tool
      *
      * @param array $platformConfig  Platform configuration data
      *
-     * @return array  Tool configuration data
+     * @return array|null  Tool configuration data
      */
-    protected function getConfiguration(array $platformConfig): array
+    protected function getConfiguration(?array $platformConfig): array
     {
         $claimsMapping = [
             'User.id' => 'sub',
@@ -917,12 +917,22 @@ class Tool
         $pos = strpos($toolUrl, '//');
         $domain = substr($toolUrl, $pos + 2);
         $domain = substr($domain, 0, strpos($domain, '/'));
-        $claimsSupported = $platformConfig['claims_supported'];
+        $claimsSupported = [];
         $messagesSupported = [];
+        $scopesSupported = [];
+        if ($platformConfig) {
+            if (isset($platformConfig['claims_supported'])) {
+        $claimsSupported = $platformConfig['claims_supported'];
+            }
+            if (isset($platformConfig['https://purl.imsglobal.org/spec/lti-platform-configuration']['messages_supported'])) {
         foreach ($platformConfig['https://purl.imsglobal.org/spec/lti-platform-configuration']['messages_supported'] as $message) {
             $messagesSupported[] = $message['type'];
         }
+            }
+            if (isset($platformConfig['scopes_supported'])) {
         $scopesSupported = $platformConfig['scopes_supported'];
+            }
+        }
         $iconUrl = null;
         $messages = [];
         $claims = ['iss'];
