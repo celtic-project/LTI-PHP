@@ -813,6 +813,8 @@ class Tool
                 $this->setReason('Invalid \'state\' parameter value and/or \'nonce\' claim value');
             }
             unset($_SESSION['ceLTIc_lti_authentication_request']);
+        } else {
+            $this->setReason('Unable to verify \'state\' and \'nonce\' values');
         }
         if (!$hasSession) {
             session_write_close();
