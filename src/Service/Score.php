@@ -16,6 +16,7 @@ use ceLTIc\LTI\Outcome;
  */
 class Score extends AssignmentGrade
 {
+
     /**
      * Media type for the Score service.
      */
@@ -69,7 +70,9 @@ class Score extends AssignmentGrade
         ];
         if (!is_null($score)) {
             $json['scoreGiven'] = $score;
-            $json['scoreMaximum'] = $ltiOutcome->getPointsPossible();
+            if (!is_null($ltiOutcome->getPointsPossible())) {
+                $json['scoreMaximum'] = $ltiOutcome->getPointsPossible();
+            }
         }
         if (!empty($ltiOutcome->submissionStarted) || !empty($ltiOutcome->submissionCompleted)) {
             $json['submission'] = [];
