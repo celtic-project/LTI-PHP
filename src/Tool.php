@@ -924,15 +924,15 @@ class Tool
         $scopesSupported = [];
         if ($platformConfig) {
             if (isset($platformConfig['claims_supported'])) {
-        $claimsSupported = $platformConfig['claims_supported'];
+                $claimsSupported = $platformConfig['claims_supported'];
             }
             if (isset($platformConfig['https://purl.imsglobal.org/spec/lti-platform-configuration']['messages_supported'])) {
-        foreach ($platformConfig['https://purl.imsglobal.org/spec/lti-platform-configuration']['messages_supported'] as $message) {
-            $messagesSupported[] = $message['type'];
-        }
+                foreach ($platformConfig['https://purl.imsglobal.org/spec/lti-platform-configuration']['messages_supported'] as $message) {
+                    $messagesSupported[] = $message['type'];
+                }
             }
             if (isset($platformConfig['scopes_supported'])) {
-        $scopesSupported = $platformConfig['scopes_supported'];
+                $scopesSupported = $platformConfig['scopes_supported'];
             }
         }
         $iconUrl = null;
