@@ -360,7 +360,7 @@ class Tool
     /**
      * Class constructor
      *
-     * @param DataConnector $dataConnector  Object containing a database connection object
+     * @param DataConnector|null $dataConnector  A data connector object
      */
     public function __construct(?DataConnector $dataConnector = null)
     {

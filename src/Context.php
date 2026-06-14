@@ -662,7 +662,7 @@ class Context
      * Load the context from the database.
      *
      * @param int $id                       Record ID of context
-     * @param DataConnector $dataConnector  Database connection object
+     * @param DataConnector $dataConnector  A data connector object
      *
      * @return Context  Context object
      */

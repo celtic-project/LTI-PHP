@@ -1341,7 +1341,7 @@ EOD;
      * Load the resource link from the database.
      *
      * @param int $id                       Record ID of resource link
-     * @param DataConnector $dataConnector  Database connection object
+     * @param DataConnector $dataConnector  A data connector object
      *
      * @return ResourceLink  ResourceLink object
      */

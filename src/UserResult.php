@@ -190,7 +190,7 @@ class UserResult extends User
     /**
      * Set the data connector.
      *
-     * @param DataConnector|null $dataConnector  Data connector object
+     * @param DataConnector|null $dataConnector  A data connector object
      *
      * @return void
      */
@@ -266,7 +266,7 @@ class UserResult extends User
      * Load the user from the database.
      *
      * @param int $id                       Record ID of user
-     * @param DataConnector $dataConnector  Database connection object
+     * @param DataConnector $dataConnector  A data connector object
      *
      * @return UserResult  UserResult object
      */
