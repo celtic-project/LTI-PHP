@@ -5,6 +5,7 @@ namespace ceLTIc\LTI;
 
 use ceLTIc\LTI\OAuth;
 use ceLTIc\LTI\Enum\LogLevel;
+use ceLTIc\LTI\Cookie\Cookie;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -210,7 +211,7 @@ final class Util
      *
      * @var int $formSubmissionTimeout
      */
-    public static int $formSubmissionTimeout = 2;
+    public static int $formSubmissionTimeout = 5;
 
     /**
      * Key to use when encrypting and decrypting values.
@@ -496,29 +497,61 @@ final class Util
     /**
      * Generate a web page containing an auto-submitted form of parameters.
      *
-     * @param string $url         URL to which the form should be submitted
-     * @param array $params       Array of form parameters
-     * @param string $target      Name of target (optional)
-     * @param string $javascript  Javascript to be inserted (optional, default is to just auto-submit form)
+     * @param string $url            URL to which the form should be submitted
+     * @param array $params          Array of form parameters
+     * @param string $target         Name of target (optional)
+     * @param string $javascript     Javascript to be inserted (optional, default is to just auto-submit form)
+     * @param bool $disableNewIfTop  True if a target of "_blank" should not open a new window when the current window is top (optional)
      *
      * @return string
      */
-    public static function sendForm(string $url, array $params, string $target = '', string $javascript = ''): string
+    public static function sendForm(string $url, array $params, string $target = '', string $javascript = '',
+        bool $disableNewIfTop = false): string
     {
         $timeout = static::$formSubmissionTimeout;
+        if (empty($target)) {
+            $target = '_self';
+        }
         if (empty($javascript)) {
             $javascript = <<< EOD
 function doUnblock() {
   var el = document.getElementById('id_blocked');
   el.style.display = 'block';
 }
+
+function doOnSubmit() {
+  var el = document.getElementById('id_blocked');
+  el.style.display = 'none';
+  el = document.getElementById('id_submitted');
+  el.style.display = 'block';
+}
+
 function doOnLoad() {
+  var target = document.forms[0].target;
+
+EOD;
+            if ($disableNewIfTop) {
+                $javascript .= <<< EOD
   if ((document.forms[0].target === '_blank') && (window.top === window.self)) {
+    target = '';
     document.forms[0].target = '';
   }
-  window.setTimeout(doUnblock, {$timeout}000);
-  document.forms[0].submit();
+
+EOD;
+            }
+            $javascript .= <<< EOD
+  if (target === '_blank') {
+    target = "ltitool-" + Math.random();
+    document.forms[0].target = target;
+  }
+  var wdw = window.open('', target);
+  if (wdw) {
+    document.forms[0].submit();
+  } else {
+    doUnblock();
+  }
 }
+
 window.onload=doOnLoad;
 EOD;
         }
@@ -535,7 +568,10 @@ EOD;
   <form action="{$url}" method="post" target="{$target}" encType="application/x-www-form-urlencoded">
     <p id="id_blocked" style="display: none; color: red; font-weight: bold;">
       Your browser may be blocking this request; try clicking the button below.<br><br>
-      <input type="submit" value="Continue">
+      <input type="submit" value="Continue" onclick="doOnSubmit();" />
+    </p>
+    <p id="id_submitted" style="display: none;">
+      The tool has been loaded in a new tab/window.
     </p>
 
 EOD;
@@ -606,6 +642,7 @@ EOD;
             echo $body;
         }
         self::logDebug('Response sent: ' . $response);
+        exit;
     }
 
     /**
@@ -671,7 +708,8 @@ EOD;
      */
     public static function setTestCookie(bool $delete = false): void
     {
-        if (!$delete || isset($_COOKIE[self::TEST_COOKIE_NAME])) {
+        $cookie = Cookie::getCookieClient();
+        if (!$delete || $cookie->hasCookie(self::TEST_COOKIE_NAME)) {
             $oauthRequest = OAuth\OAuthRequest::from_request();
             $url = $oauthRequest->get_normalized_http_url();
             $secure = (parse_url($url, PHP_URL_SCHEME) === 'https');

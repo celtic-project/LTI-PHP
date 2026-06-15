@@ -14,6 +14,8 @@ use ceLTIc\LTI\Profile\ServiceDefinition;
 use ceLTIc\LTI\Enum\LtiVersion;
 use ceLTIc\LTI\Enum\IdScope;
 use ceLTIc\LTI\Util;
+use ceLTIc\LTI\Session\Session;
+use ceLTIc\LTI\Cookie\Cookie;
 
 /**
  * Class to represent an LTI system
@@ -204,6 +206,20 @@ trait System
     protected ?array $messageParameters = null;
 
     /**
+     * URL to redirect user to on successful completion of the request.
+     *
+     * @var string|null $redirectUrl
+     */
+    protected ?string $redirectUrl = null;
+
+    /**
+     * HTML to be returned on completion of the request.
+     *
+     * @var string|null $output
+     */
+    protected ?string $output = null;
+
+    /**
      * System ID value.
      *
      * @var int|string|null $id
@@ -280,6 +296,26 @@ trait System
     public function setKey(?string $key): void
     {
         $this->key = $key;
+    }
+
+    /**
+     * Get the redirect URL
+     *
+     * @return string|null  Redirect URL
+     */
+    public function getRedirectUrl(): ?string
+    {
+        return $this->redirectUrl;
+    }
+
+    /**
+     * Get the HTML to be returned
+     *
+     * @return string|null  HTML
+     */
+    public function getOutput(): ?string
+    {
+        return $this->output;
     }
 
     /**
@@ -1351,6 +1387,8 @@ trait System
      */
     private function parseMessage(bool $disableCookieCheck, bool $generateWarnings): void
     {
+        $session = Session::getSessionClient();
+        $cookie = Cookie::getCookieClient();
         $this->getRawParameters();
         if (isset($this->rawParameters['id_token']) || isset($this->rawParameters['JWT'])) {  // JWT-signed message
             try {
@@ -1415,7 +1453,7 @@ trait System
                                 if ($this->ok) {
                                     $state = $this->rawParameters['state'];
                                     $parts = explode('.', $state);
-                                    if (!empty(session_id()) && (count($parts) > 1) && (session_id() !== $parts[1]) &&
+                                    if (!empty($session->getId()) && (count($parts) > 1) && ($session->getId() !== $parts[1]) &&
                                         ($parts[1] !== 'platformStorage')) {  // Reset to original session
                                         session_abort();
                                         session_id($parts[1]);
@@ -1428,10 +1466,10 @@ trait System
                                     }
                                     $this->onAuthenticate($state, $nonce, $usePlatformStorage);
                                     if (!$disableCookieCheck) {
-                                        if (empty($_COOKIE) && !isset($_POST['_new_window'])) {  // Reopen in a new window
+                                        if (($cookie->numCookies() <= 0) && !isset($_POST['_new_window'])) {  // Reopen in a new window
                                             Util::setTestCookie();
                                             $_POST['_new_window'] = '';
-                                            echo Util::sendForm($_SERVER['REQUEST_URI'], $_POST, '_blank');
+                                            $this->output = Util::sendForm($_SERVER['REQUEST_URI'], $_POST, '_blank', true);
                                             $this->doExit();
                                         }
                                         Util::setTestCookie(true);
@@ -1500,12 +1538,12 @@ trait System
                     $state = $this->rawParameters['tool_state'];
                     if (!$disableCookieCheck) {
                         $parts = explode('.', $state);
-                        if (empty($_COOKIE) && !isset($_POST['_new_window'])) {  // Reopen in a new window
+                        if (($cookie->numCookies() <= 0) && !isset($_POST['_new_window'])) {  // Reopen in a new window
                             Util::setTestCookie();
                             $_POST['_new_window'] = '';
-                            echo Util::sendForm($_SERVER['REQUEST_URI'], $_POST, '_blank');
+                            $this->output = Util::sendForm($_SERVER['REQUEST_URI'], $_POST, '_blank', true);
                             $this->doExit();
-                        } elseif (!empty(session_id()) && (count($parts) > 1) && (session_id() !== $parts[1])) {  // Reset to original session
+                        } elseif (!empty($session->getId()) && (count($parts) > 1) && ($session->getId() !== $parts[1])) {  // Reset to original session
                             session_abort();
                             session_id($parts[1]);
                             session_start();
@@ -1891,23 +1929,6 @@ trait System
     }
 
     /**
-     * Call exit or throw an exception.
-     *
-     * @return never
-     */
-    private function doExit(): never
-    {
-        if (!empty($this->onExitExceptionClass)) {
-            try {
-                throw new $this->onExitExceptionClass();
-            } catch (\Error $e) {
-                Util::logError('Unable to throw exception: ' . $e->getMessage());
-            }
-        }
-        exit;
-    }
-
-    /**
      * Add the JWT signature to an array of message parameters or to a header string.
      *
      * @param string $endpoint         URL to which message is being sent
@@ -2034,6 +2055,31 @@ trait System
             }
 
             return $header;
+        }
+    }
+
+    /**
+     * Call exit or throw an exception.
+     *
+     * @param string $contentType    Content type of response (default is empty)
+     * @param int $statusCode        Status code of response (default is 200)
+     * @param string $statusMessage  Status message of response (default is 'OK')
+     *
+     * @return void
+     */
+    private function doExit(string $contentType = 'text/html', int $statusCode = 200, string $statusMessage = 'OK'): void
+    {
+        if (!empty($this->onExitExceptionClass)) {
+            try {
+                throw new $this->onExitExceptionClass($statusMessage, $statusCode);
+            } catch (\Error $e) {
+                Util::logError('Unable to throw exception: ' . $e->getMessage());
+            }
+        }
+        if (!is_null($this->redirectUrl)) {
+            Util::redirect($this->redirectUrl);
+        } elseif (!is_null($this->output)) {
+            Util::sendResponse($this->output, $contentType, $statusCode, $statusMessage);
         }
     }
 

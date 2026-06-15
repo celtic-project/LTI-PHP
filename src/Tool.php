@@ -16,6 +16,8 @@ use ceLTIc\LTI\User;
 use ceLTIc\LTI\Util;
 use ceLTIc\LTI\Enum\LtiVersion;
 use ceLTIc\LTI\Enum\LogLevel;
+use ceLTIc\LTI\Session\Session;
+use ceLTIc\LTI\Cookie\Cookie;
 
 /**
  * Class to represent an LTI Tool
@@ -295,13 +297,6 @@ class Tool
     public static int $postMessageTimeoutDelay = 20;
 
     /**
-     * URL to redirect user to on successful completion of the request.
-     *
-     * @var string|null $redirectUrl
-     */
-    protected ?string $redirectUrl = null;
-
-    /**
      * Media types accepted by the platform.
      *
      * @var array|null $mediaTypes
@@ -328,13 +323,6 @@ class Tool
      * @var array|null $documentTargets
      */
     protected ?array $documentTargets = null;
-
-    /**
-     * Default HTML to be displayed on a successful completion of the request.
-     *
-     * @var string|null $output
-     */
-    protected ?string $output = null;
 
     /**
      * HTML to be displayed on an unsuccessful completion of the request and no return URL is available.
@@ -760,16 +748,16 @@ class Tool
      */
     protected function onInitiateLogin(array $requestParameters, array &$authParameters): void
     {
-        $hasSession = !empty(session_id());
-        if (!$hasSession) {
-            session_start();
-        }
-        $_SESSION['ceLTIc_lti_authentication_request'] = [
-            'state' => $authParameters['state'],
-            'nonce' => $authParameters['nonce']
-        ];
-        if (!$hasSession) {
-            session_write_close();
+        $session = Session::getSessionClient();
+        $existingSession = !$session->openSession();
+        $session->setItem('ceLTIc_lti_authentication_request',
+            [
+                'state' => $authParameters['state'],
+                'nonce' => $authParameters['nonce']
+            ]
+        );
+        if (!$existingSession) {
+            $session->closeSession();
         }
     }
 
@@ -784,15 +772,13 @@ class Tool
      */
     protected function onAuthenticate(string $state, string $nonce, bool $usePlatformStorage): void
     {
-        $hasSession = !empty(session_id());
-        if (!$hasSession) {
-            session_start();
-        }
+        $session = Session::getSessionClient();
+        $existingSession = !$session->openSession();
         $parts = explode('.', $state);
         if (!isset($this->rawParameters['_storage_check']) && $usePlatformStorage) {  // Check browser storage
             $this->rawParameters['_storage_check'] = '';
             $javascript = $this->getStorageJS('lti.get_data', $state, '');
-            echo Util::sendForm($_SERVER['REQUEST_URI'], $this->rawParameters, '', $javascript);
+            $this->output = Util::sendForm($_SERVER['REQUEST_URI'], $this->rawParameters, '', $javascript);
             $this->doExit();
         } elseif (isset($this->rawParameters['_storage_check'])) {
             if (!empty(($this->rawParameters['_storage_check']))) {
@@ -804,20 +790,20 @@ class Tool
             } else {
                 $this->setReason('Error accessing platform storage');
             }
-        } elseif (isset($_SESSION['ceLTIc_lti_authentication_request'])) {
-            $auth = $_SESSION['ceLTIc_lti_authentication_request'];
+        } elseif ($session->hasItem('ceLTIc_lti_authentication_request')) {
+            $auth = $session->getItem('ceLTIc_lti_authentication_request');
             if (str_ends_with($state, '.platformStorage')) {
                 $state = substr($state, 0, -16);
             }
             if (($state !== $auth['state']) || ($nonce !== $auth['nonce'])) {
                 $this->setReason('Invalid \'state\' parameter value and/or \'nonce\' claim value');
             }
-            unset($_SESSION['ceLTIc_lti_authentication_request']);
+            $session->setItem('ceLTIc_lti_authentication_request', null);
         } else {
             $this->setReason('Unable to verify \'state\' and \'nonce\' values');
         }
-        if (!$hasSession) {
-            session_write_close();
+        if (!$existingSession) {
+            $session->closeSession();
         }
     }
 
@@ -1302,7 +1288,7 @@ EOD;
                     if (empty($this->ltiVersion)) {
                         $this->ltiVersion = LtiVersion::V1;
                     }
-                    echo $this->sendMessage($errorUrl, 'ContentItemSelection', $formParams);
+                    $this->output = $this->sendMessage($errorUrl, 'ContentItemSelection', $formParams);
                 } else {
                     $params = [];
                     if ($this->debugMode && !is_null($this->reason)) {
@@ -1313,26 +1299,19 @@ EOD;
                             $params['lti_errorlog'] = "Debug error: {$this->reason}";
                         }
                     }
-                    Util::redirect($errorUrl, $params);
+                    $this->redirectUrl = Util::addQueryParameters($errorUrl, $params);
                 }
-                $this->doExit();
             } else {
                 if (!is_null($this->errorOutput)) {
-                    echo $this->errorOutput;
+                    $this->output = $this->errorOutput;
                 } elseif ($this->debugMode && !empty($this->reason)) {
-                    echo "Debug error: {$this->reason}";
+                    $this->output = "Debug error: {$this->reason}";
                 } else {
-                    echo "Error: {$this->message}";
+                    $this->output = "Error: {$this->message}";
                 }
-                $this->doExit();
             }
-        } elseif (!is_null($this->redirectUrl)) {
-            Util::redirect($this->redirectUrl);
-            $this->doExit();
-        } elseif (!is_null($this->output)) {
-            echo $this->output;
-            $this->doExit();
         }
+        $this->doExit();
     }
 
     /**
@@ -2189,20 +2168,22 @@ EOD;
         if (!$ok) {
             $this->setReason('Platform not found or no platform authentication request URL');
         } else {
+            $session = Session::getSessionClient();
+            $cookie = Cookie::getCookieClient();
             $oauthRequest = OAuth\OAuthRequest::from_request();
             $usePlatformStorage = !empty($oauthRequest->get_parameter('lti_storage_target'));
             $session_id = '';
             if ($usePlatformStorage) {
-                $usePlatformStorage = empty($_COOKIE[session_name()]) || ($_COOKIE[session_name()] !== session_id());
+                $usePlatformStorage = !$cookie->hasCookie($session->getName()) || ($cookie->getCookie($session->getName()) !== $session->getId());
             }
             if (!$disableCookieCheck) {
-                if (empty(session_id())) {
-                    if (empty($_COOKIE)) {
+                if (empty($session->getId())) {
+                    if ($cookie->numCookies() <= 0) {
                         Util::setTestCookie();
                     }
-                } elseif (empty($_COOKIE[session_name()]) || ($_COOKIE[session_name()] !== session_id())) {
-                    $session_id = '.' . session_id();
-                    if (empty($_COOKIE[session_name()])) {
+                } elseif (!$cookie->hasCookie($session->getName()) || ($cookie->getCookie($session->getName()) !== $session->getId())) {
+                    $session_id = '.' . $session->getId();
+                    if (!$cookie->hasCookie($session->getName())) {
                         Util::setTestCookie();
                     }
                 }
@@ -2284,15 +2265,17 @@ EOD;
      */
     private function sendRelaunchRequest(bool $disableCookieCheck): bool
     {
+        $session = Session::getSessionClient();
+        $cookie = Cookie::getCookieClient();
         $session_id = '';
         if (!$disableCookieCheck) {
-            if (empty(session_id())) {
-                if (empty($_COOKIE)) {
+            if (empty($session->getId())) {
+                if ($cookie->numCookies() <= 0) {
                     Util::setTestCookie();
                 }
-            } elseif (empty($_COOKIE[session_name()]) || ($_COOKIE[session_name()] !== session_id())) {
-                $session_id = '.' . session_id();
-                if (empty($_COOKIE[session_name()])) {
+            } elseif ($cookie->hasCookie($session->getName()) || ($cookie->getCookie($session->getName()) !== $session->getId())) {
+                $session_id = '.' . $session->getId();
+                if (!$cookie->hasCookie($session->getName())) {
                     Util::setTestCookie();
                 }
             }
@@ -2422,7 +2405,7 @@ window.addEventListener('message', function (event) {
   }
   if (ok && !event.data.subject) {
     ok = false;
-    console.log('Error: There is no subject specified');
+    console.log('Error: Message has no subject');
   }
   if (ok) {
     switch (event.data.subject) {
@@ -2436,12 +2419,11 @@ window.addEventListener('message', function (event) {
           event.data.supported_messages.forEach(function(capability) {
             supported.set(capability.subject, (capability.frame) ? capability.frame : target);
           });
+          ok = false;
           if (supported.has('{$message}')) {
-            sendMessage('{$message}');
+            ok = sendMessage('{$message}');
           } else if (supported.has('org.imsglobal.{$message}')) {
-            sendMessage('org.imsglobal.{$message}');
-          } else {
-            submitForm();
+            ok = sendMessage('org.imsglobal.{$message}');
           }
         }
         break;
@@ -2512,6 +2494,7 @@ EOD;
                 case 'lti.put_data':
                     $javascript .= <<< EOD
 function sendMessage(subject) {
+  let ok = false;
   let usetarget = target;
   if (supported.has(subject)) {
     usetarget = supported.get(subject);
@@ -2525,12 +2508,12 @@ function sendMessage(subject) {
         'key': state,
         'value': nonce
       }, origin);
+      ok = true;
     } catch(err) {
       console.log(err.name + ': ' + err.message);
     }
-  } else {
-    saveData();
   }
+  return ok;
 }
 
 function doOnLoad() {
@@ -2551,6 +2534,7 @@ EOD;
                 case 'lti.get_data':
                     $javascript .= <<< EOD
 function sendMessage(subject) {
+  let ok = false;
   let usetarget = target;
   if (supported.has(subject)) {
     usetarget = supported.get(subject);
@@ -2563,10 +2547,12 @@ function sendMessage(subject) {
         'message_id': messageid,
         'key': state
       }, origin);
+      ok = true;
     } catch(err) {
       console.log(err.name + ': ' + err.message);
     }
   }
+  return ok;
 }
 
 function doOnLoad() {
@@ -2613,12 +2599,24 @@ function doUnblock() {
   el.style.display = 'block';
 }
 
+function doOnSubmit() {
+  var el = document.getElementById('id_blocked');
+  el.style.display = 'none';
+  el = document.getElementById('id_submitted');
+  el.style.display = 'block';
+}
+
 function submitForm() {
-  if ((document.forms[0].target === '_blank') && (window.top === window.self)) {
-    document.forms[0].target = '';
+  if (target === '_blank') {
+    target = "ltitool-" + Math.random();
+    document.forms[0].target = target;
   }
-  window.setTimeout(doUnblock, {$formSubmissionTimeout}000);
-  document.forms[0].submit();
+  var wdw = window.open('', target);
+  if (wdw) {
+    document.forms[0].submit();
+  } else {
+    doUnblock();
+  }
 }
 
 window.onload=doOnLoad;

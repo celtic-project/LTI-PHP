@@ -12,6 +12,7 @@ use ceLTIc\LTI\ApiHook\ApiHook;
 use ceLTIc\LTI\Content\Item;
 use ceLTIc\LTI\OAuth;
 use ceLTIc\LTI\Jwt\Jwt;
+use ceLTIc\LTI\Session\Session;
 
 /**
  * Class to represent a platform
@@ -515,6 +516,7 @@ class Platform
                 $scopesPermitted[] = $scope;
             }
         }
+        $this->redirectUrl = null;
         if (!empty($scopesPermitted)) {
             $life = static::$accessTokenLife;
             $scopes = implode(' ', array_unique($scopesPermitted));
@@ -525,7 +527,7 @@ class Platform
             try {
                 $jwt = Jwt::getJwtClient();
                 $tokenValue = $jwt::sign($payload, $this->signatureMethod, $this->rsaKey);
-                $body = <<< EOD
+                $this->output = <<< EOD
 {
   "access_token" : "{$tokenValue}",
   "token_type" : "bearer",
@@ -534,8 +536,7 @@ class Platform
 }
 EOD;
                 $this->ok = true;
-                Util::sendResponse($body, 'Content-Type: application/json; charset=utf-8');
-                $this->doExit();
+                $this->doExit('Content-Type: application/json; charset=utf-8');
             } catch (\Exception $e) {
                 $reason = $e->getMessage();
                 if (empty($reason)) {
@@ -546,8 +547,8 @@ EOD;
             $reason = 'No valid scope requested';
         }
         $this->ok = false;
-        Util::sendResponse('', '', 400, $reason);
-        $this->doExit();
+        $this->output = '';
+        $this->doExit('', 400, $reason);
     }
 
     /**
@@ -822,18 +823,18 @@ EOD;
      */
     protected function onInitiateLogin(string &$url, string &$loginHint, ?string &$ltiMessageHint, array $params): void
     {
-        $hasSession = !empty(session_id());
-        if (!$hasSession) {
-            session_start();
-        }
-        $_SESSION['ceLTIc_lti_initiated_login'] = [
-            'messageUrl' => $url,
-            'login_hint' => $loginHint,
-            'lti_message_hint' => $ltiMessageHint,
-            'params' => $params
-        ];
-        if (!$hasSession) {
-            session_write_close();
+        $session = Session::getSessionClient();
+        $existingSession = !$session->openSession();
+        $session->setItem('ceLTIc_lti_initiated_login',
+            [
+                'messageUrl' => $url,
+                'login_hint' => $loginHint,
+                'lti_message_hint' => $ltiMessageHint,
+                'params' => $params
+            ]
+        );
+        if (!$existingSession) {
+            $session->closeSession();
         }
     }
 
@@ -846,12 +847,10 @@ EOD;
      */
     protected function onAuthenticate(): void
     {
-        $hasSession = !empty(session_id());
-        if (!$hasSession) {
-            session_start();
-        }
-        if (isset($_SESSION['ceLTIc_lti_initiated_login'])) {
-            $login = $_SESSION['ceLTIc_lti_initiated_login'];
+        $session = Session::getSessionClient();
+        $existingSession = !$session->openSession();
+        if ($session->hasItem('ceLTIc_lti_initiated_login')) {
+            $login = $session->getItem('ceLTIc_lti_initiated_login');
             $parameters = Util::getRequestParameters();
             if ($parameters['login_hint'] !== $login['login_hint'] ||
                 (isset($login['lti_message_hint']) && (!isset($parameters['lti_message_hint']) || ($parameters['lti_message_hint'] !== $login['lti_message_hint'])))) {
@@ -861,10 +860,10 @@ EOD;
                 Tool::$defaultTool->messageUrl = $login['messageUrl'];
                 $this->messageParameters = $login['params'];
             }
-            unset($_SESSION['ceLTIc_lti_initiated_login']);
+            $session->setItem('ceLTIc_lti_initiated_login', null);
         }
-        if (!$hasSession) {
-            session_write_close();
+        if (!$existingSession) {
+            $session->closeSession();
         }
     }
 
@@ -1025,11 +1024,11 @@ EOD;
             $parameters['redirect_uri'] .= "{$sep}lti_storage_target=" . static::$browserStorageFrame;
         }
         if (isset($parameters['redirect_uri'])) {
-            echo Util::sendForm($parameters['redirect_uri'], $this->messageParameters);
+            $this->output = Util::sendForm($parameters['redirect_uri'], $this->messageParameters);
+            $this->doExit();
         } else {
-            http_response_code(400);
+            $this->doExit('', 400, 'Bad Request');
         }
-        $this->doExit();
     }
 
 }
