@@ -262,23 +262,6 @@ class WebTokenClient implements ClientInterface
     /**
      * Verify the signature of the JWT.
      *
-     * @deprecated Use verifySignature() instead
-     *
-     * @param string|null $publicKey  Public key of issuer
-     * @param string|null $jku        JSON Web Key URL of issuer (optional)
-     *
-     * @return bool  True if the JWT has a valid signature
-     */
-    public function verify(?string $publicKey, ?string $jku = null): bool
-    {
-        Util::logDebug('Method ceLTIc\LTI\Jwt\WebTokenClient->verify has been deprecated; please use ceLTIc\LTI\Jwt\WebTokenClient->verifySignature instead.',
-            true);
-        return $this->verifySignature($publicKey, $jku);
-    }
-
-    /**
-     * Verify the signature of the JWT.
-     *
      * If a new public key is fetched and used to successfully verify the signature, the value of the publicKey parameter is updated.
      *
      * @param string|null $publicKey  Public key of issuer (passed by reference)

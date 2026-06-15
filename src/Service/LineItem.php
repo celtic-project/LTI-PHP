@@ -237,23 +237,6 @@ class LineItem extends AssignmentGrade
         return $lineItem;
     }
 
-    /**
-     * Retrieve a line-item.
-     *
-     * @deprecated Use LineItem::fromEndpoint() or get() instead
-     *
-     * @param Platform $platform  Platform object for this service request
-     * @param string $endpoint    Line-item endpoint
-     *
-     * @return LTI\\LineItem|bool  LineItem object, or false on error
-     */
-    public static function getLineItem(Platform $platform, string $endpoint): LTI\LineItem|bool
-    {
-        Util::logDebug('Method ceLTIc\LTI\Service\LineItem::getLineItem has been deprecated; please use ceLTIc\LTI\LineItem::fromEndpoint or ceLTIc\LTI\Service\LineItem->get instead.',
-            true);
-        return LTI\LineItem::fromEndpoint($platform, $endpoint);
-    }
-
 ###
 ###  PRIVATE METHODS
 ###

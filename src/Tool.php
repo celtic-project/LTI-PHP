@@ -2344,13 +2344,11 @@ EOD;
                 } else {
                     $ok = true;
                     if ($generateWarnings) {
-                        $this->warnings[] = sprintf($reason, $value);
                         Util::setMessage(false, sprintf($reason, $value));
                     }
                 }
             } elseif ($lookupValue !== $value) {
                 if ($generateWarnings) {
-                    $this->warnings[] = sprintf($reason, $value) . " [Changed to '{$lookupValue}']";
                     Util::setMessage(false, sprintf($reason, $value) . " [Changed to '{$lookupValue}']");
                 }
                 $value = $lookupValue;
@@ -2374,7 +2372,6 @@ EOD;
         if ($strictMode) {
             $this->setReason($reason);
         } elseif ($generateWarnings) {
-            $this->warnings[] = $reason;
             Util::setMessage(false, $reason);
         }
     }

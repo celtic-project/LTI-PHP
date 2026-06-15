@@ -387,22 +387,6 @@ final class Util
     /**
      * Log an error message irrespective of the logging level.
      *
-     * @deprecated Use logMessage() instead
-     *
-     * @param string $message   Message to be logged
-     * @param bool $showSource  True if the name and line number of the current file are to be included
-     *
-     * @return void
-     */
-    public static function log(string $message, bool $showSource = false): void
-    {
-        self::logDebug('Method ceLTIc\LTI\Util::log has been deprecated; please use ceLTIc\LTI\Util::logMessage instead.', true);
-        self::logMessage($message, LogLevel::None, $showSource);
-    }
-
-    /**
-     * Log an error message irrespective of the logging level.
-     *
      * @param string $message   Message to be logged
      * @param LogLevel $type    Type of message to be logged (optional, default is none)
      * @param bool $showSource  True if the name and line number of the current file are to be included

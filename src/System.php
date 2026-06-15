@@ -120,15 +120,6 @@ trait System
     public array $details = [];
 
     /**
-     * Warnings relating to last request processed.
-     *
-     * @deprecated Use Util::getMessages() instead
-     *
-     * @var array $warnings
-     */
-    public array $warnings = [];
-
-    /**
      * Whether debug level messages are to be reported.
      *
      * @var bool $debugMode
@@ -2089,7 +2080,6 @@ trait System
             $type = gettype($value);
             if (!is_string($value) && !Util::$strictMode) {
                 if ($generateWarnings) {
-                    $this->warnings[] = "Value of claim '{$name}' is not a string: '{$value}'";
                     Util::setMessage(false, "The '{$name}' claim should have a string value ({$type} found)");
                 }
                 $value = Util::valToString($value, null);
