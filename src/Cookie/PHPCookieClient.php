@@ -26,7 +26,7 @@ class PHPCookieClient implements ClientInterface
     /**
      * Check if a cookie exists.
      *
-     * @param $name string  Name of Cookie
+     * @param string $name  Name of Cookie
      *
      * @return bool  True if the cookie exists
      */
@@ -38,11 +38,11 @@ class PHPCookieClient implements ClientInterface
     /**
      * Get a cookie value.
      *
-     * @param $name string  Name of cookie
+     * @param string $name  Name of cookie
      *
      * @return string|null  Value of cookie or null if the cookie does not exist
      */
-    public function getCookie(string $name): ?string
+    public function getValue(string $name): ?string
     {
         $value = null;
         if ($this->hasCookie($name)) {
@@ -50,6 +50,44 @@ class PHPCookieClient implements ClientInterface
         }
 
         return $value;
+    }
+
+    /**
+     * Define a new cookie.
+     *
+     * @param string $name      Name of cookie
+     * @param string $value     Value of cookie
+     * @param int $expires      Life of cookie in minutes
+     * @param string $path      Cookie path
+     * @param string $domain    Cookie domain
+     * @param bool $secure      True if cookie is for a secire connection
+     * @param bool $httpOnly    True if cookie is for HTTP connections only
+     * @param string $sameSite  SameSite value
+     *
+     * @return bool  True if the cookie was successfully created
+     */
+    public function createCookie(string $name, string $value, int $expires, string $path, string $domain, bool $secure,
+        bool $httpOnly, string $sameSite): bool
+    {
+        if ($expires <> 0) {
+            $expires = time() + ($expires * 60);
+        }
+        if ((PHP_MAJOR_VERSION > 7) || ((PHP_MAJOR_VERSION >= 7) && (PHP_MINOR_VERSION >= 3))) {  // PHP 7.3 or later?
+            $ok = setcookie($name, $value,
+                [
+                    'expires' => $expires,
+                    'path' => $path,
+                    'domain' => $domain,
+                    'secure' => $secure,
+                    'httponly' => true,
+                    'SameSite' => $sameSite
+                ]
+            );
+        } else {
+            $ok = setcookie($name, $value, $expires, $path, $domain, $secure, $httpOnly);
+        }
+
+        return $ok;
     }
 
 }

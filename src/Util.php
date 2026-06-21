@@ -727,22 +727,11 @@ EOD;
             if (!$delete) {
                 $expires = 0;
             } else {
-                $expires = time() - 3600;
+                $expires = -60;
             }
-            if ((PHP_MAJOR_VERSION > 7) || ((PHP_MAJOR_VERSION >= 7) && (PHP_MINOR_VERSION >= 3))) {  // PHP 7.3 or later?
-                setcookie(self::TEST_COOKIE_NAME, 'LTI cookie check',
-                    [
-                        'expires' => $expires,
-                        'path' => $path,
-                        'domain' => $_SERVER['SERVER_NAME'],
-                        'secure' => $secure,
-                        'httponly' => true,
-                        'SameSite' => $sameSite
-                    ]
-                );
-            } else {
-                setcookie(self::TEST_COOKIE_NAME, 'LTI cookie check', $expires, $path, $_SERVER['HTTP_HOST'], $secure);
-            }
+            $cookie = Cookie::getCookieClient();
+            $cookie->createCookie(self::TEST_COOKIE_NAME, 'LTI cookie check', $expires, $path, $_SERVER['SERVER_NAME'], $secure,
+                true, $sameSite);
         }
     }
 

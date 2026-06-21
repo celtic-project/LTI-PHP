@@ -2174,14 +2174,14 @@ EOD;
             $usePlatformStorage = !empty($oauthRequest->get_parameter('lti_storage_target'));
             $session_id = '';
             if ($usePlatformStorage) {
-                $usePlatformStorage = !$cookie->hasCookie($session->getName()) || ($cookie->getCookie($session->getName()) !== $session->getId());
+                $usePlatformStorage = !$cookie->hasCookie($session->getName()) || ($cookie->getValue($session->getName()) !== $session->getId());
             }
             if (!$disableCookieCheck) {
                 if (empty($session->getId())) {
                     if ($cookie->numCookies() <= 0) {
                         Util::setTestCookie();
                     }
-                } elseif (!$cookie->hasCookie($session->getName()) || ($cookie->getCookie($session->getName()) !== $session->getId())) {
+                } elseif (!$cookie->hasCookie($session->getName()) || ($cookie->getValue($session->getName()) !== $session->getId())) {
                     $session_id = '.' . $session->getId();
                     if (!$cookie->hasCookie($session->getName())) {
                         Util::setTestCookie();
@@ -2273,7 +2273,7 @@ EOD;
                 if ($cookie->numCookies() <= 0) {
                     Util::setTestCookie();
                 }
-            } elseif ($cookie->hasCookie($session->getName()) || ($cookie->getCookie($session->getName()) !== $session->getId())) {
+            } elseif ($cookie->hasCookie($session->getName()) || ($cookie->getValue($session->getName()) !== $session->getId())) {
                 $session_id = '.' . $session->getId();
                 if (!$cookie->hasCookie($session->getName())) {
                     Util::setTestCookie();
