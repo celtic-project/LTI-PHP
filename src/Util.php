@@ -176,7 +176,7 @@ final class Util
      *
      * @var string $version
      */
-    public static string $version = '5.3.3';
+    public static string $version = '5.4.0';
 
     /**
      * Value of User-Agent header of HTTP requests.
