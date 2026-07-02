@@ -150,7 +150,7 @@ class Service
             $this->http = new HttpMessage($url, $method, $body, $header);
             if ($this->http->send() && !empty($this->http->response)) {
                 $this->http->responseJson = Util::jsonDecode($this->http->response);
-                $this->http->ok = !is_null($this->http->responseJson);
+                $this->http->ok = (!str_contains($this->mediaType, 'json') || !is_null($this->http->responseJson));
             }
             $retry = $retry && !$retried && !$this->http->ok;
             if ($retry) {
