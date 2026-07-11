@@ -51,9 +51,9 @@ abstract class OAuthDataStore
      * @param OAuthConsumer $consumer  Consumer
      * @param string|null $callback    Callback URL
      *
-     * @return string|null
+     * @return OAuthToken|null
      */
-    abstract function new_request_token(OAuthConsumer $consumer, ?string $callback = null): ?string;
+    abstract function new_request_token(OAuthConsumer $consumer, ?string $callback = null): ?OAuthToken;
 
     /**
      * Get new access token.
@@ -62,8 +62,8 @@ abstract class OAuthDataStore
      * @param OAuthConsumer $consumer  OAuthConsumer object
      * @param string|null $verifier    Verification code
      *
-     * @return string|null
+     * @return OAuthToken|null
      */
-    abstract function new_access_token(string $token, OAuthConsumer $consumer, ?string $verifier = null): ?string;
+    abstract function new_access_token(string $token, OAuthConsumer $consumer, ?string $verifier = null): ?OAuthToken;
 
 }

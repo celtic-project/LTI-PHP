@@ -113,9 +113,9 @@ class OAuthDataStore extends OAuth\OAuthDataStore
      * @param OAuthConsumer $consumer  OAuthConsumer object
      * @param string|null $callback    Callback URL
      *
-     * @return string|null Null value
+     * @return OAuthToken|null Null value
      */
-    function new_request_token(OAuthConsumer $consumer, ?string $callback = null): ?string
+    function new_request_token(OAuthConsumer $consumer, ?string $callback = null): ?OAuthToken
     {
         return null;
     }
@@ -127,9 +127,9 @@ class OAuthDataStore extends OAuth\OAuthDataStore
      * @param OAuthConsumer $consumer  OAuthConsumer object
      * @param string|null $verifier    Verification code
      *
-     * @return string|null Null value
+     * @return OAuthToken|null Null value
      */
-    function new_access_token(string $token, OAuthConsumer $consumer, ?string $verifier = null): ?string
+    function new_access_token(string $token, OAuthConsumer $consumer, ?string $verifier = null): ?OAuthToken
     {
         return null;
     }
