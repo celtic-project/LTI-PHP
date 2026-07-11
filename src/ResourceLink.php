@@ -1526,7 +1526,7 @@ EOD;
                     $accessToken = $this->platform->getAccessToken();
                     $accessToken->expires = time();
                     $accessToken->get($scope, true);
-                    $retry = !empty($accessTOken->token);  // Only retry if a new token was obtained
+                    $retry = !empty($accessToken->token);  // Only retry if a new token was obtained
                     $this->platform->setAccessToken($accessToken);
                     $newToken = true;
                 }

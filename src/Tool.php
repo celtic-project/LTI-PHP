@@ -848,7 +848,7 @@ class Tool
                     $this->setReason('Unable to access platform configuration details');
                 }
             } else {
-                $this->setReason('Invalid registration request: missing \'openid_configuration\ parameter');
+                $this->setReason('Invalid registration request: missing \'openid_configuration\' parameter');
             }
             if ($this->ok) {
                 $this->ok = !empty($platformConfig['registration_endpoint']) && !empty($platformConfig['jwks_uri']) && !empty($platformConfig['authorization_endpoint']) &&
@@ -1113,7 +1113,7 @@ class Tool
     <title>LTI Tool registration</title>
     <style>
       h1 {
-        font-soze: 110%;
+        font-size: 110%;
         font-weight: bold;
       }
       .success {
@@ -1971,8 +1971,8 @@ EOD;
                             $this->platform->consumerVersion = $version;
                             $doSavePlatform = true;
                         }
-                    } elseif (isset($this->messageParameters['ext_lms']) && ($this->platform->consumerName !== $this->messageParameters['ext_lms'])) {
-                        $this->platform->consumerVersion = $this->messageParameters['ext_lms'];
+                    } elseif (!isset($this->messageParameters['tool_consumer_instance_name']) && isset($this->messageParameters['ext_lms']) && ($this->platform->consumerName !== $this->messageParameters['ext_lms'])) {
+                        $this->platform->consumerName = $this->messageParameters['ext_lms'];
                         $doSavePlatform = true;
                     }
                     if (isset($this->messageParameters['tool_consumer_instance_guid'])) {

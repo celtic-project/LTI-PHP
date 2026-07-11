@@ -62,7 +62,7 @@ class LaravelCookieClient implements ClientInterface
      * @param int $expires      Life of cookie in minutes
      * @param string $path      Cookie path
      * @param string $domain    Cookie domain
-     * @param bool $secure      True if cookie is for a secire connection
+     * @param bool $secure      True if cookie is for a secure connection
      * @param bool $httpOnly    True if cookie is for HTTP connections only
      * @param string $sameSite  SameSite value
      *

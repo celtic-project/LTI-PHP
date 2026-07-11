@@ -74,7 +74,7 @@ class TimePeriod
     }
 
     /**
-     * Generate a LineItem object from its JSON or JSON-LD representation.
+     * Generate a time period object from its JSON or JSON-LD representation.
      *
      * @param object $item  A JSON or JSON-LD object representing a content-item
      *

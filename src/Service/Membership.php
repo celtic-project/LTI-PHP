@@ -253,10 +253,12 @@ class Membership extends Service
                             Util::setMessage(true, 'The membership/member/userid or @id element is missing');
                         } elseif (!is_string($userid)) {
                             if (Util::$strictMode) {
-                                Util::setMessage(true, 'The membership/member/userid or @id element must have a string ');
+                                Util::setMessage(true,
+                                    'The membership/member/userid or @id element must have a string value (' . gettype($userid) . ' found)');
                                 $userid = null;
                             } else {
-                                Util::setMessage(false, 'The membership/member/userid or @id element should have a string ');
+                                Util::setMessage(false,
+                                    'The membership/member/userid or @id element should have a string value (' . gettype($userid) . ' found)');
                                 $userid = LTI\Util::valToString($userid);
                             }
                         }

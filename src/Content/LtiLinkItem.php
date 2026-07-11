@@ -236,7 +236,7 @@ class LtiLinkItem extends Item
                     break;
                 case 'noUpdate':
                     $this->noUpdate = Util::checkBoolean($item, 'LtiLink/noUpdate');
-                    if (is_null($this->noUpdate) && isset($this->noUpdate)) {
+                    if (is_null($this->noUpdate)) {
                         $ok = false;
                     }
                     break;

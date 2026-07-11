@@ -286,7 +286,7 @@ class LineItem extends AssignmentGrade
                     $lineItem->submissionReview = SubmissionReview::fromJsonObject($json->submissionReview);
                 } else {
                     Util::setMessage(true,
-                        'The \'submissionReview\' element must be an object (' . gettype($json->submissionReviewJson) . ' found)');
+                        'The \'submissionReview\' element must be an object (' . gettype($json->submissionReview) . ' found)');
                 }
             }
         } else {

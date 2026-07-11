@@ -21,22 +21,22 @@ class AssessmentControlAction
     public const ACTION_PAUSE = 'pause';
 
     /**
-     * Pause action.
+     * Resume action.
      */
     public const ACTION_RESUME = 'resume';
 
     /**
-     * Pause action.
+     * Terminate action.
      */
     public const ACTION_TERMINATE = 'terminate';
 
     /**
-     * Pause action.
+     * Update action.
      */
     public const ACTION_UPDATE = 'update';
 
     /**
-     * Pause action.
+     * Flag action.
      */
     public const ACTION_FLAG = 'flag';
 

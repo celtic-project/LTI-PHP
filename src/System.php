@@ -720,7 +720,7 @@ trait System
                             $role = '';
                         } elseif (!empty(preg_grep("/^http:\/\/purl.imsglobal.org\/vocab\/lis\/v2\/membership\/{$principalRole}#.*$/",
                                     $roles)) ||
-                            !empty(preg_grep('/^{$principalRole}#.*$/', $roles))) {
+                            !empty(preg_grep("/^{$principalRole}#.*$/", $roles))) {
                             $role = '';
                         } else {
                             $role = "urn:lti:role:ims/lis/{$principalRole}";
@@ -780,7 +780,7 @@ trait System
                             }
                         } elseif ((count($subroles) === 1) && (!empty(preg_grep("/^http:\/\/purl.imsglobal.org\/vocab\/lis\/v2\/membership\/{$subroles[0]}#.*$/",
                                     $roles)) ||
-                            !empty(preg_grep('/^{$subroles[0]}#.*$/', $roles)))) {
+                            !empty(preg_grep("/^{$subroles[0]}#.*$/", $roles)))) {
                             $role = '';
                         } else {
                             $role = substr($role, 21);
@@ -806,7 +806,7 @@ trait System
                             $role = '';
                         } elseif (!empty(preg_grep("/^http:\/\/purl.imsglobal.org\/vocab\/lis\/v2\/membership\/{$principalRole2}#.*$/",
                                     $roles)) ||
-                            !empty(preg_grep('/^{$principalRole2}#.*$/', $roles))) {
+                            !empty(preg_grep("/^{$principalRole2}#.*$/", $roles))) {
                             $role = '';
                         } else {
                             $role = $principalRole;
@@ -883,7 +883,7 @@ trait System
                         }
                     } elseif (str_starts_with($role, 'http://purl.imsglobal.org/vocab/lis/v2/membership#')) {
                         $prefix = 'http://purl.imsglobal.org/vocab/lis/v2/membership';
-                        if (substr($role, 50, 18) === 'TeachingAssistant') {
+                        if (substr($role, 50, 17) === 'TeachingAssistant') {
                             $role = 'Instructor#TeachingAssistant';
                             if ($addPrincipalRole) {
                                 $parsedRoles[] = "{$prefix}#Instructor";
@@ -896,7 +896,7 @@ trait System
                         $subroles = explode('#', substr($role, 50));
                         if (count($subroles) === 2) {
                             if ($subroles[0] === 'TeachingAssistant') {
-                                $role = "Instructor#{subroles[1]}";
+                                $role = "Instructor#{$subroles[1]}";
                                 if ($addPrincipalRole) {
                                     $parsedRoles[] = "{$prefix}#Instructor";
                                 }
@@ -1726,7 +1726,7 @@ trait System
         if ($this->jwt->hasClaim($claim)) {
             unset($payload->{$claim});
             $lti1p1 = $this->getClaimObject($claim, false);
-            if (is_array($lti1p1)) {
+            if (is_object($lti1p1)) {
                 foreach ($lti1p1 as $key => $value) {
                     if (is_null($value)) {
                         $value = '';
@@ -1755,7 +1755,7 @@ trait System
                     $this->messageParameters['ext_d2l_username'] = Util::valToString($d2l['username']);
                     unset($payload->{$claim}['username']);
                 }
-            } elseif (isset($ext) && is_object($ext)) {
+            } elseif (isset($d2l) && is_object($d2l)) {
                 if (!empty($d2l->username)) {
                     $this->messageParameters['ext_d2l_username'] = Util::valToString($d2l->username);
                     unset($payload->{$claim}->username);
