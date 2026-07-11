@@ -2080,6 +2080,8 @@ trait System
             Util::redirect($this->redirectUrl);
         } elseif (!is_null($this->output)) {
             Util::sendResponse($this->output, $contentType, $statusCode, $statusMessage);
+        } else {
+            exit;
         }
     }
 
