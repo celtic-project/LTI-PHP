@@ -74,17 +74,17 @@ class PHPSessionClient implements ClientInterface
      * Get a session item value.
      *
      * @param $name string  Name of session item
+     * @param $default mixed  Default value to return when item does not exist
      *
-     * @return mixed  Value of session item or null if the item does not exist
+     * @return mixed  Value of session item or default value if the item does not exist
      */
-    public function getItem(string $name): mixed
+    public function getItem(string $name, mixed $default = null): mixed
     {
-        $value = null;
         if ($this->hasItem($name)) {
-            $value = $_SESSION[$name];
+            $default = $_SESSION[$name];
         }
 
-        return $value;
+        return $default;
     }
 
     /**

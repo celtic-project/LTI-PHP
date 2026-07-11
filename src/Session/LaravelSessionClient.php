@@ -70,18 +70,18 @@ class LaravelSessionClient implements ClientInterface
     /**
      * Get a session item value.
      *
-     * @param $name string  Name of session item
+     * @param $name string    Name of session item
+     * @param $default mixed  Default value to return when item does not exist
      *
-     * @return mixed  Value of session item or null if the item does not exist
+     * @return mixed  Value of session item or default value if the item does not exist
      */
-    public function getItem(string $name): mixed
+    public function getItem(string $name, mixed $default = null): mixed
     {
-        $value = null;
         if ($this->hasItem($name)) {
-            $value = Session::get($name);
+            $default = Session::get($name);
         }
 
-        return $value;
+        return $default;
     }
 
     /**
