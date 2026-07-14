@@ -41,14 +41,23 @@ class StreamClient implements ClientInterface
                 if ($message->ok) {
                     $message->response = $resp;
                     // see http://php.net/manual/en/reserved.variables.httpresponseheader.php
-                    if (isset($http_response_header[0])) {
-                        $message->responseHeaders = $http_response_header;
-                        if (preg_match("/HTTP\/\d.\d\s+(\d+)/", $http_response_header[0], $out)) {
+                    if (function_exists('http_get_last_response_headers')) {
+                        $headers = http_get_last_response_headers();
+                    } else {
+                        $headers = $http_response_header;
+                    }
+                    if (!empty($headers)) {
+                        $message->responseHeaders = $headers;
+                        if (preg_match("/HTTP\/\d.\d\s+(\d+)(.*)/", $headers[0], $out)) {
                             $message->status = intval($out[1]);
                         }
                         $message->ok = $message->status < 400;
                         if (!$message->ok) {
-                            $message->error = $http_response_header[0];
+                            if ((count($out) >= 2) && !empty(trim($out[2]))) {
+                                $message->error = trim($out[2]);
+                            } else {
+                                $message->error = trim($headers[0]);
+                            }
                         }
                     }
                     return $message->ok;

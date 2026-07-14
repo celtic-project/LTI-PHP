@@ -51,13 +51,10 @@ class CurlClient implements ClientInterface
         $chResp = curl_exec($ch);
         $message->ok = $chResp !== false;
         if ($message->ok) {
-            $message->requestHeaders = explode("\n", trim(str_replace("\r\n", "\n", curl_getinfo($ch, CURLINFO_HEADER_OUT))));
-            $chResp = str_replace("\r\n", "\n", $chResp);
-            $chRespSplit = explode("\n\n", $chResp, 2);
-            if ((count($chRespSplit) > 1) && str_starts_with($chRespSplit[1], 'HTTP/')) {
-                $chRespSplit = explode("\n\n", $chRespSplit[1], 2);
-            }
-            $message->responseHeaders = explode("\n", trim($chRespSplit[0]));
+            $message->requestHeaders = preg_split("/\r?\n/", trim(curl_getinfo($ch, CURLINFO_HEADER_OUT)));
+            $chResp = ltrim($chResp, "\r\n");
+            $chRespSplit = preg_split("/\r?\n\r?\n/", $chResp, 2);
+            $message->responseHeaders = preg_split("/\r?\n/", trim($chRespSplit[0]));
             if (count($chRespSplit) > 1) {
                 $message->response = $chRespSplit[1];
             } else {
@@ -66,7 +63,12 @@ class CurlClient implements ClientInterface
             $message->status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             $message->ok = ($message->status >= 100) && ($message->status < 400);
             if (!$message->ok) {
-                $message->error = curl_error($ch);
+                $message->error = trim($message->responseHeaders[0]);
+                if (preg_match("/HTTP\/\d.\d\s+(\d+)(.*)/", $message->responseHeaders[0], $out)) {
+                    if ((count($out) >= 2) && !empty(trim($out[2]))) {
+                        $message->error = trim($out[2]);
+                    }
+                }
             }
         }
 
