@@ -100,6 +100,13 @@ class HttpMessage
     private static ?ClientInterface $httpClient = null;
 
     /**
+     * The messages sent.
+     *
+     * @var string[] $messages
+     */
+    private static array $messages = [];
+
+    /**
      * Class constructor.
      *
      * @param string            $url     URL to send request to
@@ -177,6 +184,16 @@ class HttpMessage
     }
 
     /**
+     * Get the HTTP messages sent.
+     *
+     * @return string[]  The HTTP messages
+     */
+    public static function getMessages(): array
+    {
+        return self::$messages;
+    }
+
+    /**
      * Send the request to the target URL.
      *
      * @return bool  True if the request was successful
@@ -208,30 +225,29 @@ class HttpMessage
             }
             $this->ok = $client->send($this);
             $this->parseRelativeLinks();
-            if (Util::$logLevel->logError()) {
-                $message = "Http\\HttpMessage->send {$this->method} request to '{$this->url}'";
-                if (!empty($this->requestHeaders)) {
-                    $message .= "\n" . implode("\n", $this->requestHeaders);
-                }
-                if (!empty($this->request)) {
-                    $message .= "\n\n{$this->request}";
-                }
-                $message .= "\nResponse:";
-                if (!empty($this->responseHeaders)) {
-                    $message .= "\n" . implode("\n", $this->responseHeaders);
-                }
-                if (!empty($this->response)) {
-                    $message .= "\n\n{$this->response}";
-                }
-                if ($this->ok) {
-                    Util::logInfo($message);
-                } else {
-                    if (!empty($this->error)) {
-                        $message .= "\nError: {$this->error}";
-                    }
-                    Util::logError($message);
-                }
+            $message = "Http\\HttpMessage->send {$this->method} request to '{$this->url}'";
+            if (!empty($this->requestHeaders)) {
+                $message .= "\n" . implode("\n", $this->requestHeaders);
             }
+            if (!empty($this->request)) {
+                $message .= "\n\n{$this->request}";
+            }
+            $message .= "\n\nResponse:";
+            if (!empty($this->responseHeaders)) {
+                $message .= "\n" . implode("\n", $this->responseHeaders);
+            }
+            if (!empty($this->response)) {
+                $message .= "\n\n{$this->response}";
+            }
+            if ($this->ok) {
+                Util::logInfo($message);
+            } else {
+                if (!empty($this->error)) {
+                    $message .= "\n\nError: {$this->error}";
+                }
+                Util::logError($message);
+            }
+            self::$messages[] = $message;
         }
 
         return $this->ok;
