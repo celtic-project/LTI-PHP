@@ -1504,12 +1504,14 @@ trait System
                             $this->messageParameters['oauth_consumer_key'] = $aud;
                             $this->messageParameters['oauth_signature_method'] = $this->jwt->getHeader('alg');
                             $this->parseClaims($generateWarnings);
-                            $url = $this->jwt->getClaim(Util::JWT_CLAIM_PREFIX . '/claim/target_link_uri');
-                            if (!empty($url)) {
-                                $queryString = parse_url($url, PHP_URL_QUERY);
-                                if ($queryString) {
-                                    $this->messageParameters = array_merge($this->getCustomQueryParameters($queryString),
-                                        $this->messageParameters);
+                            if ($this instanceof Tool) {
+                                $url = $this->jwt->getClaim(Util::JWT_CLAIM_PREFIX . '/claim/target_link_uri');
+                                if (!empty($url)) {
+                                    $queryString = parse_url($url, PHP_URL_QUERY);
+                                    if ($queryString) {
+                                        $this->messageParameters = array_merge($this->getCustomQueryParameters($queryString),
+                                            $this->messageParameters);
+                                    }
                                 }
                             }
                         }
@@ -2065,9 +2067,9 @@ trait System
      * @param int $statusCode        Status code of response (default is 200)
      * @param string $statusMessage  Status message of response (default is 'OK')
      *
-     * @return void
+     * @return never
      */
-    private function doExit(string $contentType = 'text/html', int $statusCode = 200, string $statusMessage = 'OK'): void
+    private function doExit(string $contentType = 'text/html', int $statusCode = 200, string $statusMessage = 'OK'): never
     {
         if (!empty($this->onExitExceptionClass)) {
             try {
@@ -2080,9 +2082,8 @@ trait System
             Util::redirect($this->redirectUrl);
         } elseif (!is_null($this->output)) {
             Util::sendResponse($this->output, $contentType, $statusCode, $statusMessage);
-        } else {
-            exit;
         }
+        exit;
     }
 
     /**

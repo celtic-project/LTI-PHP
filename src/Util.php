@@ -613,10 +613,10 @@ EOD;
      * @param int $statusCode        Status code of response (default is 200)
      * @param string $statusMessage  Status message of response (default is 'OK')
      *
-     * @return void
+     * @return never
      */
     public static function sendResponse(string $body = '', string $contentType = '', int $statusCode = 200,
-        string $statusMessage = 'OK'): void
+        string $statusMessage = 'OK'): never
     {
         $status = strval($statusCode);
         $response = "{$_SERVER['SERVER_PROTOCOL']} {$status} {$statusMessage}";
