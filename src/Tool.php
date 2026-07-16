@@ -2273,7 +2273,7 @@ EOD;
                 if ($cookie->numCookies() <= 0) {
                     Util::setTestCookie();
                 }
-            } elseif ($cookie->hasCookie($session->getName()) || ($cookie->getValue($session->getName()) !== $session->getId())) {
+            } elseif (!$cookie->hasCookie($session->getName()) || ($cookie->getValue($session->getName()) !== $session->getId())) {
                 $session_id = '.' . $session->getId();
                 if (!$cookie->hasCookie($session->getName())) {
                     Util::setTestCookie();
