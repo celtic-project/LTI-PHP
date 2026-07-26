@@ -558,6 +558,7 @@ EOD;
         self::logForm($url, $params, 'POST');
         $page = <<< EOD
 <!DOCTYPE html>
+<html lang="en">
 <head>
 <title>1EdTech LTI message</title>
 <script type="text/javascript">
