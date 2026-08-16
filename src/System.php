@@ -1469,7 +1469,7 @@ trait System
                                         if (($cookie->numCookies() <= 0) && !isset($_POST['_new_window'])) {  // Reopen in a new window
                                             Util::setTestCookie();
                                             $_POST['_new_window'] = '';
-                                            $this->output = Util::sendForm($_SERVER['REQUEST_URI'], $_POST, '_blank', true);
+                                            $this->output = Util::sendForm($_SERVER['REQUEST_URI'], $_POST, '_blank', '', true);
                                             $this->doExit();
                                         }
                                         Util::setTestCookie(true);
@@ -1543,7 +1543,7 @@ trait System
                         if (($cookie->numCookies() <= 0) && !isset($_POST['_new_window'])) {  // Reopen in a new window
                             Util::setTestCookie();
                             $_POST['_new_window'] = '';
-                            $this->output = Util::sendForm($_SERVER['REQUEST_URI'], $_POST, '_blank', true);
+                            $this->output = Util::sendForm($_SERVER['REQUEST_URI'], $_POST, '_blank', '', true);
                             $this->doExit();
                         } elseif (!empty($session->getId()) && (count($parts) > 1) && ($session->getId() !== $parts[1])) {  // Reset to original session
                             session_abort();
