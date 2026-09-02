@@ -735,6 +735,8 @@ class DataConnector
     protected function fixToolSettings(Tool $tool, bool $isSave): void
     {
         if (!$isSave) {
+            $tool->jku = $tool->getSetting('_jku', $tool->jku);
+            $tool->setSetting('_jku');
             $tool->kid = $tool->getSetting('_kid', $tool->kid);
             $tool->setSetting('_kid');
             $tool->encryptionMethod = $tool->getSetting('_encryption_method', $tool->encryptionMethod);
@@ -745,6 +747,7 @@ class DataConnector
                 Util::$logLevel = LogLevel::Debug;
             }
         } else {
+            $tool->setSetting('_jku', !empty($tool->jku) ? $tool->jku : null);
             $tool->setSetting('_kid', !empty($tool->kid) ? $tool->kid : null);
             $tool->setSetting('_encryption_method', !empty($tool->encryptionMethod) ? $tool->encryptionMethod : null);
             $tool->setSetting('_debug', $tool->debugMode ? 'true' : null);
