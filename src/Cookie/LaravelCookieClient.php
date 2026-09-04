@@ -22,7 +22,7 @@ class LaravelCookieClient implements ClientInterface
      */
     public function numCookies(): int
     {
-        return count(Cookie::get());
+        return count(array_filter(Cookie::get()));  // Exclude non-Laravel cookies
     }
 
     /**
