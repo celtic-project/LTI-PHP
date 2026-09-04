@@ -1455,9 +1455,10 @@ trait System
                                     $parts = explode('.', $state);
                                     if (!empty($session->getId()) && (count($parts) > 1) && ($session->getId() !== $parts[1]) &&
                                         ($parts[1] !== 'platformStorage')) {  // Reset to original session
-                                        session_abort();
-                                        session_id($parts[1]);
-                                        session_start();
+                                        $session = Session::getSessionClient();
+                                        $session->closeSession();
+                                        $session->setId($parts[1]);
+                                        $session->openSession();
                                         $this->onResetSessionId();
                                     }
                                     $usePlatformStorage = str_ends_with($state, '.platformStorage');
@@ -1546,9 +1547,10 @@ trait System
                             $this->output = Util::sendForm($_SERVER['REQUEST_URI'], $_POST, '_blank', '', true);
                             $this->doExit();
                         } elseif (!empty($session->getId()) && (count($parts) > 1) && ($session->getId() !== $parts[1])) {  // Reset to original session
-                            session_abort();
-                            session_id($parts[1]);
-                            session_start();
+                            $session = Session::getSessionClient();
+                            $session->closeSession();
+                            $session->setId($parts[1]);
+                            $existingSession = !$session->openSession();
                             $this->onResetSessionId();
                         }
                         unset($this->rawParameters['_new_window']);

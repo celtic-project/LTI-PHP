@@ -21,6 +21,15 @@ interface ClientInterface
     public function getId(): string;
 
     /**
+     * Set user session ID.
+     *
+     * @param $id string  Session ID value
+     *
+     * @return void
+     */
+    public function setId(string $id): void;
+
+    /**
      * Get user session name.
      *
      * @return string

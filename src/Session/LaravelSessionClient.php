@@ -26,6 +26,18 @@ class LaravelSessionClient implements ClientInterface
     }
 
     /**
+     * Set user session ID.
+     *
+     * @param $id string  Session ID value
+     *
+     * @return void
+     */
+    public function setId(string $id): void
+    {
+        Session::setId($id);
+    }
+
+    /**
      * Get user session name.
      *
      * @return string

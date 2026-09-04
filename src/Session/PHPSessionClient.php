@@ -24,6 +24,18 @@ class PHPSessionClient implements ClientInterface
     }
 
     /**
+     * Set user session ID.
+     *
+     * @param $id string  Session ID value
+     *
+     * @return void
+     */
+    public function setId(string $id): void
+    {
+        session_id($id);
+    }
+
+    /**
      * Get user session name.
      *
      * @return string
