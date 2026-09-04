@@ -72,20 +72,19 @@ class PHPCookieClient implements ClientInterface
         if ($expires <> 0) {
             $expires = time() + ($expires * 60);
         }
-        if ((PHP_MAJOR_VERSION > 7) || ((PHP_MAJOR_VERSION >= 7) && (PHP_MINOR_VERSION >= 3))) {  // PHP 7.3 or later?
-            $ok = setcookie($name, $value,
-                [
-                    'expires' => $expires,
-                    'path' => $path,
-                    'domain' => $domain,
-                    'secure' => $secure,
-                    'httponly' => true,
-                    'SameSite' => $sameSite
-                ]
-            );
-        } else {
-            $ok = setcookie($name, $value, $expires, $path, $domain, $secure, $httpOnly);
+        if (!empty($sameSite) && $secure) {
+            $sameSite .= '; Partitioned';
         }
+        $ok = setcookie($name, $value,
+            [
+                'expires' => $expires,
+                'path' => $path,
+                'domain' => $domain,
+                'secure' => $secure,
+                'httponly' => true,
+                'SameSite' => $sameSite
+            ]
+        );
 
         return $ok;
     }
