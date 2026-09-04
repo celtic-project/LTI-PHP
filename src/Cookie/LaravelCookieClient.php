@@ -72,7 +72,7 @@ class LaravelCookieClient implements ClientInterface
         bool $httpOnly, string $sameSite): bool
     {
         if ($expires >= 0) {
-            $cookie = Cookie::make($name, $value, $expires, $path, $domain, $secure, $httpOnly, $sameSite);
+            $cookie = Cookie::make($name, $value, $expires, $path, $domain, $secure, $httpOnly, false, $sameSite);
         } else {
             $cookie = Cookie::forget($name);
         }
