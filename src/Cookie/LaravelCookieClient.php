@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace ceLTIc\LTI\Cookie;
 
 use Illuminate\Support\Facades\Cookie;
+use Symfony\Component\HttpFoundation\Cookie as ACookie;
 
 /**
  * Class to implement the user cookie interface using the Laravel framework.
@@ -72,7 +73,7 @@ class LaravelCookieClient implements ClientInterface
         bool $httpOnly, string $sameSite): bool
     {
         if ($expires >= 0) {
-            $cookie = Cookie::make($name, $value, $expires, $path, $domain, $secure, $httpOnly, false, $sameSite);
+            $cookie = new ACookie($name, $value, $expires, $path, $domain, $secure, $httpOnly, false, $sameSite, $secure);
         } else {
             $cookie = Cookie::forget($name);
         }
