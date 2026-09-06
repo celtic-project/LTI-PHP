@@ -1465,7 +1465,7 @@ trait System
                                         $state = substr($state, 0, -16);
                                     }
                                     $this->onAuthenticate($state, $nonce, $usePlatformStorage);
-                                    if (!$this->ok && !$disableCookieCheck) {
+                                    if (!$disableCookieCheck) {
                                         if (($cookie->numCookies() <= 0) && !isset($_POST['_new_window'])) {  // Reopen in a new window
                                             Util::setTestCookie();
                                             $_POST['_new_window'] = '';
