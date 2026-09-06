@@ -1041,9 +1041,10 @@ trait System
     public function sendMessage(string $url, string $type, array $messageParams, string $target = '', ?string $userId = null,
         ?string $hint = null): string
     {
+        $useGet = Platform::$initiateLoginUsingGet && ($this instanceof Platform) && ($this->ltiVersion === LtiVersion::V1P3);
         $sendParams = $this->signMessage($url, $type, $this->ltiVersion ? $this->ltiVersion->value : '', $messageParams, $userId,
             $hint);
-        $html = Util::sendForm($url, $sendParams, $target);
+        $html = Util::sendForm($url, $sendParams, $target, '', false, $useGet);
 
         return $html;
     }

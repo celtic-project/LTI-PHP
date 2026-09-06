@@ -51,6 +51,13 @@ class Platform
     public static $accessTokenLife = 3600;
 
     /**
+     * Use GET method for initiate login request messages when true
+     *
+     * @var bool $initiateLoginUsingGet
+     */
+    public static bool $initiateLoginUsingGet = false;
+
+    /**
      * Platform ID.
      *
      * @var string|null $platformId
