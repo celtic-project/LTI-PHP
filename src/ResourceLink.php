@@ -676,6 +676,7 @@ class ResourceLink
             }
             if (!empty($do)) {
                 $xml = '';
+                $submittedXml = '';
                 if ($action === ServiceAction::Write) {
                     $comment = (empty($ltiOutcome->comment)) ? '' : trim($ltiOutcome->comment);
                     if (!empty($comment) && !empty($sourceResourceLink->getSetting('ext_outcome_data_values_accepted'))) {
@@ -702,6 +703,17 @@ class ResourceLink
 EOD;
                         }
                     }
+                    if (!empty($ltiOutcome->submissionCompleted) && $sourceResourceLink->getSetting('ext_outcome_submission_submitted_at_accepted') !== 'true') {
+                        $submitted = $ltiOutcome->submissionCompleted->format('Y-m-d\TH:i:s\Z');
+                        $submittedXml = <<< EOD
+      <submissionDetails>
+        <submittedAt>
+          {$submitted}
+        </submittedAt>
+      </submissionDetails>
+
+EOD;
+                    }
                     $xml = <<< EOD
 
         <result>
@@ -714,7 +726,7 @@ EOD;
                 }
                 $sourcedId = htmlentities($sourcedId);
                 $xml = <<< EOD
-      <resultRecord>
+{$submittedXml}      <resultRecord>
         <sourcedGUID>
           <sourcedId>{$sourcedId}</sourcedId>
         </sourcedGUID>{$xml}
