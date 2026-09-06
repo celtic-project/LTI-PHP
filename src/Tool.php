@@ -465,8 +465,10 @@ class Tool
      * @param bool|null $strictMode     True if full compliance with the LTI specification is required (optional, default is the Util::$strictMode setting)
      * @param bool $disableCookieCheck  True if no cookie check should be made (optional, default is false)
      * @param bool $generateWarnings    True if warning messages should be generated (optional, default is false)
+     *
+     * @return never
      */
-    public function handleRequest(?bool $strictMode = null, bool $disableCookieCheck = false, bool $generateWarnings = false): void
+    public function handleRequest(?bool $strictMode = null, bool $disableCookieCheck = false, bool $generateWarnings = false): never
     {
         $currentStrictMode = Util::$strictMode;
         if (!is_null($strictMode)) {
@@ -1258,9 +1260,9 @@ EOD;
     /**
      * Perform the result of an action.
      *
-     * @return void
+     * @return never
      */
-    private function result(): void
+    private function result(): never
     {
         if (!$this->ok) {
             $this->message = self::CONNECTION_ERROR_MESSAGE;
