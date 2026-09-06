@@ -502,15 +502,21 @@ final class Util
      * @param string $target         Name of target (optional)
      * @param string $javascript     Javascript to be inserted (optional, default is to just auto-submit form)
      * @param bool $disableNewIfTop  True if a target of "_blank" should not open a new window when the current window is top (optional)
+     * @param bool $useGet           True if the form should be submitted using GET (optional)
      *
      * @return string
      */
     public static function sendForm(string $url, array $params, string $target = '', string $javascript = '',
-        bool $disableNewIfTop = false): string
+        bool $disableNewIfTop = false, bool $useGet = false): string
     {
         $timeout = static::$formSubmissionTimeout;
         if (empty($target)) {
             $target = '_self';
+        }
+        if ($useGet) {
+            $method = 'get';
+        } else {
+            $method = 'post';
         }
         if (empty($javascript)) {
             $javascript = <<< EOD
@@ -566,7 +572,7 @@ EOD;
 </script>
 </head>
 <body>
-  <form action="{$url}" method="post" target="{$target}" encType="application/x-www-form-urlencoded">
+  <form action="{$url}" method="{$method}" target="{$target}" encType="application/x-www-form-urlencoded">
     <p id="id_blocked" style="display: none; color: red; font-weight: bold;">
       Your browser may be blocking this request; try clicking the button below.<br><br>
       <input type="submit" value="Continue" onclick="doOnSubmit();" />
