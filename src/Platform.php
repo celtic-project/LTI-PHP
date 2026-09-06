@@ -856,11 +856,16 @@ EOD;
                 (isset($login['lti_message_hint']) && (!isset($parameters['lti_message_hint']) || ($parameters['lti_message_hint'] !== $login['lti_message_hint'])))) {
                 $this->ok = false;
                 $this->messageParameters['error'] = 'access_denied';
+                $this->messageParameters['error_description'] = 'Unexpected login_hint and/or lti_message_hint values';
             } else {
                 Tool::$defaultTool->messageUrl = $login['messageUrl'];
                 $this->messageParameters = $login['params'];
             }
             $session->setItem('ceLTIc_lti_initiated_login', null);
+        } else {
+            $this->ok = false;
+            $this->messageParameters['error'] = 'access_denied';
+            $this->messageParameters['error_description'] = 'Session error';
         }
         if (!$existingSession) {
             $session->closeSession();
