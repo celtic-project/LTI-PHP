@@ -1455,7 +1455,6 @@ trait System
                                     $parts = explode('.', $state);
                                     if (!empty($session->getId()) && (count($parts) > 1) && ($session->getId() !== $parts[1]) &&
                                         ($parts[1] !== 'platformStorage')) {  // Reset to original session
-                                        $session = Session::getSessionClient();
                                         $session->closeSession();
                                         $session->setId($parts[1]);
                                         $session->openSession();
@@ -1466,7 +1465,7 @@ trait System
                                         $state = substr($state, 0, -16);
                                     }
                                     $this->onAuthenticate($state, $nonce, $usePlatformStorage);
-                                    if (!$disableCookieCheck) {
+                                    if (!$this->ok && !$disableCookieCheck) {
                                         if (($cookie->numCookies() <= 0) && !isset($_POST['_new_window'])) {  // Reopen in a new window
                                             Util::setTestCookie();
                                             $_POST['_new_window'] = '';
@@ -1547,7 +1546,6 @@ trait System
                             $this->output = Util::sendForm($_SERVER['REQUEST_URI'], $_POST, '_blank', '', true);
                             $this->doExit();
                         } elseif (!empty($session->getId()) && (count($parts) > 1) && ($session->getId() !== $parts[1])) {  // Reset to original session
-                            $session = Session::getSessionClient();
                             $session->closeSession();
                             $session->setId($parts[1]);
                             $existingSession = !$session->openSession();

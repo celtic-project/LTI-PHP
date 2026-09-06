@@ -35,6 +35,7 @@ class LaravelSessionClient implements ClientInterface
     public function setId(string $id): void
     {
         Session::setId($id);
+        Session::start();
     }
 
     /**
