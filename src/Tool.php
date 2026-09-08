@@ -755,7 +755,8 @@ class Tool
         $session->setItem('ceLTIc_lti_authentication_request',
             [
                 'state' => $authParameters['state'],
-                'nonce' => $authParameters['nonce']
+                'nonce' => $authParameters['nonce'],
+                'user-agent' => $_SERVER['HTTP_USER_AGENT']
             ]
         );
         if (!$existingSession) {
@@ -799,8 +800,11 @@ class Tool
             }
             if (($state !== $auth['state']) || ($nonce !== $auth['nonce'])) {
                 $this->setReason('Invalid \'state\' parameter value and/or \'nonce\' claim value');
+            } elseif ($auth['user-agent'] !== $_SERVER['HTTP_USER_AGENT']) {
+                $this->setReason('Browser session mismatch');
+            } else {
+                $session->setItem('ceLTIc_lti_authentication_request', null);
             }
-            $session->setItem('ceLTIc_lti_authentication_request', null);
         } else {
             $this->setReason('Unable to verify \'state\' and \'nonce\' values');
         }
