@@ -33,6 +33,7 @@ class PHPSessionClient implements ClientInterface
     public function setId(string $id): void
     {
         session_id($id);
+        session_start();
     }
 
     /**
