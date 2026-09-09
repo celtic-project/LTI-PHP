@@ -1454,6 +1454,7 @@ trait System
                                 if ($this->ok) {
                                     $state = $this->rawParameters['state'];
                                     $parts = explode('.', $state);
+                                    $session->openSession();
                                     if (!empty($session->getId()) && (count($parts) > 1) && ($session->getId() !== $parts[1]) &&
                                         ($parts[1] !== 'platformStorage')) {  // Reset to original session
                                         $session->closeSession();
@@ -1540,6 +1541,7 @@ trait System
                     $state = $this->rawParameters['tool_state'];
                     if (!$disableCookieCheck) {
                         $parts = explode('.', $state);
+                        $session->openSession();
                         if (($cookie->numCookies() <= 0) && !isset($_POST['_new_window'])) {  // Reopen in a new window
                             Util::setTestCookie();
                             $_POST['_new_window'] = '';
