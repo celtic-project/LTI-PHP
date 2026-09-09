@@ -2175,6 +2175,7 @@ EOD;
             $this->setReason('Platform not found or no platform authentication request URL');
         } else {
             $session = Session::getSessionClient();
+            $session->openSession();
             $cookie = Cookie::getCookieClient();
             $oauthRequest = OAuth\OAuthRequest::from_request();
             $usePlatformStorage = !empty($oauthRequest->get_parameter('lti_storage_target'));
@@ -2272,6 +2273,7 @@ EOD;
     private function sendRelaunchRequest(bool $disableCookieCheck): bool
     {
         $session = Session::getSessionClient();
+        $session->openSession();
         $cookie = Cookie::getCookieClient();
         $session_id = '';
         if (!$disableCookieCheck) {
