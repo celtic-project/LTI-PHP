@@ -312,7 +312,7 @@ class LineItem extends AssignmentGrade
         if (!empty($lineItem->label)) {
             $json->label = $lineItem->label;
         }
-        if (!empty($lineItem->pointsPossible)) {
+        if (!is_null($lineItem->pointsPossible)) {
             $json->scoreMaximum = $lineItem->pointsPossible;
         }
         if (!empty($lineItem->ltiResourceLinkId)) {

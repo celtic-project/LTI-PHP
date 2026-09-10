@@ -1072,9 +1072,19 @@ EOD;
             $num = self::valToNumber($obj->{$name});
             if (!is_null($num)) {
                 if (($minimum !== false) && !$minimumExclusive && ($num < $minimum)) {
-                    self::setMessage(true, "The '{$fullname}' element must have a numeric value of at least {$minimum}");
+                    if (self::$strictMode || $overrideStrictMode) {
+                        self::setMessage(true, "The '{$fullname}' element must have a numeric value of at least {$minimum}");
+                    } else {
+                        self::setMessage(false, "The '{$fullname}' element should have a numeric value of at least {$minimum}");
+                        $value = $num;
+                    }
                 } elseif (($minimum !== false) && $minimumExclusive && ($num <= $minimum)) {
-                    self::setMessage(true, "The '{$fullname}' element must have a numeric value greater than {$minimum}");
+                    if (self::$strictMode || $overrideStrictMode) {
+                        self::setMessage(true, "The '{$fullname}' element must have a numeric value greater than {$minimum}");
+                    } else {
+                        self::setMessage(false, "The '{$fullname}' element should have a numeric value greater than {$minimum}");
+                        $value = $num;
+                    }
                 } else {
                     $value = $num;
                 }
