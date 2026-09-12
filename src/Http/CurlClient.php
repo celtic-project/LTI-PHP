@@ -32,7 +32,7 @@ class CurlClient implements ClientInterface
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30);
         curl_setopt($ch, CURLOPT_URL, $message->getUrl());
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $message->requestHeaders);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array_merge($message->requestHeaders, ['Expect:']));  // Avoid sending Expect header
         if ($message->getMethod() === 'POST') {
             curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_POSTFIELDS, $message->request);
