@@ -2615,11 +2615,12 @@ function doOnSubmit() {
 }
 
 function submitForm() {
-  if (target === '_blank') {
-    target = "ltitool-" + Math.random();
-    document.forms[0].target = target;
+  var formtarget = document.forms[0].target;
+  if (formtarget === '_blank') {
+    formtarget = "ltitool-" + Math.random();
+    document.forms[0].target = formtarget;
   }
-  var wdw = window.open('', target);
+  var wdw = window.open('', formtarget);
   if (wdw) {
     document.forms[0].submit();
   } else {
