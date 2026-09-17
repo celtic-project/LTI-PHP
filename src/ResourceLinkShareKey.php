@@ -189,7 +189,7 @@ class ResourceLinkShareKey
             $this->length = strlen(strval($this->id));
         }
         if (!is_null($this->expires)) {
-            $this->life = ($this->expires - time()) / 60 / 60;
+            $this->life = intdiv($this->expires - time(), 60 * 60);
         }
     }
 
