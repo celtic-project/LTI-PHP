@@ -40,15 +40,19 @@ class Cookie
     public static function setCookieClient(?ClientInterface $cookieClient = null): void
     {
         self::$cookieClient = $cookieClient;
-        Util::logDebug('CookieClient set to \'' . get_class(self::$cookieClient) . '\'');
+        if (!empty($cookieClient)) {
+            Util::logDebug('CookieClient set to \'' . get_class(self::$cookieClient) . '\'');
+        } else {
+            Util::logDebug('CookieClient unset');
+        }
     }
 
     /**
      * Get the client to use for handling cookie sessions. If one is not set, a default client is created.
      *
-     * @return ClientInterface|null  The user cookie client
+     * @return ClientInterface  The user cookie client
      */
-    public static function getCookieClient(): ?ClientInterface
+    public static function getCookieClient(): ClientInterface
     {
         if (empty(self::$cookieClient)) {
             self::setCookieClient(new PHPCookieClient());

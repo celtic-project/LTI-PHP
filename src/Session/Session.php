@@ -40,15 +40,19 @@ class Session
     public static function setSessionClient(?ClientInterface $sessionClient = null): void
     {
         self::$sessionClient = $sessionClient;
-        Util::logDebug('SessionClient set to \'' . get_class(self::$sessionClient) . '\'');
+        if (!empty($sessionClient)) {
+            Util::logDebug('SessionClient set to \'' . get_class(self::$sessionClient) . '\'');
+        } else {
+            Util::logDebug('SessionClient unset');
+        }
     }
 
     /**
      * Get the client to use for handling user sessions. If one is not set, a default client is created.
      *
-     * @return ClientInterface|null  The user session client
+     * @return ClientInterface  The user session client
      */
-    public static function getSessionClient(): ?ClientInterface
+    public static function getSessionClient(): ClientInterface
     {
         if (empty(self::$sessionClient)) {
             self::setSessionClient(new PHPSessionClient());
