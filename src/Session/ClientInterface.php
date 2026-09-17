@@ -23,7 +23,7 @@ interface ClientInterface
     /**
      * Set user session ID.
      *
-     * @param $id string  Session ID value
+     * @param string $id  Session ID value
      *
      * @return void
      */
@@ -53,7 +53,7 @@ interface ClientInterface
     /**
      * Check if an item exists in the user session.
      *
-     * @param $name string  Name of session item
+     * @param string $name  Name of session item
      *
      * @return bool  True if the item exists in the user session
      */
@@ -62,8 +62,8 @@ interface ClientInterface
     /**
      * Get a session item value.
      *
-     * @param $name string    Name of session item
-     * @param $default mixed  Default value to return when item does not exist
+     * @param string $name    Name of session item
+     * @param mixed $default  Default value to return when item does not exist
      *
      * @return mixed  Value of session item or default value if the item does not exist
      */
@@ -72,8 +72,8 @@ interface ClientInterface
     /**
      * Set a session item value.
      *
-     * @param $name string  Name of session item
-     * @param $value mixed  Value of session item (or null to delete the item)
+     * @param string $name  Name of session item
+     * @param mixed $value  Value of session item (or null to delete the item)
      *
      * @return void
      */
