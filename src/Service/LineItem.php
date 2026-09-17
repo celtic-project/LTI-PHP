@@ -257,7 +257,7 @@ class LineItem extends AssignmentGrade
         $resourceId = Util::checkString($json, 'resourceId');
         $tag = Util::checkString($json, 'tag');
         $startDateTime = Util::checkDateTime($json, 'startDateTime');
-        $endDateTime = Util::checkDateTIme($json, 'endDateTime');
+        $endDateTime = Util::checkDateTime($json, 'endDateTime');
         $resourceLinkId = Util::checkString($json, 'resourceLinkId');
         $gradesReleased = Util::checkBoolean($json, 'gradesReleased');
         if (!empty($id) && !empty($label) && !is_null($scoreMaximum)) {
