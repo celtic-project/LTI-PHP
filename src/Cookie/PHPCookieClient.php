@@ -81,7 +81,7 @@ class PHPCookieClient implements ClientInterface
                 'path' => $path,
                 'domain' => $domain,
                 'secure' => $secure,
-                'httponly' => true,
+                'httponly' => $httpOnly,
                 'SameSite' => $sameSite
             ]
         );
