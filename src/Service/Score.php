@@ -64,10 +64,12 @@ class Score extends AssignmentGrade
         $json = [
             'timestamp' => date_format(new \DateTime(), 'Y-m-d\TH:i:s.uP'),
             'userId' => $user->ltiUserId,
-            'comment' => $ltiOutcome->comment,
             'activityProgress' => $activityProgress,
             'gradingProgress' => $gradingProgress
         ];
+        if (!empty($ltiOutcome->comment)) {
+            $json['comment'] = $ltiOutcome->comment;
+        }
         if (!is_null($score)) {
             $json['scoreGiven'] = $score;
             if (!is_null($ltiOutcome->getPointsPossible())) {
