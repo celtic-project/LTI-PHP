@@ -57,9 +57,9 @@ class AssessmentControl extends Service
      * @param User $user                                        User object
      * @param int $attemptNumber                                Attempt number
      *
-     * @return string|bool  Value of the status response, or false if not successful
+     * @return string|false  Value of the status response, or false if not successful
      */
-    public function submitAction(AssessmentControlAction $assessmentControlAction, User $user, int $attemptNumber): string|bool
+    public function submitAction(AssessmentControlAction $assessmentControlAction, User $user, int $attemptNumber): string|false
     {
         $status = false;
         $json = [
@@ -72,7 +72,7 @@ class AssessmentControl extends Service
             ],
             'attempt_number' => $attemptNumber,
             'action' => $assessmentControlAction->getAction(),
-            'incident_time' => $assessmentControlAction->getDate()->format('Y-m-d\TH:i:s\Z'),
+            'incident_time' => gmdate('Y-m-d\TH:i:s\Z', $assessmentControlAction->getDate()->getTimestamp()),
             'incident_severity' => $assessmentControlAction->getSeverity()
         ];
         if (!empty($assessmentControlAction->extraTime)) {
