@@ -759,7 +759,7 @@ EOD;
         $charsLength = strlen($chars) - 1;
 
         for ($i = 1; $i <= $length; $i++) {
-            $value .= $chars[rand(0, $charsLength)];
+            $value .= $chars[random_int(0, $charsLength)];
         }
 
         return $value;
