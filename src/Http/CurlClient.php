@@ -14,6 +14,13 @@ class CurlClient implements ClientInterface
 {
 
     /**
+     * Connection timeout (in seconds).
+     *
+     * @var int $connectionTimeout
+     */
+    public static int $connectionTimeout = 30;
+
+    /**
      * The HTTP version to be used.
      *
      * @var int|null $httpVersion
@@ -30,7 +37,8 @@ class CurlClient implements ClientInterface
     public function send(HttpMessage $message): bool
     {
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, self::$connectionTimeout);
+        curl_setopt($ch, CURLOPT_TIMEOUT, self::$connectionTimeout);
         curl_setopt($ch, CURLOPT_URL, $message->getUrl());
         curl_setopt($ch, CURLOPT_HTTPHEADER, array_merge($message->requestHeaders, ['Expect:']));  // Avoid sending Expect header
         if ($message->getMethod() === 'POST') {

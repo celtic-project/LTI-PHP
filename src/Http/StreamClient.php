@@ -16,6 +16,13 @@ class StreamClient implements ClientInterface
 {
 
     /**
+     * Connection timeout (in seconds).
+     *
+     * @var int $connectionTimeout
+     */
+    public static int $connectionTimeout = 30;
+
+    /**
      * Send the request to the target URL.
      *
      * @param HttpMessage $message
@@ -28,6 +35,7 @@ class StreamClient implements ClientInterface
             'method' => $message->getMethod(),
             'content' => $message->request,
             'header' => $message->requestHeaders,
+            'timeout' => self::connectionTimeout,
             'ignore_errors' => true,
         ];
 
