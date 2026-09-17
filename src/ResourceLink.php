@@ -648,7 +648,7 @@ class ResourceLink
         if (!empty($urlAGS)) {
             if (($action === ServiceAction::Read) && ($ltiOutcome->type === OutcomeType::Decimal) && $sourceResourceLink->hasResultService()) {
                 $ok = $this->doResultService($ltiOutcome, $userResult, $urlAGS);
-            } elseif ((($action === ServiceAction::Write) && $this->checkValueType($ltiOutcome, [OutcomeType::Decimal]) && $sourceResourceLink->hasScoreService()) ||
+            } elseif ((($action === ServiceAction::Write) && $this->checkValueType($ltiOutcome, [OutcomeType::Decimal->value]) && $sourceResourceLink->hasScoreService()) ||
                 ($action === ServiceAction::Delete)) {
                 if ($action === ServiceAction::Delete) {
                     $ltiOutcome->setValue(null);
@@ -666,7 +666,7 @@ class ResourceLink
             $outcome = $ltiOutcome->getValue();
             if (($action === ServiceAction::Read) && ($ltiOutcome->type === OutcomeType::Decimal)) {
                 $do = 'readResult';
-            } elseif (($action === ServiceAction::Write) && $this->checkValueType($ltiOutcome, [OutcomeType::Decimal])) {
+            } elseif (($action === ServiceAction::Write) && $this->checkValueType($ltiOutcome, [OutcomeType::Decimal->value])) {
                 $do = 'replaceResult';
                 if (($ltiOutcome->getPointsPossible() <> 1) && ($ltiOutcome->getPointsPossible() > 0)) {
                     $outcome = $outcome / $ltiOutcome->getPointsPossible();
@@ -757,7 +757,7 @@ EOD;
                 $do = 'basic-lis-readresult';
             } elseif ($action === ServiceAction::Write) {
                 $do = 'basic-lis-updateresult';
-                if ($this->checkValueType($ltiOutcome, [OutcomeType::Decimal])) {
+                if ($this->checkValueType($ltiOutcome, [OutcomeType::Decimal->value])) {
                     if (($ltiOutcome->getPointsPossible() <> 1) && ($ltiOutcome->getPointsPossible() > 0)) {
                         $outcome = $outcome / $ltiOutcome->getPointsPossible();
                     }
@@ -1397,12 +1397,13 @@ EOD;
     {
         if (empty($supportedTypes)) {
             $supportedTypes = explode(',',
-                str_replace(' ', '', strtolower($this->getSetting('ext_ims_lis_resultvalue_sourcedids', OutcomeType::Decimal))));
+                str_replace(' ', '',
+                    strtolower($this->getSetting('ext_ims_lis_resultvalue_sourcedids', OutcomeType::Decimal->value))));
         }
         $type = $ltiOutcome->type;
         $value = $ltiOutcome->getValue();
 // Check whether the type is supported or there is no value
-        $ok = in_array($type, $supportedTypes) || empty($value);
+        $ok = in_array($type->value, $supportedTypes) || empty($value);
         if (!$ok) {
 // Convert numeric values to decimal
             if ($type === OutcomeType::Percentage) {
