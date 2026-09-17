@@ -127,7 +127,7 @@ class User
      *   - hidden
      *   - set (ID of group set, array of IDs if the group belongs to more than one set, omitted if the group is not part of a set)
      * The array key value is the group ID.
-     * 
+     *
      * @var array $groups
      */
     public array $groups = [];
@@ -221,7 +221,7 @@ class User
         } elseif ((count($names) > 1) && !empty($names[count($names) - 1])) {
             $this->lastname = $names[count($names) - 1];
         } elseif (!static::$allowEmptyName) {
-            $this->lastname = $this->ltiUserId;
+            $this->lastname = $this->ltiUserId ?? '';
         } else {
             $this->lastname = '';
         }
@@ -237,7 +237,7 @@ class User
     /**
      * Set the user's email address.
      *
-     * @param stringnull $email          Email address value
+     * @param string|null $email         Email address value
      * @param string|null $defaultEmail  Value to use if no email is provided (optional, default is none)
      *
      * @return void

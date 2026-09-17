@@ -422,7 +422,7 @@ final class Util
             };
             error_log($prefix . $message);
         } else {
-            $context = ['ip' => $_SERVER['REMOTE_ADDR']];
+            $context = ['ip' => $_SERVER['REMOTE_ADDR'] ?? ''];
             switch ($type) {
                 case LogLevel::Error:
                     $loggerClient->error($message, $context);
@@ -737,8 +737,8 @@ EOD;
                 $expires = -60;
             }
             $cookie = Cookie::getCookieClient();
-            $cookie->createCookie(self::TEST_COOKIE_NAME, 'LTI cookie check', $expires, $path, $_SERVER['SERVER_NAME'], $secure,
-                true, $sameSite);
+            $cookie->createCookie(self::TEST_COOKIE_NAME, 'LTI cookie check', $expires, $path, $_SERVER['SERVER_NAME'] ?? '',
+                $secure, true, $sameSite);
         }
     }
 
