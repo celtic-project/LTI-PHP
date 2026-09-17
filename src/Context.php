@@ -429,7 +429,7 @@ class Context
     {
         $has = !empty($this->getSetting('custom_context_groups_url'));
         if (!$has) {
-            $has = self::hasConfiguredApiHook(self::$MEMBERSHIPS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode(), $this);
+            $has = self::hasConfiguredApiHook(self::$GROUPS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode(), $this);
         }
         return $has;
     }
@@ -584,7 +584,7 @@ class Context
         $this->lastServiceRequest = null;
         $lineItemService = $this->getLineItemService();
         if (!empty($lineItemService)) {
-            $lineItems = $lineItemService->getAll(null, $resourceId, $tag);
+            $lineItems = $lineItemService->getAll(null, $resourceId, $tag, $limit);
             $http = $lineItemService->getHttpMessage();
             $this->lastServiceRequest = $http;
         }
