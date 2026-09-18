@@ -1678,12 +1678,7 @@ EOD;
             }
             if ($this->ok) {
                 $url = $this->messageParameters['tc_profile_url'];
-                if (!str_contains($url, '?')) {
-                    $url .= '?';
-                } else {
-                    $url .= '&';
-                }
-                $url .= 'lti_version=' . LtiVersion::V2->value;
+                $url = Util::addQueryParameters($url, ['lti_version' => LtiVersion::V2->value]);
                 $http = new HttpMessage($url, 'GET', null, 'Accept: application/vnd.ims.lti.v2.toolconsumerprofile+json');
                 $this->ok = $http->send();
                 if (!$this->ok) {
@@ -1756,12 +1751,7 @@ EOD;
             }
         } elseif ($this->ok && !empty($this->messageParameters['custom_tc_profile_url']) && empty($this->platform->profile)) {
             $url = $this->messageParameters['custom_tc_profile_url'];
-            if (!str_contains($url, '?')) {
-                $url .= '?';
-            } else {
-                $url .= '&';
-            }
-            $url .= 'lti_version=' . $this->ltiVersion->value;
+            $url = Util::addQueryParameters($url, ['lti_version' => $this->ltiVersion->value]);
             $http = new HttpMessage($url, 'GET', null, 'Accept: application/vnd.ims.lti.v2.toolconsumerprofile+json');
             if ($http->send()) {
                 $tcProfile = Util::jsonDecode($http->response);

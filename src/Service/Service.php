@@ -105,15 +105,7 @@ class Service
     {
         $url = $this->endpoint;
         if (!empty($parameters)) {
-            if (!str_contains($url, '?')) {
-                $sep = '?';
-            } else {
-                $sep = '&';
-            }
-            foreach ($parameters as $name => $value) {
-                $url .= $sep . Util::urlEncode(strval($name)) . '=' . Util::urlEncode(strval($value));
-                $sep = '&';
-            }
+            $url = Util::addQueryParameters($url, $parameters);
         }
         $header = null;
         $retry = !$this->platform->useOAuth1();
