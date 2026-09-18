@@ -1284,7 +1284,8 @@ trait System
                         if (empty($this->reason)) {
                             $this->setReason('OAuth signature check failed - perhaps an incorrect secret or timestamp');
                         }
-                        $this->details[] = "Shared secret: '{$secret}'";
+                        $logsecret = substr_replace($secret, '...', 2, -2);  // Obsure secret in log file
+                        $this->details[] = "Shared secret: '{$logsecret}'";
                         $this->details[] = 'Current timestamp: ' . time();
                         $this->details[] = "Expected signature: {$signature}";
                         $this->details[] = "Base string: {$request->base_string}";
