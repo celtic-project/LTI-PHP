@@ -1323,7 +1323,7 @@ EOD;
         $ok = $this->executeQuery($sql, $stmt);
         if ($ok) {
             if (is_null($userResult->created)) {
-                $userResult->setRecordId(mysqli_insert_id($this->db));
+                $userResult->setRecordId($this->db->insert_id);
                 $userResult->created = $time;
             }
             $userResult->updated = $time;
