@@ -1012,12 +1012,7 @@ trait System
                 $url = Tool::$defaultTool->initiateLoginUrl;
             }
             if (!empty(static::$browserStorageFrame)) {
-                if (!str_contains($url, '?')) {
-                    $sep = '?';
-                } else {
-                    $sep = '&';
-                }
-                $url .= "{$sep}lti_storage_target=" . static::$browserStorageFrame;
+                $url = Util::addQueryParameters($url, ['lti_storage_target' => static::$browserStorageFrame]);
             }
         } else {
             $params = $this->signParameters($url, $type, $ltiVersionString, $params);
@@ -1146,10 +1141,10 @@ trait System
      */
     public function checkMessage(bool $generateWarnings = false): bool
     {
-        $this->ok = $_SERVER['REQUEST_METHOD'] === 'POST';
-        if (!$this->ok) {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->setReason('LTI messages must use HTTP POST');
         } else {
+            $isLti1p3 = !empty($this->jwt) && !empty($this->jwt->hasJwt());
 // Set signature method from request
             if (isset($this->messageParameters['oauth_signature_method'])) {
                 $this->signatureMethod = $this->messageParameters['oauth_signature_method'];
@@ -1160,7 +1155,7 @@ trait System
 // Check all required launch parameters
             if ($this->ok || $generateWarnings) {
                 if (!isset($this->messageParameters['lti_message_type'])) {
-                    $this->setReason('Missing \'lti_message_type\' parameter');
+                    $this->setMissingParameter($isLti1p3, 'lti_message_type');
                 }
             }
             if ($this->ok || $generateWarnings) {
@@ -1168,7 +1163,7 @@ trait System
                     $this->ltiVersion = LtiVersion::tryFrom($this->messageParameters['lti_version']);
                 }
                 if (empty($this->ltiVersion)) {
-                    $this->setReason('Invalid or missing \'lti_version\' parameter');
+                    $this->setMissingParameter($isLti1p3, 'lti_version');
                 }
             }
         }
@@ -1374,6 +1369,38 @@ trait System
         return false;
     }
 
+    /**
+     * Set the error reason for a missing parameter/claim.
+     *
+     * @param bool $showClaim  True if the claim name should be used
+     * @param string $name     Parameter name
+     *
+     * @return bool  Returns false
+     */
+    public function setMissingParameter(bool $showClaim, string $name): bool
+    {
+        if ($showClaim) {
+            $mapping = Util::JWT_CLAIM_MAPPING[$name];
+            $claim = Util::JWT_CLAIM_PREFIX;
+            if (!empty($mapping['suffix'])) {
+                $claim .= "-{$mapping['suffix']}";
+            }
+            $claim .= '/claim/';
+            if (is_null($mapping['group'])) {
+                $claim = $mapping['claim'];
+            } elseif (empty($mapping['group'])) {
+                $claim .= $mapping['claim'];
+            } else {
+                $claim .= $mapping['group'];
+            }
+            $reason = "Missing '{$claim}' claim";
+        } else {
+            $reason = "Missing '{$name}' parameter";
+        }
+
+        return $this->setReason($reason);
+    }
+
 ###
 ###    PRIVATE METHODS
 ###
@@ -1399,132 +1426,134 @@ trait System
                 } else {
                     $this->ok = $this->jwt->load($this->rawParameters['JWT'], $this->rsaKey);
                 }
-                if (!$this->ok) {
-                    $this->setReason('Message does not contain a valid JWT');
-                } else {
-                    if ($this->ok || $generateWarnings) {
-                        $iat = $this->getClaimInteger('iat', true, $generateWarnings);
+            } catch (\Exception $e) {
+                $this->ok = false;
+            }
+            if (!$this->ok) {
+                $this->setReason('Message does not contain a valid JWT');
+            } else {
+                if ($this->ok || $generateWarnings) {
+                    $iat = $this->getClaimInteger('iat', true, $generateWarnings);
+                }
+                if ($this->ok || $generateWarnings) {
+                    $exp = $this->getClaimInteger('exp', true, $generateWarnings);
+                }
+                if (($this->ok || $generateWarnings) && !is_null($iat) && !is_null($exp) && ($iat > $exp)) {
+                    $this->setReason('\'iat\' claim must not have a value greater than \'exp\' claim');
+                }
+                if ($this->ok || $generateWarnings) {
+                    $nonce = $this->getClaimString('nonce', true, true, $generateWarnings);
+                }
+                if ($this->ok || $generateWarnings) {
+                    $iss = $this->getClaimString('iss', true, true, $generateWarnings);
+                }
+                if ($this->ok || $generateWarnings) {
+                    $azp = $this->getClaimString('azp', false, true, $generateWarnings);
+                }
+                if ($this->ok || $generateWarnings) {
+                    $aud = $this->jwt->getClaim('aud');
+                    if (is_string($aud)) {
+                        $aud = [$aud];
                     }
-                    if ($this->ok || $generateWarnings) {
-                        $exp = $this->getClaimInteger('exp', true, $generateWarnings);
-                    }
-                    if (($this->ok || $generateWarnings) && !is_null($iat) && !is_null($exp) && ($iat > $exp)) {
-                        $this->setReason('\'iat\' claim must not have a value greater than \'exp\' claim');
-                    }
-                    if ($this->ok || $generateWarnings) {
-                        $nonce = $this->getClaimString('nonce', true, true, $generateWarnings);
-                    }
-                    if ($this->ok || $generateWarnings) {
-                        $iss = $this->getClaimString('iss', true, true, $generateWarnings);
-                    }
-                    if ($this->ok || $generateWarnings) {
-                        $azp = $this->getClaimString('azp', false, true, $generateWarnings);
-                    }
-                    if ($this->ok || $generateWarnings) {
-                        $aud = $this->jwt->getClaim('aud');
-                        if (is_string($aud)) {
-                            $aud = [$aud];
-                        }
-                        $aud = $this->checkClaimArray('aud', $aud, true, true, $generateWarnings);
-                        if (!empty($aud)) {
-                            if (!empty($azp)) {
-                                if (in_array($azp, $aud)) {
-                                    $aud = $azp;
-                                } else {
-                                    $this->setReason('\'azp\' claim value is not included in \'aud\' claim');
-                                }
+                    $aud = $this->checkClaimArray('aud', $aud, true, true, $generateWarnings);
+                    if (!empty($aud)) {
+                        if (!empty($azp)) {
+                            if (in_array($azp, $aud)) {
+                                $aud = $azp;
                             } else {
-                                $aud = $aud[0];
-                                if (empty($aud)) {
-                                    $this->setReason('First element of \'aud\' claim is empty');
-                                }
+                                $this->setReason('\'azp\' claim value is not included in \'aud\' claim');
                             }
-                        }
-                    }
-                    if ($this->ok || $generateWarnings) {
-                        $deploymentId = $this->getClaimString(Util::JWT_CLAIM_PREFIX . '/claim/deployment_id', true, true,
-                            $generateWarnings);
-                    }
-                    if ($this->ok) {
-                        if ($this instanceof Tool) {
-                            $this->platform = Platform::fromPlatformId($iss, $aud, $deploymentId, $this->dataConnector);
-                            $this->platform->platformId = $iss;
-                            if (isset($this->rawParameters['id_token'])) {
-                                $this->ok = !empty($this->rawParameters['state']);
-                                if ($this->ok) {
-                                    $state = $this->rawParameters['state'];
-                                    $parts = explode('.', $state);
-                                    $session->openSession();
-                                    if (!empty($session->getId()) && (count($parts) > 1) && ($session->getId() !== $parts[1]) &&
-                                        ($parts[1] !== 'platformStorage')) {  // Reset to original session
-                                        $session->closeSession();
-                                        $session->setId($parts[1]);
-                                        $this->onResetSessionId();
-                                    }
-                                    $usePlatformStorage = str_ends_with($state, '.platformStorage');
-                                    if ($usePlatformStorage) {
-                                        $state = substr($state, 0, -16);
-                                    }
-                                    $this->onAuthenticate($state, $nonce, $usePlatformStorage);
-                                    if (!$this->ok && !$disableCookieCheck) {
-                                        if (($cookie->numCookies() <= 0) && !isset($_POST['_new_window'])) {  // Reopen in a new window
-                                            Util::setTestCookie();
-                                            $_POST['_new_window'] = '';
-                                            $this->output = Util::sendForm($_SERVER['REQUEST_URI'], $_POST, '_blank', '', true);
-                                            $this->doExit();
-                                        }
-                                        Util::setTestCookie(true);
-                                    }
-                                } else {
-                                    $this->setReason('\'state\' parameter is missing');
-                                }
-                                if ($this->ok) {
-                                    $nonce = new PlatformNonce($this->platform, $state);
-                                    $this->ok = $nonce->load();
-                                    if (!$this->ok) {
-                                        $platform = Platform::fromPlatformId($iss, $aud, null, $this->dataConnector);
-                                        $nonce = new PlatformNonce($platform, $state);
-                                        $this->ok = $nonce->load();
-                                    }
-                                    if (!$this->ok) {
-                                        $platform = Platform::fromPlatformId($iss, null, null, $this->dataConnector);
-                                        $nonce = new PlatformNonce($platform, $state);
-                                        $this->ok = $nonce->load();
-                                    }
-                                    if ($this->ok) {
-                                        $this->ok = $nonce->delete();
-                                    }
-                                    if (!$this->ok) {
-                                        $this->setReason('\'state\' parameter is invalid or has expired');
-                                    }
-                                }
+                        } else {
+                            $aud = $aud[0];
+                            if (empty($aud)) {
+                                $this->setReason('First element of \'aud\' claim is empty');
                             }
-                        }
-                        $this->messageParameters = [];
-                        if ($this->ok) {
-                            $this->messageParameters['oauth_consumer_key'] = $aud;
-                            $this->messageParameters['oauth_signature_method'] = $this->jwt->getHeader('alg');
-                            $this->parseClaims($generateWarnings);
-                            if ($this instanceof Tool) {
-                                $url = $this->jwt->getClaim(Util::JWT_CLAIM_PREFIX . '/claim/target_link_uri');
-                                if (!empty($url)) {
-                                    $queryString = parse_url($url, PHP_URL_QUERY);
-                                    if ($queryString) {
-                                        $this->messageParameters = array_merge($this->getCustomQueryParameters($queryString),
-                                            $this->messageParameters);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    if ($this->ok || $generateWarnings) {
-                        if (isset($iss) && isset($this->rawParameters['iss']) && ($this->rawParameters['iss'] !== $iss)) {
-                            $this->setReason('\'iss\' parameter does not match \'iss\' claim');
                         }
                     }
                 }
-            } catch (\Exception $e) {
-                $this->setReason('Message does not contain a valid JWT');
+                if ($this->ok || $generateWarnings) {
+                    $deploymentId = $this->getClaimString(Util::JWT_CLAIM_PREFIX . '/claim/deployment_id', true, true,
+                        $generateWarnings);
+                }
+                if ($this->ok) {
+                    if ($this instanceof Tool) {
+                        $this->platform = Platform::fromPlatformId($iss, $aud, $deploymentId, $this->dataConnector);
+                        $this->platform->platformId = $iss;
+                        if (isset($this->rawParameters['id_token'])) {
+                            $this->ok = !empty($this->rawParameters['state']);
+                            if ($this->ok) {
+                                $state = $this->rawParameters['state'];
+                                $parts = explode('.', $state);
+                                $session->openSession();
+                                if (!empty($session->getId()) && (count($parts) > 1) && ($session->getId() !== $parts[1]) &&
+                                    ($parts[1] !== 'platformStorage')) {  // Reset to original session
+                                    $session->closeSession();
+                                    $session->setId($parts[1]);
+                                    $this->onResetSessionId();
+                                }
+                                $usePlatformStorage = str_ends_with($state, '.platformStorage');
+                                if ($usePlatformStorage) {
+                                    $state = substr($state, 0, -16);
+                                }
+                                $this->onAuthenticate($state, $nonce, $usePlatformStorage);
+                                if (!$this->ok && !$disableCookieCheck) {
+                                    if (($cookie->numCookies() <= 0) && !isset($_POST['_new_window'])) {  // Reopen in a new window
+                                        Util::setTestCookie();
+                                        $_POST['_new_window'] = '';
+                                        $this->output = Util::sendForm($_SERVER['REQUEST_URI'], $_POST, '_blank', '', true);
+                                        $this->doExit();
+                                    }
+                                }
+                                if ($cookie->hasCookie(Util::TEST_COOKIE_NAME)) {
+                                    Util::setTestCookie(true);
+                                }
+                            } else {
+                                $this->setReason('\'state\' parameter is missing');
+                            }
+                            if ($this->ok) {
+                                $nonce = new PlatformNonce($this->platform, $state);
+                                $this->ok = $nonce->load();
+                                if (!$this->ok) {
+                                    $platform = Platform::fromPlatformId($iss, $aud, null, $this->dataConnector);
+                                    $nonce = new PlatformNonce($platform, $state);
+                                    $this->ok = $nonce->load();
+                                }
+                                if (!$this->ok) {
+                                    $platform = Platform::fromPlatformId($iss, null, null, $this->dataConnector);
+                                    $nonce = new PlatformNonce($platform, $state);
+                                    $this->ok = $nonce->load();
+                                }
+                                if ($this->ok) {
+                                    $this->ok = $nonce->delete();
+                                }
+                                if (!$this->ok) {
+                                    $this->setReason('\'state\' parameter is invalid or has expired');
+                                }
+                            }
+                        }
+                    }
+                    $this->messageParameters = [];
+                    if ($this->ok) {
+                        $this->messageParameters['oauth_consumer_key'] = $aud;
+                        $this->messageParameters['oauth_signature_method'] = $this->jwt->getHeader('alg');
+                        $this->parseClaims($generateWarnings);
+                        if ($this instanceof Tool) {
+                            $url = $this->jwt->getClaim(Util::JWT_CLAIM_PREFIX . '/claim/target_link_uri');
+                            if (!empty($url)) {
+                                $queryString = parse_url($url, PHP_URL_QUERY);
+                                if ($queryString) {
+                                    $this->messageParameters = array_merge($this->getCustomQueryParameters($queryString),
+                                        $this->messageParameters);
+                                }
+                            }
+                        }
+                    }
+                }
+                if ($this->ok || $generateWarnings) {
+                    if (isset($iss) && isset($this->rawParameters['iss']) && ($this->rawParameters['iss'] !== $iss)) {
+                        $this->setReason('\'iss\' parameter does not match \'iss\' claim');
+                    }
+                }
             }
         } elseif (isset($this->rawParameters['error'])) {  // Error with JWT-signed message
             $reason = $this->rawParameters['error'];

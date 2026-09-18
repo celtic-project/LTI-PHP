@@ -1028,12 +1028,8 @@ EOD;
             $this->messageParameters['state'] = $parameters['state'];
         }
         if ($this->ok && !empty(static::$browserStorageFrame)) {
-            if (!str_contains($parameters['redirect_uri'], '?')) {
-                $sep = '?';
-            } else {
-                $sep = '&';
-            }
-            $parameters['redirect_uri'] .= "{$sep}lti_storage_target=" . static::$browserStorageFrame;
+            $parameters['redirect_uri'] = Util::addQueryParameters($parameters['redirect_uri'],
+                ['lti_storage_target' => static::$browserStorageFrame]);
         }
         if (isset($parameters['redirect_uri'])) {
             $this->output = Util::sendForm($parameters['redirect_uri'], $this->messageParameters);

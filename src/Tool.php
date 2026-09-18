@@ -150,6 +150,34 @@ class Tool
     public static bool $allowCustomQueryParameters = false;
 
     /**
+     * Default tool for use with service requests
+     *
+     * @var Tool|null $defaultTool
+     */
+    public static ?Tool $defaultTool = null;
+
+    /**
+     * Use GET method for authentication request messages when true
+     *
+     * @var bool $authenticateUsingGet
+     */
+    public static bool $authenticateUsingGet = false;
+
+    /**
+     * Life in seconds for the state value issued during the OIDC login process
+     *
+     * @var int $stateLife
+     */
+    public static int $stateLife = 10;
+
+    /**
+     * Period in milliseconds to wait for a response to a postMessage
+     *
+     * @var int $postMessageTimeoutDelay
+     */
+    public static int $postMessageTimeoutDelay = 500;
+
+    /**
      * Platform object.
      *
      * @var Platform|null $platform
@@ -267,34 +295,6 @@ class Tool
      * @var array|null $redirectionUris
      */
     public ?array $redirectionUris = null;
-
-    /**
-     * Default tool for use with service requests
-     *
-     * @var Tool|null $defaultTool
-     */
-    public static ?Tool $defaultTool = null;
-
-    /**
-     * Use GET method for authentication request messages when true
-     *
-     * @var bool $authenticateUsingGet
-     */
-    public static bool $authenticateUsingGet = false;
-
-    /**
-     * Life in seconds for the state value issued during the OIDC login process
-     *
-     * @var int $stateLife
-     */
-    public static int $stateLife = 10;
-
-    /**
-     * Period in milliseconds to wait for a response to a postMessage
-     *
-     * @var int $postMessageTimeoutDelay
-     */
-    public static int $postMessageTimeoutDelay = 20;
 
     /**
      * Media types accepted by the platform.
@@ -498,7 +498,7 @@ class Tool
         } else {  // LTI message
             Util::logRequest();
             $this->getMessageParameters($strictMode, $disableCookieCheck, $generateWarnings);
-            if (($this->ok || $generateWarnings) && !is_null($this->messageParameters)) {
+            if (($this->ok && !is_null($this->messageParameters)) || ($generateWarnings && !empty($this->messageParameters))) {
                 $this->authenticate($disableCookieCheck, $generateWarnings);
             }
             if ($this->ok && empty($this->output)) {
@@ -752,13 +752,13 @@ class Tool
     {
         $session = Session::getSessionClient();
         $existingSession = !$session->openSession();
-        $session->setItem('ceLTIc_lti_authentication_request',
-            [
-                'state' => $authParameters['state'],
-                'nonce' => $authParameters['nonce'],
-                'user-agent' => $_SERVER['HTTP_USER_AGENT']
-            ]
-        );
+        $auth = $session->getItem('ceLTIc_lti_authentication_requests', []);
+        $auth[$authParameters['state']] = [
+            'nonce' => $authParameters['nonce'],
+            'user-agent' => $_SERVER['HTTP_USER_AGENT'] ?? '',
+            'expires' => time() + Tool::$stateLife
+        ];
+        $session->setItem('ceLTIc_lti_authentication_requests', $auth);
         if (!$existingSession) {
             $session->closeSession();
         }
@@ -775,16 +775,45 @@ class Tool
      */
     protected function onAuthenticate(string $state, string $nonce, bool $usePlatformStorage): void
     {
+        $target = $this->getStorageTarget();
+        $usePlatformStorage = $usePlatformStorage && !empty($target);
         $session = Session::getSessionClient();
         $existingSession = !$session->openSession();
         $parts = explode('.', $state);
-        if (!isset($this->rawParameters['_storage_check']) && $usePlatformStorage) {  // Check browser storage
-            $this->rawParameters['_storage_check'] = '';
-            $javascript = $this->getStorageJS('lti.get_data', $state, '');
-            $this->output = Util::sendForm($_SERVER['REQUEST_URI'], $this->rawParameters, '', $javascript);
-            $this->doExit();
-        } elseif (isset($this->rawParameters['_storage_check'])) {
-            if (!empty(($this->rawParameters['_storage_check']))) {
+        if ($session->hasItem('ceLTIc_lti_authentication_requests')) {
+            $expired = false;
+            $auth = $session->getItem('ceLTIc_lti_authentication_requests');
+            foreach ($auth as $key => $value) {  // Delete expired state/nonce pairs
+                if (empty($value['expires']) || ($value['expires'] < time())) {
+                    $expired = true;
+                    unset($auth[$key]);
+                }
+            }
+            if (str_ends_with($state, '.platformStorage')) {
+                $state = substr($state, 0, -16);
+            }
+            if (!isset($auth[$state]) || ($nonce !== $auth[$state]['nonce'])) {
+                $this->setReason('Invalid \'state\' parameter value and/or \'nonce\' claim value');
+            } elseif ($auth[$state]['user-agent'] !== ($_SERVER['HTTP_USER_AGENT'] ?? '')) {
+                $this->setReason('Browser session mismatch');
+            }
+            if (isset($auth[$state])) {
+                $expired = true;
+                unset($auth[$state]);
+            }
+            if ($expired) {
+                if (empty($auth)) {
+                    $auth = null;
+                }
+                $session->setItem('ceLTIc_lti_authentication_requests', $auth);
+            }
+        } elseif ($usePlatformStorage) {
+            if (!isset($this->rawParameters['_storage_check'])) {  // Check browser storage
+                $this->rawParameters['_storage_check'] = '';
+                $javascript = $this->getStorageJS($target, 'lti.get_data', $state, '');
+                $this->output = Util::sendForm($_SERVER['REQUEST_URI'], $this->rawParameters, '', $javascript);
+                $this->doExit();
+            } elseif (!empty(($this->rawParameters['_storage_check']))) {
                 $state = $parts[0];
                 $parts = explode('.', $this->rawParameters['_storage_check']);
                 if ((count($parts) !== 2) || ($parts[0] !== $state) || ($parts[1] !== $nonce)) {
@@ -793,19 +822,10 @@ class Tool
             } else {
                 $this->setReason('Error accessing platform storage');
             }
-        } elseif ($session->hasItem('ceLTIc_lti_authentication_request')) {
-            $auth = $session->getItem('ceLTIc_lti_authentication_request');
-            if (str_ends_with($state, '.platformStorage')) {
-                $state = substr($state, 0, -16);
-            }
-            if (($state !== $auth['state']) || ($nonce !== $auth['nonce'])) {
-                $this->setReason('Invalid \'state\' parameter value and/or \'nonce\' claim value');
-            } elseif ($auth['user-agent'] !== $_SERVER['HTTP_USER_AGENT']) {
-                $this->setReason('Browser session mismatch');
-            } else {
-                $session->setItem('ceLTIc_lti_authentication_request', null);
-            }
         } else {
+            $this->ok = false;
+        }
+        if (!$this->ok) {
             $this->setReason('Unable to verify \'state\' and \'nonce\' values');
         }
         if (!$existingSession) {
@@ -2178,7 +2198,8 @@ EOD;
             $session->openSession();
             $cookie = Cookie::getCookieClient();
             $oauthRequest = OAuth\OAuthRequest::from_request();
-            $usePlatformStorage = !empty($oauthRequest->get_parameter('lti_storage_target'));
+            $target = $this->getStorageTarget();
+            $usePlatformStorage = !empty($target);
             $session_id = '';
             if ($usePlatformStorage) {
                 $usePlatformStorage = !$cookie->hasCookie($session->getName()) || ($cookie->getValue($session->getName()) !== $session->getId());
@@ -2189,8 +2210,10 @@ EOD;
                         Util::setTestCookie();
                     }
                 } elseif (!$cookie->hasCookie($session->getName()) || ($cookie->getValue($session->getName()) !== $session->getId())) {
-                    $session_id = '.' . $session->getId();
-                    if (!$cookie->hasCookie($session->getName())) {
+                    if (!$usePlatformStorage) {
+                        $session_id = '.' . $session->getId();
+                    }
+                    if ($cookie->numCookies() <= 0) {
                         Util::setTestCookie();
                     }
                 }
@@ -2248,7 +2271,7 @@ EOD;
                 $this->onInitiateLogin($parameters, $params);
                 $javascript = '';
                 if ($usePlatformStorage) {
-                    $javascript = $this->getStorageJS('lti.put_data', $nonce->getValue(), $requestNonce);
+                    $javascript = $this->getStorageJS($target, 'lti.put_data', $nonce->getValue(), $requestNonce);
                 }
                 if (!Tool::$authenticateUsingGet) {
                     $this->output = Util::sendForm($this->platform->authenticationUrl, $params, '', $javascript);
@@ -2368,15 +2391,34 @@ EOD;
     }
 
     /**
+     * Get the storage target parameter, if any, from the current request, and ensure it is properly formatted.
+     *
+     * @return string|null
+     */
+    private function getStorageTarget(): ?string
+    {
+        $target = null;
+        if (!empty(Util::getRequestParameters()['lti_storage_target'])) {
+            $param = Util::getRequestParameters()['lti_storage_target'];
+            if (preg_match('/^[A-Za-z_][A-Za-z0-9_-]*$/', $param) === 1) {
+                $target = $param;
+            }
+        }
+
+        return $target;
+    }
+
+    /**
      * Get the JavaScript for handling storage postMessages from a tool.
      *
-     * @param string $message  Type of postMessage
-     * @param string $state    Value of state
-     * @param string $nonce    Value of nonce
+     * @param string $storageFrame  Name of frame where platform storage is located
+     * @param string $message       Type of postMessage
+     * @param string $state         Value of state
+     * @param string $nonce         Value of nonce
      *
      * @return string  The JavaScript to handle storage postMessages
      */
-    private function getStorageJS(string $message, string $state, string $nonce): string
+    private function getStorageJS(string $storageFrame, string $message, string $state, string $nonce): string
     {
         $javascript = '';
         $timeoutDelay = static::$postMessageTimeoutDelay;
@@ -2388,8 +2430,7 @@ EOD;
             $messageId = Util::getRandomString();
             $javascript = <<< EOD
 let origin = new URL('{$this->platform->authenticationUrl}').origin;
-let params = new URLSearchParams(window.location.search);
-let target = params.get('lti_storage_target');
+let target = '{$storageFrame}';
 let state = '{$state}';
 let nonce = '{$nonce}';
 let capabilitiesid = '{$capabilitiesId}';
@@ -2419,33 +2460,26 @@ window.addEventListener('message', function (event) {
     switch (event.data.subject) {
       case 'lti.capabilities.response':
       case 'org.imsglobal.lti.capabilities.response':
-        clearTimeout(timeout);
         if (event.data.message_id !== capabilitiesid) {
-          ok = false;
           console.log('Invalid message ID');
         } else {
           event.data.supported_messages.forEach(function(capability) {
             supported.set(capability.subject, (capability.frame) ? capability.frame : target);
           });
-          ok = false;
           if (supported.has('{$message}')) {
-            ok = sendMessage('{$message}');
+            sendMessage('{$message}');
           } else if (supported.has('org.imsglobal.{$message}')) {
-            ok = sendMessage('org.imsglobal.{$message}');
+            sendMessage('org.imsglobal.{$message}');
           }
         }
         break;
       case '{$message}.response':
       case 'org.imsglobal.{$message}.response':
-        clearTimeout(timeout);
         if ((event.data.message_id !== messageid) || (event.origin !== origin)) {
-          ok = false;
           console.log('Invalid message ID or origin');
         } else if (event.data.key !== state) {
-          ok = false;
           console.log('Key not expected: ' + event.data.key);
         } else if (('{$message}' === 'lti.put_data') && (event.data.value !== nonce)) {
-          ok = false;
           console.log('Invalid value for key ' + event.data.key + ': ' + event.data.value + ' (expected ' + nonce + ')');
         } else {
           if (document.getElementById('id__storage_check')) {
@@ -2460,11 +2494,6 @@ window.addEventListener('message', function (event) {
         console.log('Subject \'' + event.data.subject + '\' not recognised');
         break;
     }
-  } else {
-    clearTimeout(timeout);
-  }
-  if (!ok) {
-    submitForm();
   }
 });
 
@@ -2502,7 +2531,6 @@ EOD;
                 case 'lti.put_data':
                     $javascript .= <<< EOD
 function sendMessage(subject) {
-  let ok = false;
   let usetarget = target;
   if (supported.has(subject)) {
     usetarget = supported.get(subject);
@@ -2516,25 +2544,10 @@ function sendMessage(subject) {
         'key': state,
         'value': nonce
       }, origin);
-      ok = true;
     } catch(err) {
       console.log(err.name + ': ' + err.message);
     }
   }
-  return ok;
-}
-
-function doOnLoad() {
-  timeout = setTimeout(function() {  // Allow time to check platform capabilities
-    timeout = setTimeout(function() {  // Allow time to check platform capabilities
-      timeout = setTimeout(function() {  // Allow time to send postMessage
-        submitForm();
-      }, {$timeoutDelay});
-      sendMessage('lti.put_data');
-    }, {$timeoutDelay});
-    checkCapabilities('org.imsglobal.lti.capabilities', true);
-  }, {$timeoutDelay});
-  checkCapabilities('lti.capabilities', false);
 }
 
 EOD;
@@ -2542,7 +2555,6 @@ EOD;
                 case 'lti.get_data':
                     $javascript .= <<< EOD
 function sendMessage(subject) {
-  let ok = false;
   let usetarget = target;
   if (supported.has(subject)) {
     usetarget = supported.get(subject);
@@ -2555,25 +2567,10 @@ function sendMessage(subject) {
         'message_id': messageid,
         'key': state
       }, origin);
-      ok = true;
     } catch(err) {
       console.log(err.name + ': ' + err.message);
     }
   }
-  return ok;
-}
-
-function doOnLoad() {
-  timeout = setTimeout(function() {  // Allow time to check platform capabilities
-    timeout = setTimeout(function() {  // Allow time to check platform capabilities
-      timeout = setTimeout(function() {  // Allow time to send postMessage
-        submitForm();
-      }, {$timeoutDelay});
-      sendMessage('lti.get_data');
-    }, {$timeoutDelay});
-    checkCapabilities('org.imsglobal.lti.capabilities', true);
-  }, {$timeoutDelay});
-  checkCapabilities('lti.capabilities', false);
 }
 
 EOD;
@@ -2586,11 +2583,12 @@ function checkCapabilities(subject, checkparent) {
   let wdw = getTarget(target);
   if (wdw) {
     try {
-      wdw.postMessage({
-        'subject': subject,
-        'message_id': capabilitiesid
-      }, '*');
-      if (checkparent && (wdw !== window.parent)) {
+      if (!checkparent || (wdw === window.parent)) {
+        wdw.postMessage({
+          'subject': subject,
+          'message_id': capabilitiesid
+        }, '*');
+      } else {
         window.parent.postMessage({
           'subject': subject,
           'message_id': capabilitiesid
@@ -2615,6 +2613,7 @@ function doOnSubmit() {
 }
 
 function submitForm() {
+  clearTimeout(timeout);
   var formtarget = document.forms[0].target;
   if (formtarget === '_blank') {
     formtarget = "ltitool-" + Math.random();
@@ -2626,6 +2625,19 @@ function submitForm() {
   } else {
     doUnblock();
   }
+}
+
+function doOnLoad() {
+  timeout = setTimeout(function() {  // Allow time to check for platform capabilities
+    timeout = setTimeout(function() {  // Allow time to check for deprecated platform capabilities
+      timeout = setTimeout(function() {  // Allow time to send postMessage
+        submitForm();
+      }, {$timeoutDelay});
+      sendMessage('{$message}');
+    }, {$timeoutDelay});
+    checkCapabilities('org.imsglobal.lti.capabilities', true);
+  }, {$timeoutDelay});
+  checkCapabilities('lti.capabilities', false);
 }
 
 window.onload=doOnLoad;
