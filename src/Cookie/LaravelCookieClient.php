@@ -72,10 +72,13 @@ class LaravelCookieClient implements ClientInterface
     public function createCookie(string $name, string $value, int $expires, string $path, string $domain, bool $secure,
         bool $httpOnly, string $sameSite): bool
     {
-        if ($expires >= 0) {
-            $cookie = new ACookie($name, $value, $expires, $path, $domain, $secure, $httpOnly, false, $sameSite, $secure);
-        } else {
+        if ($expires < 0) {
             $cookie = Cookie::forget($name);
+        } else {
+            if ($expires > 0) {
+                $expires = \time() + ($expires * 60);
+            }
+            $cookie = new ACookie($name, $value, $expires, $path, $domain, $secure, $httpOnly, false, $sameSite, $secure);
         }
         if ($cookie) {
             $ok = true;
