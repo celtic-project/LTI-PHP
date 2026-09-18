@@ -89,9 +89,9 @@ class LineItem extends AssignmentGrade
      * @param string|null $tag                Tag (optional)
      * @param int|null $limit                 Limit of line-items to be returned in each request, null for service default (optional)
      *
-     * @return LTI\\LineItem[]|bool  Array of LineItem objects or false on error
+     * @return LTI\\LineItem[]|false  Array of LineItem objects or false on error
      */
-    public function getAll(?string $ltiResourceLinkId = null, ?string $resourceId = null, ?string $tag = null, ?int $limit = null): array|bool
+    public function getAll(?string $ltiResourceLinkId = null, ?string $resourceId = null, ?string $tag = null, ?int $limit = null): array|false
     {
         $params = [];
         if (!empty($ltiResourceLinkId)) {
@@ -214,9 +214,9 @@ class LineItem extends AssignmentGrade
     /**
      * Retrieve a line-item.
      *
-     * @return LTI\\LineItem|bool  LineItem object, or false on error
+     * @return LTI\\LineItem|false  LineItem object, or false on error
      */
-    public function get(): LTI\LineItem|bool
+    public function get(): LTI\LineItem|false
     {
         $lineItem = false;
 

@@ -187,9 +187,9 @@ class ContentItem
      * @param Platform $platform  Platform object
      * @param string $endpoint    ID value
      *
-     * @return ContentItem|bool  ContentItem object or false on error
+     * @return ContentItem|false  ContentItem object or false on error
      */
-    public static function fromEndpoint(Platform $platform, string $endpoint): ContentItem|bool
+    public static function fromEndpoint(Platform $platform, string $endpoint): ContentItem|false
     {
         $linkContentService = new Service\LinkContent($platform, $endpoint);
 

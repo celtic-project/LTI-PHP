@@ -61,9 +61,9 @@ trait MoodleApi
      *
      * @param bool $withGroups  True is group information is to be requested as well
      *
-     * @return array|bool  Array of UserResult objects or false if the request was not successful
+     * @return array|false  Array of UserResult objects or false if the request was not successful
      */
-    private function get(bool $withGroups): array|bool
+    private function get(bool $withGroups): array|false
     {
         $platform = $this->sourceObject->getPlatform();
         $this->url = $platform->getSetting('moodle.url');
@@ -159,9 +159,9 @@ trait MoodleApi
      * @param string $perPage   Maximum number of records per request
      * @param bool $withGroups  True is group information is to be requested as well
      *
-     * @return array|bool  Array of UserResult objects or false if the request was not successful
+     * @return array|false  Array of UserResult objects or false if the request was not successful
      */
-    private function getUsers(string $perPage, bool $withGroups): array|bool
+    private function getUsers(string $perPage, bool $withGroups): array|false
     {
         $users = [];
         $params = [

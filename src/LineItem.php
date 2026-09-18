@@ -143,9 +143,9 @@ class LineItem
      *
      * @param int|null $limit  Limit of outcomes to be returned in each request, null for service default
      *
-     * @return Outcome[]|bool  Array of outcome objects, or false on error
+     * @return Outcome[]|false  Array of outcome objects, or false on error
      */
-    public function getOutcomes(?int $limit = null): array|bool
+    public function getOutcomes(?int $limit = null): array|false
     {
         $resultService = new Service\Result($this->platform, $this->endpoint);
         return $resultService->getAll($limit);
@@ -156,9 +156,9 @@ class LineItem
      *
      * @param User $user  User object
      *
-     * @return Outcome|null|bool  Outcome object, or null if none, or false on error
+     * @return Outcome|null|false  Outcome object, or null if none, or false on error
      */
-    public function readOutcome(User $user): Outcome|null|bool
+    public function readOutcome(User $user): Outcome|null|false
     {
         $resultService = new Service\Result($this->platform, $this->endpoint);
         return $resultService->get($user);
@@ -198,9 +198,9 @@ class LineItem
      * @param Platform $platform  Platform object
      * @param string $endpoint    ID value
      *
-     * @return LineItem|bool  LineItem object or false on error
+     * @return LineItem|false  LineItem object or false on error
      */
-    public static function fromEndpoint(Platform $platform, string $endpoint): LineItem|bool
+    public static function fromEndpoint(Platform $platform, string $endpoint): LineItem|false
     {
         $lineItemService = new Service\LineItem($platform, $endpoint);
 

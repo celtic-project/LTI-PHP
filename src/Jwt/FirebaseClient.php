@@ -236,8 +236,8 @@ class FirebaseClient implements ClientInterface
      *
      * If a new public key is fetched and used to successfully verify the signature, the value of the publicKey parameter is updated.
      *
-     * @param string|null $publicKey  Public key of issuer (passed by reference)
-     * @param string|null $jku        JSON Web Key URL of issuer (optional)
+     * @param string|null &$publicKey  Public key of issuer (passed by reference)
+     * @param string|null $jku         JSON Web Key URL of issuer (optional)
      *
      * @return bool  True if the JWT has a valid signature
      */

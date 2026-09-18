@@ -70,7 +70,7 @@ class OAuthServer
      *
      * Returns the request token on success
      *
-     * @param OAuthRequest $request  Request
+     * @param OAuthRequest &$request  Request
      *
      * @return OAuthToken|null
      */
@@ -97,7 +97,7 @@ class OAuthServer
      *
      * Returns the access token on success
      *
-     * @param OAuthRequest $request  Request
+     * @param OAuthRequest &$request  Request
      *
      * @return OAuthToken|null
      */
@@ -122,7 +122,7 @@ class OAuthServer
     /**
      * Verify an API call, checks all the parameters.
      *
-     * @param OAuthRequest $request  Request
+     * @param OAuthRequest &$request  Request
      *
      * @return array
      */
@@ -143,7 +143,7 @@ class OAuthServer
      *
      * version 1
      *
-     * @param OAuthRequest $request  Request
+     * @param OAuthRequest &$request  Request
      *
      * @return string
      * @throws OAuthException

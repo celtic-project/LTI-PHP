@@ -77,9 +77,9 @@ class Result extends AssignmentGrade
      *
      * @param int|null $limit  Limit of results to be returned in each request, null for service default
      *
-     * @return Outcome[]|bool  Array of Outcome objects or false on error
+     * @return Outcome[]|false  Array of Outcome objects or false on error
      */
-    public function getAll(?int $limit = null): array|bool
+    public function getAll(?int $limit = null): array|false
     {
         $params = [];
         if (is_null($limit)) {
@@ -133,9 +133,9 @@ class Result extends AssignmentGrade
      *
      * @param User $user  User object
      *
-     * @return Outcome|null|bool  Outcome object, or null if none, or false on error
+     * @return Outcome|null|false  Outcome object, or null if none, or false on error
      */
-    public function get(User $user): Outcome|null|bool
+    public function get(User $user): Outcome|null|false
     {
         $params = [
             'user_id' => $user->ltiUserId

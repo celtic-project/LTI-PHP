@@ -130,7 +130,7 @@ class Context
     private bool $settingsChanged = false;
 
     /**
-     * Data connector object or string.
+     * Data connector object.
      *
      * @var DataConnector|null $dataConnector
      */
@@ -576,9 +576,9 @@ class Context
      * @param string|null $tag         Tag
      * @param int|null $limit          Limit of line-items to be returned in each request, null for service default
      *
-     * @return LineItem[]|bool  Array of LineItem objects or false on error
+     * @return LineItem[]|false  Array of LineItem objects or false on error
      */
-    public function getLineItems(?string $resourceId = null, ?string $tag = null, ?int $limit = null): array|bool
+    public function getLineItems(?string $resourceId = null, ?string $tag = null, ?int $limit = null): array|false
     {
         $lineItems = false;
         $this->lastServiceRequest = null;
@@ -625,9 +625,9 @@ class Context
      *
      * @param int|null $limit  Limit of content-items to be returned in each request, null for service default
      *
-     * @return ContentItem[]|bool  Array of ContentItem objects or false on error
+     * @return ContentItem[]|false  Array of ContentItem objects or false on error
      */
-    public function getContentItems(?int $limit = null): array|bool
+    public function getContentItems(?int $limit = null): array|false
     {
         $contentItems = false;
         $this->lastServiceRequest = null;
@@ -643,7 +643,7 @@ class Context
     /**
      * Create a new content-item.
      *
-     * @param ContentItem $contentItem  Content-item object
+     * @param ContentItem &$contentItem  Content-item object
      *
      * @return bool  True if successful
      */
@@ -717,9 +717,9 @@ class Context
     /**
      * Get the Line-item service object.
      *
-     * @return Service\LineItem|bool  Line-item service, or false if not available
+     * @return Service\LineItem|false  Line-item service, or false if not available
      */
-    private function getLineItemService(): Service\LineItem|bool
+    private function getLineItemService(): Service\LineItem|false
     {
         $url = $this->getSetting('custom_lineitems_url');
         if (!empty($url)) {
@@ -734,9 +734,9 @@ class Context
     /**
      * Get the Link and Content service object.
      *
-     * @return Service\LinkContent|bool  Link and Content service, or false if not available
+     * @return Service\LinkContent|false  Link and Content service, or false if not available
      */
-    private function getLinkContentService(): Service\LinkContent|bool
+    private function getLinkContentService(): Service\LinkContent|false
     {
         $url = $this->getSetting('custom_linkcontentitems_url');
         if (!empty($url)) {

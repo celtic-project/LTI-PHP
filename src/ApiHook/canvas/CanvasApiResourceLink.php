@@ -34,9 +34,9 @@ class CanvasApiResourceLink extends ApiResourceLink
      *
      * @param bool $withGroups  True is group information is to be requested as well
      *
-     * @return array|bool  Array of UserResult objects or false if the request was not successful
+     * @return array|false  Array of UserResult objects or false if the request was not successful
      */
-    public function getMemberships(bool $withGroups): array|bool
+    public function getMemberships(bool $withGroups): array|false
     {
         $users = $this->get($withGroups);
 

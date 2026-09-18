@@ -401,7 +401,7 @@ class ResourceLink
     /**
      * Get the data connector.
      *
-     * @return DataConnector|null  Data connector object or string
+     * @return DataConnector|null  Data connector object
      */
     public function getDataConnector(): ?DataConnector
     {
@@ -1153,9 +1153,9 @@ EOD;
      * @param string|null $tag         Tag
      * @param int|null $limit          Limit of line-items to be returned in each request, null for service default
      *
-     * @return LineItem[]|bool  Array of LineItem objects or false on error
+     * @return LineItem[]|false  Array of LineItem objects or false on error
      */
-    public function getLineItems(?string $resourceId = null, ?string $tag = null, ?int $limit = null): array|bool
+    public function getLineItems(?string $resourceId = null, ?string $tag = null, ?int $limit = null): array|false
     {
         $lineItems = false;
         $this->extRequest = '';
@@ -1199,9 +1199,9 @@ EOD;
     /**
      * Get content-item.
      *
-     * @return ContentItem|bool  ContentItem object or false on error
+     * @return ContentItem|false  ContentItem object or false on error
      */
-    public function getContentItem(): ContentItem|bool
+    public function getContentItem(): ContentItem|false
     {
         $contentItem = false;
         $this->lastServiceRequest = null;
@@ -1237,9 +1237,9 @@ EOD;
      *
      * @param int|null $limit  Limit of outcomes to be returned in each request, null for service default
      *
-     * @return Outcome[]|bool  Array of Outcome objects or false on error
+     * @return Outcome[]|false  Array of Outcome objects or false on error
      */
-    public function getOutcomes(?int $limit = null): array|bool
+    public function getOutcomes(?int $limit = null): array|false
     {
         $outcomes = false;
         $this->extRequest = '';
@@ -1269,9 +1269,9 @@ EOD;
      * @param User $user                                        User object
      * @param int $attemptNumber                                Number of attempt
      *
-     * @return string|bool  The response status or false if the request was not successfully processed
+     * @return string|false  The response status or false if the request was not successfully processed
      */
-    public function doAssessmentControlAction(AssessmentControlAction $assessmentControlAction, User $user, int $attemptNumber): string|bool
+    public function doAssessmentControlAction(AssessmentControlAction $assessmentControlAction, User $user, int $attemptNumber): string|false
     {
         $status = false;
         $this->extRequest = '';
@@ -1718,9 +1718,9 @@ EOD;
     /**
      * Get the Line-item service object.
      *
-     * @return Service\LineItem|bool  Line-item service, or false if not available
+     * @return Service\LineItem|false  Line-item service, or false if not available
      */
-    private function getLineItemService(): Service\LineItem|bool
+    private function getLineItemService(): Service\LineItem|false
     {
         $url = $this->getSetting('custom_lineitems_url');
         if (!empty($url)) {
@@ -1735,9 +1735,9 @@ EOD;
     /**
      * Get the Link and Content service object.
      *
-     * @return Service\LinkContent|bool  Link and Content service, or false if not available
+     * @return Service\LinkContent|false  Link and Content service, or false if not available
      */
-    private function getLinkContentService(): Service\LinkContent|bool
+    private function getLinkContentService(): Service\LinkContent|false
     {
         $url = $this->getSetting('custom_linkcontentitem_url');
         if (!empty($url)) {

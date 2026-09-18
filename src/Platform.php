@@ -305,7 +305,7 @@ class Platform
     /**
      * Get the data connector.
      *
-     * @return DataConnector|null  Data connector object or string
+     * @return DataConnector|null  Data connector object
      */
     public function getDataConnector(): ?DataConnector
     {
@@ -561,7 +561,7 @@ EOD;
     /**
      * Verify the authorisation of a service request.
      *
-     * @param array $allowedScopes  Array of scopes at least one of which is required to authorise the request (passed by reference)
+     * @param array &$allowedScopes  Array of scopes at least one of which is required to authorise the request (passed by reference)
      *
      * @return bool  True if the request is authorised
      */
@@ -620,11 +620,11 @@ EOD;
     /**
      * Load the platform from the database by its platform, client and deployment IDs.
      *
-     * @param string $platformId            The platform ID
-     * @param string|null $clientId         The client ID
-     * @param string|null $deploymentId     The deployment ID
-     * @param DataConnector $dataConnector  A data connector object
-     * @param bool $autoEnable              True if the platform is to be enabled automatically (optional, default is false)
+     * @param string $platformId                 The platform ID
+     * @param string|null $clientId              The client ID
+     * @param string|null $deploymentId          The deployment ID
+     * @param DataConnector|null $dataConnector  A data connector object
+     * @param bool $autoEnable                   True if the platform is to be enabled automatically (optional, default is false)
      *
      * @return Platform  The platform object
      */
@@ -821,10 +821,10 @@ EOD;
      *
      * Override this method to save the data elsewhere.
      *
-     * @param string $url                  The message URL
-     * @param string $loginHint            The ID of the user
-     * @param string|null $ltiMessageHint  The message hint being sent to the tool
-     * @param array $params                An associative array of message parameters
+     * @param string &$url                  The message URL
+     * @param string &$loginHint            The ID of the user
+     * @param string|null &$ltiMessageHint  The message hint being sent to the tool
+     * @param array $params                 An associative array of message parameters
      *
      * @return void
      */

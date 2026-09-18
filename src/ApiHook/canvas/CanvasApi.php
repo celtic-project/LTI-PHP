@@ -62,9 +62,9 @@ trait CanvasApi
      *
      * @param bool $withGroups  True is group information is to be requested as well
      *
-     * @return array|bool  Array of UserResult objects or false if the request was not successful
+     * @return array|false  Array of UserResult objects or false if the request was not successful
      */
-    private function get(bool $withGroups): array|bool
+    private function get(bool $withGroups): array|false
     {
         $platform = $this->sourceObject->getPlatform();
         $this->domain = $platform->getSetting('canvas.domain');
@@ -139,9 +139,9 @@ trait CanvasApi
      *
      * @param string $perPage  Maximum number of records per request
      *
-     * @return array|bool  Array of UserResult objects or false if the request was not successful
+     * @return array|false  Array of UserResult objects or false if the request was not successful
      */
-    private function getRoles(string $perPage): array|bool
+    private function getRoles(string $perPage): array|false
     {
         $roles = [];
 
@@ -178,9 +178,9 @@ trait CanvasApi
      * @param string $perPage   Maximum number of records per request
      * @param bool $withGroups  True is group information is to be requested as well
      *
-     * @return array|bool  Array of UserResult objects or false if the request was not successful
+     * @return array|false  Array of UserResult objects or false if the request was not successful
      */
-    private function getUsers(string $perPage, bool $withGroups): array|bool
+    private function getUsers(string $perPage, bool $withGroups): array|false
     {
         $users = [];
         $url = "https://{$this->domain}/api/v1/courses/{$this->courseId}/users?state[]=invited&state[]=active&state[]=completed";

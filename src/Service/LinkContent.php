@@ -97,9 +97,9 @@ class LinkContent extends Service
      * @param string|null $ltiResourceLinkId  LTI resource link ID (optional)
      * @param int|null $limit                 Limit of content items to be returned in each request, null for service default (optional)
      *
-     * @return ContentItem[]|bool  Array of ContentItem objects or false on error
+     * @return ContentItem[]|false  Array of ContentItem objects or false on error
      */
-    public function getAll(?string $ltiResourceLinkId = null, ?int $limit = null): array|bool
+    public function getAll(?string $ltiResourceLinkId = null, ?int $limit = null): array|false
     {
         $this->scope = self::$SCOPE_READ;
         $this->mediaType = self::MEDIA_TYPE_CONTENT_ITEMS;
@@ -153,7 +153,7 @@ class LinkContent extends Service
     /**
      * Create a new content item.
      *
-     * @param ContentItem $contentItem  Content item object
+     * @param ContentItem &$contentItem  Content item object
      *
      * @return bool  True if successful
      */
@@ -176,7 +176,7 @@ class LinkContent extends Service
     /**
      * Save a content item.
      *
-     * @param ContentItem $contentItem  Content item object
+     * @param ContentItem &$contentItem  Content item object
      *
      * @return bool  True if successful
      */
@@ -215,9 +215,9 @@ class LinkContent extends Service
     /**
      * Retrieve a content item.
      *
-     * @return ContentItem|bool  ContentItem object, or false on error
+     * @return ContentItem|false  ContentItem object, or false on error
      */
-    public function get(): ContentItem|bool
+    public function get(): ContentItem|false
     {
         $contentItem = false;
 

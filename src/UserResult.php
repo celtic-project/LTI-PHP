@@ -202,7 +202,7 @@ class UserResult extends User
     /**
      * Get the user ID (which may be a compound of the platform and resource link IDs).
      *
-     * @param int $idScope                   Scope to use for user ID (optional, default is null for consumer default setting)
+     * @param IdScope|null $idScope          Scope to use for user ID (optional, default is null for consumer default setting)
      * @param Context|Platform|null $source  Context or Platform for user (optional)
      *
      * @return string|null  UserResult ID value, or null on error
