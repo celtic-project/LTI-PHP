@@ -744,7 +744,7 @@ class Tool
      * Process a login initiation request
      *
      * @param array $requestParameters  Request parameters
-     * @param array $authParameters     Authentication request parameters
+     * @param array &$authParameters    Authentication request parameters
      *
      * @return void
      */
@@ -2325,7 +2325,7 @@ EOD;
     /**
      * Validate a parameter value from an array of permitted values.
      *
-     * @param string $value           Value to be checked
+     * @param string &$value          Value to be checked
      * @param array $values           Array of permitted values
      * @param string $reason          Reason to generate when the value is not permitted
      * @param bool $generateWarnings  True if warning messages should be generated
