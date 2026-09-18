@@ -965,7 +965,7 @@ trait System
      * If the message is being sent from a platform using LTI 1.3, then the parameters and URL will be saved and replaced with an
      * initiate login request.
      *
-     * @param string $url                  URL for message request
+     * @param string &$url                 URL for message request
      * @param string $type                 LTI message type
      * @param string $ltiVersionString     LTI version
      * @param array $params                Message parameters
