@@ -1330,7 +1330,7 @@ EOD;
             if ($row !== false) {
                 $row = array_change_key_case($row);
                 $shareKey->resourceLinkId = intval($row['resource_link_pk']);
-                $shareKey->autoApprove = ($row['auto_approve'] === 1);
+                $shareKey->autoApprove = (intval($row['auto_approve']) === 1);
                 $shareKey->expires = strtotime($row['expires']);
                 $ok = true;
             }

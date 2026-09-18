@@ -474,8 +474,8 @@ EOD;
                     $settings = [];
                 }
                 $platform->setSettings($settings);
-                $platform->protected = (intval($row->protected) === 1);
-                $platform->enabled = (intval($row->enabled) === 1);
+                $platform->protected = ($row->protected === 't');
+                $platform->enabled = ($row->enabled === 't');
                 $platform->enableFrom = null;
                 if (!is_null($row->enable_from)) {
                     $platform->enableFrom = strtotime($row->enable_from);
@@ -775,7 +775,7 @@ EOD;
                 } else {
                     $resourceLink->primaryResourceLinkId = null;
                 }
-                $resourceLink->shareApproved = (is_null($row->share_approved)) ? null : (intval($row->share_approved) === 1);
+                $resourceLink->shareApproved = (is_null($row->share_approved)) ? null : ($row->share_approved === 't');
                 $resourceLink->created = strtotime($row->created);
                 $resourceLink->updated = strtotime($row->updated);
                 $ok = true;
@@ -1022,7 +1022,7 @@ EOD;
                 $share->consumerName = $row->consumer_name;
                 $share->resourceLinkId = intval($row->resource_link_pk);
                 $share->title = $row->title;
-                $share->approved = (intval($row->share_approved) === 1);
+                $share->approved = ($row->share_approved === 't');
                 $shares[] = $share;
             }
         }
@@ -1269,7 +1269,7 @@ EOD;
             $row = pg_fetch_object($rsShareKey);
             if ($row) {
                 $shareKey->resourceLinkId = intval($row->resource_link_pk);
-                $shareKey->autoApprove = (intval($row->auto_approve) === 1);
+                $shareKey->autoApprove = ($row->auto_approve === 't');
                 $shareKey->expires = strtotime($row->expires);
                 $ok = true;
             }
@@ -1692,7 +1692,7 @@ EOD;
                     $settings = [];
                 }
                 $tool->setSettings($settings);
-                $tool->enabled = (intval($row->enabled) === 1);
+                $tool->enabled = ($row->enabled === 't');
                 $tool->enableFrom = null;
                 if (!is_null($row->enable_from)) {
                     $tool->enableFrom = strtotime($row->enable_from);
