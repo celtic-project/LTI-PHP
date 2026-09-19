@@ -343,6 +343,7 @@ trait MoodleApi
             $json = Util::jsonDecode($http->response);
             $http->ok = !is_null($json) && is_array($json);
             if (!$http->ok) {
+                $json = null;
                 Util::logError("Moodle web service returned an error: {$http->response}");
             }
         }
