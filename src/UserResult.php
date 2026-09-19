@@ -139,7 +139,11 @@ class UserResult extends User
      */
     public function setResourceLink(ResourceLink $resourceLink): void
     {
-        $this->resourceLink = $resourceLink;
+        if ($this->resourceLinkId !== $resourceLink->getRecordId()) {
+            $this->resourceLinkId = $resourceLink->getRecordId();
+            $this->resourceLink = $resourceLink;
+            $this->dataConnector = $resourceLink->getDataConnector();
+        }
     }
 
     /**
@@ -173,8 +177,10 @@ class UserResult extends User
      */
     public function setResourceLinkId(?int $resourceLinkId): void
     {
-        $this->resourceLink = null;
-        $this->resourceLinkId = $resourceLinkId;
+        if ($this->resourceLinkId !== $resourceLinkId) {
+            $this->resourceLink = null;
+            $this->resourceLinkId = $resourceLinkId;
+        }
     }
 
     /**
