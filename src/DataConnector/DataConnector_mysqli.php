@@ -892,7 +892,13 @@ EOD;
         if ($this->executeQuery($sql, $stmt)) {
             $rsUser = $stmt->get_result();
             while ($row = $rsUser->fetch_object()) {
-                $userResult = LTI\UserResult::fromResourceLink($resourceLink, $row->lti_user_id);
+                $userResult = new LTI\UserResult();
+                $userResult->setRecordId(intval($row->user_result_pk));
+                $userResult->setResourceLink($resourceLink);
+                $userResult->ltiUserId = $row->lti_user_id;
+                $userResult->ltiResultSourcedId = $row->lti_result_sourcedid;
+                $userResult->created = strtotime($row->created);
+                $userResult->updated = strtotime($row->updated);
                 if (is_null($idScope)) {
                     $userResults[] = $userResult;
                 } else {

@@ -976,7 +976,13 @@ EOD;
         $rsUser = $this->executeQuery($sql, $params);
         if ($rsUser) {
             while ($row = pg_fetch_object($rsUser)) {
-                $userResult = LTI\UserResult::fromResourceLink($resourceLink, $row->lti_user_id);
+                $userResult = new LTI\UserResult();
+                $userResult->setRecordId(intval($row->user_result_pk));
+                $userResult->setResourceLink($resourceLink);
+                $userResult->ltiUserId = $row->lti_user_id;
+                $userResult->ltiResultSourcedId = $row->lti_result_sourcedid;
+                $userResult->created = strtotime($row->created);
+                $userResult->updated = strtotime($row->updated);
                 if (is_null($idScope)) {
                     $userResults[] = $userResult;
                 } else {

@@ -1030,7 +1030,10 @@ EOD;
         if ($this->executeQuery($sql, $query)) {
             while ($row = oci_fetch_assoc($query)) {
                 $row = array_change_key_case($row);
-                $userResult = LTI\UserResult::fromRecordId(intval($row['user_result_pk']), $resourceLink->getDataConnector());
+                $userResult = new LTI\UserResult();
+                $userResult->setRecordId(intval($row['user_result_pk']));
+                $userResult->setResourceLink($resourceLink);
+                $userResult->ltiUserId = $row['lti_user_id'];
                 $userResult->ltiResultSourcedId = $row['lti_result_sourcedid'];
                 $userResult->created = strtotime($row['created']);
                 $userResult->updated = strtotime($row['updated']);
