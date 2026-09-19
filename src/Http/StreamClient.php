@@ -35,7 +35,7 @@ class StreamClient implements ClientInterface
             'method' => $message->getMethod(),
             'content' => $message->request,
             'header' => $message->requestHeaders,
-            'timeout' => self::connectionTimeout,
+            'timeout' => self::$connectionTimeout,
             'ignore_errors' => true,
         ];
 
