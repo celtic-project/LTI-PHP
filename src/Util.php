@@ -1226,6 +1226,9 @@ EOD;
     {
         if (!empty($str)) {
             $json = \json_decode($str, $associative);
+            if (!is_object($json) && !is_array($json)) {
+                $json = null;
+            }
         } else {
             $json = null;
         }
