@@ -1483,11 +1483,13 @@ trait System
                         if (isset($this->rawParameters['id_token'])) {
                             $this->ok = !empty($this->rawParameters['state']);
                             if ($this->ok) {
+                                $currentId = null;
                                 $state = $this->rawParameters['state'];
                                 $parts = explode('.', $state);
                                 $session->openSession();
                                 if (!empty($session->getId()) && (count($parts) > 1) && ($session->getId() !== $parts[1]) &&
                                     ($parts[1] !== 'platformStorage')) {  // Reset to original session
+                                    $currentId = $session->getId();
                                     $session->closeSession();
                                     $session->setId($parts[1]);
                                     $this->onResetSessionId();
@@ -1497,6 +1499,11 @@ trait System
                                     $state = substr($state, 0, -16);
                                 }
                                 $this->onAuthenticate($state, $nonce, $usePlatformStorage);
+                                if ($currentId) {  // Reset to new session
+                                    $session->closeSession();
+                                    $session->setId($currentId);
+                                    $this->onResetSessionId();
+                                }
                                 if (!$this->ok && !$disableCookieCheck) {
                                     if (($cookie->numCookies() <= 0) && !isset($_POST['_new_window'])) {  // Reopen in a new window
                                         Util::setTestCookie();
