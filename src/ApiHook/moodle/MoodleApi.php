@@ -157,12 +157,12 @@ trait MoodleApi
     /**
      * Get users enrolled in course.
      *
-     * @param string $perPage   Maximum number of records per request
+     * @param int $perPage      Maximum number of records per request
      * @param bool $withGroups  True is group information is to be requested as well
      *
      * @return array|false  Array of UserResult objects or false if the request was not successful
      */
-    private function getUsers(string $perPage, bool $withGroups): array|false
+    private function getUsers(int $perPage, bool $withGroups): array|false
     {
         $users = [];
         $params = [
@@ -266,7 +266,7 @@ trait MoodleApi
                 $users = false;
                 break;
             }
-        } while (is_array($enrolments) && !empty($enrolments));
+        } while (($perPage > 0) && is_array($enrolments) && !empty($enrolments));
 
         return $users;
     }
