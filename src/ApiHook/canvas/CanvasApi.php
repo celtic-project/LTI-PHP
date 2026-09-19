@@ -159,7 +159,7 @@ trait CanvasApi
             $url = '';
             if ($http->ok) {
                 foreach ($enrolments as $enrolment) {
-                    $roles[strval($enrolment->user_id)] = $enrolment->type;
+                    $roles[strval($enrolment->user_id)][] = $enrolment->type;
                 }
                 if (preg_match('/\<([^\>]+)\>; *rel=\"next\"/', implode("\n", $http->responseHeaders), $matches)) {
                     $url = $matches[1];
@@ -182,7 +182,7 @@ trait CanvasApi
      */
     private function getUsers(string $perPage, bool $withGroups): array|false
     {
-        $users = [];
+        $users = false;
         $url = "https://{$this->domain}/api/v1/courses/{$this->courseId}/users?state[]=invited&state[]=active&state[]=completed";
         if ($perPage > 0) {
             $url .= "&per_page={$perPage}";
@@ -191,65 +191,70 @@ trait CanvasApi
             $url .= '&include[]=group_ids';
         }
         $roles = $this->getRoles($perPage);
-        do {
-            $http = new HttpMessage($url, 'GET', null, "Authorization: Bearer {$this->token}");
-            $http->send();
-            if ($http->ok) {
-                $enrolments = Util::jsonDecode($http->response);
-                $http->ok = !is_null($enrolments) && is_array($enrolments);
-            }
-            $url = '';
-            if ($http->ok) {
-                foreach ($enrolments as $enrolment) {
-                    $userId = strval($enrolment->id);
-                    if (array_key_exists($userId, $users)) {
-                        $user = $users[$userId];
-                    } else {
-                        if (is_a($this->sourceObject, 'ceLTIc\LTI\ResourceLink')) {
-                            $user = UserResult::fromResourceLink($this->sourceObject, $userId);
+        if ($roles !== false) {
+            $users = [];
+            do {
+                $http = new HttpMessage($url, 'GET', null, "Authorization: Bearer {$this->token}");
+                $http->send();
+                if ($http->ok) {
+                    $enrolments = Util::jsonDecode($http->response);
+                    $http->ok = !is_null($enrolments) && is_array($enrolments);
+                }
+                $url = '';
+                if ($http->ok) {
+                    foreach ($enrolments as $enrolment) {
+                        $userId = strval($enrolment->id);
+                        if (array_key_exists($userId, $users)) {
+                            $user = $users[$userId];
                         } else {
-                            $user = new UserResult();
-                            $user->ltiUserId = $userId;
+                            if (is_a($this->sourceObject, 'ceLTIc\LTI\ResourceLink')) {
+                                $user = UserResult::fromResourceLink($this->sourceObject, $userId);
+                            } else {
+                                $user = new UserResult();
+                                $user->ltiUserId = $userId;
+                            }
                         }
-                    }
-                    $user->setNames('', '', $enrolment->name);
-                    $user->setEmail($enrolment->email, $this->sourceObject->getPlatform()->defaultEmail);
-                    $user->username = $enrolment->login_id;
-                    $user->sourcedId = $enrolment->sis_user_id;
-                    if (!empty($enrolment->group_ids)) {
-                        foreach ($enrolment->group_ids as $groupId) {
-                            $user->groups[] = strval($groupId);
+                        $user->setNames('', '', $enrolment->name);
+                        $user->setEmail($enrolment->email, $this->sourceObject->getPlatform()->defaultEmail);
+                        $user->username = $enrolment->login_id;
+                        $user->sourcedId = $enrolment->sis_user_id;
+                        if (!empty($enrolment->group_ids)) {
+                            foreach ($enrolment->group_ids as $groupId) {
+                                $user->groups[] = strval($groupId);
+                            }
                         }
-                    }
-                    if (array_key_exists($userId, $roles)) {
-                        switch ($roles[$userId]) {
-                            case 'StudentEnrollment':
-                                $user->roles[] = 'urn:lti:role:ims/lis/Learner';
-                                break;
-                            case 'TeacherEnrollment':
-                                $user->roles[] = 'urn:lti:role:ims/lis/Instructor';
-                                break;
-                            case 'TaEnrollment':
-                                $user->roles[] = 'urn:lti:role:ims/lis/TeachingAssistant';
-                                break;
-                            case 'DesignerEnrollment':
-                                $user->roles[] = 'urn:lti:role:ims/lis/ContentDeveloper';
-                                break;
-                            case 'ObserverEnrollment':
-                                $user->roles[] = 'urn:lti:instrole:ims/lis/Observer';
-                                $user->roles[] = 'urn:lti:role:ims/lis/Mentor';
-                                break;
+                        if (array_key_exists($userId, $roles)) {
+                            foreach ($roles[$userId] as $role) {
+                                switch ($role) {
+                                    case 'StudentEnrollment':
+                                        $user->roles[] = 'urn:lti:role:ims/lis/Learner';
+                                        break;
+                                    case 'TeacherEnrollment':
+                                        $user->roles[] = 'urn:lti:role:ims/lis/Instructor';
+                                        break;
+                                    case 'TaEnrollment':
+                                        $user->roles[] = 'urn:lti:role:ims/lis/TeachingAssistant';
+                                        break;
+                                    case 'DesignerEnrollment':
+                                        $user->roles[] = 'urn:lti:role:ims/lis/ContentDeveloper';
+                                        break;
+                                    case 'ObserverEnrollment':
+                                        $user->roles[] = 'urn:lti:instrole:ims/lis/Observer';
+                                        $user->roles[] = 'urn:lti:role:ims/lis/Mentor';
+                                        break;
+                                }
+                            }
                         }
+                        $users[$userId] = $user;
                     }
-                    $users[$userId] = $user;
+                    if (preg_match('/\<([^\>]+)\>; *rel=\"next\"/', implode("\n", $http->responseHeaders), $matches)) {
+                        $url = $matches[1];
+                    }
+                } else {
+                    $users = false;
                 }
-                if (preg_match('/\<([^\>]+)\>; *rel=\"next\"/', implode("\n", $http->responseHeaders), $matches)) {
-                    $url = $matches[1];
-                }
-            } else {
-                $users = false;
-            }
-        } while ($url);
+            } while ($url);
+        }
 
         return $users;
     }
@@ -286,6 +291,9 @@ trait CanvasApi
                             'title' => $group->name,
                             'set' => $setId
                         ];
+                        if (!in_array($groupId, $this->sourceObject->groupSets[$setId]['groups'])) {
+                            $this->sourceObject->groupSets[$setId]['groups'][] = $groupId;
+                        }
                         foreach ($users as $user) {
                             if (in_array($groupId, $user->groups)) {
                                 $this->sourceObject->groupSets[$setId]['num_members']++;
@@ -294,9 +302,6 @@ trait CanvasApi
                                 }
                                 if ($user->isLearner()) {
                                     $this->sourceObject->groupSets[$setId]['num_learners']++;
-                                }
-                                if (!in_array($groupId, $this->sourceObject->groupSets[$setId]['groups'])) {
-                                    $this->sourceObject->groupSets[$setId]['groups'][] = $groupId;
                                 }
                             }
                         }
