@@ -210,7 +210,7 @@ class Placement
         $url = null;
         $html = null;
         if (isset($item->{'@type'})) {  // Version 1
-            if (empty($documentTarget) && isset($item->placementAdvice)) {
+            if (empty($documentTarget) && isset($item->placementAdvice) && is_object($item->placementAdvice)) {
                 $documentTarget = Util::checkString($item->placementAdvice, 'Item/placementAdvice/presentationDocumentTarget',
                     false, true, ['embed', 'frame', 'iframe', 'none', 'overlay', 'popup', 'window'], false, null);
                 $ok = $ok && (!is_null($documentTarget) || isset($item->placementAdvice->presentationDocumentTarget));
@@ -237,7 +237,7 @@ class Placement
                 } elseif (isset($item->window)) {
                     $documentTarget = 'window';
                 }
-            } elseif (!isset($item->{$documentTarget})) {
+            } elseif (!isset($item->{$documentTarget}) || !is_object($item->{$documentTarget})) {
                 $documentTarget = null;
             }
             if (!empty($documentTarget)) {
