@@ -478,12 +478,12 @@ class Context
      *
      * @param bool $withGroups  True is group information is to be requested as well
      *
-     * @return array|bool  The array of UserResult objects if successful, otherwise false
+     * @return array|false  The array of UserResult objects if successful, otherwise false
      */
-    public function getMemberships(bool $withGroups = false): array|bool
+    public function getMemberships(bool $withGroups = false): array|false
     {
         $ok = false;
-        $userResults = [];
+        $userResults = false;
         $hasMembershipsService = !empty($this->getSetting('custom_context_memberships_url'));
         $hasNRPService = !empty($this->getSetting('custom_context_memberships_v2_url'));
         $hasGroupsService = !empty($this->getSetting('custom_context_groups_url')) ||

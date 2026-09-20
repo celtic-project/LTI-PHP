@@ -941,12 +941,12 @@ EOD;
      *
      * @param bool $withGroups  True if group information is to be requested as well
      *
-     * @return array|bool  The array of UserResult objects if successful, otherwise false
+     * @return array|false  The array of UserResult objects if successful, otherwise false
      */
-    public function getMemberships(bool $withGroups = false): array|bool
+    public function getMemberships(bool $withGroups = false): array|false
     {
         $ok = false;
-        $userResults = [];
+        $userResults = false;
         $hasLtiLinkService = !empty($this->getSetting('custom_link_memberships_url'));
         $hasLtiContextService = !empty($this->getContextId()) &&
             (!empty($this->getContext()->getSetting('custom_context_memberships_url')) || !empty($this->getContext()->getSetting('custom_context_memberships_v2_url')));
