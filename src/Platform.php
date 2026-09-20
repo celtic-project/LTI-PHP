@@ -490,6 +490,8 @@ class Platform
                     $this->doCallback();
                 }
             }
+        } else {
+            Util::logRequest();
         }
         if (!$this->ok) {
             $this->onError();
@@ -983,6 +985,11 @@ EOD;
         if ($this->ok && ($parameters['client_id'] !== $this->clientId)) {
             $this->ok = false;
             $this->messageParameters['error'] = 'unauthorized_client';
+        }
+        if ($this->ok && empty(Tool::$defaultTool)) {
+            $this->ok = false;
+            $this->messageParameters['error'] = 'server_error';
+            $this->messageParameters['error_description'] = 'Tool not configured by platform';
         }
         if ($this->ok) {
             $this->ok = in_array($parameters['redirect_uri'], Tool::$defaultTool->redirectionUris);
