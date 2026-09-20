@@ -1190,6 +1190,9 @@ EOD;
         if (property_exists($obj, $name)) {
             if (is_string($obj->{$name})) {
                 $dateTime = \DateTime::createFromFormat(DATE_ATOM, $obj->{$name});
+                if ($dateTime === false) {
+                    $dateTime = \DateTime::createFromFormat(DATE_RFC3339_EXTENDED, $obj->{$name});
+                }
                 if ($dateTime !== false) {
                     $value = $dateTime->getTimestamp();
                 } elseif (self::$strictMode) {
