@@ -298,8 +298,10 @@ class ResourceLink
      */
     public function setPlatformId(?int $platformId): void
     {
-        $this->platform = null;
-        $this->platformId = $platformId;
+        if ($this->platformId !== $platformId) {
+            $this->platform = null;
+            $this->platformId = $platformId;
+        }
     }
 
     /**
