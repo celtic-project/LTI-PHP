@@ -182,8 +182,10 @@ class AccessToken
                         'scope' => implode(' ', $scopesRequested)
                     ];
                     if (!empty(Tool::$defaultTool)) {
+                        $platform = $this->platform;
                         Tool::$defaultTool->platform = $this->platform;
                         $body = Tool::$defaultTool->signServiceRequest($url, $method, $type, $body);
+                        Tool::$defaultTool->platform = $platform;
                     } else {
                         $body = $this->platform->signServiceRequest($url, $method, $type, $body);
                     }
