@@ -57,7 +57,11 @@ class PlatformNonce
     public function __construct(Platform $platform, ?string $value = null)
     {
         $this->platform = $platform;
-        $this->value = substr($value, -self::$maximumLength);
+        if (!is_null($value)) {
+            $this->value = substr($value, -self::$maximumLength);
+        } else {
+            $this->value = $value;
+        }
         $this->expires = time() + (self::MAX_NONCE_AGE * 60);
     }
 
