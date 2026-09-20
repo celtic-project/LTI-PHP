@@ -139,7 +139,7 @@ class ToolSettings extends Service
                                 }
                             }
                         }
-                        if ($response !== false) {
+                        if (($response !== false) && in_array($level->{'@type'}, self::$LEVEL_NAMES)) {
                             $response[self::$LEVEL_NAMES[$level->{'@type'}]] = $settings;
                         }
                     }
