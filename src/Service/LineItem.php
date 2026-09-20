@@ -223,6 +223,7 @@ class LineItem extends AssignmentGrade
         $this->scope = self::$SCOPE_READONLY;
         $this->mediaType = self::MEDIA_TYPE_LINE_ITEM;
         $http = $this->send('GET');
+        $this->scope = self::$SCOPE;
         if ($http->ok && !empty($http->responseJson)) {
             if (!is_object($http->responseJson)) {
                 Util::setMessage(true, 'The response must be an object (' . gettype($http->responseJson) . ' found)');
