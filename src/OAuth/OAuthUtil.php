@@ -44,7 +44,7 @@ class OAuthUtil
      */
     public static function urldecode_rfc3986(string $string): string
     {
-        return urldecode($string);
+        return \urldecode($string);
     }
 
     /**

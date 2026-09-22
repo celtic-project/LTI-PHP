@@ -257,6 +257,16 @@ final class Util
     }
 
     /**
+     * Get the raw POST data
+     *
+     * @return array  The POST data
+     */
+    public static function getPostData(): array
+    {
+        return OAuth\OAuthUtil::parse_parameters(file_get_contents(OAuth\OAuthRequest::$POST_INPUT));
+    }
+
+    /**
      * Return GET and POST request parameters (POST parameters take precedence).
      *
      * @return array
@@ -349,7 +359,8 @@ final class Util
                 }
                 $message .= "headers of:\n" . var_export($headers, true);
             }
-            $message = "{$_SERVER['REQUEST_METHOD']} request received for '{$_SERVER['REQUEST_URI']}'{$message}";
+            $url = \urldecode($_SERVER['REQUEST_URI']);
+            $message = "{$_SERVER['REQUEST_METHOD']} request received for '{$url}'{$message}";
             if (!$debugLevel) {
                 self::logInfo($message);
             } else {
@@ -510,8 +521,11 @@ final class Util
         bool $disableNewIfTop = false, bool $useGet = false): string
     {
         $timeout = static::$formSubmissionTimeout;
+        $url = htmlentities($url, ENT_COMPAT | ENT_HTML401, 'UTF-8');
         if (empty($target)) {
             $target = '_self';
+        } else {
+            $target = htmlentities($target, ENT_COMPAT | ENT_HTML401, 'UTF-8');
         }
         if ($useGet) {
             $method = 'get';

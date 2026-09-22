@@ -811,7 +811,7 @@ class Tool
             if (!isset($this->rawParameters['_storage_check'])) {  // Check browser storage
                 $this->rawParameters['_storage_check'] = '';
                 $javascript = $this->getStorageJS($target, 'lti.get_data', $state, '');
-                $this->output = Util::sendForm($_SERVER['REQUEST_URI'], $this->rawParameters, '', $javascript);
+                $this->output = Util::sendForm(\urldecode($_SERVER['REQUEST_URI']), $this->rawParameters, '', $javascript);
                 $this->doExit();
             } elseif (!empty(($this->rawParameters['_storage_check']))) {
                 $state = $parts[0];
@@ -2224,7 +2224,7 @@ EOD;
                         $ignoreParams = ['iss', 'target_link_uri', 'login_hint', 'lti_message_hint', 'client_id', 'lti_deployment_id', 'lti_storage_target'];
                     }
                     $queryString = '';
-                    $params = explode('&', $_SERVER['QUERY_STRING']);
+                    $params = explode('&', \urldecode($_SERVER['QUERY_STRING']));
                     $ignore = false;  // Only include those query parameters which come before any of the standard OpenID Connect ones
                     foreach ($params as $param) {
                         $parts = explode('=', $param, 2);

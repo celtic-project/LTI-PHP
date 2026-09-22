@@ -424,7 +424,7 @@ trait System
     public function getRawParameters(): array
     {
         if (is_null($this->rawParameters)) {
-            $this->rawParameters = OAuth\OAuthUtil::parse_parameters(file_get_contents(OAuth\OAuthRequest::$POST_INPUT));
+            $this->rawParameters = Util::getPostData();
         }
 
         return $this->rawParameters;
@@ -1508,7 +1508,8 @@ trait System
                                     if (($cookie->numCookies() <= 0) && !isset($_POST['_new_window'])) {  // Reopen in a new window
                                         Util::setTestCookie();
                                         $_POST['_new_window'] = '';
-                                        $this->output = Util::sendForm($_SERVER['REQUEST_URI'], $_POST, '_blank', '', true);
+                                        $this->output = Util::sendForm(\urldecode($_SERVER['REQUEST_URI']), $_POST, '_blank', '',
+                                            true);
                                         $this->doExit();
                                     }
                                 }
@@ -1582,7 +1583,7 @@ trait System
                         if (($cookie->numCookies() <= 0) && !isset($_POST['_new_window'])) {  // Reopen in a new window
                             Util::setTestCookie();
                             $_POST['_new_window'] = '';
-                            $this->output = Util::sendForm($_SERVER['REQUEST_URI'], $_POST, '_blank', '', true);
+                            $this->output = Util::sendForm(\urldecode($_SERVER['REQUEST_URI']), $_POST, '_blank', '', true);
                             $this->doExit();
                         } elseif (!empty($session->getId()) && (count($parts) > 1) && ($session->getId() !== $parts[1])) {  // Reset to original session
                             $session->closeSession();
