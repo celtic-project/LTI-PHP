@@ -517,8 +517,7 @@ class Platform
      */
     public function sendAccessToken($supportedScopes): never
     {
-        $scopesRequested = explode(' ',
-            OAuth\OAuthUtil::parse_parameters(file_get_contents(OAuth\OAuthRequest::$POST_INPUT))['scope']);
+        $scopesRequested = explode(' ', Util::getPostData()['scope']);
         $scopesPermitted = [];
         foreach ($scopesRequested as $scope) {
             if (in_array($scope, $supportedScopes)) {
@@ -529,7 +528,9 @@ class Platform
         if (!empty($scopesPermitted)) {
             $life = static::$accessTokenLife;
             $scopes = implode(' ', array_unique($scopesPermitted));
+            $payload['iss'] = $this->platformId;
             $payload['sub'] = $this->clientId;
+            $payload['aud'] = $this->accessTokenUrl;
             $payload['iat'] = time();
             $payload['exp'] = $payload['iat'] + $life;
             $payload['imsglobal.org.security.scope'] = $scopes;
@@ -577,6 +578,10 @@ EOD;
                 $token = trim(substr($requestHeaders['Authorization'], 7));
                 $jwt = Jwt::getJwtClient();
                 $ok = $jwt->load($token);
+                if ($ok) {
+                    $ok = ($jwt->getClaim('iss') === $this->platformId) && ($jwt->getClaim('sub') === $this->clientId) &&
+                        ($jwt->getClaim('aud') === $this->accessTokenUrl);
+                }
                 if ($ok) {
                     $publicKey = $jwt->getPublicKey($this->rsaKey);
                     $ok = $jwt->verifySignature($publicKey);
