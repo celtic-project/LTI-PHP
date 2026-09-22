@@ -890,9 +890,9 @@ class Tool
             }
             if ($this->ok) {
                 $jwtClient = Jwt::getJwtClient();
-                $algorithms = \array_intersect($jwtClient::getSupportedAlgorithms(),
+                $platformConfig['id_token_signing_alg_values_supported'] = \array_intersect($jwtClient::getSupportedAlgorithms(),
                     $platformConfig['id_token_signing_alg_values_supported']);
-                $this->ok = !empty($algorithms);
+                $this->ok = !empty($platformConfig['id_token_signing_alg_values_supported']);
                 if ($this->ok) {
                     rsort($platformConfig['id_token_signing_alg_values_supported']);
                 } else {
@@ -1525,7 +1525,7 @@ EOD;
             if (!isset($this->messageParameters['oauth_consumer_key'])) {
                 $this->setError('Missing consumer key', true, $generateWarnings);
             }
-            if (is_null($this->platform->created)) {
+            if (is_null($this->platform) || is_null($this->platform->created)) {
                 if (empty($this->jwt) || !$this->jwt->hasJwt()) {
                     $reason = "Consumer key not recognised: '{$this->messageParameters['oauth_consumer_key']}'";
                 } else {
@@ -1741,10 +1741,10 @@ EOD;
                     $this->platform->profile = $tcProfile;
                     $this->platform->secret = $this->messageParameters['reg_password'];
                     $this->platform->ltiVersion = $this->ltiVersion;
-                    $this->platform->name = $tcProfile->product_instance->service_owner->service_owner_name->default_value;
+                    $this->platform->name = $tcProfile->product_instance->service_owner->service_owner_name->default_value ?? null;
                     $this->platform->consumerName = $this->platform->name;
-                    $this->platform->consumerVersion = "{$tcProfile->product_instance->product_info->product_family->code}-{$tcProfile->product_instance->product_info->product_version}";
-                    $this->platform->consumerGuid = $tcProfile->product_instance->guid;
+                    $this->platform->consumerVersion = "{$tcProfile->product_instance->product_info->product_family->code}-{$tcProfile->product_instance->product_info->product_version}" ?? null;
+                    $this->platform->consumerGuid = $tcProfile->product_instance->guid ?? null;
                     $this->platform->protected = true;
                     $doSavePlatform = true;
                 }
