@@ -2019,11 +2019,13 @@ trait System
                 }
                 $payload['nonce'] = $nonce;
             } else {
+                $deploymentId = '';
                 $authorizationId = '';
                 if ($this instanceof Tool) {
                     $sub = '';
                     if (!empty($this->platform)) {
                         $sub = $this->platform->clientId;
+                        $deploymentId = $this->platform->deploymentId;
                         $authorizationId = $this->platform->authorizationServerId;
                         $publicKey = $this->platform->rsaKey;
                     }
@@ -2041,6 +2043,9 @@ trait System
                 }
                 $payload['iss'] = $sub;
                 $payload['sub'] = $sub;
+                if (!empty($deploymentId)) {
+                    $payload[Util::JWT_CLAIM_PREFIX . '/claim/deployment_id'] = $deploymentId;
+                }
                 if (empty($authorizationId)) {
                     $authorizationId = $endpoint;
                 }
