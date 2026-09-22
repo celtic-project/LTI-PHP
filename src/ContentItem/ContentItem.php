@@ -171,7 +171,8 @@ class ContentItem
         $id = Util::checkString($item, 'id', false, true, '', false, null);
         $type = Util::checkString($item, 'type', true, true, '', false, null);
         if (!is_null($type)) {
-            if (!in_array($type, [Item::TYPE_LINK, Item::TYPE_LTI_LINK, Item::TYPE_FILE, Item::TYPE_HTML, Item::TYPE_IMAGE])) {
+            if (!in_array($type,
+                    [Item::TYPE_LINK, Item::TYPE_LTI_LINK, Item::TYPE_LTI_ASSIGNMENT, Item::TYPE_FILE, Item::TYPE_HTML, Item::TYPE_IMAGE])) {
                 Util::setMessage(false, "Value of the 'Item/type' element not recognised ('{$type}' found)");
             }
             $obj = self::fromType($type, $id);
