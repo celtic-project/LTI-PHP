@@ -190,7 +190,7 @@ class Service
             $contextdefs = [];
             foreach ($contexts as $context) {
                 if (is_object($context)) {
-                    $contextdefs = array_merge(get_object_vars($context), $contexts);
+                    $contextdefs = array_merge(get_object_vars($context), $contextdefs);
                 }
             }
             $parsed = [];
@@ -199,7 +199,7 @@ class Service
                 if (count($parts) > 1) {
                     if (array_key_exists($parts[0], $contextdefs)) {
                         $parsed[$key] = $contextdefs[$parts[0]] . $parts[1];
-                        break;
+                        continue;
                     }
                 }
                 $parsed[$key] = $value;
