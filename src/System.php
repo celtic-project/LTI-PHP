@@ -877,7 +877,7 @@ trait System
                         $role = substr($role, 46);
                         $pos = strrpos($role, '/');
                         if ($pos !== false) {
-                            $role = substr($role, 0, $pos - 1) . '#' . substr($role, $pos + 1);
+                            $role = substr($role, 0, $pos) . '#' . substr($role, $pos + 1);
                         }
                     } elseif (str_starts_with($role, 'http://purl.imsglobal.org/vocab/lis/v2/membership#')) {
                         $prefix = 'http://purl.imsglobal.org/vocab/lis/v2/membership';
