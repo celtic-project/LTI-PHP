@@ -202,11 +202,11 @@ class Membership extends Service
                         $ok = $ok && !Util::$strictMode;
                     }
                     $members = Util::checkArray($http->responseJson, 'members');
-                    if ($ok && !$this->pagingMode && $http->hasRelativeLink('next')) {
-                        $url = $http->getRelativeLink('next');
-                        $this->endpoint = $url;
-                        $parameters = [];
-                    }
+                }
+                if ($ok && !$this->pagingMode && $http->hasRelativeLink('next')) {
+                    $url = $http->getRelativeLink('next');
+                    $this->endpoint = $url;
+                    $parameters = [];
                 }
                 $memberships = array_merge($memberships, $members);
             }
@@ -264,8 +264,8 @@ class Membership extends Service
                         }
                         $roles = [];
                         $stringroles = Util::checkArray($membership, 'membership/role', true, true);
-                        foreach ($stringroles as $role) {
-                            if (!is_string($role)) {
+                        foreach ($stringroles as $arole) {
+                            if (!is_string($arole)) {
                                 if (Util::$strictMode) {
                                     Util::setMessage(true, 'The membership/role element must only comprise string values');
                                     $userid = null;
@@ -273,7 +273,7 @@ class Membership extends Service
                                     Util::setMessage(false, 'The membership/role element should only comprise string values');
                                 }
                             } else {
-                                $roles[] = $role;
+                                $roles[] = $arole;
                             }
                         }
                         if (!empty($userid)) {
@@ -391,7 +391,6 @@ class Membership extends Service
                                     $doSave = true;
                                 }
                                 if (!$doSave && isset($member->resultSourcedId)) {
-                                    $userResult->setResourceLinkId($this->source->getId());
                                     $userResult->ltiResultSourcedId = Util::checkString($member, 'membership/member/resultSourcedId');
                                     $doSave = true;
                                 }
@@ -413,8 +412,8 @@ class Membership extends Service
                     $userid = Util::checkString($member, 'members/user_id', true);
                     $roles = [];
                     $stringroles = Util::checkArray($member, 'members/roles', true, true);
-                    foreach ($stringroles as $role) {
-                        if (!is_string($role)) {
+                    foreach ($stringroles as $arole) {
+                        if (!is_string($arole)) {
                             if (Util::$strictMode) {
                                 Util::setMessage(true, 'The members/roles element must only comprise string values');
                                 $userid = null;
@@ -422,7 +421,7 @@ class Membership extends Service
                                 Util::setMessage(false, 'The members/roles element should only comprise string values');
                             }
                         } else {
-                            $roles[] = $role;
+                            $roles[] = $arole;
                         }
                     }
                 }
@@ -637,8 +636,8 @@ class Membership extends Service
             }
 
 /// Delete any old users which were not in the latest list from the platform if request is not paged
-            if ($isLink && !$this->pagingMode) {
-                foreach ($oldUsers as $id => $userResult) {
+            if ($isLink && empty($role) && !$this->pagingMode) {
+                foreach ($oldUsers as $userResult) {
                     $userResult->delete();
                 }
             }
