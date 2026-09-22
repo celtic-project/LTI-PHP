@@ -489,13 +489,15 @@ class Item
             $obj = match ($type) {
                 'ContentItem' => new Item('ContentItem', $placement),
                 'LtiLinkItem' => new LtiLinkItem($placement),
+                'AssignmentLinkItem' => new LtiAssignmentItem($placement),
                 'FileItem' => new FileItem($placement),
                 default => new Item($type, $placement),
             };
         } else {
             $type = Util::checkString($item, 'Item/type', true, true, '', false, null);
             if (!is_null($type)) {
-                if (!in_array($type, [self::TYPE_LINK, self::TYPE_LTI_LINK, self::TYPE_FILE, self::TYPE_HTML, self::TYPE_IMAGE])) {
+                if (!in_array($type,
+                        [self::TYPE_LINK, self::TYPE_LTI_LINK, self::TYPE_LTI_ASSIGNMENT, self::TYPE_FILE, self::TYPE_HTML, self::TYPE_IMAGE])) {
                     Util::setMessage(false, "Value of the 'Item/type' element not recognised ('{$type}' found)");
                 }
                 $placements = [];
