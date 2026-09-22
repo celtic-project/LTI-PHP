@@ -612,13 +612,25 @@ class Membership extends Service
                                         if (!is_array($sets)) {
                                             $sets = [$sets];
                                         }
-                                        foreach ($sets as $set) {
-                                            $this->source->groupSets[$set]['num_members']++;
+                                        foreach ($sets as $setId) {
+                                            if (!isset($this->source->groupSets[$setId])) {
+                                                $this->source->groupSets[$setId] = [
+                                                    'title' => "Group set {$setId}",
+                                                    'groups' => [],
+                                                    'num_members' => 0,
+                                                    'num_staff' => 0,
+                                                    'num_learners' => 0
+                                                ];
+                                            }
+                                            if (!in_array($groupId, $this->source->groupSets[$setId]['groups'])) {
+                                                $this->source->groupSets[$setId]['groups'][] = $groupId;
+                                            }
+                                            $this->source->groupSets[$setId]['num_members']++;
                                             if ($userResult->isStaff()) {
-                                                $this->source->groupSets[$set]['num_staff']++;
+                                                $this->source->groupSets[$setId]['num_staff']++;
                                             }
                                             if ($userResult->isLearner()) {
-                                                $this->source->groupSets[$set]['num_learners']++;
+                                                $this->source->groupSets[$setId]['num_learners']++;
                                             }
                                         }
                                     }
