@@ -108,7 +108,7 @@ class Service
             $url = Util::addQueryParameters($url, $parameters);
         }
         $header = null;
-        $retry = !$this->platform->useOAuth1();
+        $retry = !$this->platform->useOAuth1() && !$this->unsigned;
         $newToken = false;
         $retried = false;
         do {
@@ -129,8 +129,9 @@ class Service
                             if (!$accessToken->hasScope($this->scope)) {
                                 if (empty($this->http)) {
                                     $this->http = new HttpMessage($url);
-                                    $this->http->error = "Unable to obtain an access token for scope: {$this->scope}";
                                 }
+                                $this->http->ok = false;
+                                $this->http->error = "Unable to obtain an access token for scope: {$this->scope}";
                                 break;
                             }
                         }
