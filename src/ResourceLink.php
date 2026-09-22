@@ -639,7 +639,7 @@ class ResourceLink
         $ok = false;
         $this->extResponse = '';
 // Lookup service details from the source resource link appropriate to the user (in case the destination is being shared)
-        $sourceResourceLink = $userResult->getResourceLink();
+        $sourceResourceLink = $userResult->getResourceLink() ?? $this;
         $sourcedId = $userResult->ltiResultSourcedId;
 
 // Use LTI 1.1 service in preference to extension service if it is available
@@ -670,7 +670,7 @@ class ResourceLink
                 $do = 'readResult';
             } elseif (($action === ServiceAction::Write) && $this->checkValueType($ltiOutcome, [OutcomeType::Decimal->value])) {
                 $do = 'replaceResult';
-                if (($ltiOutcome->getPointsPossible() <> 1) && ($ltiOutcome->getPointsPossible() > 0)) {
+                if ((is_int($outcome) || is_float($outcome)) && ($ltiOutcome->getPointsPossible() <> 1) && ($ltiOutcome->getPointsPossible() > 0)) {
                     $outcome = $outcome / $ltiOutcome->getPointsPossible();
                 }
             } elseif ($action === ServiceAction::Delete) {
