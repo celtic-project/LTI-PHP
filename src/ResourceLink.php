@@ -680,7 +680,8 @@ class ResourceLink
                 $xml = '';
                 $submittedXml = '';
                 if ($action === ServiceAction::Write) {
-                    $comment = (empty($ltiOutcome->comment)) ? '' : trim($ltiOutcome->comment);
+                    $comment = (empty($ltiOutcome->comment)) ? '' : htmlspecialchars(trim($ltiOutcome->comment),
+                            ENT_XML1 | ENT_QUOTES);
                     if (!empty($comment) && !empty($sourceResourceLink->getSetting('ext_outcome_data_values_accepted'))) {
                         $resultDataTypes = explode(',', $sourceResourceLink->getSetting('ext_outcome_data_values_accepted'));
                         $resultDataType = '';
@@ -705,8 +706,8 @@ class ResourceLink
 EOD;
                         }
                     }
-                    if (!empty($ltiOutcome->submissionCompleted) && $sourceResourceLink->getSetting('ext_outcome_submission_submitted_at_accepted') !== 'true') {
-                        $submitted = $ltiOutcome->submissionCompleted->format('Y-m-d\TH:i:s\Z');
+                    if (!empty($ltiOutcome->submissionCompleted) && $sourceResourceLink->getSetting('ext_outcome_submission_submitted_at_accepted') === 'true') {
+                        $submitted = gmdate('Y-m-d\TH:i:s\Z', $ltiOutcome->submissionCompleted->getTimestamp());
                         $submittedXml = <<< EOD
       <submissionDetails>
         <submittedAt>
@@ -716,17 +717,21 @@ EOD;
 
 EOD;
                     }
+                    if (is_string($outcome)) {
+                        $outcome = htmlspecialchars($outcome, ENT_XML1 | ENT_QUOTES);
+                    }
+                    $language = htmlspecialchars($ltiOutcome->language, ENT_XML1 | ENT_QUOTES);
                     $xml = <<< EOD
 
         <result>
           <resultScore>
-            <language>{$ltiOutcome->language}</language>
+            <language>{$language}</language>
             <textString>{$outcome}</textString>
           </resultScore>{$xml}
         </result>
 EOD;
                 }
-                $sourcedId = htmlentities($sourcedId);
+                $sourcedId = htmlspecialchars($sourcedId, ENT_XML1 | ENT_QUOTES);
                 $xml = <<< EOD
 {$submittedXml}      <resultRecord>
         <sourcedGUID>
