@@ -452,10 +452,7 @@ trait System
             if (!empty($messageParameters['accept_media_types'])) {
                 $mediaTypes = array_map('trim', explode(',', $messageParameters['accept_media_types']));
                 $mediaTypes = array_filter($mediaTypes);
-                $types = [];
                 if (!empty($messageParameters['accept_types'])) {
-                    $types = array_map('trim', explode(',', $this->messageParameters['accept_types']));
-                    $types = array_filter($types);
                     foreach ($mediaTypes as $mediaType) {
                         if (str_starts_with($mediaType, 'application/vnd.ims.lti.')) {
                             unset($mediaTypes[array_search($mediaType, $mediaTypes)]);
@@ -463,6 +460,7 @@ trait System
                     }
                     $messageParameters['accept_media_types'] = implode(',', $mediaTypes);
                 } else {
+                    $types = [];
                     foreach ($mediaTypes as $mediaType) {
                         if ($mediaType === Item::LTI_LINK_MEDIA_TYPE) {
                             unset($mediaTypes[array_search(Item::LTI_LINK_MEDIA_TYPE, $mediaTypes)]);
