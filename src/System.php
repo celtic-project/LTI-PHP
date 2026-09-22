@@ -1212,8 +1212,10 @@ trait System
                 if (!empty($publicKey) && $this->jwt->hasHeader('kid')) {
                     if ($this instanceof Tool) {
                         $cachedKid = $this->platform->kid;
-                    } else {
+                    } elseif (!empty(Tool::$defaultTool)) {
                         $cachedKid = Tool::$defaultTool->kid;
+                    } else {
+                        $cachedKid = null;
                     }
                     if (!empty($jku) && !empty($cachedKid) && ($cachedKid !== $this->jwt->getHeader('kid'))) {  // Ignore cached key
                         $publicKey = null;
