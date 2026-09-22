@@ -244,52 +244,63 @@ class FirebaseClient implements ClientInterface
     public function verifySignature(?string &$publicKey, ?string $jku = null): bool
     {
         $ok = false;
-        $hasPublicKey = !empty($publicKey);
-        if ($hasPublicKey) {
-            $json = Util::jsonDecode($publicKey, true);
-            if (!is_null($json)) {
-                try {
-                    $jwks = [
-                        'keys' => [$json]
-                    ];
-                    $jwk = JWK::parseKeySet($jwks, $this->getHeader('alg'));
-                } catch (\Exception $e) {
-
-                }
-            } else {
-                $jwk = new Key($publicKey, $this->getHeader('alg'));
-            }
-        } elseif (!empty($jku)) {
-            $jwk = $this->fetchPublicKey($jku);
-        }
-        JWT::$leeway = Jwt::$leeway;
-        $retry = false;
-        do {
-            try {
-                JWT::decode($this->jwtString, $jwk);
-                $ok = true;
-                if (!$hasPublicKey || $retry) {
-                    $key = openssl_pkey_get_public($jwk[$this->getHeader('kid')]->getKeyMaterial());
-                    $keyDetails = openssl_pkey_get_details($key);
-                    if ($keyDetails !== false) {
-                        $publicKey = str_replace("\n", "\r\n", $keyDetails['key']);
-                    }
-                }
-            } catch (\Exception | \TypeError $e) {
-                if ($retry) {
-                    Util::logError($e->getMessage());
-                    $retry = false;
-                } elseif ($hasPublicKey && !empty($jku)) {
-                    Util::logDebug($e->getMessage() . ' [will retry]');
+        $alg = $this->getHeader('alg');
+        if (in_array($alg, self::SUPPORTED_ALGORITHMS)) {
+            $jwk = null;
+            $hasPublicKey = !empty($publicKey);
+            if ($hasPublicKey) {
+                $json = Util::jsonDecode($publicKey, true);
+                if (!is_null($json)) {
                     try {
-                        $jwk = $this->fetchPublicKey($jku);
-                        $retry = !empty($jwk);
+                        $jwks = [
+                            'keys' => [$json]
+                        ];
+                        $jwk = JWK::parseKeySet($jwks, $alg);
                     } catch (\Exception $e) {
 
                     }
+                } else {
+                    $jwk = new Key($publicKey, $alg);
                 }
             }
-        } while (!$ok && $retry);
+            if (empty($jwk) && !empty($jku)) {
+                $jwk = $this->fetchPublicKey($jku);
+            }
+            if (!empty($jwk)) {
+                JWT::$leeway = Jwt::$leeway;
+                $retry = false;
+                do {
+                    try {
+                        JWT::decode($this->jwtString, $jwk);
+                        $ok = true;
+                        if (!$hasPublicKey || $retry) {
+                            $key = openssl_pkey_get_public($jwk[$this->getHeader('kid')]->getKeyMaterial());
+                            $keyDetails = openssl_pkey_get_details($key);
+                            if ($keyDetails !== false) {
+                                $publicKey = str_replace("\n", "\r\n", $keyDetails['key']);
+                            }
+                        }
+                    } catch (\Exception | \TypeError $e) {
+                        if ($retry) {
+                            Util::logError($e->getMessage());
+                            $retry = false;
+                        } elseif ($hasPublicKey && !empty($jku)) {
+                            Util::logDebug($e->getMessage() . ' [will retry]');
+                            try {
+                                $jwk = $this->fetchPublicKey($jku);
+                                $retry = !empty($jwk);
+                            } catch (\Exception $e) {
+
+                            }
+                        }
+                    }
+                } while (!$ok && $retry);
+            } else {
+                Util::logError('No valid public key available');
+            }
+        } else {
+            Util::logDebug("Unsupported JWT algorithm: '{$alg}'");
+        }
 
         return $ok;
     }
