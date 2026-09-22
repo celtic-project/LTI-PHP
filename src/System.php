@@ -1148,9 +1148,6 @@ trait System
 // Set signature method from request
             if (isset($this->messageParameters['oauth_signature_method'])) {
                 $this->signatureMethod = $this->messageParameters['oauth_signature_method'];
-                if (($this instanceof Tool) && !empty($this->platform)) {
-                    $this->platform->signatureMethod = $this->signatureMethod;
-                }
             }
 // Check all required launch parameters
             if ($this->ok || $generateWarnings) {
