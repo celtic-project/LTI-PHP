@@ -566,12 +566,15 @@ class Item
                     }
                     break;
                 case 'placementAdvice':
-                    $placements = Util::checkString($value, 'Item/placementAdvice/presentationDocumentTarget', true, true, '',
-                        false, null);
-                    if (!is_null($placements)) {
-                        $placements = explode(',', $placements);
-                        foreach ($placements as $placement) {
-                            $ok = $ok && $this->addPlacementAdvice(Placement::fromJsonObject($item, $placement));
+                    $placementAdvice = Util::checkObject($item, "Item/{$name}");
+                    if (!is_null($placementAdvice)) {
+                        $placements = Util::checkString($placementAdvice, "Item/{$name}/presentationDocumentTarget", true, true, '',
+                            false, null);
+                        if (!is_null($placements)) {
+                            $placements = explode(',', $placements);
+                            foreach ($placements as $placement) {
+                                $ok = $ok && $this->addPlacementAdvice(Placement::fromJsonObject($item, $placement));
+                            }
                         }
                     }
                     break;
