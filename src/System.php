@@ -1592,7 +1592,9 @@ trait System
                     }
                     $nonce = new PlatformNonce($this->platform, $state);
                     $this->ok = $nonce->load();
-                    if (!$this->ok) {
+                    if ($this->ok) {
+                        $this->ok = $nonce->delete();
+                    } else {
                         $this->setReason("Invalid tool_state parameter: '{$state}'");
                     }
                 }
