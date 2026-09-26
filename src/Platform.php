@@ -991,17 +991,16 @@ EOD;
             $this->ok = false;
             $this->messageParameters['error'] = 'unauthorized_client';
         }
-        $tool = Tool::$defaultTool;
-        if ($this->ok && empty($tool)) {
-            $tool = Tool::fromConsumerKey($this->clientId, $platform->getDataConnector());
+        if ($this->ok && empty(Tool::$defaultTool)) {
+            Tool::$defaultTool = Tool::fromConsumerKey($this->clientId, $this->getDataConnector());
         }
-        if ($this->ok && !$tool->enabled) {
+        if ($this->ok && (empty(Tool::$defaultTool) || !Tool::$defaultTool->enabled)) {
             $this->ok = false;
             $this->messageParameters['error'] = 'server_error';
             $this->messageParameters['error_description'] = 'Tool not found or enabled';
         }
         if ($this->ok) {
-            $this->ok = in_array($parameters['redirect_uri'], $tool->redirectionUris);
+            $this->ok = in_array($parameters['redirect_uri'], Tool::$defaultTool->redirectionUris);
             if (!$this->ok) {
                 $this->messageParameters['error'] = 'invalid_request';
                 $this->messageParameters['error_description'] = 'Unregistered redirect_uri';
