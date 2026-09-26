@@ -827,7 +827,7 @@ class Tool
             $this->ok = false;
         }
         if (!$this->ok) {
-            $this->setReason('Unable to verify \'state\' and \'nonce\' values');
+            $this->setReason('Unable to verify \'state\' and \'nonce\' values; may be a cookie issue');
         }
         if (!$existingSession) {
             $session->closeSession();
