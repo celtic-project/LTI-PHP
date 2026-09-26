@@ -52,9 +52,7 @@ class ToolProfile
     {
         $this->lti_version = 'LTI-2p0';
 
-        if (!empty($tool->product)) {
-            $this->product_instance = new \stdClass;
-        }
+        $this->product_instance = new \stdClass;
         if (!empty($tool->product->id)) {
             $this->product_instance->guid = $tool->product->id;
         }
@@ -111,8 +109,8 @@ class ToolProfile
         foreach ($tool->resourceHandlers as $resourceHandler) {
             $this->resource_handler[] = new ResourceHandler($tool, $resourceHandler);
         }
+        $this->base_url_choice = [];
         if (!empty($tool->baseUrl)) {
-            $this->base_url_choice = [];
             $this->base_url_choice[] = (object) ['default_base_url' => $tool->baseUrl];
         }
     }
