@@ -960,7 +960,7 @@ EOD;
         $hasGroupsService = !empty($this->getContextId()) && !empty($this->getContext()->getSetting('custom_context_groups_url'));
         $hasExtService = !empty($this->getSetting('ext_ims_lis_memberships_url'));
         $hasApiHook = $this->hasConfiguredApiHook(self::$MEMBERSHIPS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode(), $this);
-        if (($hasLtiContextService && (!$withGroups || $hasGroupsService)) || (!$hasExtService && !$hasApiHook)) {
+        if ($hasLtiContextService && (!$withGroups || $hasGroupsService || (!$hasLtiLinkService && !$hasExtService && !$hasApiHook))) {
             if (!empty($this->getContextId()) && !empty($this->getContext()->getSetting('custom_context_memberships_v2_url'))) {
                 $url = $this->getContext()->getSetting('custom_context_memberships_v2_url');
                 $format = Service\Membership::MEDIA_TYPE_MEMBERSHIPS_NRPS;
