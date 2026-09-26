@@ -452,9 +452,10 @@ EOD;
         if ($ok) {
             while ($row = $query->fetch(\PDO::FETCH_ASSOC)) {
                 $row = array_change_key_case($row);
-                $platform = Platform::fromConsumerKey($row['consumer_key'], $this);
+                $platform = new Platform($this);
                 $platform->setRecordId(intval($row['consumer_pk']));
                 $platform->name = $row['name'];
+                $platform->setKey($row['consumer_key']);
                 $platform->secret = $row['secret'];
                 $platform->platformId = $row['platform_id'];
                 $platform->clientId = $row['client_id'];
