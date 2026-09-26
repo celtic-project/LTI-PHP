@@ -1292,8 +1292,7 @@ trait System
                 ($parameters['client_assertion_type'] === 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer') &&
                 isset($parameters['client_assertion']) && !empty($parameters['scope'])) {
                 $jwt = Jwt::getJwtClient();
-                $ok = $jwt->load($parameters['client_assertion']);
-                if (!$ok) {
+                if (!$jwt->load($parameters['client_assertion'])) {
                     $this->setReason('Request does not contain a valid client_assertion JWT');
                 } else {
                     $this->jwt = $jwt;
@@ -1334,11 +1333,17 @@ trait System
                         $deploymentId = $this->getClaimString(Util::JWT_CLAIM_PREFIX . '/claim/deployment_id', false, true,
                             $generateWarnings);
                     }
-                }
-                if ($ok) {
-                    $ok = $jwt->verifySignature($publicKey, $jku);
-                    if (!$ok) {
-                        $this->setReason('Invalid JWT signature');
+                    if ($this->ok && ($this instanceof Platform) && empty(Tool::$defaultTool)) {
+                        Tool::$defaultTool = Tool::fromConsumerKey($sub, $this->getDataConnector());
+                        if (Tool::$defaultTool->enabled) {
+                            $publicKey = Tool::$defaultTool->rsaKey;
+                            $jku = Tool::$defaultTool->jku;
+                        }
+                    }
+                    if ($this->ok || $generateWarnings) {
+                        if (!$jwt->verifySignature($publicKey, $jku)) {
+                            $this->setReason('Invalid JWT signature');
+                        }
                     }
                 }
             } else {
