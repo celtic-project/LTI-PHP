@@ -1480,33 +1480,23 @@ trait System
                         if (isset($this->rawParameters['id_token'])) {
                             $this->ok = !empty($this->rawParameters['state']);
                             if ($this->ok) {
-                                $currentId = null;
                                 $state = $this->rawParameters['state'];
                                 $parts = explode('.', $state);
                                 $session->openSession();
                                 if (!empty($session->getId()) && (count($parts) > 1) && ($session->getId() !== $parts[1]) &&
                                     ($parts[1] !== 'platformStorage')) {  // Reset to original session
-                                    $currentId = $session->getId();
-                                    $session->closeSession();
-                                    $session->setId($parts[1]);
-                                    $this->onResetSessionId();
+                                    $this->onMigrateSession($session, $parts[1]);
                                 }
                                 $usePlatformStorage = str_ends_with($state, '.platformStorage');
                                 if ($usePlatformStorage) {
                                     $state = substr($state, 0, -16);
                                 }
                                 $this->onAuthenticate($state, $nonce, $usePlatformStorage);
-                                if ($currentId) {  // Reset to new session
-                                    $session->closeSession();
-                                    $session->setId($currentId);
-                                    $this->onResetSessionId();
-                                }
                                 if (!$this->ok && !$disableCookieCheck) {
                                     if (($cookie->numCookies() <= 0) && !isset($_POST['_new_window'])) {  // Reopen in a new window
                                         Util::setTestCookie();
                                         $_POST['_new_window'] = '';
-                                        $this->output = Util::sendForm(\urldecode($_SERVER['REQUEST_URI']), $_POST, '_blank', '',
-                                            true);
+                                        $this->output = Util::sendForm(\urldecode($_SERVER['REQUEST_URI']), $_POST, '_blank');
                                         $this->doExit();
                                     }
                                 }
@@ -1580,12 +1570,10 @@ trait System
                         if (($cookie->numCookies() <= 0) && !isset($_POST['_new_window'])) {  // Reopen in a new window
                             Util::setTestCookie();
                             $_POST['_new_window'] = '';
-                            $this->output = Util::sendForm(\urldecode($_SERVER['REQUEST_URI']), $_POST, '_blank', '', true);
+                            $this->output = Util::sendForm(\urldecode($_SERVER['REQUEST_URI']), $_POST, '_blank');
                             $this->doExit();
                         } elseif (!empty($session->getId()) && (count($parts) > 1) && ($session->getId() !== $parts[1])) {  // Reset to original session
-                            $session->closeSession();
-                            $session->setId($parts[1]);
-                            $this->onResetSessionId();
+                            $this->onMigrateSession($session, $parts[1]);
                         }
                         unset($this->rawParameters['_new_window']);
                         Util::setTestCookie(true);

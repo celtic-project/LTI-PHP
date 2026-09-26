@@ -17,6 +17,7 @@ use ceLTIc\LTI\Util;
 use ceLTIc\LTI\Enum\LtiVersion;
 use ceLTIc\LTI\Enum\LogLevel;
 use ceLTIc\LTI\Session\Session;
+use ceLTIc\LTI\Session\ClientInterface;
 use ceLTIc\LTI\Cookie\Cookie;
 
 /**
@@ -834,7 +835,66 @@ class Tool
     }
 
     /**
+     * Migrate elements from the old session
+     *
+     * @param ClientInterface $session  Session client
+     * @param string $id                Session ID to migrate from
+     * @param array $elements           Names of elements to be migrated
+     *
+     * @return void
+     */
+    protected function onMigrateSession(ClientInterface $session, string $id, array $elements = []): void
+    {
+        $currentId = $session->getId();
+        if ($currentId !== $id) {
+            $session->closeSession();
+            $session->setId($id);
+            $this->onResetSessionId();
+            $elements = array_merge($elements, ['ceLTIc_lti_authentication_requests']);
+            $merge = [];
+            foreach ($elements as $key => $value) {
+                if (is_array($value)) {
+                    foreach ($value as $item) {
+                        $val = $session->getItem($key);
+                        if (isset($val[$item])) {
+                            $merge[$key][$item] = $val[$item];
+                        }
+                    }
+                } elseif (is_string($key)) {
+                    $val = $session->getItem($key);
+                    if (is_array($val) && !empty($val[$value])) {
+                        $merge[$key][$value] = $val[$value];
+                    }
+                } elseif (is_string($value)) {
+                    $val = $session->getItem($value);
+                    if (!empty($val)) {
+                        $merge[$value] = $val;
+                    }
+                }
+            }
+            $session->closeSession();
+            $session->setId($currentId);
+            $this->onResetSessionId();
+            foreach ($merge as $key => $value) {
+                $val = $session->getItem($key);
+                if (!is_array($val)) {
+                    $session->setItem($key, $value);
+                } else {
+                    if (is_array($value)) {
+                        $val = array_merge($val, $value);
+                    } else {
+                        $val[] = $value;
+                    }
+                    $session->setItem($key, $val);
+                }
+            }
+        }
+    }
+
+    /**
      * Process a change in the session ID
+     *
+     * @deprecated
      *
      * @return void
      */
@@ -2412,7 +2472,6 @@ EOD;
     {
         $javascript = '';
         $timeoutDelay = static::$postMessageTimeoutDelay;
-        $formSubmissionTimeout = Util::$formSubmissionTimeout;
         if ($timeoutDelay > 0) {
             $parts = explode('.', $state);
             $state = $parts[0];
@@ -2427,6 +2486,7 @@ let capabilitiesid = '{$capabilitiesId}';
 let messageid = '{$messageId}';
 let supported = new Map();
 let timeout;
+let formtarget;
 
 window.addEventListener('message', function (event) {
   let ok = true;
@@ -2598,22 +2658,29 @@ function doUnblock() {
 function doOnSubmit() {
   var el = document.getElementById('id_blocked');
   el.style.display = 'none';
-  el = document.getElementById('id_submitted');
-  el.style.display = 'block';
+  if (formtarget) {
+    el = document.getElementById('id_submitted');
+    el.style.display = 'block';
+  }
 }
 
 function submitForm() {
   clearTimeout(timeout);
-  var formtarget = document.forms[0].target;
+  formtarget = document.forms[0].target;
   if (formtarget === '_blank') {
     formtarget = "ltitool-" + Math.random();
     document.forms[0].target = formtarget;
   }
-  var wdw = window.open('', formtarget);
-  if (wdw) {
+  if ((formtarget === '_self') || (formtarget === '_parent') || (formtarget === '_top')) {
     document.forms[0].submit();
   } else {
-    doUnblock();
+    var wdw = window.open('', formtarget);
+    if (wdw) {
+      doOnSubmit();
+      document.forms[0].submit();
+    } else {
+      doUnblock();
+    }
   }
 }
 

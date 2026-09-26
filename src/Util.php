@@ -209,6 +209,8 @@ final class Util
     /**
      * Delay (in seconds) before a manual button is displayed in case a browser is blocking a form submission.
      *
+     * @deprecated
+     * 
      * @var int $formSubmissionTimeout
      */
     public static int $formSubmissionTimeout = 5;
@@ -520,7 +522,6 @@ final class Util
     public static function sendForm(string $url, array $params, string $target = '', string $javascript = '',
         bool $disableNewIfTop = false, bool $useGet = false): string
     {
-        $timeout = static::$formSubmissionTimeout;
         $url = htmlentities($url, ENT_COMPAT | ENT_HTML401, 'UTF-8');
         if (empty($target)) {
             $target = '_self';
@@ -534,6 +535,8 @@ final class Util
         }
         if (empty($javascript)) {
             $javascript = <<< EOD
+var target;
+
 function doUnblock() {
   var el = document.getElementById('id_blocked');
   el.style.display = 'block';
@@ -542,17 +545,19 @@ function doUnblock() {
 function doOnSubmit() {
   var el = document.getElementById('id_blocked');
   el.style.display = 'none';
-  el = document.getElementById('id_submitted');
-  el.style.display = 'block';
+  if (target) {
+    el = document.getElementById('id_submitted');
+    el.style.display = 'block';
+  }
 }
 
 function doOnLoad() {
-  var target = document.forms[0].target;
+  target = document.forms[0].target;
 
 EOD;
             if ($disableNewIfTop) {
                 $javascript .= <<< EOD
-  if ((document.forms[0].target === '_blank') && (window.top === window.self)) {
+  if ((target === '_blank') && (window.top === window.self)) {
     target = '';
     document.forms[0].target = '';
   }
@@ -564,11 +569,16 @@ EOD;
     target = "ltitool-" + Math.random();
     document.forms[0].target = target;
   }
-  var wdw = window.open('', target);
-  if (wdw) {
+  if ((target === '') || (target === '_self') || (target === '_parent') || (target === '_top')) {
     document.forms[0].submit();
   } else {
-    doUnblock();
+    var wdw = window.open('', target);
+    if (wdw) {
+      doOnSubmit();
+      document.forms[0].submit();
+    } else {
+      doUnblock();
+    }
   }
 }
 
