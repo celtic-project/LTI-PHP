@@ -764,7 +764,10 @@ EOD;
                 $do = 'basic-lis-readresult';
             } elseif ($action === ServiceAction::Write) {
                 $do = 'basic-lis-updateresult';
-                if ($this->checkValueType($ltiOutcome, [OutcomeType::Decimal->value])) {
+                if ($this->checkValueType($ltiOutcome,
+                        [OutcomeType::Decimal->value, OutcomeType::Percentage->value, OutcomeType::Ratio->value,
+                            OutcomeType::LetterAF->value, OutcomeType::LetterAFPlus->value, OutcomeType::PassFail->value,
+                            OutcomeType::Text->value])) {
                     if (($ltiOutcome->getPointsPossible() <> 1) && ($ltiOutcome->getPointsPossible() > 0)) {
                         $outcome = $outcome / $ltiOutcome->getPointsPossible();
                     }
