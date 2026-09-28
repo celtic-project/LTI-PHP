@@ -854,21 +854,32 @@ class Tool
             $merge = [];
             foreach ($elements as $key => $value) {
                 if (is_array($value)) {
+                    $val = $session->getItem($key);
                     foreach ($value as $item) {
-                        $val = $session->getItem($key);
                         if (isset($val[$item])) {
                             $merge[$key][$item] = $val[$item];
+                            unset($val[$item]);
                         }
                     }
+                    if (empty($val)) {
+                        $val = null;
+                    }
+                    $session->setItem($key, $val);
                 } elseif (is_string($key)) {
                     $val = $session->getItem($key);
                     if (is_array($val) && !empty($val[$value])) {
                         $merge[$key][$value] = $val[$value];
+                        unset($val[$value]);
+                        if (empty($val)) {
+                            $val = null;
+                        }
+                        $session->setItem($key, $val);
                     }
                 } elseif (is_string($value)) {
                     $val = $session->getItem($value);
                     if (!empty($val)) {
                         $merge[$value] = $val;
+                        $session->setItem($value, null);
                     }
                 }
             }
