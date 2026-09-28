@@ -210,7 +210,7 @@ final class Util
      * Delay (in seconds) before a manual button is displayed in case a browser is blocking a form submission.
      *
      * @deprecated
-     * 
+     *
      * @var int $formSubmissionTimeout
      */
     public static int $formSubmissionTimeout = 5;
@@ -693,14 +693,14 @@ EOD;
             $sep = '&';
         }
         foreach ($params as $key => $value) {
-            $key = self::urlEncode($key);
+            $key = self::urlEncode(strval($key));
             if (!is_array($value)) {
-                $value = self::urlEncode($value);
+                $value = self::urlEncode(strval($value));
                 $url .= "{$sep}{$key}={$value}";
                 $sep = '&';
             } else {
                 foreach ($value as $element) {
-                    $element = self::urlEncode($element);
+                    $element = self::urlEncode(strval($element));
                     $url .= "{$sep}{$key}={$element}";
                     $sep = '&';
                 }
