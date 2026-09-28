@@ -1138,6 +1138,12 @@ EOD;
                 $stmt->bind_param('ssssi', $scopes, $token, $expires, $now, $consumer_pk);
             }
             $ok = $this->executeQuery($sql, $stmt);
+            if ($ok) {
+                if (empty($accessToken->created)) {
+                    $accessToken->created = $time;
+                }
+                $accessToken->updated = $time;
+            }
         }
 
         return $ok;

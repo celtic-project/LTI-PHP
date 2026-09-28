@@ -1241,6 +1241,12 @@ EOD;
                 $query->bindValue('consumer_pk', $consumer_pk, \PDO::PARAM_INT);
             }
             $ok = $this->executeQuery($sql, $query);
+            if ($ok) {
+                if (empty($accessToken->created)) {
+                    $accessToken->created = $time;
+                }
+                $accessToken->updated = $time;
+            }
         }
 
         return $ok;

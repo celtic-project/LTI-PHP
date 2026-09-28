@@ -1224,6 +1224,12 @@ EOD;
                 ];
             }
             $ok = $this->executeQuery($sql, $params) !== false;
+            if ($ok) {
+                if (empty($accessToken->created)) {
+                    $accessToken->created = $time;
+                }
+                $accessToken->updated = $time;
+            }
         }
 
         return $ok;

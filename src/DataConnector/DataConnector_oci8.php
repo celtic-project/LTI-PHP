@@ -1289,6 +1289,12 @@ EOD;
                 oci_bind_by_name($query, 'consumer_pk', $consumer_pk);
             }
             $ok = $this->executeQuery($sql, $query);
+            if ($ok) {
+                if (empty($accessToken->created)) {
+                    $accessToken->created = $time;
+                }
+                $accessToken->updated = $time;
+            }
         }
 
         return $ok;
