@@ -975,8 +975,7 @@ EOD;
             isset($parameters['login_hint']) && isset($parameters['nonce']);
         if (!$this->ok) {
             $this->messageParameters['error'] = 'invalid_request';
-        }
-        if ($this->ok) {
+        } else {
             $scopes = explode(' ', $parameters['scope']);
             $this->ok = in_array('openid', $scopes);
             if (!$this->ok) {
@@ -1002,6 +1001,7 @@ EOD;
         if ($this->ok) {
             $this->ok = in_array($parameters['redirect_uri'], Tool::$defaultTool->redirectionUris);
             if (!$this->ok) {
+                unset($parameters['redirect_uri']);
                 $this->messageParameters['error'] = 'invalid_request';
                 $this->messageParameters['error_description'] = 'Unregistered redirect_uri';
             }
@@ -1039,7 +1039,7 @@ EOD;
                 }
             }
         }
-        if (isset($parameters['state'])) {
+        if ($this->ok && isset($parameters['state'])) {
             $this->messageParameters['state'] = $parameters['state'];
         }
         if ($this->ok && !empty(static::$browserStorageFrame)) {
@@ -1050,7 +1050,8 @@ EOD;
             $this->output = Util::sendForm($parameters['redirect_uri'], $this->messageParameters);
             $this->doExit();
         } else {
-            $this->doExit('', 400, 'Bad Request');
+            $this->output = \json_encode($this->messageParameters, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+            $this->doExit('application/json', 400, 'Bad Request');
         }
     }
 
