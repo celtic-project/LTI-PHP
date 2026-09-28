@@ -67,8 +67,8 @@ EOD;
                 $userResult->setResourceLink($resourceLink);
                 $userResult->ltiUserId = $row['lti_user_id'];
                 $userResult->ltiResultSourcedId = $row['lti_result_sourcedid'];
-                $userResult->created = date_timestamp_get($row['created']);
-                $userResult->updated = date_timestamp_get($row['updated']);
+                $userResult->created = strtotime($row['created']);
+                $userResult->updated = strtotime($row['updated']);
                 if (is_null($idScope)) {
                     $userResults[] = $userResult;
                 } else {
