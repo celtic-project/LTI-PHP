@@ -1414,7 +1414,7 @@ EOD;
         if (!$ok) {
 // Convert numeric values to decimal
             if ($type === OutcomeType::Percentage) {
-                if (str_ends_with($value, '%')) {
+                if (is_string($value) && str_ends_with($value, '%')) {
                     $value = substr($value, 0, -1);
                 }
                 $ok = is_numeric($value) && ($value >= 0) && ($value <= 100);
