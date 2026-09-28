@@ -1728,7 +1728,8 @@ trait System
                             $value = Util::valToString($value);
                         }
                     }
-                    if (is_string($value)) {
+                    if (is_string($value) && !isset($this->messageParameters["custom_{$key}"]) &&
+                        !isset(Util::JWT_CLAIM_MAPPING["custom_{$key}"])) {  // Do not allow custom claims to override services
                         $this->messageParameters["custom_{$key}"] = $value;
                     }
                 }
