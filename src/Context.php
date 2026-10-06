@@ -228,9 +228,9 @@ class Context
     /**
      * Get consumer key.
      *
-     * @return string  Consumer key value for this context.
+     * @return string|null  Consumer key value for this context.
      */
-    public function getKey(): string
+    public function getKey(): ?string
     {
         return $this->getPlatform()->getKey();
     }

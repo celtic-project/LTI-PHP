@@ -363,9 +363,9 @@ class ResourceLink
     /**
      * Get consumer key.
      *
-     * @return string  Consumer key value for this resource link.
+     * @return string|null  Consumer key value for this resource link.
      */
-    public function getKey(): string
+    public function getKey(): ?string
     {
         return $this->getPlatform()->getKey();
     }
