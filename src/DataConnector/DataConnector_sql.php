@@ -172,6 +172,7 @@ EOD;
         $id = $platform->getRecordId();
         $profile = (!empty($platform->profile)) ? json_encode($platform->profile) : null;
         $this->fixPlatformSettings($platform, true);
+        $settingsValue = json_encode($platform->getSettings());
         $this->fixPlatformSettings($platform, false);
         $time = time();
         $now = date("{$this->dateFormat} {$this->timeFormat}", $time);
@@ -210,7 +211,7 @@ EOD;
                 $platform->consumerGuid,
                 $profile,
                 $platform->toolProxy,
-                json_encode($platform->getSettings()),
+                $settingsValue,
                 $platform->protected,
                 $platform->enabled,
                 $from,
@@ -242,7 +243,7 @@ EOD;
                 $platform->consumerGuid,
                 $profile,
                 $platform->toolProxy,
-                json_encode($platform->getSettings()),
+                $settingsValue,
                 $platform->protected,
                 $platform->enabled,
                 $from,
