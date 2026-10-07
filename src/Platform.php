@@ -517,6 +517,8 @@ class Platform
      */
     public function sendAccessToken($supportedScopes): never
     {
+        $this->ok = false;
+        $this->output = '';
         $scopesRequested = explode(' ', Util::getPostData()['scope']);
         $scopesPermitted = [];
         foreach ($scopesRequested as $scope) {
@@ -546,7 +548,6 @@ class Platform
 }
 EOD;
                 $this->ok = true;
-                $this->doExit('Content-Type: application/json; charset=utf-8');
             } catch (\Exception $e) {
                 $reason = $e->getMessage();
                 if (empty($reason)) {
@@ -556,9 +557,11 @@ EOD;
         } else {
             $reason = 'No valid scope requested';
         }
-        $this->ok = false;
-        $this->output = '';
-        $this->doExit('', 400, $reason);
+        if ($this->ok) {
+            $this->doExit('Content-Type: application/json; charset=utf-8');
+        } else {
+            $this->doExit('', 400, $reason);
+        }
     }
 
     /**
