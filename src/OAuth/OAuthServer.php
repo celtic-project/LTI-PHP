@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace ceLTIc\LTI\OAuth;
 
+use ceLTIc\LTI\Util;
+
 /**
  * Class to represent an OAuth server
  *
@@ -261,6 +263,30 @@ class OAuthServer
             $this->check_nonce($consumer, $token, $nonce, $timestamp);
         } else {
             throw new OAuthException('Invalid nonce parameter: ' . var_export($nonce, true));
+        }
+        $http_method = $request->get_normalized_http_method();
+        $request_headers = OAuthUtil::get_headers();
+        $body_hash = $request->get_parameter('oauth_body_hash');
+        if (($http_method === 'POST') && isset($request_headers['Content-Type']) && !stristr($request_headers['Content-Type'],
+                'application/x-www-form-urlencoded')) {
+            if (!is_null($body_hash)) {
+                $data = file_get_contents(OAuthRequest::$POST_INPUT);
+                $hash = match ($request->get_parameter('oauth_signature_method')) {
+                    'HMAC-SHA1' => base64_encode(sha1($data, true)),
+                    'HMAC-SHA224' => base64_encode(hash('sha224', $data, true)),
+                    'HMAC-SHA256' => base64_encode(hash('sha256', $data, true)),
+                    'HMAC-SHA384' => base64_encode(hash('sha384', $data, true)),
+                    'HMAC-SHA512' => base64_encode(hash('sha512', $data, true)),
+                    default => null
+                };
+                if ($hash !== $body_hash) {
+                    throw new OAuthException('Invalid body hash parameter');
+                }
+            } elseif (Util::$strictMode) {
+                throw new OAuthException('Missing body hash');
+            }
+        } elseif (!is_null($body_hash)) {
+            throw new OAuthException('Unexpected body hash');
         }
 
         $signature_method = $this->get_signature_method($request);
