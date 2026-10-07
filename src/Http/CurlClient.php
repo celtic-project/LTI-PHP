@@ -41,6 +41,8 @@ class CurlClient implements ClientInterface
         curl_setopt($ch, CURLOPT_TIMEOUT, self::$connectionTimeout);
         curl_setopt($ch, CURLOPT_URL, $message->getUrl());
         curl_setopt($ch, CURLOPT_HTTPHEADER, array_merge($message->requestHeaders, ['Expect:']));  // Avoid sending Expect header
+        curl_setopt($ch, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
+        curl_setopt($ch, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
         if ($message->getMethod() === 'POST') {
             curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_POSTFIELDS, $message->request);
@@ -59,7 +61,13 @@ class CurlClient implements ClientInterface
         $chResp = curl_exec($ch);
         $message->ok = $chResp !== false;
         if ($message->ok) {
-            $message->requestHeaders = preg_split("/\r?\n/", trim(curl_getinfo($ch, CURLINFO_HEADER_OUT)));
+            $info = curl_getinfo($ch, CURLINFO_HEADER_OUT);
+            if ($info === false) {
+                $info = '';
+            } else {
+                $info = trim($info);
+            }
+            $message->requestHeaders = preg_split("/\r?\n/", $info);
             $chResp = ltrim($chResp, "\r\n");
             $chRespSplit = preg_split("/\r?\n\r?\n/", $chResp, 2);
             $message->responseHeaders = preg_split("/\r?\n/", trim($chRespSplit[0]));
