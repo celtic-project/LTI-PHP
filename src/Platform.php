@@ -44,6 +44,13 @@ class Platform
     public static ?string $browserStorageFrame = null;
 
     /**
+     * Life in seconds for the OIDC login process
+     *
+     * @var int $loginLife
+     */
+    public static int $loginLife = 10;
+
+    /**
      * Life (in seconds) of an issued access token (default is 1 hour).
      *
      * @var int $accessTokenLife
@@ -833,23 +840,29 @@ EOD;
      *
      * @param string &$url                  The message URL
      * @param string &$loginHint            The ID of the user
-     * @param string|null &$ltiMessageHint  The message hint being sent to the tool
+     * @param string|null &$ltiMessageHint  The message hint being sent to the tool (use empty string to have a random value generated)
      * @param array $params                 An associative array of message parameters
      *
      * @return void
      */
     protected function onInitiateLogin(string &$url, string &$loginHint, ?string &$ltiMessageHint, array $params): void
     {
+        if ($ltiMessageHint === '') {
+            $ltiMessageHint = Util::getRandomString();
+        }
         $session = Session::getSessionClient();
         $existingSession = !$session->openSession();
-        $session->setItem('ceLTIc_lti_initiated_login',
-            [
-                'messageUrl' => $url,
-                'login_hint' => $loginHint,
-                'lti_message_hint' => $ltiMessageHint,
-                'params' => $params
-            ]
-        );
+        $logins = $session->getItem('ceLTIc_lti_initiated_logins', []);
+        $logins[$ltiMessageHint ?? ''] = [
+            'messageUrl' => $url,
+            'iss' => $this->platformId,
+            'client_id' => $this->clientId ?? null,
+            'lti_deployment_id' => $this->deploymentId ?? null,
+            'login_hint' => $loginHint,
+            'params' => $params,
+            'expires' => time() + self::$loginLife
+        ];
+        $session->setItem('ceLTIc_lti_initiated_logins', $logins);
         if (!$existingSession) {
             $session->closeSession();
         }
@@ -866,19 +879,40 @@ EOD;
     {
         $session = Session::getSessionClient();
         $existingSession = !$session->openSession();
-        if ($session->hasItem('ceLTIc_lti_initiated_login')) {
-            $login = $session->getItem('ceLTIc_lti_initiated_login');
+        if ($session->hasItem('ceLTIc_lti_initiated_logins')) {
+            $logins = $session->getItem('ceLTIc_lti_initiated_logins');
+            foreach ($logins as $key => $value) {  // Delete expired logins
+                if (isset($value['expires']) && ($value['expires'] < time())) {
+                    unset($logins[$key]);
+                }
+            }
             $parameters = Util::getRequestParameters();
-            if ($parameters['login_hint'] !== $login['login_hint'] ||
-                (isset($login['lti_message_hint']) && (!isset($parameters['lti_message_hint']) || ($parameters['lti_message_hint'] !== $login['lti_message_hint'])))) {
+            $messageHint = $parameters['lti_message_hint'] ?? '';
+            if (isset($logins[$messageHint])) {
+                $login = $logins[$messageHint];
+                if (($login['iss'] !== $this->platformId) || ($login['client_id'] !== $this->clientId) ||
+                    ($login['lti_deployment_id'] !== $this->deploymentId)) {
+                    $this->ok = false;
+                    $this->messageParameters['error'] = 'access_denied';
+                    $this->messageParameters['error_description'] = 'Invalid platform';
+                } elseif ($parameters['login_hint'] !== $login['login_hint']) {
+                    $this->ok = false;
+                    $this->messageParameters['error'] = 'access_denied';
+                    $this->messageParameters['error_description'] = 'Unexpected login_hint value';
+                } else {
+                    Tool::$defaultTool->messageUrl = $login['messageUrl'];
+                    $this->messageParameters = $login['params'];
+                }
+                unset($logins[$messageHint]);
+                if (empty($logins)) {
+                    $logins = null;
+                }
+                $session->setItem('ceLTIc_lti_initiated_logins', $logins);
+            } else {
                 $this->ok = false;
                 $this->messageParameters['error'] = 'access_denied';
-                $this->messageParameters['error_description'] = 'Unexpected login_hint and/or lti_message_hint values';
-            } else {
-                Tool::$defaultTool->messageUrl = $login['messageUrl'];
-                $this->messageParameters = $login['params'];
+                $this->messageParameters['error_description'] = 'Unrecognised lti_message_hint value or expired login attempt';
             }
-            $session->setItem('ceLTIc_lti_initiated_login', null);
         } else {
             $this->ok = false;
             $this->messageParameters['error'] = 'access_denied';
