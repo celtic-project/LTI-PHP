@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace ceLTIc\LTI\Jwt;
 
-use Firebase\JWT\JWT;
+use Firebase\JWT\JWT as FirebaseJWT;
 use Firebase\JWT\JWK;
 use Firebase\JWT\Key;
 use ceLTIc\LTI\Http\HttpMessage;
@@ -102,8 +102,8 @@ class FirebaseClient implements ClientInterface
         $sections = explode('.', $jwtString);
         $ok = count($sections) === 3;
         if ($ok) {
-            $headers = Util::jsonDecode(JWT::urlsafeB64Decode($sections[0]));
-            $payload = Util::jsonDecode(JWT::urlsafeB64Decode($sections[1]));
+            $headers = Util::jsonDecode(FirebaseJWT::urlsafeB64Decode($sections[0]));
+            $payload = Util::jsonDecode(FirebaseJWT::urlsafeB64Decode($sections[1]));
             $ok = !is_null($headers) && !is_null($payload);
         }
         if ($ok) {
@@ -267,11 +267,12 @@ class FirebaseClient implements ClientInterface
                 $jwk = $this->fetchPublicKey($jku);
             }
             if (!empty($jwk)) {
-                JWT::$leeway = Jwt::$leeway;
+                $leeway = FirebaseJWT::$leeway;
+                FirebaseJWT::$leeway = Jwt::$leeway;
                 $retry = false;
                 do {
                     try {
-                        JWT::decode($this->jwtString, $jwk);
+                        FirebaseJWT::decode($this->jwtString, $jwk);
                         $ok = true;
                         if (!$hasPublicKey || $retry) {
                             $key = openssl_pkey_get_public($jwk[$this->getHeader('kid')]->getKeyMaterial());
@@ -293,6 +294,8 @@ class FirebaseClient implements ClientInterface
 
                             }
                         }
+                    } finally {
+                        FirebaseJWT::$leeway = $leeway;
                     }
                 } while (!$ok && $retry);
             } else {
@@ -327,10 +330,10 @@ class FirebaseClient implements ClientInterface
             Util::logError($errorMessage);
             throw new \Exception($errorMessage);
         }
-        $jwtString = JWT::encode($payload, $privateKey, $signatureMethod, $kid);
+        $jwtString = FirebaseJWT::encode($payload, $privateKey, $signatureMethod, $kid);
         $sections = explode('.', $jwtString);
-        self::$lastHeaders = Util::jsonDecode(JWT::urlsafeB64Decode($sections[0]));
-        self::$lastPayload = Util::jsonDecode(JWT::urlsafeB64Decode($sections[1]));
+        self::$lastHeaders = Util::jsonDecode(FirebaseJWT::urlsafeB64Decode($sections[0]));
+        self::$lastPayload = Util::jsonDecode(FirebaseJWT::urlsafeB64Decode($sections[1]));
 
         return $jwtString;
     }
@@ -419,8 +422,8 @@ class FirebaseClient implements ClientInterface
             if (isset($details['rsa']) && isset($details['rsa']['n']) && isset($details['rsa']['e'])) {
                 $key = [
                     'kty' => 'RSA',
-                    'n' => JWT::urlsafeB64Encode($details['rsa']['n']),
-                    'e' => JWT::urlsafeB64Encode($details['rsa']['e']),
+                    'n' => FirebaseJWT::urlsafeB64Encode($details['rsa']['n']),
+                    'e' => FirebaseJWT::urlsafeB64Encode($details['rsa']['e']),
                     'alg' => $signatureMethod,
                     'use' => 'sig'
                 ];
@@ -432,8 +435,8 @@ class FirebaseClient implements ClientInterface
                 $key = [
                     'kty' => 'EC',
                     'crv' => $details['ec']['curve_name'],
-                    'x' => JWT::urlsafeB64Encode($details['ec']['x']),
-                    'y' => JWT::urlsafeB64Encode($details['ec']['y']),
+                    'x' => FirebaseJWT::urlsafeB64Encode($details['ec']['x']),
+                    'y' => FirebaseJWT::urlsafeB64Encode($details['ec']['y']),
                     'alg' => $signatureMethod,
                     'use' => 'sig'
                 ];
