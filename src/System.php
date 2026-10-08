@@ -1333,8 +1333,10 @@ trait System
                         $deploymentId = $this->getClaimString(Util::JWT_CLAIM_PREFIX . '/claim/deployment_id', false, true,
                             $generateWarnings);
                     }
+                    $resetDefaultTool = false;
                     if ($this->ok && ($this instanceof Platform) && empty(Tool::$defaultTool)) {
                         Tool::$defaultTool = Tool::fromConsumerKey($sub, $this->getDataConnector());
+                        $resetDefaultTool = true;
                         if (Tool::$defaultTool->enabled) {
                             $publicKey = Tool::$defaultTool->rsaKey;
                             $jku = Tool::$defaultTool->jku;
@@ -1344,6 +1346,9 @@ trait System
                         if (!$jwt->verifySignature($publicKey, $jku)) {
                             $this->setReason('Invalid JWT signature');
                         }
+                    }
+                    if ($resetDefaultTool) {
+                        Tool::$defaultTool = null;
                     }
                 }
             } else {

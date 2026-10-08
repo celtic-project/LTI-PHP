@@ -1027,8 +1027,10 @@ EOD;
             $this->ok = false;
             $this->messageParameters['error'] = 'unauthorized_client';
         }
+        $resetDefaultTool = false;
         if ($this->ok && empty(Tool::$defaultTool)) {
             Tool::$defaultTool = Tool::fromConsumerKey($this->clientId, $this->getDataConnector());
+            $resetDefaultTool = true;
         }
         if ($this->ok && (empty(Tool::$defaultTool) || !Tool::$defaultTool->enabled)) {
             $this->ok = false;
@@ -1082,6 +1084,9 @@ EOD;
         if ($this->ok && !empty(static::$browserStorageFrame)) {
             $parameters['redirect_uri'] = Util::addQueryParameters($parameters['redirect_uri'],
                 ['lti_storage_target' => static::$browserStorageFrame]);
+        }
+        if ($resetDefaultTool) {
+            Tool::$defaultTool = null;
         }
         if (isset($parameters['redirect_uri'])) {
             $this->output = Util::sendForm($parameters['redirect_uri'], $this->messageParameters);
