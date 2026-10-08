@@ -515,22 +515,6 @@ class Membership extends Service
                                                     'The members/message/https://purl.imsglobal.org/spec/lti/claim/custom element must be an object (' . gettype($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'}) . ' found)');
                                             }
                                         }
-                                        if (isset($member->group_enrollments)) {
-                                            if (!is_array($member->group_enrollments)) {
-                                                if (Util::$strictMode) {
-                                                    Util::setMessage(true,
-                                                        'The members/message/group_enrollments element must be an array (' . gettype($member->group_enrollments) . ' found)');
-                                                } else {
-                                                    Util::setMessage(false,
-                                                        'The members/message/group_enrollments element should be an array (' . gettype($member->group_enrollments) . ' found)');
-                                                    if (is_object($member->group_enrollments)) {
-                                                        $groupenrollments = (array) $member->group_enrollments;
-                                                    }
-                                                }
-                                            } else {
-                                                $groupenrollments = $member->group_enrollments;
-                                            }
-                                        }
                                     }
                                     if (!isset($message->{'https://purl.imsglobal.org/spec/lti/claim/message_type'})) {
                                         Util::setMessage(true,
@@ -585,6 +569,22 @@ class Membership extends Service
                             }
                             if ($doSave) {
                                 $userResult->save();
+                            }
+                            if (isset($member->group_enrollments)) {
+                                if (!is_array($member->group_enrollments)) {
+                                    if (Util::$strictMode) {
+                                        Util::setMessage(true,
+                                            'The members/message/group_enrollments element must be an array (' . gettype($member->group_enrollments) . ' found)');
+                                    } else {
+                                        Util::setMessage(false,
+                                            'The members/message/group_enrollments element should be an array (' . gettype($member->group_enrollments) . ' found)');
+                                        if (is_object($member->group_enrollments)) {
+                                            $groupenrollments = (array) $member->group_enrollments;
+                                        }
+                                    }
+                                } else {
+                                    $groupenrollments = $member->group_enrollments;
+                                }
                             }
                         }
                         $userResults[] = $userResult;
