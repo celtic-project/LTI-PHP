@@ -119,9 +119,8 @@ class LineItem extends AssignmentGrade
             $this->mediaType = self::MEDIA_TYPE_LINE_ITEMS;
             $http = $this->send('GET', $params);
             $this->scope = self::$SCOPE;
-            $ok = $http->ok && !empty($http->responseJson);
             $url = '';
-            if ($ok) {
+            if ($http->ok) {
                 $items = Util::checkArray($http, 'responseJson');
                 foreach ($items as $lineItemJson) {
                     if (!is_object($lineItemJson)) {
