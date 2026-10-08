@@ -424,225 +424,225 @@ class Membership extends Service
                             $roles[] = $arole;
                         }
                     }
-                }
-                if ($isLink) {
-                    if (isset($member->message)) {
-                        $messages = $member->message;
-                        if (!is_array($messages)) {
-                            if (Util::$strictMode) {
-                                $userid = null;
-                                Util::setMessage(true,
-                                    'The members/message element must have an array value (' . gettype($member->message) . ' found)');
-                                $messages = [];
-                            } else {
-                                Util::setMessage(false,
-                                    'The members/message element should have an array value (' . gettype($membership->message) . ' found)');
-                                if (is_object($messages)) {
-                                    $messages = (array) $messages;
-                                } else {
+                    if ($isLink) {
+                        if (isset($member->message)) {
+                            $messages = $member->message;
+                            if (!is_array($messages)) {
+                                if (Util::$strictMode) {
+                                    $userid = null;
+                                    Util::setMessage(true,
+                                        'The members/message element must have an array value (' . gettype($member->message) . ' found)');
                                     $messages = [];
+                                } else {
+                                    Util::setMessage(false,
+                                        'The members/message element should have an array value (' . gettype($membership->message) . ' found)');
+                                    if (is_object($messages)) {
+                                        $messages = (array) $messages;
+                                    } else {
+                                        $messages = [];
+                                    }
                                 }
                             }
+                        } else {
+                            $messages = [];
                         }
-                    } else {
-                        $messages = [];
                     }
-                }
-                if (!empty($userid)) {
-                    if ($isLink) {
-                        $userResult = LTI\UserResult::fromResourceLink($this->source, $userid);
-                    } else {
-                        $userResult = new LTI\UserResult();
-                        $userResult->ltiUserId = $userid;
-                    }
+                    if (!empty($userid)) {
+                        if ($isLink) {
+                            $userResult = LTI\UserResult::fromResourceLink($this->source, $userid);
+                        } else {
+                            $userResult = new LTI\UserResult();
+                            $userResult->ltiUserId = $userid;
+                        }
 
 // Set the user name
-                    $firstname = Util::checkString($member, 'members/given_name');
-                    $middlename = Util::checkString($member, 'members/middle_name');
-                    $lastname = Util::checkString($member, 'members/family_name');
-                    $fullname = Util::checkString($member, 'members/name');
-                    $userResult->setNames($firstname, $lastname, $fullname, $middlename);
+                        $firstname = Util::checkString($member, 'members/given_name');
+                        $middlename = Util::checkString($member, 'members/middle_name');
+                        $lastname = Util::checkString($member, 'members/family_name');
+                        $fullname = Util::checkString($member, 'members/name');
+                        $userResult->setNames($firstname, $lastname, $fullname, $middlename);
 
 // Set the sourcedId
-                    if (isset($member->lis_person_sourcedid)) {
-                        $userResult->sourcedId = Util::checkString($member, 'members/lis_person_sourcedid');
-                    }
+                        if (isset($member->lis_person_sourcedid)) {
+                            $userResult->sourcedId = Util::checkString($member, 'members/lis_person_sourcedid');
+                        }
 
 // Set the username
-                    $username = Util::checkString($member, 'members/ext_username');
-                    if (empty($username)) {
-                        $username = Util::checkString($member, 'members/ext_user_username');
-                    }
-                    if (empty($username)) {
-                        $username = Util::checkString($member, 'members/ext_d2l_username');
-                    }
-                    if (!empty($username)) {
-                        $userResult->username = $username;
-                    }
+                        $username = Util::checkString($member, 'members/ext_username');
+                        if (empty($username)) {
+                            $username = Util::checkString($member, 'members/ext_user_username');
+                        }
+                        if (empty($username)) {
+                            $username = Util::checkString($member, 'members/ext_d2l_username');
+                        }
+                        if (!empty($username)) {
+                            $userResult->username = $username;
+                        }
 
 // Set the user email
-                    $email = Util::checkString($member, 'email');
-                    $userResult->setEmail($email, $this->source->getPlatform()->defaultEmail);
+                        $email = Util::checkString($member, 'email');
+                        $userResult->setEmail($email, $this->source->getPlatform()->defaultEmail);
 
 // Set the user roles
-                    if (!empty($roles)) {
-                        $ltiVersion = $this->getPlatform()->ltiVersion;
-                        if (empty($ltiVersion)) {
-                            $ltiVersion = LtiVersion::V1;
+                        if (!empty($roles)) {
+                            $ltiVersion = $this->getPlatform()->ltiVersion;
+                            if (empty($ltiVersion)) {
+                                $ltiVersion = LtiVersion::V1;
+                            }
+                            $userResult->roles = LTI\Tool::parseRoles($roles, $ltiVersion);
                         }
-                        $userResult->roles = LTI\Tool::parseRoles($roles, $ltiVersion);
-                    }
 
 // If a result sourcedid is provided save the user
-                    $groupenrollments = [];
-                    if ($isLink) {
-                        $doSave = false;
-                        if (is_array($messages)) {
-                            foreach ($messages as $message) {
-                                if (!is_object($message)) {
-                                    Util::setMessage(true,
-                                        'The members/message element must comprise an array of objects (' . gettype($message) . ' found)');
-                                    continue;
-                                } else {
-                                    if (isset($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'})) {
-                                        if (!is_object($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'})) {
-                                            Util::setMessage(true,
-                                                'The members/message/https://purl.imsglobal.org/spec/lti/claim/ext element must be an object (' . gettype($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'}) . ' found)');
-                                        }
-                                    }
-                                    if (isset($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'})) {
-                                        if (!is_object($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'})) {
-                                            Util::setMessage(true,
-                                                'The members/message/https://purl.imsglobal.org/spec/lti/claim/custom element must be an object (' . gettype($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'}) . ' found)');
-                                        }
-                                    }
-                                    if (isset($member->group_enrollments)) {
-                                        if (!is_array($member->group_enrollments)) {
-                                            if (Util::$strictMode) {
+                        $groupenrollments = [];
+                        if ($isLink) {
+                            $doSave = false;
+                            if (is_array($messages)) {
+                                foreach ($messages as $message) {
+                                    if (!is_object($message)) {
+                                        Util::setMessage(true,
+                                            'The members/message element must comprise an array of objects (' . gettype($message) . ' found)');
+                                        continue;
+                                    } else {
+                                        if (isset($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'})) {
+                                            if (!is_object($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'})) {
                                                 Util::setMessage(true,
-                                                    'The members/message/group_enrollments element must be an array (' . gettype($member->group_enrollments) . ' found)');
-                                            } else {
-                                                Util::setMessage(false,
-                                                    'The members/message/group_enrollments element should be an array (' . gettype($member->group_enrollments) . ' found)');
-                                                if (is_object($member->group_enrollments)) {
-                                                    $groupenrollments = (array) $member->group_enrollments;
-                                                }
+                                                    'The members/message/https://purl.imsglobal.org/spec/lti/claim/ext element must be an object (' . gettype($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'}) . ' found)');
                                             }
-                                        } else {
-                                            $groupenrollments = $member->group_enrollments;
+                                        }
+                                        if (isset($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'})) {
+                                            if (!is_object($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'})) {
+                                                Util::setMessage(true,
+                                                    'The members/message/https://purl.imsglobal.org/spec/lti/claim/custom element must be an object (' . gettype($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'}) . ' found)');
+                                            }
+                                        }
+                                        if (isset($member->group_enrollments)) {
+                                            if (!is_array($member->group_enrollments)) {
+                                                if (Util::$strictMode) {
+                                                    Util::setMessage(true,
+                                                        'The members/message/group_enrollments element must be an array (' . gettype($member->group_enrollments) . ' found)');
+                                                } else {
+                                                    Util::setMessage(false,
+                                                        'The members/message/group_enrollments element should be an array (' . gettype($member->group_enrollments) . ' found)');
+                                                    if (is_object($member->group_enrollments)) {
+                                                        $groupenrollments = (array) $member->group_enrollments;
+                                                    }
+                                                }
+                                            } else {
+                                                $groupenrollments = $member->group_enrollments;
+                                            }
                                         }
                                     }
-                                }
-                                if (!isset($message->{'https://purl.imsglobal.org/spec/lti/claim/message_type'})) {
-                                    Util::setMessage(true,
-                                        'The members/message elements must include a \'https://purl.imsglobal.org/spec/lti/claim/message_type\' property');
-                                } elseif (($message->{'https://purl.imsglobal.org/spec/lti/claim/message_type'} === 'basic-lti-launch-request') ||
-                                    ($message->{'https://purl.imsglobal.org/spec/lti/claim/message_type'} === 'LtiResourceLinkRequest')) {
-                                    if (isset($message->{'https://purl.imsglobal.org/spec/lti-bo/claim/basicoutcome'}) &&
-                                        isset($message->{'https://purl.imsglobal.org/spec/lti-bo/claim/basicoutcome'}->lis_result_sourcedid)) {
-                                        $sourcedid = Util::checkString($message->{'https://purl.imsglobal.org/spec/lti-bo/claim/basicoutcome'},
-                                            'members/message/https://purl.imsglobal.org/spec/lti-bo/claim/basicoutcome/lis_result_sourcedid');
-                                        if (empty($userResult->ltiResultSourcedId) || ($userResult->ltiResultSourcedId !== $sourcedid)) {
-                                            $userResult->ltiResultSourcedId = $sourcedid;
+                                    if (!isset($message->{'https://purl.imsglobal.org/spec/lti/claim/message_type'})) {
+                                        Util::setMessage(true,
+                                            'The members/message elements must include a \'https://purl.imsglobal.org/spec/lti/claim/message_type\' property');
+                                    } elseif (($message->{'https://purl.imsglobal.org/spec/lti/claim/message_type'} === 'basic-lti-launch-request') ||
+                                        ($message->{'https://purl.imsglobal.org/spec/lti/claim/message_type'} === 'LtiResourceLinkRequest')) {
+                                        if (isset($message->{'https://purl.imsglobal.org/spec/lti-bo/claim/basicoutcome'}) &&
+                                            isset($message->{'https://purl.imsglobal.org/spec/lti-bo/claim/basicoutcome'}->lis_result_sourcedid)) {
+                                            $sourcedid = Util::checkString($message->{'https://purl.imsglobal.org/spec/lti-bo/claim/basicoutcome'},
+                                                'members/message/https://purl.imsglobal.org/spec/lti-bo/claim/basicoutcome/lis_result_sourcedid');
+                                            if (empty($userResult->ltiResultSourcedId) || ($userResult->ltiResultSourcedId !== $sourcedid)) {
+                                                $userResult->ltiResultSourcedId = $sourcedid;
+                                                $doSave = true;
+                                            }
+                                        } elseif ($userResult->isLearner() && empty($userResult->created)) {  // Ensure all learners are recorded in case Assignment and Grade services are used
+                                            $userResult->ltiResultSourcedId = '';
                                             $doSave = true;
                                         }
-                                    } elseif ($userResult->isLearner() && empty($userResult->created)) {  // Ensure all learners are recorded in case Assignment and Grade services are used
-                                        $userResult->ltiResultSourcedId = '';
-                                        $doSave = true;
-                                    }
-                                    $username = null;
-                                    if (isset($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'}) &&
-                                        is_object($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'})) {
-                                        if (!empty($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'}->username)) {
-                                            $username = Util::checkString($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'},
-                                                'members/message/https://purl.imsglobal.org/spec/lti/claim/ext/username');
-                                        } elseif (!empty($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'}->user_username)) {
-                                            $username = Util::checkString($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'},
-                                                'members/message/https://purl.imsglobal.org/spec/lti/claim/ext/user_username');
-                                        } elseif (!empty($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'}->d2l_username)) {
-                                            $username = Util::checkString($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'},
-                                                'members/message/https://purl.imsglobal.org/spec/lti/claim/ext/d2l_username');
+                                        $username = null;
+                                        if (isset($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'}) &&
+                                            is_object($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'})) {
+                                            if (!empty($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'}->username)) {
+                                                $username = Util::checkString($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'},
+                                                    'members/message/https://purl.imsglobal.org/spec/lti/claim/ext/username');
+                                            } elseif (!empty($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'}->user_username)) {
+                                                $username = Util::checkString($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'},
+                                                    'members/message/https://purl.imsglobal.org/spec/lti/claim/ext/user_username');
+                                            } elseif (!empty($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'}->d2l_username)) {
+                                                $username = Util::checkString($message->{'https://purl.imsglobal.org/spec/lti/claim/ext'},
+                                                    'members/message/https://purl.imsglobal.org/spec/lti/claim/ext/d2l_username');
+                                            }
                                         }
-                                    }
-                                    if (empty($username) && isset($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'}) &&
-                                        is_object($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'})) {
-                                        if (!empty($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'}->username)) {
-                                            $username = Util::checkString($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'},
-                                                'members/message/https://purl.imsglobal.org/spec/lti/claim/custom/username');
-                                        } elseif (!empty($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'}->user_username)) {
-                                            $username = Util::checkString($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'},
-                                                'members/message/https://purl.imsglobal.org/spec/lti/claim/custom/user_username');
+                                        if (empty($username) && isset($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'}) &&
+                                            is_object($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'})) {
+                                            if (!empty($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'}->username)) {
+                                                $username = Util::checkString($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'},
+                                                    'members/message/https://purl.imsglobal.org/spec/lti/claim/custom/username');
+                                            } elseif (!empty($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'}->user_username)) {
+                                                $username = Util::checkString($message->{'https://purl.imsglobal.org/spec/lti/claim/custom'},
+                                                    'members/message/https://purl.imsglobal.org/spec/lti/claim/custom/user_username');
+                                            }
                                         }
+                                        if (!empty($username)) {
+                                            $userResult->username = $username;
+                                        }
+                                        break;
                                     }
-                                    if (!empty($username)) {
-                                        $userResult->username = $username;
-                                    }
-                                    break;
                                 }
+                            } elseif ($userResult->isLearner() && empty($userResult->created)) {  // Ensure all learners are recorded in case Assignment and Grade services are used
+                                $userResult->ltiResultSourcedId = '';
+                                $doSave = true;
                             }
-                        } elseif ($userResult->isLearner() && empty($userResult->created)) {  // Ensure all learners are recorded in case Assignment and Grade services are used
-                            $userResult->ltiResultSourcedId = '';
-                            $doSave = true;
+                            if ($doSave) {
+                                $userResult->save();
+                            }
                         }
-                        if ($doSave) {
-                            $userResult->save();
-                        }
-                    }
-                    $userResults[] = $userResult;
-                    if (is_array($groupenrollments)) {
-                        $userResult->groups = [];
-                        foreach ($groupenrollments as $group) {
-                            if (!is_object($group)) {
-                                Util::setMessage(true,
-                                    'The members/group_enrollments element must comprise an array of objects (' . gettype($group) . ' found)');
-                                continue;
-                            } elseif (!isset($group->group_id)) {
-                                Util::setMessage(true, 'The members/group_enrollments objects must have a \'group_id\' property');
-                                continue;
-                            } else {
-                                $groupId = Util::checkString($group, 'members/group_enrollments/group_id');
-                                if (!empty($groupId)) {
-                                    if (empty($this->source->groups) || !array_key_exists($groupId, $this->source->groups)) {
-                                        $this->source->groups[$groupId] = [
-                                            'title' => "Group {$groupId}"
-                                        ];
-                                    }
-                                    if (!empty($this->source->groups[$groupId]['set'])) {
-                                        $sets = $this->source->groups[$groupId]['set'];
-                                        if (!is_array($sets)) {
-                                            $sets = [$sets];
+                        $userResults[] = $userResult;
+                        if (is_array($groupenrollments)) {
+                            $userResult->groups = [];
+                            foreach ($groupenrollments as $group) {
+                                if (!is_object($group)) {
+                                    Util::setMessage(true,
+                                        'The members/group_enrollments element must comprise an array of objects (' . gettype($group) . ' found)');
+                                    continue;
+                                } elseif (!isset($group->group_id)) {
+                                    Util::setMessage(true, 'The members/group_enrollments objects must have a \'group_id\' property');
+                                    continue;
+                                } else {
+                                    $groupId = Util::checkString($group, 'members/group_enrollments/group_id');
+                                    if (!empty($groupId)) {
+                                        if (empty($this->source->groups) || !array_key_exists($groupId, $this->source->groups)) {
+                                            $this->source->groups[$groupId] = [
+                                                'title' => "Group {$groupId}"
+                                            ];
                                         }
-                                        foreach ($sets as $setId) {
-                                            if (!isset($this->source->groupSets[$setId])) {
-                                                $this->source->groupSets[$setId] = [
-                                                    'title' => "Group set {$setId}",
-                                                    'groups' => [],
-                                                    'num_members' => 0,
-                                                    'num_staff' => 0,
-                                                    'num_learners' => 0
-                                                ];
+                                        if (!empty($this->source->groups[$groupId]['set'])) {
+                                            $sets = $this->source->groups[$groupId]['set'];
+                                            if (!is_array($sets)) {
+                                                $sets = [$sets];
                                             }
-                                            if (!in_array($groupId, $this->source->groupSets[$setId]['groups'])) {
-                                                $this->source->groupSets[$setId]['groups'][] = $groupId;
-                                            }
-                                            $this->source->groupSets[$setId]['num_members']++;
-                                            if ($userResult->isStaff()) {
-                                                $this->source->groupSets[$setId]['num_staff']++;
-                                            }
-                                            if ($userResult->isLearner()) {
-                                                $this->source->groupSets[$setId]['num_learners']++;
+                                            foreach ($sets as $setId) {
+                                                if (!isset($this->source->groupSets[$setId])) {
+                                                    $this->source->groupSets[$setId] = [
+                                                        'title' => "Group set {$setId}",
+                                                        'groups' => [],
+                                                        'num_members' => 0,
+                                                        'num_staff' => 0,
+                                                        'num_learners' => 0
+                                                    ];
+                                                }
+                                                if (!in_array($groupId, $this->source->groupSets[$setId]['groups'])) {
+                                                    $this->source->groupSets[$setId]['groups'][] = $groupId;
+                                                }
+                                                $this->source->groupSets[$setId]['num_members']++;
+                                                if ($userResult->isStaff()) {
+                                                    $this->source->groupSets[$setId]['num_staff']++;
+                                                }
+                                                if ($userResult->isLearner()) {
+                                                    $this->source->groupSets[$setId]['num_learners']++;
+                                                }
                                             }
                                         }
+                                        $userResult->groups[] = $groupId;
                                     }
-                                    $userResult->groups[] = $groupId;
                                 }
                             }
                         }
-                    }
 
 // Remove old user (if it exists)
-                    if ($isLink) {
-                        unset($oldUsers[$userResult->getId(IdScope::Resource)]);
+                        if ($isLink) {
+                            unset($oldUsers[$userResult->getId(IdScope::Resource)]);
+                        }
                     }
                 }
             }
