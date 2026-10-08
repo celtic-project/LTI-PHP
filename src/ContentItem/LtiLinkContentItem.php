@@ -99,7 +99,7 @@ class LtiLinkContentItem extends ContentItem
                     $custom = Util::checkObject($obj, 'custom', false, true);
                     if (!is_null($custom)) {
                         foreach (get_object_vars($custom) as $elementName => $elementValue) {
-                            $elementValue = Util::checkString($obj, "custom/{$elementName}");
+                            $elementValue = Util::checkString($custom, "custom/{$elementName}", false, false, '', false, null);
                             if (!is_null($elementValue)) {
                                 $this->item->addCustom($elementName, $elementValue);
                             }
