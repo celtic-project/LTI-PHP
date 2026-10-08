@@ -501,6 +501,9 @@ class Tool
             $this->getMessageParameters($strictMode, $disableCookieCheck, $generateWarnings);
             if (($this->ok && !is_null($this->messageParameters)) || ($generateWarnings && !empty($this->messageParameters))) {
                 $this->authenticate($disableCookieCheck, $generateWarnings);
+                if (!$this->ok) {
+                    $this->returnUrl = null;  // Do not use any return URL when request has not been authenticated
+                }
             }
             if ($this->ok && empty($this->output)) {
                 $this->doCallback();
