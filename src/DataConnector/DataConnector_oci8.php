@@ -119,7 +119,7 @@ EOD;
         }
         $ok = $this->executeQuery($sql, $query);
         if ($ok) {
-            $row = oci_fetch_assoc($query);
+            $row = oci_fetch_array($query, OCI_ASSOC | OCI_RETURN_NULLS | OCI_RETURN_LOBS);
             $ok = ($row !== false) && ($allowMultiple || !oci_fetch_assoc($query));
         }
         if ($ok) {
@@ -139,7 +139,7 @@ EOD;
             $platform->consumerGuid = $row['consumer_guid'];
             $platform->profile = Util::jsonDecode($row['profile']);
             $platform->toolProxy = $row['tool_proxy'];
-            $settingsValue = $row['settings']->load();
+            $settingsValue = $row['settings'];
             if (is_string($settingsValue)) {
                 $settings = Util::jsonDecode($settingsValue, true);
                 if (!is_array($settings) && is_string($settingsValue)) {
@@ -471,7 +471,7 @@ EOD;
         }
 
         if ($ok) {
-            while ($row = oci_fetch_assoc($query)) {
+            while ($row = oci_fetch_array($query, OCI_ASSOC | OCI_RETURN_NULLS | OCI_RETURN_LOBS)) {
                 $row = array_change_key_case($row);
                 $platform = new Platform($this);
                 $platform->setRecordId(intval($row['consumer_pk']));
@@ -489,7 +489,7 @@ EOD;
                 $platform->consumerGuid = $row['consumer_guid'];
                 $platform->profile = Util::jsonDecode($row['profile']);
                 $platform->toolProxy = $row['tool_proxy'];
-                $settingsValue = $row['settings']->load();
+                $settingsValue = $row['settings'];
                 if (is_string($settingsValue)) {
                     $settings = Util::jsonDecode($settingsValue, true);
                     if (!is_array($settings) && is_string($settingsValue)) {
@@ -562,7 +562,7 @@ EOD;
         }
         $ok = $this->executeQuery($sql, $query);
         if ($ok) {
-            $row = oci_fetch_assoc($query);
+            $row = oci_fetch_array($query, OCI_ASSOC | OCI_RETURN_NULLS | OCI_RETURN_LOBS);
             $ok = ($row !== false);
         }
         if ($ok) {
@@ -572,7 +572,7 @@ EOD;
             $context->title = $row['title'];
             $context->ltiContextId = $row['lti_context_id'];
             $context->type = $row['type'];
-            $settingsValue = $row['settings']->load();
+            $settingsValue = $row['settings'];
             if (is_string($settingsValue)) {
                 $settings = Util::jsonDecode($settingsValue, true);
                 if (!is_array($settings) && is_string($settingsValue)) {
@@ -783,7 +783,7 @@ EOD;
         }
         $ok = $this->executeQuery($sql, $query);
         if ($ok) {
-            $row = oci_fetch_assoc($query);
+            $row = oci_fetch_array($query, OCI_ASSOC | OCI_RETURN_NULLS | OCI_RETURN_LOBS);
             $ok = ($row !== false);
         }
 
@@ -802,8 +802,8 @@ EOD;
             }
             $resourceLink->title = $row['title'];
             $resourceLink->ltiResourceLinkId = $row['lti_resource_link_id'];
-            $settings = $row['settings']->load();
-            $settingsValue = $row['settings']->load();
+            $settings = $row['settings'];
+            $settingsValue = $row['settings'];
             if (is_string($settingsValue)) {
                 $settings = Util::jsonDecode($settingsValue, true);
                 if (!is_array($settings) && is_string($settingsValue)) {
@@ -1028,7 +1028,7 @@ EOD;
             oci_bind_by_name($query, 'pid', $id);
         }
         if ($this->executeQuery($sql, $query)) {
-            while ($row = oci_fetch_assoc($query)) {
+            while ($row = oci_fetch_array($query, OCI_ASSOC | OCI_RETURN_NULLS | OCI_RETURN_LOBS)) {
                 $row = array_change_key_case($row);
                 $userResult = new LTI\UserResult();
                 $userResult->setRecordId(intval($row['user_result_pk']));
@@ -1078,7 +1078,7 @@ EOD;
         oci_bind_by_name($query, 'id1', $id);
         oci_bind_by_name($query, 'id2', $id);
         if ($this->executeQuery($sql, $query)) {
-            while ($row = oci_fetch_assoc($query)) {
+            while ($row = oci_fetch_array($query, OCI_ASSOC | OCI_RETURN_NULLS | OCI_RETURN_LOBS)) {
                 $row = array_change_key_case($row);
                 $share = new LTI\ResourceLinkShare();
                 $share->consumerName = $row['consumer_name'];
@@ -1131,7 +1131,7 @@ EOD;
             oci_bind_by_name($query, 'value', $value);
             $ok = $this->executeQuery($sql, $query, false);
             if ($ok) {
-                $row = oci_fetch_assoc($query);
+                $row = oci_fetch_array($query, OCI_ASSOC | OCI_RETURN_NULLS | OCI_RETURN_LOBS);
                 if ($row === false) {
                     $ok = false;
                 }
@@ -1224,10 +1224,10 @@ EOD;
             oci_bind_by_name($query, 'consumer_pk', $consumer_pk);
             $this->executeQuery($sql, $query, false);
             if ($this->executeQuery($sql, $query)) {
-                $row = oci_fetch_assoc($query);
+                $row = oci_fetch_array($query, OCI_ASSOC | OCI_RETURN_NULLS | OCI_RETURN_LOBS);
                 if ($row !== false) {
                     $row = array_change_key_case($row);
-                    $scopes = Util::jsonDecode($row['scopes']->load(), true);
+                    $scopes = Util::jsonDecode($row['scopes'], true);
                     if (!is_array($scopes)) {
                         $scopes = [];
                     }
@@ -1335,7 +1335,7 @@ EOD;
         $query = oci_parse($this->db, $sql);
         oci_bind_by_name($query, 'id', $id);
         if ($this->executeQuery($sql, $query)) {
-            $row = oci_fetch_assoc($query);
+            $row = oci_fetch_array($query, OCI_ASSOC | OCI_RETURN_NULLS | OCI_RETURN_LOBS);
             if ($row !== false) {
                 $row = array_change_key_case($row);
                 $shareKey->resourceLinkId = intval($row['resource_link_pk']);
@@ -1440,7 +1440,7 @@ EOD;
             oci_bind_by_name($query, 'u_id', $uid);
         }
         if ($this->executeQuery($sql, $query)) {
-            $row = oci_fetch_assoc($query);
+            $row = oci_fetch_array($query, OCI_ASSOC | OCI_RETURN_NULLS | OCI_RETURN_LOBS);
             if ($row !== false) {
                 $row = array_change_key_case($row);
                 $userResult->setRecordId(intval($row['user_result_pk']));
@@ -1581,7 +1581,7 @@ EOD;
         }
         $ok = $this->executeQuery($sql, $query);
         if ($ok) {
-            $row = oci_fetch_assoc($query);
+            $row = oci_fetch_array($query, OCI_ASSOC | OCI_RETURN_NULLS | OCI_RETURN_LOBS);
             $ok = ($row !== false);
         }
         if ($ok) {
@@ -1592,7 +1592,7 @@ EOD;
             $tool->secret = $row['secret'];
             $tool->messageUrl = $row['message_url'];
             $tool->initiateLoginUrl = $row['initiate_login_url'];
-            $redirectionUrisValue = $row['redirection_uris']->load();
+            $redirectionUrisValue = $row['redirection_uris'];
             if (is_string($redirectionUrisValue)) {
                 $redirectionUris = Util::jsonDecode($redirectionUrisValue, true);
                 if (!is_array($redirectionUris)) {
@@ -1605,7 +1605,7 @@ EOD;
             $tool->rsaKey = $row['public_key'];
             $tool->ltiVersion = LtiVersion::tryFrom($row['lti_version'] ?? '');
             $tool->signatureMethod = $row['signature_method'];
-            $settingsValue = $row['settings']->load();
+            $settingsValue = $row['settings'];
             if (is_string($settingsValue)) {
                 $settings = Util::jsonDecode($settingsValue, true);
                 if (!is_array($settings)) {
@@ -1784,7 +1784,7 @@ EOD;
         }
 
         if ($ok) {
-            while ($row = oci_fetch_assoc($query)) {
+            while ($row = oci_fetch_array($query, OCI_ASSOC | OCI_RETURN_NULLS | OCI_RETURN_LOBS)) {
                 $row = array_change_key_case($row);
                 $tool = new Tool($this);
                 $tool->setRecordId(intval($row['tool_pk']));
@@ -1793,7 +1793,7 @@ EOD;
                 $tool->secret = $row['secret'];
                 $tool->messageUrl = $row['message_url'];
                 $tool->initiateLoginUrl = $row['initiate_login_url'];
-                $redirectionUrisValue = $row['redirection_uris']->load();
+                $redirectionUrisValue = $row['redirection_uris'];
                 if (is_string($redirectionUrisValue)) {
                     $redirectionUris = Util::jsonDecode($redirectionUrisValue, true);
                     if (!is_array($redirectionUris)) {
@@ -1806,7 +1806,7 @@ EOD;
                 $tool->rsaKey = $row['public_key'];
                 $tool->ltiVersion = LtiVersion::tryFrom($row['lti_version'] ?? '');
                 $tool->signatureMethod = $row['signature_method'];
-                $settingsValue = $row['settings']->load();
+                $settingsValue = $row['settings'];
                 if (is_string($settingsValue)) {
                     $settings = Util::jsonDecode($settingsValue, true);
                     if (!is_array($settings)) {
