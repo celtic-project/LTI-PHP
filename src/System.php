@@ -1861,7 +1861,7 @@ trait System
             $queryParams = [];
         }
 
-        if (!is_array($data)) {
+        if (!is_array($data) && ($method !== 'GET') && ($method !== 'HEAD')) {
             if (empty($hash)) {  // Calculate body hash
                 if (is_null($data)) {
                     $data = '';
