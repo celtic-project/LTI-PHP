@@ -24,8 +24,8 @@ class CanvasApiTool extends ApiTool
     {
         $userId = '';
         $messageParameters = $this->tool->getMessageParameters(true, true, false);
-        if (isset($messageParameters['custom_canvas_user_id'])) {
-            $userId = trim($messageParameters['custom_canvas_user_id']);
+        if (isset($messageParameters['lti1p1_user_id'])) {
+            $userId = trim($messageParameters['lti1p1_user_id']);
         }
 
         return $userId;
