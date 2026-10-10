@@ -303,20 +303,45 @@ class HttpMessage
      */
     private function parseRelativeLinks(): void
     {
-        $matched = preg_match_all('/^(Link|link): *(.*)$/m', implode("\n", $this->responseHeaders), $matches);
-        if ($matched) {
-            for ($i = 0; $i < $matched; $i++) {
-                $links = explode(',', $matches[2][$i]);
-                foreach ($links as $link) {
-                    if (preg_match('/^\<([^\>]+)\>; *rel=([^ ]+)$/', trim($link), $match)) {
-                        $rel = strtolower(mb_convert_encoding($match[2], 'ISO-8859-1', 'UTF-8'));
-                        if (str_starts_with($rel, '"') || str_starts_with($rel, '?')) {
-                            $rel = substr($rel, 1, strlen($rel) - 2);
+        foreach ($this->responseHeaders as $header) {
+            if (str_starts_with(strtolower($header), 'link:')) {
+                $matched = preg_match_all('/\<([^\>]+)\>([^,]*)/', trim(substr($header, 5)), $matches);
+                if ($matched !== false) {
+                    for ($i = 0; $i < $matched; $i++) {
+                        $params = explode(';', trim($matches[2][$i]));
+                        foreach ($params as $param) {
+                            $param = trim($param);
+                            if (str_starts_with(strtolower($param), 'rel=')) {
+                                $rel = trim(substr($param, 4), '"\'');
+                                if ($rel === 'previous') {
+                                    $rel = 'prev';
+                                }
+                                $url = trim($matches[1][$i]);
+                                if (str_starts_with($url, '//')) {
+                                    $url = parse_url($this->url, PHP_URL_SCHEME) ?? '' . ":{$url}";
+                                } elseif (strpos($url, '://') === false) {
+                                    $baseUrl = $this->url;
+                                    $pos = strpos($baseUrl, '?');
+                                    if ($pos !== false) {
+                                        $baseUrl = substr($baseUrl, 0, $pos);
+                                    }
+                                    $pos = strpos($baseUrl, '#');
+                                    if ($pos !== false) {
+                                        $baseUrl = substr($baseUrl, 0, $pos);
+                                    }
+                                    if (str_starts_with($url, '/')) {
+                                        $url = $baseUrl . $url;
+                                    } elseif (str_ends_with($baseUrl, '/') || str_starts_with($url, '?') || str_starts_with($url,
+                                            '#')) {
+                                        $url = $baseUrl . $url;
+                                    } else {
+                                        $url = $baseUrl . '/' . $url;
+                                    }
+                                }
+                                $this->relativeLinks[$rel] = $url;
+                                break;
+                            }
                         }
-                        if ($rel === 'previous') {
-                            $rel = 'prev';
-                        }
-                        $this->relativeLinks[$rel] = $match[1];
                     }
                 }
             }
