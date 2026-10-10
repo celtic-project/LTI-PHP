@@ -43,6 +43,8 @@ class CurlClient implements ClientInterface
         curl_setopt($ch, CURLOPT_HTTPHEADER, array_merge($message->requestHeaders, ['Expect:']));  // Avoid sending Expect header
         curl_setopt($ch, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
         curl_setopt($ch, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 0);
+        curl_setopt($ch, CURLOPT_MAXREDIRS, 0);
         if ($message->getMethod() === 'POST') {
             curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_POSTFIELDS, $message->request);
