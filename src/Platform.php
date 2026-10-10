@@ -563,11 +563,19 @@ EOD;
             }
         } else {
             $reason = 'No valid scope requested';
+            $this->output = <<< EOD
+{
+  "error" : "invalid_scope",
+  "error_description" : "No valid scope requested"
+}
+EOD;
         }
+        header('Cache-Control: no-store, no-cache, must-revalidate');
+        header('Pragma: no-cache');
         if ($this->ok) {
-            $this->doExit('Content-Type: application/json; charset=utf-8');
+            $this->doExit('application/json; charset=utf-8');
         } else {
-            $this->doExit('', 400, $reason);
+            $this->doExit('application/json; charset=utf-8', 400, 'Bad Request');
         }
     }
 
