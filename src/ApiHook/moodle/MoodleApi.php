@@ -164,7 +164,7 @@ trait MoodleApi
      */
     private function getUsers(int $perPage, bool $withGroups): array|false
     {
-        $users = [];
+        $users = false;
         $params = [
             'courseid' => $this->courseId,
             'options' => [
@@ -182,91 +182,92 @@ trait MoodleApi
                 ]
             ]
         ];
-        $teachers = [];
         $enrolments = $this->callMoodleApi('core_enrol_get_enrolled_users', $params);
         if (is_array($enrolments)) {
+            $teachers = [];
             foreach ($enrolments as $enrolment) {
                 $teachers[] = $enrolment->id;
             }
-        }
-        $userFields = 'id, username, idnumber, firstname, lastname, fullname, email, roles';
-        if ($withGroups) {
-            $userFields .= ', groups';
-        }
-        $params = [
-            'courseid' => $this->courseId,
-            'options' => [
-                [
-                    'name' => 'onlyactive',
-                    'value' => 1
-                ],
-                [
-                    'name' => 'userfields',
-                    'value' => $userFields
+            $userFields = 'id, username, idnumber, firstname, lastname, fullname, email, roles';
+            if ($withGroups) {
+                $userFields .= ', groups';
+            }
+            $params = [
+                'courseid' => $this->courseId,
+                'options' => [
+                    [
+                        'name' => 'onlyactive',
+                        'value' => 1
+                    ],
+                    [
+                        'name' => 'userfields',
+                        'value' => $userFields
+                    ]
                 ]
-            ]
-        ];
-        if ($perPage > 0) {
-            array_push($params['options'],
-                [
-                    'name' => 'limitnumber',
-                    'value' => $perPage
-                ]
-            );
-        }
-        $n = 0;
-        do {
+            ];
             if ($perPage > 0) {
                 array_push($params['options'],
                     [
-                        'name' => 'limitfrom',
-                        'value' => $n
+                        'name' => 'limitnumber',
+                        'value' => $perPage
                     ]
                 );
             }
-            $enrolments = $this->callMoodleApi('core_enrol_get_enrolled_users', $params);
-            if (is_array($enrolments)) {
-                foreach ($enrolments as $enrolment) {
-                    $userId = strval($enrolment->id);
-                    if (is_a($this->sourceObject, 'ceLTIc\LTI\ResourceLink')) {
-                        $user = UserResult::fromResourceLink($this->sourceObject, $userId);
-                    } else {
-                        $user = new UserResult();
-                        $user->ltiUserId = $userId;
-                    }
-                    $user->setEmail($enrolment->email, $this->sourceObject->getPlatform()->defaultEmail);
-                    $user->setNames($enrolment->firstname, $enrolment->lastname, $enrolment->fullname);
-                    $user->username = $enrolment->username;
-                    if (!empty($enrolment->idnumber)) {
-                        $user->sourcedId = $enrolment->idnumber;
-                    } else {
-                        $user->sourcedId = null;
-                    }
-                    if (!empty($enrolment->groups)) {
-                        foreach ($enrolment->groups as $group) {
-                            $groupId = strval($group->id);
-                            if (array_key_exists($groupId, $this->sourceObject->groups)) {
-                                $user->groups[] = $groupId;
+            $users = [];
+            $n = 0;
+            do {
+                if ($perPage > 0) {
+                    array_push($params['options'],
+                        [
+                            'name' => 'limitfrom',
+                            'value' => $n
+                        ]
+                    );
+                }
+                $enrolments = $this->callMoodleApi('core_enrol_get_enrolled_users', $params);
+                if (is_array($enrolments)) {
+                    foreach ($enrolments as $enrolment) {
+                        $userId = strval($enrolment->id);
+                        if (is_a($this->sourceObject, 'ceLTIc\LTI\ResourceLink')) {
+                            $user = UserResult::fromResourceLink($this->sourceObject, $userId);
+                        } else {
+                            $user = new UserResult();
+                            $user->ltiUserId = $userId;
+                        }
+                        $user->setEmail($enrolment->email, $this->sourceObject->getPlatform()->defaultEmail);
+                        $user->setNames($enrolment->firstname, $enrolment->lastname, $enrolment->fullname);
+                        $user->username = $enrolment->username;
+                        if (!empty($enrolment->idnumber)) {
+                            $user->sourcedId = $enrolment->idnumber;
+                        } else {
+                            $user->sourcedId = null;
+                        }
+                        if (!empty($enrolment->groups)) {
+                            foreach ($enrolment->groups as $group) {
+                                $groupId = strval($group->id);
+                                if (array_key_exists($groupId, $this->sourceObject->groups)) {
+                                    $user->groups[] = $groupId;
+                                }
                             }
                         }
+                        // Add Instructor or Learner role - NB no check is made for the Administrator role
+                        if (in_array($enrolment->id, $teachers)) {
+                            $user->roles[] = 'urn:lti:role:ims/lis/Instructor';
+                        } else {
+                            $user->roles[] = 'urn:lti:role:ims/lis/Learner';
+                        }
+                        $users[$userId] = $user;
                     }
-                    // Add Instructor or Learner role - NB no check is made for the Administrator role
-                    if (in_array($enrolment->id, $teachers)) {
-                        $user->roles[] = 'urn:lti:role:ims/lis/Instructor';
-                    } else {
-                        $user->roles[] = 'urn:lti:role:ims/lis/Learner';
+                    if ($perPage > 0) {
+                        $n += count($enrolments);
+                        array_pop($params['options']);
                     }
-                    $users[$userId] = $user;
+                } else {
+                    $users = false;
+                    break;
                 }
-                if ($perPage > 0) {
-                    $n += count($enrolments);
-                    array_pop($params['options']);
-                }
-            } else {
-                $users = false;
-                break;
-            }
-        } while (($perPage > 0) && is_array($enrolments) && !empty($enrolments));
+            } while (($perPage > 0) && is_array($enrolments) && !empty($enrolments));
+        }
 
         return $users;
     }
