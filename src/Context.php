@@ -388,8 +388,8 @@ class Context
             $this->lastServiceRequest = $service->getHttpMessage();
             $ok = $settings !== false;
         }
-        if (!$ok && $this->hasConfiguredApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode(), $this)) {
-            $className = $this->getApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode());
+        if (!$ok && self::hasConfiguredApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode(), $this)) {
+            $className = self::getApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode());
             $hook = new $className($this);
             $settings = $hook->getToolSettings($mode, $simple);
         }
@@ -413,8 +413,8 @@ class Context
             $ok = $service->set($settings);
             $this->lastServiceRequest = $service->getHttpMessage();
         }
-        if (!$ok && $this->hasConfiguredApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode(), $this)) {
-            $className = $this->getApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode());
+        if (!$ok && self::hasConfiguredApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode(), $this)) {
+            $className = self::getApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode());
             $hook = new $className($this);
             $ok = $hook->setToolSettings($settings);
         }
@@ -450,8 +450,8 @@ class Context
         if (!empty($service->getHttpMessage())) {
             $this->lastServiceRequest = $service->getHttpMessage();
         }
-        if (!$ok && $this->hasConfiguredApiHook(self::$GROUPS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode(), $this)) {
-            $className = $this->getApiHook(self::$GROUPS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode());
+        if (!$ok && self::hasConfiguredApiHook(self::$GROUPS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode(), $this)) {
+            $className = self::getApiHook(self::$GROUPS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode());
             $hook = new $className($this);
             $ok = $hook->getGroups();
         }
@@ -487,8 +487,8 @@ class Context
         $hasMembershipsService = !empty($this->getSetting('custom_context_memberships_url'));
         $hasNRPService = !empty($this->getSetting('custom_context_memberships_v2_url'));
         $hasGroupsService = !empty($this->getSetting('custom_context_groups_url')) ||
-            $this->hasConfiguredApiHook(self::$GROUPS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode(), $this);
-        $hasApiHook = $this->hasConfiguredApiHook(self::$MEMBERSHIPS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode(), $this);
+            self::hasConfiguredApiHook(self::$GROUPS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode(), $this);
+        $hasApiHook = self::hasConfiguredApiHook(self::$MEMBERSHIPS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode(), $this);
         if (($hasMembershipsService || $hasNRPService) && (!$withGroups || ($hasNRPService && $hasGroupsService) || !$hasApiHook)) {
             if ($hasNRPService) {
                 $url = $this->getSetting('custom_context_memberships_v2_url');
@@ -509,7 +509,7 @@ class Context
             $ok = $userResults !== false;
         }
         if (!$ok && $hasApiHook) {
-            $className = $this->getApiHook(self::$MEMBERSHIPS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode());
+            $className = self::getApiHook(self::$MEMBERSHIPS_SERVICE_HOOK, $this->getPlatform()->getFamilyCode());
             $hook = new $className($this);
             $userResults = $hook->getMemberships($withGroups);
         }

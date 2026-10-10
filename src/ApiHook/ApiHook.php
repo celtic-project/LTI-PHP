@@ -3,6 +3,10 @@ declare(strict_types=1);
 
 namespace ceLTIc\LTI\ApiHook;
 
+use ceLTIc\LTI\Platform;
+use ceLTIc\LTI\Context;
+use ceLTIc\LTI\ResourceLink;
+
 /**
  * Trait to handle API hook registrations
  *
@@ -105,7 +109,7 @@ trait ApiHook
      *
      * @return bool  True if the API hook is registered and configured
      */
-    private static function hasConfiguredApiHook(string $hookName, string $familyCode, $sourceObject): bool
+    private static function hasConfiguredApiHook(string $hookName, string $familyCode, Platform|Context|ResourceLink $sourceObject): bool
     {
         $ok = false;
         $class = self::class;

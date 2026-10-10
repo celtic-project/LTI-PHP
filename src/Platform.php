@@ -393,8 +393,8 @@ class Platform
             $this->lastServiceRequest = $service->getHttpMessage();
             $ok = $settings !== false;
         }
-        if (!$ok && $this->hasConfiguredApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getFamilyCode(), $this)) {
-            $className = $this->getApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getFamilyCode());
+        if (!$ok && self::hasConfiguredApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getFamilyCode(), $this)) {
+            $className = self::getApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getFamilyCode());
             $hook = new $className($this);
             $settings = $hook->getToolSettings($simple);
         }
@@ -418,8 +418,8 @@ class Platform
             $ok = $service->set($settings);
             $this->lastServiceRequest = $service->getHttpMessage();
         }
-        if (!$ok && $this->hasConfiguredApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getFamilyCode(), $this)) {
-            $className = $this->getApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getFamilyCode());
+        if (!$ok && self::hasConfiguredApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getFamilyCode(), $this)) {
+            $className = self::getApiHook(self::$TOOL_SETTINGS_SERVICE_HOOK, $this->getFamilyCode());
             $hook = new $className($this);
             $ok = $hook->setToolSettings($settings);
         }
