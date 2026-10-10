@@ -312,6 +312,9 @@ class OAuthServer
         if (!$timestamp) {
             throw new OAuthException('Missing timestamp parameter. The parameter is required');
         }
+        if (!is_numeric($timestamp)) {
+            throw new OAuthException('Timestamp parameter must be numeric');
+        }
 
         // verify that timestamp is recentish
         $now = time();

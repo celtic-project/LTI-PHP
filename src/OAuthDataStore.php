@@ -61,7 +61,7 @@ class OAuthDataStore extends OAuth\OAuthDataStore
             throw new OAuthException('Consumer key not found');
         }
 
-        return new OAuthConsumer($key, $secret);
+        return new OAuthConsumer($key ?? '', $secret ?? '');
     }
 
     /**

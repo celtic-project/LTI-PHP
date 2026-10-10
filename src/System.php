@@ -1270,10 +1270,10 @@ trait System
                         $request->unset_parameter('_new_window');
                     }
                     $server->verify_request($request);
-                } catch (\Exception $e) {
+                } catch (\Throwable $e) {
                     $this->ok = false;
                     if (empty($this->reason)) {
-                        $oauthConsumer = new OAuth\OAuthConsumer($key, $secret);
+                        $oauthConsumer = new OAuth\OAuthConsumer($key ?? '', $secret ?? '');
                         $signature = $request->build_signature($method, $oauthConsumer, null);
                         if ($this->debugMode) {
                             $this->setReason($e->getMessage());
