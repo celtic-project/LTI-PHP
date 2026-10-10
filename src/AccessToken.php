@@ -181,14 +181,10 @@ class AccessToken
                         'client_assertion_type' => 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
                         'scope' => implode(' ', $scopesRequested)
                     ];
-                    if (!empty(Tool::$defaultTool)) {
-                        $platform = $this->platform;
-                        Tool::$defaultTool->platform = $this->platform;
-                        $body = Tool::$defaultTool->signServiceRequest($url, $method, $type, $body);
-                        Tool::$defaultTool->platform = $platform;
-                    } else {
-                        $body = $this->platform->signServiceRequest($url, $method, $type, $body);
-                    }
+                    $platform = $this->platform;
+                    Tool::$defaultTool->platform = $this->platform;
+                    $body = Tool::$defaultTool->signServiceRequest($url, $method, $type, $body);
+                    Tool::$defaultTool->platform = $platform;
                     $http = new HttpMessage($url, $method, $body, 'Accept: application/json');
                     if ($http->send() && !empty($http->response)) {
                         $http->responseJson = Util::jsonDecode($http->response);
