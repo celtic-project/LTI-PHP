@@ -980,9 +980,8 @@ EOD;
             }
             $this->lastServiceRequest = $service->getHttpMessage();
             $ok = $userResults !== false;
-        } elseif ($hasLtiLinkService) {
-            $id = $this->id;
-            $this->id = null;
+        }
+        if (!$ok && $hasLtiLinkService) {
             $url = $this->getSetting('custom_link_memberships_url');
             $format = Service\Membership::MEDIA_TYPE_MEMBERSHIPS_V1;
             $service = new Service\Membership($this, $url, $format);
@@ -992,7 +991,6 @@ EOD;
                 $userResults = $service->getWithGroups();
             }
             $this->lastServiceRequest = $service->getHttpMessage();
-            $this->id = $id;
             $ok = $userResults !== false;
         }
         if (!$ok && $hasExtService) {
