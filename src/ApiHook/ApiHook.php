@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace ceLTIc\LTI\ApiHook;
 
 use ceLTIc\LTI\Platform;
+use ceLTIc\LTI\Tool;
 use ceLTIc\LTI\Context;
 use ceLTIc\LTI\ResourceLink;
 
@@ -103,13 +104,14 @@ trait ApiHook
     /**
      * Check if an API hook is registered and configured.
      *
-     * @param string $hookName                             Name of hook
-     * @param string $familyCode                           Family code for current platform
-     * @param Platform|Context|ResourceLink $sourceObject  Source object for which hook is to be used
+     * @param string $hookName                                  Name of hook
+     * @param string $familyCode                                Family code for current platform
+     * @param Platform|Tool|Context|ResourceLink $sourceObject  Source object for which hook is to be used
      *
      * @return bool  True if the API hook is registered and configured
      */
-    private static function hasConfiguredApiHook(string $hookName, string $familyCode, Platform|Context|ResourceLink $sourceObject): bool
+    private static function hasConfiguredApiHook(string $hookName, string $familyCode,
+        Platform|Tool|Context|ResourceLink $sourceObject): bool
     {
         $ok = false;
         $class = self::class;
