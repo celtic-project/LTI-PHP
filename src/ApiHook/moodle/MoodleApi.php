@@ -234,9 +234,9 @@ trait MoodleApi
                             $user = new UserResult();
                             $user->ltiUserId = $userId;
                         }
-                        $user->setEmail($enrolment->email, $this->sourceObject->getPlatform()->defaultEmail);
-                        $user->setNames($enrolment->firstname, $enrolment->lastname, $enrolment->fullname);
-                        $user->username = $enrolment->username;
+                        $user->setEmail($enrolment->email ?? null, $this->sourceObject->getPlatform()->defaultEmail);
+                        $user->setNames($enrolment->firstname ?? '', $enrolment->lastname ?? '', $enrolment->fullname ?? '');
+                        $user->username = $enrolment->username ?? null;
                         if (!empty($enrolment->idnumber)) {
                             $user->sourcedId = $enrolment->idnumber;
                         } else {

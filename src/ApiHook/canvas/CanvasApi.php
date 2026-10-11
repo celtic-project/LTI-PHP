@@ -214,10 +214,10 @@ trait CanvasApi
                                 $user->ltiUserId = $userId;
                             }
                         }
-                        $user->setNames('', '', $enrolment->name);
-                        $user->setEmail($enrolment->email, $this->sourceObject->getPlatform()->defaultEmail);
-                        $user->username = $enrolment->login_id;
-                        $user->sourcedId = $enrolment->sis_user_id;
+                        $user->setNames('', '', $enrolment->name ?? '');
+                        $user->setEmail($enrolment->email ?? null, $this->sourceObject->getPlatform()->defaultEmail);
+                        $user->username = $enrolment->login_id ?? null;
+                        $user->sourcedId = $enrolment->sis_user_id ?? null;
                         if (!empty($enrolment->group_ids)) {
                             foreach ($enrolment->group_ids as $groupId) {
                                 $user->groups[] = strval($groupId);
