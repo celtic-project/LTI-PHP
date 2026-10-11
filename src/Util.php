@@ -608,15 +608,20 @@ EOD;
 EOD;
         if (!empty($params)) {
             foreach ($params as $key => $value) {
-                $key = htmlentities($key, ENT_COMPAT | ENT_HTML401, 'UTF-8');
+                $key = htmlentities(strval($key), ENT_COMPAT | ENT_HTML401, 'UTF-8');
                 if (!is_array($value)) {
-                    $value = htmlentities($value, ENT_COMPAT | ENT_HTML401, 'UTF-8');
+                    $value = htmlentities(self::valToString($value), ENT_COMPAT | ENT_HTML401, 'UTF-8');
                     $page .= <<< EOD
     <input type="hidden" name="{$key}" id="id_{$key}" value="{$value}">
 
 EOD;
                 } else {
                     foreach ($value as $element) {
+                        if (is_array($element)) {
+                            $element = implode(',', $element);
+                        } else {
+                            $element = strval($element);
+                        }
                         $element = htmlentities($element, ENT_COMPAT | ENT_HTML401, 'UTF-8');
                         $page .= <<< EOD
     <input type="hidden" name="{$key}" value="{$element}">

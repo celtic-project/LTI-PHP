@@ -87,7 +87,7 @@ class AssessmentControl extends Service
         $data = json_encode($json);
         $http = $this->send('POST', null, $data);
         if ($http->ok) {
-            $http->ok = !empty($http->responseJson->status);
+            $http->ok = !empty($http->responseJson->status) && is_string($http->responseJson->status);
             if ($http->ok) {
                 $status = $http->responseJson->status;
             }

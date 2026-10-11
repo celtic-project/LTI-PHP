@@ -977,8 +977,8 @@ trait System
     {
         if (($this instanceof Platform) && ($this->ltiVersion === LtiVersion::V1P3)) {
             if (!isset($loginHint) || (strlen($loginHint) <= 0)) {
-                if (isset($params['user_id']) && (strlen($params['user_id']) > 0)) {
-                    $loginHint = $params['user_id'];
+                if (isset($params['user_id']) && (strlen(Util::valToString($params['user_id'])) > 0)) {
+                    $loginHint = Util::valToString($params['user_id']);
                 } else {
                     $loginHint = 'Anonymous';
                 }

@@ -663,7 +663,7 @@ class ResourceLink
         if (!$ok && is_null($ltiOutcome->getValue())) {
             $ltiOutcome->setValue('');
         }
-        if (!$ok && !empty($urlLTI11)) {
+        if (!$ok && !empty($urlLTI11) && !empty($sourcedId)) {
             $do = '';
             $outcome = $ltiOutcome->getValue();
             if (($action === ServiceAction::Read) && ($ltiOutcome->type === OutcomeType::Decimal)) {
@@ -731,11 +731,11 @@ EOD;
         </result>
 EOD;
                 }
-                $sourcedId = htmlspecialchars($sourcedId, ENT_XML1 | ENT_QUOTES);
+                $htmlSourcedId = htmlspecialchars($sourcedId, ENT_XML1 | ENT_QUOTES);
                 $xml = <<< EOD
 {$submittedXml}      <resultRecord>
         <sourcedGUID>
-          <sourcedId>{$sourcedId}</sourcedId>
+          <sourcedId>{$htmlSourcedId}</sourcedId>
         </sourcedGUID>{$xml}
       </resultRecord>
 EOD;
@@ -744,7 +744,7 @@ EOD;
                         case ServiceAction::Read:
                             if (!isset($this->extNodes['imsx_POXBody']["{$do}Response"]['result']['resultScore']['textString'])) {
                                 break;
-                            } elseif (!empty($this->extNodes['imsx_POXBody']["{$do}Response"]['result']['resultScore']['textString'])) {
+                            } elseif (strlen($this->extNodes['imsx_POXBody']["{$do}Response"]['result']['resultScore']['textString']) > 0) {
                                 $ltiOutcome->setValue($this->extNodes['imsx_POXBody']["{$do}Response"]['result']['resultScore']['textString']);
                             } else {
                                 $ltiOutcome->setValue(null);
@@ -757,7 +757,7 @@ EOD;
                 }
             }
         }
-        if (!$ok && !empty($urlExt)) {
+        if (!$ok && !empty($urlExt) && !empty($sourcedId)) {
             $do = '';
             $outcome = $ltiOutcome->getValue();
             if ($action === ServiceAction::Read) {
@@ -768,7 +768,8 @@ EOD;
                         [OutcomeType::Decimal->value, OutcomeType::Percentage->value, OutcomeType::Ratio->value,
                             OutcomeType::LetterAF->value, OutcomeType::LetterAFPlus->value, OutcomeType::PassFail->value,
                             OutcomeType::Text->value])) {
-                    if (($ltiOutcome->getPointsPossible() <> 1) && ($ltiOutcome->getPointsPossible() > 0)) {
+                    $outcome = $ltiOutcome->getValue();
+                    if ((is_int($outcome) || is_float($outcome)) && ($ltiOutcome->getPointsPossible() <> 1) && ($ltiOutcome->getPointsPossible() > 0)) {
                         $outcome = $outcome / $ltiOutcome->getPointsPossible();
                     }
                 }
@@ -1424,6 +1425,7 @@ EOD;
                 if ($ok) {
                     $ltiOutcome->setValue($value / 100);
                     $ltiOutcome->type = OutcomeType::Decimal;
+                    $litOutcome->setPointsPossible(1);
                 }
             } elseif ($type === OutcomeType::Ratio) {
                 $parts = explode('/', $value, 2);
@@ -1431,6 +1433,7 @@ EOD;
                 if ($ok) {
                     $ltiOutcome->setValue($parts[0] / $parts[1]);
                     $ltiOutcome->type = OutcomeType::Decimal;
+                    $litOutcome->setPointsPossible(1);
                 }
 // Convert letter_af to letter_af_plus or text
             } elseif ($type === OutcomeType::LetterAF) {
@@ -1529,19 +1532,23 @@ EOD;
 // Parse XML response
                     $this->extResponse = $http->response;
                     $this->extResponseHeaders = $http->responseHeaders;
-                    try {
-                        $this->extDoc = new DOMDocument();
-                        @$this->extDoc->loadXML($http->response);
-                        if ($this->extDoc->documentElement) {
-                            $this->extNodes = $this->domnodeToArray($this->extDoc->documentElement);
-                            if (isset($this->extNodes['statusinfo']['codemajor']) && ($this->extNodes['statusinfo']['codemajor'] === 'Success')) {
-                                $ok = true;
+                    if (!empty($http->response)) {
+                        try {
+                            $this->extDoc = new DOMDocument();
+                            @$this->extDoc->loadXML($http->response);
+                            if ($this->extDoc->documentElement) {
+                                $this->extNodes = $this->domnodeToArray($this->extDoc->documentElement);
+                                if (isset($this->extNodes['statusinfo']['codemajor']) && ($this->extNodes['statusinfo']['codemajor'] === 'Success')) {
+                                    $ok = true;
+                                }
+                            } else {
+                                Util::setMessage(true, 'Invalid XML in service response');
                             }
-                        } else {
-                            Util::setMessage(true, 'Invalid XML in service response');
-                        }
-                    } catch (\Exception $e) {
+                        } catch (\Throwable $e) {
 
+                        }
+                    } else {
+                        Util::setMessage(true, 'Empty service response');
                     }
                 }
                 $retry = $retry && !$newToken && !$ok;
@@ -1582,9 +1589,13 @@ EOD;
         if (!empty($url)) {
             $resultService = new Service\Result($this->getPlatform(), $url);
             $outcome = $resultService->get($userResult);
-            $ok = !empty($outcome);
+            $ok = $outcome !== false;
             if ($ok) {
-                $ltiOutcome->assign($outcome);
+                if (!empty($outcome)) {
+                    $ltiOutcome->assign($outcome);
+                } else {
+                    $ltiOutcome->setValue(null);
+                }
             }
             $http = $resultService->getHttpMessage();
             $this->extResponse = $http->response;
@@ -1692,20 +1703,24 @@ EOD;
 // Parse XML response
                     $this->extResponse = $http->response;
                     $this->extResponseHeaders = $http->responseHeaders;
-                    try {
-                        $this->extDoc = new DOMDocument();
-                        @$this->extDoc->loadXML($http->response);
-                        if ($this->extDoc->documentElement) {
-                            $this->extNodes = $this->domnodeToArray($this->extDoc->documentElement);
-                            if (isset($this->extNodes['imsx_POXHeader']['imsx_POXResponseHeaderInfo']['imsx_statusInfo']['imsx_codeMajor']) &&
-                                ($this->extNodes['imsx_POXHeader']['imsx_POXResponseHeaderInfo']['imsx_statusInfo']['imsx_codeMajor'] === 'success')) {
-                                $ok = true;
+                    if (!empty($http->response)) {
+                        try {
+                            $this->extDoc = new DOMDocument();
+                            @$this->extDoc->loadXML($http->response);
+                            if ($this->extDoc->documentElement) {
+                                $this->extNodes = $this->domnodeToArray($this->extDoc->documentElement);
+                                if (isset($this->extNodes['imsx_POXHeader']['imsx_POXResponseHeaderInfo']['imsx_statusInfo']['imsx_codeMajor']) &&
+                                    ($this->extNodes['imsx_POXHeader']['imsx_POXResponseHeaderInfo']['imsx_statusInfo']['imsx_codeMajor'] === 'success')) {
+                                    $ok = true;
+                                }
+                            } else {
+                                Util::setMessage(true, 'Invalid XML in service response');
                             }
-                        } else {
-                            Util::setMessage(true, 'Invalid XML in service response');
-                        }
-                    } catch (\Exception $e) {
+                        } catch (\Throwable $e) {
 
+                        }
+                    } else {
+                        Util::setMessage(true, 'Empty service response');
                     }
                 }
                 $retry = $retry && !$newToken && !$ok;
@@ -1775,30 +1790,34 @@ EOD;
                 $output = trim($node->textContent);
                 break;
             case XML_ELEMENT_NODE:
-                for ($i = 0; $i < $node->childNodes->length; $i++) {
-                    $child = $node->childNodes->item($i);
-                    $v = $this->domnodeToArray($child);
-                    if (isset($child->tagName)) {
-                        $name = explode(':', $child->tagName, 2);  // Remove any namespace
-                        $output[$name[count($name) - 1]][] = $v;
-                    } else {
-                        $s = (string) $v;
-                        if (!empty($s)) {
-                            $output = $s;
+                if ($node->childNodes->length > 0) {
+                    for ($i = 0; $i < $node->childNodes->length; $i++) {
+                        $child = $node->childNodes->item($i);
+                        $v = $this->domnodeToArray($child);
+                        if (isset($child->tagName)) {
+                            $name = explode(':', $child->tagName, 2);  // Remove any namespace
+                            $output[$name[count($name) - 1]][] = $v;
+                        } else {
+                            $s = (string) $v;
+                            if (strlen($s) > 0) {
+                                $output = $s;
+                            }
                         }
                     }
-                }
-                if (is_array($output)) {
-                    if ($node->hasAttributes()) {
-                        foreach ($node->attributes as $attrNode) {
-                            $output['@attributes'][$attrNode->name] = (string) $attrNode->value;
+                    if (is_array($output)) {
+                        if ($node->hasAttributes()) {
+                            foreach ($node->attributes as $attrNode) {
+                                $output['@attributes'][$attrNode->name] = (string) $attrNode->value;
+                            }
+                        }
+                        foreach ($output as $t => $v) {
+                            if (is_array($v) && (count($v) === 1) && ($t !== '@attributes')) {
+                                $output[$t] = $v[0];
+                            }
                         }
                     }
-                    foreach ($output as $t => $v) {
-                        if (is_array($v) && (count($v) === 1) && ($t !== '@attributes')) {
-                            $output[$t] = $v[0];
-                        }
-                    }
+                } else {
+                    $output = '';
                 }
                 break;
         }
