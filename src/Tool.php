@@ -471,6 +471,7 @@ class Tool
      */
     public function handleRequest(?bool $strictMode = null, bool $disableCookieCheck = false, bool $generateWarnings = false): never
     {
+        Util::$requestParameters = null;  // Ensure variable is empty
         $currentStrictMode = Util::$strictMode;
         if (!is_null($strictMode)) {
             Util::$strictMode = $strictMode;

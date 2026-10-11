@@ -479,6 +479,7 @@ class Platform
      */
     public function handleRequest(bool $generateWarnings = false): void
     {
+        Util::$requestParameters = null;  // Ensure variable is empty
         $parameters = Util::getRequestParameters();
         if ($this->debugMode) {
             Util::$logLevel = LogLevel::Debug;
